@@ -1,2 +1,4 @@
 *.deps
 *.a
+*.o
+*.dylib

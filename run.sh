@@ -1,3 +1,3 @@
 #!/bin/sh
 
-rdmd dstep/DStep.d *.a
+rdmd -L-L. -Lclang dstep/DStep.d
