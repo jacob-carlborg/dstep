@@ -20,6 +20,9 @@
  */
 module clang.c.index;
 
+import core.stdc.config;
+import core.stdc.time;
+
 extern (C):
 
 enum bool hasBlocks = false;
@@ -57,12 +60,12 @@ struct CXUnsavedFile {
    *
    * This file must already exist in the file system.
    */
-  const char* Filename;
+  const(char)* Filename;
 
   /**
    * A buffer containing the unsaved contents of this file.
    */
-  const char* Contents;
+  const(char)* Contents;
 
   /**
    * The length of the unsaved contents of this buffer.
@@ -113,7 +116,7 @@ struct CXString {
 /**
  * Retrieve the character data associated with the given string.
  */
-const char* clang_getCString(CXString string);
+const(char)* clang_getCString(CXString string);
 
 /**
  * Free the given string,
@@ -349,7 +352,7 @@ void clang_getExpansionLocation(CXSourceLocation location,
  *
  * #123 "dummy.c" 1
  *
- * static int func(void)
+ * static int func()
  * {
  *     return 0;
  * }
@@ -605,7 +608,7 @@ CXString clang_formatDiagnostic(CXDiagnostic Diagnostic,
  * \returns A set of display options suitable for use with \c
  * clang_displayDiagnostic().
  */
-uint clang_defaultDiagnosticDisplayOptions(void);
+uint clang_defaultDiagnosticDisplayOptions();
 
 /**
  * Determine the severity of the given diagnostic.
@@ -784,7 +787,7 @@ CXTranslationUnit clang_createTranslationUnitFromSourceFile(
                                          CXIndex CIdx,
                                          const char* source_filename,
                                          int num_clang_command_line_args,
-                                   const char * const* clang_command_line_args,
+                                   		 const(char*)* clang_command_line_args,
                                          uint num_unsaved_files,
                                          CXUnsavedFile* unsaved_files);
 
@@ -908,7 +911,7 @@ enum CXTranslationUnit_Flags {
  * preamble) geared toward improving the performance of these routines. The
  * set of optimizations enabled may change from one version to the next.
  */
-uint clang_defaultEditingTranslationUnitOptions(void);
+uint clang_defaultEditingTranslationUnitOptions();
   
 /**
  * Parse the given source file and the translation unit corresponding
@@ -954,7 +957,7 @@ uint clang_defaultEditingTranslationUnitOptions(void);
  */
 CXTranslationUnit clang_parseTranslationUnit(CXIndex CIdx,
                                                     const char* source_filename,
-                                         const char * const* command_line_args,
+                                         const(char*)* command_line_args,
                                                       int num_command_line_args,
                                             CXUnsavedFile* unsaved_files,
                                                      uint num_unsaved_files,
@@ -1151,8 +1154,7 @@ enum CXTUResourceUsageKind {
   * Returns the human-readable null-terminated C string that represents
   *  the name of the memory category.  This string should never be freed.
   */
-CINDEX_LINKAGE
-const char* clang_getTUResourceUsageName(CXTUResourceUsageKind kind);
+const(char)* clang_getTUResourceUsageName(CXTUResourceUsageKind kind);
 
 struct CXTUResourceUsageEntry {
   /* The memory usage category. */
@@ -1519,7 +1521,7 @@ struct CXCursor {
 /**
  * Retrieve the NULL cursor, which represents no entity.
  */
-CXCursor clang_getNullCursor(void);
+CXCursor clang_getNullCursor();
 
 /**
  * Retrieve the cursor that represents the given translation unit.
@@ -1659,11 +1661,13 @@ CXLanguageKind clang_getCursorLanguage(CXCursor cursor);
  */
 CXTranslationUnit clang_Cursor_getTranslationUnit(CXCursor);
 
+///
+struct CXCursorSetImpl;
 
 /**
  * A fast container representing a set of CXCursors.
  */
-CXCursorSetImpl* CXCursorSet;
+alias CXCursorSetImpl* CXCursorSet;
 
 /**
  * Creates an empty CXCursorSet.
@@ -2049,7 +2053,7 @@ CXType clang_getArrayElementType(CXType T);
  *
  * If a non-array type is passed in, -1 is returned.
  */
-long long clang_getArraySize(CXType T);
+long clang_getArraySize(CXType T);
 
 /**
  * Returns 1 if the base class specified by the cursor with kind
@@ -2170,9 +2174,9 @@ enum CXChildVisitResult {
  * The visitor should return one of the \c CXChildVisitResult values
  * to direct clang_visitCursorChildren().
  */
-alias CXChildVisitResult (*CXCursorVisitor)(CXCursor cursor,
-                                                   CXCursor parent,
-                                                   CXClientData client_data);
+alias CXChildVisitResult function (CXCursor cursor,
+	CXCursor parent,
+	CXClientData client_data) CXCursorVisitor;
 
 /**
  * Visit the children of a particular cursor.
@@ -2199,29 +2203,6 @@ alias CXChildVisitResult (*CXCursorVisitor)(CXCursor cursor,
 uint clang_visitChildren(CXCursor parent,
                                             CXCursorVisitor visitor,
                                             CXClientData client_data);
-static if (hasBlocks)
-{
-	/**
-	 * Visitor invoked for each cursor found by a traversal.
-	 *
-	 * This visitor block will be invoked for each cursor found by
-	 * clang_visitChildrenWithBlock(). Its first argument is the cursor being
-	 * visited, its second argument is the parent visitor for that cursor.
-	 *
-	 * The visitor should return one of the \c CXChildVisitResult values
-	 * to direct clang_visitChildrenWithBlock().
-	 */
-	alias CXChildVisitResult 
-	     (^CXCursorVisitorBlock)(CXCursor cursor, CXCursor parent);
-
-	/**
-	 * Visits the children of a cursor using the specified block.  Behaves
-	 * identically to clang_visitChildren() in all other respects.
-	 */
-	uint clang_visitChildrenWithBlock(CXCursor parent,
-	                                      CXCursorVisitorBlock block);
-}
-
 /**
  * @}
  */
@@ -2658,8 +2639,8 @@ void clang_getDefinitionSpellingAndExtent(CXCursor,
                                           uint* startColumn,
                                           uint* endLine,
                                           uint* endColumn);
-void clang_enableStackTraces(void);
-void clang_executeOnThread(void (*fn)(void*), void* user_data,
+void clang_enableStackTraces();
+void clang_executeOnThread(void function(void*) fn, void* user_data,
                                           uint stack_size);
 
 /**
@@ -3150,7 +3131,7 @@ enum CXCompletionContext {
  * Returns a default set of code-completion options that can be
  * passed to\c clang_codeCompleteAt(). 
  */
-uint clang_defaultCodeCompleteOptions(void);
+uint clang_defaultCodeCompleteOptions();
 
 /**
  * Perform code completion at a given location in a translation unit.
@@ -3220,7 +3201,6 @@ uint clang_defaultCodeCompleteOptions(void);
  * freed with \c clang_disposeCodeCompleteResults(). If code
  * completion fails, returns NULL.
  */
-CINDEX_LINKAGE
 CXCodeCompleteResults* clang_codeCompleteAt(CXTranslationUnit TU,
                                             const char* complete_filename,
                                             uint complete_line,
@@ -3236,21 +3216,18 @@ CXCodeCompleteResults* clang_codeCompleteAt(CXTranslationUnit TU,
  * \param Results The set of results to sort.
  * \param NumResults The number of results in \p Results.
  */
-CINDEX_LINKAGE
 void clang_sortCodeCompletionResults(CXCompletionResult* Results,
                                      uint NumResults);
   
 /**
  * Free the given set of code-completion results.
  */
-CINDEX_LINKAGE
 void clang_disposeCodeCompleteResults(CXCodeCompleteResults* Results);
   
 /**
  * Determine the number of diagnostics produced prior to the
  * location where code completion was performed.
  */
-CINDEX_LINKAGE
 uint clang_codeCompleteGetNumDiagnostics(CXCodeCompleteResults* Results);
 
 /**
@@ -3262,7 +3239,6 @@ uint clang_codeCompleteGetNumDiagnostics(CXCodeCompleteResults* Results);
  * \returns the requested diagnostic. This diagnostic must be freed
  * via a call to \c clang_disposeDiagnostic().
  */
-CINDEX_LINKAGE
 CXDiagnostic clang_codeCompleteGetDiagnostic(CXCodeCompleteResults* Results,
                                              uint Index);
 
@@ -3275,8 +3251,7 @@ CXDiagnostic clang_codeCompleteGetDiagnostic(CXCodeCompleteResults* Results,
  * \returns the kinds of completions that are appropriate for use
  * along with the given code completion results.
  */
-CINDEX_LINKAGE
-c_ulong long clang_codeCompleteGetContexts(
+ulong clang_codeCompleteGetContexts(
                                                 CXCodeCompleteResults* Results);
 
 /**
@@ -3295,7 +3270,6 @@ c_ulong long clang_codeCompleteGetContexts(
  * \returns the container kind, or CXCursor_InvalidCode if there is not a
  * container
  */
-CINDEX_LINKAGE
 CXCursorKind clang_codeCompleteGetContainerKind(
                                                  CXCodeCompleteResults* Results,
                                                      uint* IsIncomplete);
@@ -3309,7 +3283,6 @@ CXCursorKind clang_codeCompleteGetContainerKind(
  *
  * \returns the USR for the container
  */
-CINDEX_LINKAGE
 CXString clang_codeCompleteGetContainerUSR(CXCodeCompleteResults* Results);
   
   
@@ -3324,7 +3297,6 @@ CXString clang_codeCompleteGetContainerUSR(CXCodeCompleteResults* Results);
  * \returns the selector (or partial selector) that has been entered thus far
  * for an Objective-C message send.
  */
-CINDEX_LINKAGE
 CXString clang_codeCompleteGetObjCSelector(CXCodeCompleteResults* Results);
   
 /**
@@ -3364,10 +3336,10 @@ void clang_toggleCrashRecovery(uint isEnabled);
   * array is sorted in order of immediate inclusion.  For example,
   * the first element refers to the location that included 'included_file'.
   */
-alias void (*CXInclusionVisitor)(CXFile included_file,
-                                   CXSourceLocation* inclusion_stack,
-                                   uint include_len,
-                                   CXClientData client_data);
+alias void function (CXFile included_file,
+                     CXSourceLocation* inclusion_stack,
+                     uint include_len,
+                     CXClientData client_data) CXInclusionVisitor;
 
 /**
  * Visit the set of preprocessor inclusions in a translation unit.

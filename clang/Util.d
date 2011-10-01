@@ -6,25 +6,27 @@
  */
 module clang.Util;
 
+import clang.c.index;
+
 import std.string;
 
-char** toCArray (string[] arr)
+immutable(char)** strToCArray (string[] arr)
 {
 	if (!arr)
 		return null;
 	
-	char*[] cArr;
+	immutable(char)*[] cArr;
 	cArr.reserve(arr.length);
 	
 	foreach (str ; arr)
 		cArr ~= str.toStringz;
 	
-	cArr.ptr;
+	return cArr.ptr;
 }
 
 template isCX (T)
 {
-	enum isCX = __traits(compile, { T t; auto = t.cx; });
+	enum bool isCX = __traits(hasMember, T, "cx");
 }
 
 template cxName (T)
@@ -32,23 +34,18 @@ template cxName (T)
 	enum cxName = "CX" ~ T.stringof;
 }
 
-template toCArray (T) if (isCX!(T))
+U* toCArray (U, T) (T[] arr)
 {
-	mixin("alias " ~ cxName!(T) ~ " CType;");
-	
-	CType* toCArray (T[] arr)
-	{
-		if (!arr)
-			return null;
-			
-		CType[] cArr;
-		cArr.reserve(arr.length);
+	if (!arr)
+		return null;
 		
-		foreach (e ; arr)
-			cArr ~= e.cx;
-			
-		return cArr.ptr;
-	}
+	U[] cArr;
+	cArr.reserve(arr.length);
+	
+	foreach (e ; arr)
+		cArr ~= e.cx;
+		
+	return cArr.ptr;
 }
 
 mixin template CX ()
@@ -58,6 +55,11 @@ mixin template CX ()
 	CType cx_;
 	
 	@disable this ();
+	
+	this (CType cx)
+	{
+		cx_ = cx;
+	}
 	
 	CType cx ()
 	{
@@ -71,6 +73,9 @@ mixin template CX ()
 	
 	void dispose ()
 	{
-		mixin("clang_dispose" ~ typeof(this).stringof ~ "(cx);");
+		enum methodCall = "clang_dispose" ~ typeof(this).stringof ~ "(cx);";
+		
+		static if (false && __traits(compiles, methodCall))
+			mixin(methodCall);
 	}
 }

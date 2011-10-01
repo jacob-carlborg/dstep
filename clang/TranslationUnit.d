@@ -11,6 +11,7 @@ import std.string;
 import clang.c.index;
 import clang.UnsavedFile;
 import clang.Index;
+import clang.Util;
 
 struct TranslationUnit
 {
@@ -20,16 +21,14 @@ struct TranslationUnit
 		UnsavedFile[] unsavedFiles = null,
 		uint options = CXTranslationUnit_Flags.CXTranslationUnit_None)
 	{
-		TranslationUnit tu;
-		
-		tu.cx = clang_parseTranslationUnit(index.cx,
-			sourceFilename.toString,
-			commandLineArgs.toCArray,
-			commandLineArgs.length,
-			unsavedFiles.toCArray,
-			unsavedFiles.length,
-			options);
-			
-		return tu;
+		return TranslationUnit(
+			clang_parseTranslationUnit(
+				index.cx,
+				sourceFilename.toStringz,
+				strToCArray(commandLineArgs),
+				commandLineArgs.length,
+				toCArray!(CXUnsavedFile)(unsavedFiles),
+				unsavedFiles.length,
+				options));
 	}
 }
