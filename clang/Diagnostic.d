@@ -4,22 +4,17 @@
  * Version: Initial created: Oct 6, 2011
  * License: $(LINK2 http://www.boost.org/LICENSE_1_0.txt, Boost Software License 1.0)
  */
-module dstep.converter.Converter;
+module clang.Diagnostic;
 
 import clang.c.index;
-import clang.TranslationUnit;
+import clang.Util;
 
-class Converter
+struct Diagnostic
 {
-	TranslationUnit translationUnit;
+	mixin CX;
 	
-	this (TranslationUnit translationUnit)
+	string format (uint options = clang_defaultDiagnosticDisplayOptions)
 	{
-		this.translationUnit = translationUnit;
-	}
-	
-	void convert ()
-	{
-		
+		return toD(clang_formatDiagnostic(cx, options));
 	}
 }

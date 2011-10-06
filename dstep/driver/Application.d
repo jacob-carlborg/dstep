@@ -4,15 +4,18 @@
  * Version: Initial created: Oct 1, 2011
  * License: $(LINK2 http://www.boost.org/LICENSE_1_0.txt, Boost Software License 1.0)
  */
-module dstep.Application;
+module dstep.driver.Application;
 
 import core.stdc.stdlib : EXIT_SUCCESS, EXIT_FAILURE;
+
+import std.stdio;
 
 import clang.Index;
 import clang.TranslationUnit;
 
 import dstep.core.io;
-import dstep.Exceptions;
+import dstep.core.Exceptions;
+import dstep.converter.Converter;
 import dstep.util.Singleton;
 import dstep.util.Use;
 
@@ -33,6 +36,10 @@ class Application
 		alias ExitCode delegate () Runnable;	
 		
 		string[] args;
+		
+		Index index;
+		TranslationUnit translationUnit;
+		DiagnosticIterator diagnostics;
 	}
 	
 	int run (string[] args)
@@ -40,18 +47,13 @@ class Application
 		this.args = args;
 		
 		return debugHandleExceptions in {
-			auto index = Index(false, false);
-			auto translationUnit = TranslationUnit.parse(index, null, args);
-
-			translationUnit.dispose;
-			index.dispose;
-
-			println("ok");
-			
+			startConversion;
 			return ExitCode.success;
 		};
 	}
-	
+
+private:
+
 	Use!(Runnable) handleExceptions ()
 	{
 		Use!(Runnable) use;
@@ -84,5 +86,45 @@ class Application
 		};
 		
 		return use;
+	}
+	
+	void startConversion ()
+	{
+		index = Index(false, false);
+		translationUnit = TranslationUnit.parse(index, null, args);
+		
+		if (!translationUnit.isValid)
+			throw new DStepException("An unknown error occurred");
+		
+		diagnostics = translationUnit.diagnostics;
+		
+		scope (exit)
+			clean;
+		
+		if (anyErrors)
+			handleDiagnostics;
+			
+		else
+		{
+			auto converter = new Converter(translationUnit);
+			converter.convert;
+		}
+	}
+	
+	bool anyErrors ()
+	{
+		return diagnostics.length > 0;
+	}
+	
+	void handleDiagnostics ()
+	{		
+		foreach (diag ; diagnostics)
+			writeln(stderr, diag.format);
+	}
+	
+	void clean ()
+	{
+		translationUnit.dispose;
+		index.dispose;
 	}
 }

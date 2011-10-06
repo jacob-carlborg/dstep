@@ -9,6 +9,7 @@ module clang.Util;
 import clang.c.index;
 
 import std.string;
+import std.conv;
 
 immutable(char)** strToCArray (string[] arr)
 {
@@ -22,6 +23,15 @@ immutable(char)** strToCArray (string[] arr)
 		cArr ~= str.toStringz;
 	
 	return cArr.ptr;
+}
+
+string toD (CXString cxString)
+{
+	auto cstr = clang_getCString(cxString);	
+	auto str = to!(string)(cstr).idup;
+	clang_disposeString(cxString);
+	
+	return str;
 }
 
 template isCX (T)
@@ -54,19 +64,17 @@ mixin template CX ()
 	
 	CType cx_;
 	
-	@disable this ();
-	
 	this (CType cx)
 	{
 		cx_ = cx;
 	}
 	
-	CType cx ()
+	@property CType cx ()
 	{
 		return cx_;
 	}
 	
-	private CType cx (CType cx)
+	private @property CType cx (CType cx)
 	{
 		return cx_ = cx;
 	}
@@ -77,5 +85,10 @@ mixin template CX ()
 		
 		static if (false && __traits(compiles, methodCall))
 			mixin(methodCall);
+	}
+	
+	@property bool isValid ()
+	{
+		return cx !is CType.init;
 	}
 }
