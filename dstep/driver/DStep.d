@@ -4,9 +4,9 @@
  * Version: Initial created: Oct 1, 2011
  * License: $(LINK2 http://www.boost.org/LICENSE_1_0.txt, Boost Software License 1.0)
  */
-module dstep.DStep;
+module dstep.driver.DStep;
 
-import dstep.Application;
+import dstep.driver.Application;
 
 int main (string[] args)
 {
