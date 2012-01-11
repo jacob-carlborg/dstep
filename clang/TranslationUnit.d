@@ -29,9 +29,9 @@ struct TranslationUnit
 				index.cx,
 				sourceFilename.toStringz,
 				strToCArray(commandLineArgs),
-				commandLineArgs.length,
+				cast(int) commandLineArgs.length,
 				toCArray!(CXUnsavedFile)(unsavedFiles),
-				unsavedFiles.length,
+				cast(uint) unsavedFiles.length,
 				options));
 	}
 	
@@ -61,7 +61,7 @@ struct DiagnosticIterator
 		
 		foreach (i ; 0 .. length)
 		{
-			auto diag = clang_getDiagnostic(translatoinUnit, i);
+			auto diag = clang_getDiagnostic(translatoinUnit, cast(uint) i);
 			result = dg(Diagnostic(diag));
 
 			if (result)
