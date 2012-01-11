@@ -1,4 +1,7 @@
 #!/bin/sh
 
-dvm use 2.057
-rdmd -L-L. -L-lclang -L-rpath -L. dstep/driver/DStep.d
+./build.sh
+
+if [ "$?" = 0 ] ; then
+  ./bin/dstep "$@"
+fi

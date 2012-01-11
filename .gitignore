@@ -3,3 +3,4 @@
 *.o
 *.dylib
 main
+*.h
