@@ -1,9 +1,27 @@
-/**
- * Copyright: Copyright (c) 2011 Jacob Carlborg. All rights reserved.
- * Authors: Jacob Carlborg
- * Version: Initial created: Oct 1, 2011
- * License: $(LINK2 http://www.boost.org/LICENSE_1_0.txt, Boost Software License 1.0)
- * 
+/*===-- clang-c/Index.h - Indexing Public C Interface -------------*- C -*-===*\
+|*                                                                            *|
+|*                     The LLVM Compiler Infrastructure                       *|
+|*                                                                            *|
+|* This file is distributed under the University of Illinois Open Source      *|
+|* License. See LICENSE.TXT for details.                                      *|
+|*                                                                            *|
+|*===----------------------------------------------------------------------===*|
+|*                                                                            *|
+|* This header provides a public inferface to a Clang library for extracting  *|
+|* high-level symbol information from source files without exposing the full  *|
+|* Clang C++ API.                                                             *|
+|*                                                                            *|
+\*===----------------------------------------------------------------------===*/
+
+module clang.c.index;
+
+import core.stdc.config;
+import core.stdc.time;
+
+extern (C):
+
+/** \defgroup CINDEX libclang: C Interface to Clang
+ *
  * The C Interface to Clang provides a relatively small API that exposes
  * facilities for parsing source code into an abstract syntax tree (AST),
  * loading already-parsed ASTs, traversing the AST, associating
@@ -17,18 +35,12 @@
  *
  * To avoid namespace pollution, data types are prefixed with "CX" and
  * functions are prefixed with "clang_".
+ *
+ * @{
  */
-module clang.c.index;
-
-import core.stdc.config;
-import core.stdc.time;
-
-extern (C):
-
-enum bool hasBlocks = false;
 
 /**
- * An "index" that consists of a set of translation units that would
+ * \brief An "index" that consists of a set of translation units that would
  * typically be linked together into an executable or library.
  */
 alias void* CXIndex;
@@ -37,18 +49,18 @@ alias void* CXIndex;
 struct CXTranslationUnitImpl;
 
 /**
- * A single translation unit, which resides in an index.
+ * \brief A single translation unit, which resides in an index.
  */
 alias CXTranslationUnitImpl* CXTranslationUnit;
 
 /**
- * Opaque pointer representing client data that will be passed through
+ * \brief Opaque pointer representing client data that will be passed through
  * to various callbacks and visitors.
  */
 alias void* CXClientData;
 
 /**
- * Provides the contents of a file that has not yet been saved to disk.
+ * \brief Provides the contents of a file that has not yet been saved to disk.
  *
  * Each CXUnsavedFile instance provides the name of a file on the
  * system along with the current contents of that file that have not
@@ -56,42 +68,47 @@ alias void* CXClientData;
  */
 struct CXUnsavedFile {
   /**
-   * The file whose contents have not yet been saved.
+   * \brief The file whose contents have not yet been saved.
    *
    * This file must already exist in the file system.
    */
   const(char)* Filename;
 
   /**
-   * A buffer containing the unsaved contents of this file.
+   * \brief A buffer containing the unsaved contents of this file.
    */
   const(char)* Contents;
 
   /**
-   * The length of the unsaved contents of this buffer.
+   * \brief The length of the unsaved contents of this buffer.
    */
   c_ulong Length;
 }
 
 /**
- * Describes the availability of a particular entity, which indicates
+ * \brief Describes the availability of a particular entity, which indicates
  * whether the use of this entity will result in a warning or error due to
  * it being deprecated or unavailable.
  */
 enum CXAvailabilityKind {
   /**
-   * The entity is available.
+   * \brief The entity is available.
    */
   CXAvailability_Available,
   /**
-   * The entity is available, but has been deprecated (and its use is
+   * \brief The entity is available, but has been deprecated (and its use is
    * not recommended).
    */
   CXAvailability_Deprecated,
   /**
-   * The entity is not available; any use of it will be an error.
+   * \brief The entity is not available; any use of it will be an error.
    */
-  CXAvailability_NotAvailable
+  CXAvailability_NotAvailable,
+  /**
+   * \brief The entity is available, but not accessible; any use of it will be
+   * an error.
+   */
+  CXAvailability_NotAccessible
 }
   
 /**
@@ -101,7 +118,7 @@ enum CXAvailabilityKind {
  */
 
 /**
- * A character string.
+ * \brief A character string.
  *
  * The \c CXString type is used to return strings from the interface when
  * the ownership of that string might different from one call to the next.
@@ -114,12 +131,12 @@ struct CXString {
 }
 
 /**
- * Retrieve the character data associated with the given string.
+ * \brief Retrieve the character data associated with the given string.
  */
 const(char)* clang_getCString(CXString string);
 
 /**
- * Free the given string,
+ * \brief Free the given string,
  */
 void clang_disposeString(CXString string);
 
@@ -128,7 +145,7 @@ void clang_disposeString(CXString string);
  */
 
 /**
- * clang_createIndex() provides a shared context for creating
+ * \brief clang_createIndex() provides a shared context for creating
  * translation units. It provides two options:
  *
  * - excludeDeclarationsFromPCH: When non-zero, allows enumeration of "local"
@@ -168,7 +185,7 @@ CXIndex clang_createIndex(int excludeDeclarationsFromPCH,
                                          int displayDiagnostics);
 
 /**
- * Destroy the given index.
+ * \brief Destroy the given index.
  *
  * The index must not be destroyed until all of the translation units created
  * within that index have been destroyed.
@@ -182,23 +199,23 @@ void clang_disposeIndex(CXIndex index);
  */
 
 /**
- * A particular source file that is part of a translation unit.
+ * \brief A particular source file that is part of a translation unit.
  */
 alias void* CXFile;
 
 
 /**
- * Retrieve the complete file and path name of the given file.
+ * \brief Retrieve the complete file and path name of the given file.
  */
 CXString clang_getFileName(CXFile SFile);
 
 /**
- * Retrieve the last modification time of the given file.
+ * \brief Retrieve the last modification time of the given file.
  */
 time_t clang_getFileTime(CXFile SFile);
 
 /**
- * Determine whether the given header is guarded against
+ * \brief Determine whether the given header is guarded against
  * multiple inclusions, either with the conventional
  * #ifndef/#define/#endif macro guards or with #pragma once.
  */
@@ -206,7 +223,7 @@ uint
 clang_isFileMultipleIncludeGuarded(CXTranslationUnit tu, CXFile file);
 
 /**
- * Retrieve a file handle within the given translation unit.
+ * \brief Retrieve a file handle within the given translation unit.
  *
  * \param tu the translation unit
  *
@@ -216,7 +233,7 @@ clang_isFileMultipleIncludeGuarded(CXTranslationUnit tu, CXFile file);
  * or a NULL file handle if the file was not a part of this translation unit.
  */
 CXFile clang_getFile(CXTranslationUnit tu,
-                                    const char* file_name);
+                                    const(char)* file_name);
 
 /**
  * @}
@@ -236,7 +253,7 @@ CXFile clang_getFile(CXTranslationUnit tu,
  */
 
 /**
- * Identifies a specific source location within a translation
+ * \brief Identifies a specific source location within a translation
  * unit.
  *
  * Use clang_getExpansionLocation() or clang_getSpellingLocation()
@@ -248,7 +265,7 @@ struct CXSourceLocation {
 }
 
 /**
- * Identifies a half-open character range in the source code.
+ * \brief Identifies a half-open character range in the source code.
  *
  * Use clang_getRangeStart() and clang_getRangeEnd() to retrieve the
  * starting and end locations from a source range, respectively.
@@ -260,7 +277,7 @@ struct CXSourceRange {
 }
 
 /**
- * Retrieve a NULL (invalid) source location.
+ * \brief Retrieve a NULL (invalid) source location.
  */
 CXSourceLocation clang_getNullLocation();
 
@@ -276,7 +293,7 @@ uint clang_equalLocations(CXSourceLocation loc1,
                                              CXSourceLocation loc2);
 
 /**
- * Retrieves the source location associated with a given file/line/column
+ * \brief Retrieves the source location associated with a given file/line/column
  * in a particular translation unit.
  */
 CXSourceLocation clang_getLocation(CXTranslationUnit tu,
@@ -284,7 +301,7 @@ CXSourceLocation clang_getLocation(CXTranslationUnit tu,
                                                   uint line,
                                                   uint column);
 /**
- * Retrieves the source location associated with a given character offset
+ * \brief Retrieves the source location associated with a given character offset
  * in a particular translation unit.
  */
 CXSourceLocation clang_getLocationForOffset(CXTranslationUnit tu,
@@ -292,19 +309,19 @@ CXSourceLocation clang_getLocationForOffset(CXTranslationUnit tu,
                                                            uint offset);
 
 /**
- * Retrieve a NULL (invalid) source range.
+ * \brief Retrieve a NULL (invalid) source range.
  */
 CXSourceRange clang_getNullRange();
 
 /**
- * Retrieve a source range given the beginning and ending source
+ * \brief Retrieve a source range given the beginning and ending source
  * locations.
  */
 CXSourceRange clang_getRange(CXSourceLocation begin,
                                             CXSourceLocation end);
 
 /**
- * Determine whether two ranges are equivalent.
+ * \brief Determine whether two ranges are equivalent.
  *
  * \returns non-zero if the ranges are the same, zero if they differ.
  */
@@ -312,12 +329,12 @@ uint clang_equalRanges(CXSourceRange range1,
                                           CXSourceRange range2);
 
 /**
- * Returns non-zero if \arg range is null.
+ * \brief Returns non-zero if \arg range is null.
  */
 int clang_Range_isNull(CXSourceRange range);
 
 /**
- * Retrieve the file, line, column, and offset represented by
+ * \brief Retrieve the file, line, column, and offset represented by
  * the given source location.
  *
  * If the location refers into a macro expansion, retrieves the
@@ -345,7 +362,7 @@ void clang_getExpansionLocation(CXSourceLocation location,
                                                uint* offset);
 
 /**
- * Retrieve the file, line, column, and offset represented by
+ * \brief Retrieve the file, line, column, and offset represented by
  * the given source location, as specified in a # line directive.
  *
  * Example: given the following source code in a file somefile.c
@@ -388,7 +405,7 @@ void clang_getPresumedLocation(CXSourceLocation location,
                                               uint* column);
 
 /**
- * Legacy API to retrieve the file, line, column, and offset represented
+ * \brief Legacy API to retrieve the file, line, column, and offset represented
  * by the given source location.
  *
  * This interface has been replaced by the newer interface
@@ -402,7 +419,7 @@ void clang_getInstantiationLocation(CXSourceLocation location,
                                                    uint* offset);
 
 /**
- * Retrieve the file, line, column, and offset represented by
+ * \brief Retrieve the file, line, column, and offset represented by
  * the given source location.
  *
  * If the location refers into a macro instantiation, return where the
@@ -430,13 +447,13 @@ void clang_getSpellingLocation(CXSourceLocation location,
                                               uint* offset);
 
 /**
- * Retrieve a source location representing the first character within a
+ * \brief Retrieve a source location representing the first character within a
  * source range.
  */
 CXSourceLocation clang_getRangeStart(CXSourceRange range);
 
 /**
- * Retrieve a source location representing the last character within a
+ * \brief Retrieve a source location representing the last character within a
  * source range.
  */
 CXSourceLocation clang_getRangeEnd(CXSourceRange range);
@@ -452,34 +469,34 @@ CXSourceLocation clang_getRangeEnd(CXSourceRange range);
  */
 
 /**
- * Describes the severity of a particular diagnostic.
+ * \brief Describes the severity of a particular diagnostic.
  */
 enum CXDiagnosticSeverity {
   /**
-   * A diagnostic that has been suppressed, e.g., by a command-line
+   * \brief A diagnostic that has been suppressed, e.g., by a command-line
    * option.
    */
   CXDiagnostic_Ignored = 0,
 
   /**
-   * This diagnostic is a note that should be attached to the
+   * \brief This diagnostic is a note that should be attached to the
    * previous (non-note) diagnostic.
    */
   CXDiagnostic_Note    = 1,
 
   /**
-   * This diagnostic indicates suspicious code that may not be
+   * \brief This diagnostic indicates suspicious code that may not be
    * wrong.
    */
   CXDiagnostic_Warning = 2,
 
   /**
-   * This diagnostic indicates that the code is ill-formed.
+   * \brief This diagnostic indicates that the code is ill-formed.
    */
   CXDiagnostic_Error   = 3,
 
   /**
-   * This diagnostic indicates that the code is ill-formed such
+   * \brief This diagnostic indicates that the code is ill-formed such
    * that future parser recovery is unlikely to produce useful
    * results.
    */
@@ -487,19 +504,19 @@ enum CXDiagnosticSeverity {
 }
 
 /**
- * A single diagnostic, containing the diagnostic's severity,
+ * \brief A single diagnostic, containing the diagnostic's severity,
  * location, text, source ranges, and fix-it hints.
  */
 alias void* CXDiagnostic;
 
 /**
- * Determine the number of diagnostics produced for the given
+ * \brief Determine the number of diagnostics produced for the given
  * translation unit.
  */
 uint clang_getNumDiagnostics(CXTranslationUnit Unit);
 
 /**
- * Retrieve a diagnostic associated with the given translation unit.
+ * \brief Retrieve a diagnostic associated with the given translation unit.
  *
  * \param Unit the translation unit to query.
  * \param Index the zero-based diagnostic number to retrieve.
@@ -511,19 +528,19 @@ CXDiagnostic clang_getDiagnostic(CXTranslationUnit Unit,
                                                 uint Index);
 
 /**
- * Destroy a diagnostic.
+ * \brief Destroy a diagnostic.
  */
 void clang_disposeDiagnostic(CXDiagnostic Diagnostic);
 
 /**
- * Options to control the display of diagnostics.
+ * \brief Options to control the display of diagnostics.
  *
  * The values in this enum are meant to be combined to customize the
  * behavior of \c clang_displayDiagnostic().
  */
 enum CXDiagnosticDisplayOptions {
   /**
-   * Display the source-location information where the
+   * \brief Display the source-location information where the
    * diagnostic was located.
    *
    * When set, diagnostics will be prefixed by the file, line, and
@@ -538,7 +555,7 @@ enum CXDiagnosticDisplayOptions {
   CXDiagnostic_DisplaySourceLocation = 0x01,
 
   /**
-   * If displaying the source-location information of the
+   * \brief If displaying the source-location information of the
    * diagnostic, also include the column number.
    *
    * This option corresponds to the clang flag \c -fshow-column.
@@ -546,7 +563,7 @@ enum CXDiagnosticDisplayOptions {
   CXDiagnostic_DisplayColumn = 0x02,
 
   /**
-   * If displaying the source-location information of the
+   * \brief If displaying the source-location information of the
    * diagnostic, also include information about source ranges in a
    * machine-parsable format.
    *
@@ -556,7 +573,7 @@ enum CXDiagnosticDisplayOptions {
   CXDiagnostic_DisplaySourceRanges = 0x04,
   
   /**
-   * Display the option name associated with this diagnostic, if any.
+   * \brief Display the option name associated with this diagnostic, if any.
    *
    * The option name displayed (e.g., -Wconversion) will be placed in brackets
    * after the diagnostic text. This option corresponds to the clang flag
@@ -565,7 +582,7 @@ enum CXDiagnosticDisplayOptions {
   CXDiagnostic_DisplayOption = 0x08,
   
   /**
-   * Display the category number associated with this diagnostic, if any.
+   * \brief Display the category number associated with this diagnostic, if any.
    *
    * The category number is displayed within brackets after the diagnostic text.
    * This option corresponds to the clang flag 
@@ -574,7 +591,7 @@ enum CXDiagnosticDisplayOptions {
   CXDiagnostic_DisplayCategoryId = 0x10,
 
   /**
-   * Display the category name associated with this diagnostic, if any.
+   * \brief Display the category name associated with this diagnostic, if any.
    *
    * The category name is displayed within brackets after the diagnostic text.
    * This option corresponds to the clang flag 
@@ -584,7 +601,7 @@ enum CXDiagnosticDisplayOptions {
 }
 
 /**
- * Format the given diagnostic in a manner that is suitable for display.
+ * \brief Format the given diagnostic in a manner that is suitable for display.
  *
  * This routine will format the given diagnostic to a string, rendering
  * the diagnostic according to the various options given. The
@@ -602,7 +619,7 @@ CXString clang_formatDiagnostic(CXDiagnostic Diagnostic,
                                                uint Options);
 
 /**
- * Retrieve the set of display options most similar to the
+ * \brief Retrieve the set of display options most similar to the
  * default behavior of the clang compiler.
  *
  * \returns A set of display options suitable for use with \c
@@ -611,13 +628,13 @@ CXString clang_formatDiagnostic(CXDiagnostic Diagnostic,
 uint clang_defaultDiagnosticDisplayOptions();
 
 /**
- * Determine the severity of the given diagnostic.
+ * \brief Determine the severity of the given diagnostic.
  */
-enum CXDiagnosticSeverity
+CXDiagnosticSeverity
 clang_getDiagnosticSeverity(CXDiagnostic);
 
 /**
- * Retrieve the source location of the given diagnostic.
+ * \brief Retrieve the source location of the given diagnostic.
  *
  * This location is where Clang would print the caret ('^') when
  * displaying the diagnostic on the command line.
@@ -625,12 +642,12 @@ clang_getDiagnosticSeverity(CXDiagnostic);
 CXSourceLocation clang_getDiagnosticLocation(CXDiagnostic);
 
 /**
- * Retrieve the text of the given diagnostic.
+ * \brief Retrieve the text of the given diagnostic.
  */
 CXString clang_getDiagnosticSpelling(CXDiagnostic);
 
 /**
- * Retrieve the name of the command-line option that enabled this
+ * \brief Retrieve the name of the command-line option that enabled this
  * diagnostic.
  *
  * \param Diag The diagnostic to be queried.
@@ -645,7 +662,7 @@ CXString clang_getDiagnosticOption(CXDiagnostic Diag,
                                                   CXString* Disable);
 
 /**
- * Retrieve the category number for this diagnostic.
+ * \brief Retrieve the category number for this diagnostic.
  *
  * Diagnostics can be categorized into groups along with other, related
  * diagnostics (e.g., diagnostics under the same warning flag). This routine 
@@ -657,7 +674,7 @@ CXString clang_getDiagnosticOption(CXDiagnostic Diag,
 uint clang_getDiagnosticCategory(CXDiagnostic);
 
 /**
- * Retrieve the name of a particular diagnostic category.
+ * \brief Retrieve the name of a particular diagnostic category.
  *
  * \param Category A diagnostic category number, as returned by 
  * \c clang_getDiagnosticCategory().
@@ -667,13 +684,13 @@ uint clang_getDiagnosticCategory(CXDiagnostic);
 CXString clang_getDiagnosticCategoryName(uint Category);
   
 /**
- * Determine the number of source ranges associated with the given
+ * \brief Determine the number of source ranges associated with the given
  * diagnostic.
  */
 uint clang_getDiagnosticNumRanges(CXDiagnostic);
 
 /**
- * Retrieve a source range associated with the diagnostic.
+ * \brief Retrieve a source range associated with the diagnostic.
  *
  * A diagnostic's source ranges highlight important elements in the source
  * code. On the command line, Clang displays source ranges by
@@ -689,13 +706,13 @@ CXSourceRange clang_getDiagnosticRange(CXDiagnostic Diagnostic,
                                                       uint Range);
 
 /**
- * Determine the number of fix-it hints associated with the
+ * \brief Determine the number of fix-it hints associated with the
  * given diagnostic.
  */
 uint clang_getDiagnosticNumFixIts(CXDiagnostic Diagnostic);
 
 /**
- * Retrieve the replacement information for a given fix-it.
+ * \brief Retrieve the replacement information for a given fix-it.
  *
  * Fix-its are described in terms of a source range whose contents
  * should be replaced by a string. This approach generalizes over
@@ -738,13 +755,13 @@ CXString clang_getDiagnosticFixIt(CXDiagnostic Diagnostic,
  */
 
 /**
- * Get the original translation unit source file name.
+ * \brief Get the original translation unit source file name.
  */
 CXString
 clang_getTranslationUnitSpelling(CXTranslationUnit CTUnit);
 
 /**
- * Return the CXTranslationUnit for a given source file and the provided
+ * \brief Return the CXTranslationUnit for a given source file and the provided
  * command line arguments one would pass to the compiler.
  *
  * Note: The 'source_filename' argument is optional.  If the caller provides a
@@ -785,20 +802,20 @@ clang_getTranslationUnitSpelling(CXTranslationUnit CTUnit);
  */
 CXTranslationUnit clang_createTranslationUnitFromSourceFile(
                                          CXIndex CIdx,
-                                         const char* source_filename,
+                                         const(char)* source_filename,
                                          int num_clang_command_line_args,
-                                   		 const(char*)* clang_command_line_args,
+                                   const(char*)* clang_command_line_args,
                                          uint num_unsaved_files,
                                          CXUnsavedFile* unsaved_files);
 
 /**
- * Create a translation unit from an AST file (-emit-ast).
+ * \brief Create a translation unit from an AST file (-emit-ast).
  */
 CXTranslationUnit clang_createTranslationUnit(CXIndex,
-                                             const char* ast_filename);
+                                             const(char)* ast_filename);
 
 /**
- * Flags that control the creation of translation units.
+ * \brief Flags that control the creation of translation units.
  *
  * The enumerators in this enumeration type are meant to be bitwise
  * ORed together to specify which options should be used when
@@ -806,13 +823,13 @@ CXTranslationUnit clang_createTranslationUnit(CXIndex,
  */
 enum CXTranslationUnit_Flags {
   /**
-   * Used to indicate that no special translation-unit options are
+   * \brief Used to indicate that no special translation-unit options are
    * needed.
    */
   CXTranslationUnit_None = 0x0,
 
   /**
-   * Used to indicate that the parser should construct a "detailed"
+   * \brief Used to indicate that the parser should construct a "detailed"
    * preprocessing record, including all macro definitions and instantiations.
    *
    * Constructing a detailed preprocessing record requires more memory
@@ -824,7 +841,7 @@ enum CXTranslationUnit_Flags {
   CXTranslationUnit_DetailedPreprocessingRecord = 0x01,
 
   /**
-   * Used to indicate that the translation unit is incomplete.
+   * \brief Used to indicate that the translation unit is incomplete.
    *
    * When a translation unit is considered "incomplete", semantic
    * analysis that is typically performed at the end of the
@@ -837,7 +854,7 @@ enum CXTranslationUnit_Flags {
   CXTranslationUnit_Incomplete = 0x02,
   
   /**
-   * Used to indicate that the translation unit should be built with an 
+   * \brief Used to indicate that the translation unit should be built with an 
    * implicit precompiled header for the preamble.
    *
    * An implicit precompiled header is used as an optimization when a
@@ -853,7 +870,7 @@ enum CXTranslationUnit_Flags {
   CXTranslationUnit_PrecompiledPreamble = 0x04,
   
   /**
-   * Used to indicate that the translation unit should cache some
+   * \brief Used to indicate that the translation unit should cache some
    * code-completion results with each reparse of the source file.
    *
    * Caching of code-completion results is a performance optimization that
@@ -862,7 +879,7 @@ enum CXTranslationUnit_Flags {
    */
   CXTranslationUnit_CacheCompletionResults = 0x08,
   /**
-   * DEPRECATED: Enable precompiled preambles in C++.
+   * \brief DEPRECATED: Enable precompiled preambles in C++.
    *
    * Note: this is a* temporary* option that is available only while
    * we are testing C++ precompiled preamble support. It is deprecated.
@@ -870,7 +887,7 @@ enum CXTranslationUnit_Flags {
   CXTranslationUnit_CXXPrecompiledPreamble = 0x10,
 
   /**
-   * DEPRECATED: Enabled chained precompiled preambles in C++.
+   * \brief DEPRECATED: Enabled chained precompiled preambles in C++.
    *
    * Note: this is a* temporary* option that is available only while
    * we are testing C++ precompiled preamble support. It is deprecated.
@@ -878,7 +895,7 @@ enum CXTranslationUnit_Flags {
   CXTranslationUnit_CXXChainedPCH = 0x20,
   
   /**
-   * Used to indicate that the "detailed" preprocessing record,
+   * \brief Used to indicate that the "detailed" preprocessing record,
    * if requested, should also contain nested macro expansions.
    *
    * Nested macro expansions (i.e., macro expansions that occur
@@ -889,7 +906,7 @@ enum CXTranslationUnit_Flags {
   CXTranslationUnit_NestedMacroExpansions = 0x40,
 
   /**
-   * Legacy name to indicate that the "detailed" preprocessing record,
+   * \brief Legacy name to indicate that the "detailed" preprocessing record,
    * if requested, should contain nested macro expansions.
    *
    * \see CXTranslationUnit_NestedMacroExpansions for the current name for this
@@ -900,7 +917,7 @@ enum CXTranslationUnit_Flags {
 }
 
 /**
- * Returns the set of flags that is suitable for parsing a translation
+ * \brief Returns the set of flags that is suitable for parsing a translation
  * unit that is being edited.
  *
  * The set of flags returned provide options for \c clang_parseTranslationUnit()
@@ -914,7 +931,7 @@ enum CXTranslationUnit_Flags {
 uint clang_defaultEditingTranslationUnitOptions();
   
 /**
- * Parse the given source file and the translation unit corresponding
+ * \brief Parse the given source file and the translation unit corresponding
  * to that file.
  *
  * This routine is the main entry point for the Clang C API, providing the
@@ -956,7 +973,7 @@ uint clang_defaultEditingTranslationUnitOptions();
  * the compiler cannot recover, returns NULL.
  */
 CXTranslationUnit clang_parseTranslationUnit(CXIndex CIdx,
-                                                    const char* source_filename,
+                                                    const(char)* source_filename,
                                          const(char*)* command_line_args,
                                                       int num_command_line_args,
                                             CXUnsavedFile* unsaved_files,
@@ -964,7 +981,7 @@ CXTranslationUnit clang_parseTranslationUnit(CXIndex CIdx,
                                                             uint options);
   
 /**
- * Flags that control how translation units are saved.
+ * \brief Flags that control how translation units are saved.
  *
  * The enumerators in this enumeration type are meant to be bitwise
  * ORed together to specify which options should be used when
@@ -972,13 +989,13 @@ CXTranslationUnit clang_parseTranslationUnit(CXIndex CIdx,
  */
 enum CXSaveTranslationUnit_Flags {
   /**
-   * Used to indicate that no special saving options are needed.
+   * \brief Used to indicate that no special saving options are needed.
    */
   CXSaveTranslationUnit_None = 0x0
 }
 
 /**
- * Returns the set of flags that is suitable for saving a translation
+ * \brief Returns the set of flags that is suitable for saving a translation
  * unit.
  *
  * The set of flags returned provide options for
@@ -989,17 +1006,17 @@ enum CXSaveTranslationUnit_Flags {
 uint clang_defaultSaveOptions(CXTranslationUnit TU);
 
 /**
- * Describes the kind of error that occurred (if any) in a call to
+ * \brief Describes the kind of error that occurred (if any) in a call to
  * \c clang_saveTranslationUnit().
  */
 enum CXSaveError {
   /**
-   * Indicates that no error occurred while saving a translation unit.
+   * \brief Indicates that no error occurred while saving a translation unit.
    */
   CXSaveError_None = 0,
   
   /**
-   * Indicates that an unknown error occurred while attempting to save
+   * \brief Indicates that an unknown error occurred while attempting to save
    * the file.
    *
    * This error typically indicates that file I/O failed when attempting to 
@@ -1008,7 +1025,7 @@ enum CXSaveError {
   CXSaveError_Unknown = 1,
   
   /**
-   * Indicates that errors during translation prevented this attempt
+   * \brief Indicates that errors during translation prevented this attempt
    * to save the translation unit.
    * 
    * Errors that prevent the translation unit from being saved can be
@@ -1017,14 +1034,14 @@ enum CXSaveError {
   CXSaveError_TranslationErrors = 2,
   
   /**
-   * Indicates that the translation unit to be saved was somehow
+   * \brief Indicates that the translation unit to be saved was somehow
    * invalid (e.g., NULL).
    */
   CXSaveError_InvalidTU = 3
 }
   
 /**
- * Saves a translation unit into a serialized representation of
+ * \brief Saves a translation unit into a serialized representation of
  * that translation unit on disk.
  *
  * Any translation unit that was parsed without error can be saved
@@ -1047,16 +1064,16 @@ enum CXSaveError {
  * saved successfully, while a non-zero value indicates that a problem occurred.
  */
 int clang_saveTranslationUnit(CXTranslationUnit TU,
-                                             const char* FileName,
+                                             const(char)* FileName,
                                              uint options);
 
 /**
- * Destroy the specified CXTranslationUnit object.
+ * \brief Destroy the specified CXTranslationUnit object.
  */
 void clang_disposeTranslationUnit(CXTranslationUnit);
 
 /**
- * Flags that control the reparsing of translation units.
+ * \brief Flags that control the reparsing of translation units.
  *
  * The enumerators in this enumeration type are meant to be bitwise
  * ORed together to specify which options should be used when
@@ -1064,13 +1081,13 @@ void clang_disposeTranslationUnit(CXTranslationUnit);
  */
 enum CXReparse_Flags {
   /**
-   * Used to indicate that no special reparsing options are needed.
+   * \brief Used to indicate that no special reparsing options are needed.
    */
   CXReparse_None = 0x0
 }
  
 /**
- * Returns the set of flags that is suitable for reparsing a translation
+ * \brief Returns the set of flags that is suitable for reparsing a translation
  * unit.
  *
  * The set of flags returned provide options for
@@ -1082,7 +1099,7 @@ enum CXReparse_Flags {
 uint clang_defaultReparseOptions(CXTranslationUnit TU);
 
 /**
- * Reparse the source files that produced this translation unit.
+ * \brief Reparse the source files that produced this translation unit.
  *
  * This routine can be used to re-parse the source files that originally
  * created the given translation unit, for example because those source files
@@ -1121,11 +1138,11 @@ uint clang_defaultReparseOptions(CXTranslationUnit TU);
  */
 int clang_reparseTranslationUnit(CXTranslationUnit TU,
                                                 uint num_unsaved_files,
-                                          		CXUnsavedFile* unsaved_files,
+                                          CXUnsavedFile* unsaved_files,
                                                 uint options);
 
 /**
-  * Categorizes how memory is being used by a translation unit.
+  * \brief Categorizes how memory is being used by a translation unit.
   */
 enum CXTUResourceUsageKind {
   CXTUResourceUsage_AST = 1,
@@ -1151,37 +1168,37 @@ enum CXTUResourceUsageKind {
 }
 
 /**
-  * Returns the human-readable null-terminated C string that represents
+  * \brief Returns the human-readable null-terminated C string that represents
   *  the name of the memory category.  This string should never be freed.
   */
 const(char)* clang_getTUResourceUsageName(CXTUResourceUsageKind kind);
 
 struct CXTUResourceUsageEntry {
-  /* The memory usage category. */
+  /* \brief The memory usage category. */
   CXTUResourceUsageKind kind;  
-  /* Amount of resources used. 
+  /* \brief Amount of resources used. 
       The units will depend on the resource kind. */
   c_ulong amount;
 }
 
 /**
-  * The memory usage of a CXTranslationUnit, broken into categories.
+  * \brief The memory usage of a CXTranslationUnit, broken into categories.
   */
 struct CXTUResourceUsage {
-  /* Private data member, used for queries. */
+  /* \brief Private data member, used for queries. */
   void* data;
 
-  /* The number of entries in the 'entries' array. */
+  /* \brief The number of entries in the 'entries' array. */
   uint numEntries;
 
-  /* An array of key-value pairs, representing the breakdown of memory
+  /* \brief An array of key-value pairs, representing the breakdown of memory
             usage. */
   CXTUResourceUsageEntry* entries;
 
 }
 
 /**
-  * Return the memory usage of a translation unit.  This object
+  * \brief Return the memory usage of a translation unit.  This object
   *  should be released with clang_disposeCXTUResourceUsage().
   */
 CXTUResourceUsage clang_getCXTUResourceUsage(CXTranslationUnit TU);
@@ -1193,12 +1210,12 @@ void clang_disposeCXTUResourceUsage(CXTUResourceUsage usage);
  */
 
 /**
- * Describes the kind of entity that a cursor refers to.
+ * \brief Describes the kind of entity that a cursor refers to.
  */
 enum CXCursorKind {
   /* Declarations */
   /**
-   * A declaration whose specific kind is not exposed via this
+   * \brief A declaration whose specific kind is not exposed via this
    * interface.
    *
    * Unexposed declarations have the same operations as any other kind
@@ -1207,85 +1224,86 @@ enum CXCursorKind {
    * of the declaration is not reported.
    */
   CXCursor_UnexposedDecl                 = 1,
-  /** A C or C++ struct. */
+  /** \brief A C or C++ struct. */
   CXCursor_StructDecl                    = 2,
-  /** A C or C++ union. */
+  /** \brief A C or C++ union. */
   CXCursor_UnionDecl                     = 3,
-  /** A C++ class. */
+  /** \brief A C++ class. */
   CXCursor_ClassDecl                     = 4,
-  /** An enumeration. */
+  /** \brief An enumeration. */
   CXCursor_EnumDecl                      = 5,
   /**
-   * A field (in C) or non-static data member (in C++) in a
+   * \brief A field (in C) or non-static data member (in C++) in a
    * struct, union, or C++ class.
    */
   CXCursor_FieldDecl                     = 6,
-  /** An enumerator constant. */
+  /** \brief An enumerator constant. */
   CXCursor_EnumConstantDecl              = 7,
-  /** A function. */
+  /** \brief A function. */
   CXCursor_FunctionDecl                  = 8,
-  /** A variable. */
+  /** \brief A variable. */
   CXCursor_VarDecl                       = 9,
-  /** A function or method parameter. */
+  /** \brief A function or method parameter. */
   CXCursor_ParmDecl                      = 10,
-  /** An Objective-C @interface. */
+  /** \brief An Objective-C @interface. */
   CXCursor_ObjCInterfaceDecl             = 11,
-  /** An Objective-C @interface for a category. */
+  /** \brief An Objective-C @interface for a category. */
   CXCursor_ObjCCategoryDecl              = 12,
-  /** An Objective-C @protocol declaration. */
+  /** \brief An Objective-C @protocol declaration. */
   CXCursor_ObjCProtocolDecl              = 13,
-  /** An Objective-C @property declaration. */
+  /** \brief An Objective-C @property declaration. */
   CXCursor_ObjCPropertyDecl              = 14,
-  /** An Objective-C instance variable. */
+  /** \brief An Objective-C instance variable. */
   CXCursor_ObjCIvarDecl                  = 15,
-  /** An Objective-C instance method. */
+  /** \brief An Objective-C instance method. */
   CXCursor_ObjCInstanceMethodDecl        = 16,
-  /** An Objective-C class method. */
+  /** \brief An Objective-C class method. */
   CXCursor_ObjCClassMethodDecl           = 17,
-  /** An Objective-C @implementation. */
+  /** \brief An Objective-C @implementation. */
   CXCursor_ObjCImplementationDecl        = 18,
-  /** An Objective-C @implementation for a category. */
+  /** \brief An Objective-C @implementation for a category. */
   CXCursor_ObjCCategoryImplDecl          = 19,
-  /** A typedef */
+  /** \brief A alias */
   CXCursor_TypedefDecl                   = 20,
-  /** A C++ class method. */
+  /** \brief A C++ class method. */
   CXCursor_CXXMethod                     = 21,
-  /** A C++ namespace. */
+  /** \brief A C++ namespace. */
   CXCursor_Namespace                     = 22,
-  /** A linkage specification, e.g. 'extern "C"'. */
+  /** \brief A linkage specification, e.g. 'extern "C"'. */
   CXCursor_LinkageSpec                   = 23,
-  /** A C++ constructor. */
+  /** \brief A C++ constructor. */
   CXCursor_Constructor                   = 24,
-  /** A C++ destructor. */
+  /** \brief A C++ destructor. */
   CXCursor_Destructor                    = 25,
-  /** A C++ conversion function. */
+  /** \brief A C++ conversion function. */
   CXCursor_ConversionFunction            = 26,
-  /** A C++ template type parameter. */
+  /** \brief A C++ template type parameter. */
   CXCursor_TemplateTypeParameter         = 27,
-  /** A C++ non-type template parameter. */
+  /** \brief A C++ non-type template parameter. */
   CXCursor_NonTypeTemplateParameter      = 28,
-  /** A C++ template template parameter. */
+  /** \brief A C++ template template parameter. */
   CXCursor_TemplateTemplateParameter     = 29,
-  /** A C++ function template. */
+  /** \brief A C++ function template. */
   CXCursor_FunctionTemplate              = 30,
-  /** A C++ class template. */
+  /** \brief A C++ class template. */
   CXCursor_ClassTemplate                 = 31,
-  /** A C++ class template partial specialization. */
+  /** \brief A C++ class template partial specialization. */
   CXCursor_ClassTemplatePartialSpecialization = 32,
-  /** A C++ namespace alias declaration. */
+  /** \brief A C++ namespace alias declaration. */
   CXCursor_NamespaceAlias                = 33,
-  /** A C++ using directive. */
+  /** \brief A C++ using directive. */
   CXCursor_UsingDirective                = 34,
-  /** A C++ using declaration. */
+  /** \brief A C++ using declaration. */
   CXCursor_UsingDeclaration              = 35,
-  /** A C++ alias declaration */
+  /** \brief A C++ alias declaration */
   CXCursor_TypeAliasDecl                 = 36,
-  /** An Objective-C @synthesize definition. */
+  /** \brief An Objective-C @synthesize definition. */
   CXCursor_ObjCSynthesizeDecl            = 37,
-  /** An Objective-C @dynamic definition. */
+  /** \brief An Objective-C @dynamic definition. */
   CXCursor_ObjCDynamicDecl               = 38,
-  /** An access specifier. */
+  /** \brief An access specifier. */
   CXCursor_CXXAccessSpecifier            = 39,
+
   CXCursor_FirstDecl                     = CXCursor_UnexposedDecl,
   CXCursor_LastDecl                      = CXCursor_CXXAccessSpecifier,
 
@@ -1295,7 +1313,7 @@ enum CXCursorKind {
   CXCursor_ObjCProtocolRef               = 41,
   CXCursor_ObjCClassRef                  = 42,
   /**
-   * A reference to a type declaration.
+   * \brief A reference to a type declaration.
    *
    * A type reference occurs anywhere where a type is named but not
    * declared. For example, given:
@@ -1312,21 +1330,21 @@ enum CXCursorKind {
   CXCursor_TypeRef                       = 43,
   CXCursor_CXXBaseSpecifier              = 44,
   /** 
-   * A reference to a class template, function template, template
+   * \brief A reference to a class template, function template, template
    * template parameter, or class template partial specialization.
    */
   CXCursor_TemplateRef                   = 45,
   /**
-   * A reference to a namespace or namespace alias.
+   * \brief A reference to a namespace or namespace alias.
    */
   CXCursor_NamespaceRef                  = 46,
   /**
-   * A reference to a member of a struct, union, or class that occurs in 
+   * \brief A reference to a member of a struct, union, or class that occurs in 
    * some non-expression context, e.g., a designated initializer.
    */
   CXCursor_MemberRef                     = 47,
   /**
-   * A reference to a labeled statement.
+   * \brief A reference to a labeled statement.
    *
    * This cursor kind is used to describe the jump to "start_over" in the 
    * goto statement in the following example:
@@ -1343,7 +1361,7 @@ enum CXCursorKind {
   CXCursor_LabelRef                      = 48,
   
   /**
-   * A reference to a set of overloaded functions or function templates
+   * \brief A reference to a set of overloaded functions or function templates
    * that has not yet been resolved to a specific function or function template.
    *
    * An overloaded declaration reference cursor occurs in C++ templates where
@@ -1394,7 +1412,7 @@ enum CXCursorKind {
   CXCursor_FirstExpr                     = 100,
 
   /**
-   * An expression whose specific kind is not exposed via this
+   * \brief An expression whose specific kind is not exposed via this
    * interface.
    *
    * Unexposed expressions have the same operations as any other kind
@@ -1405,33 +1423,233 @@ enum CXCursorKind {
   CXCursor_UnexposedExpr                 = 100,
 
   /**
-   * An expression that refers to some value declaration, such
+   * \brief An expression that refers to some value declaration, such
    * as a function, varible, or enumerator.
    */
   CXCursor_DeclRefExpr                   = 101,
 
   /**
-   * An expression that refers to a member of a struct, union,
+   * \brief An expression that refers to a member of a struct, union,
    * class, Objective-C class, etc.
    */
   CXCursor_MemberRefExpr                 = 102,
 
-  /** An expression that calls a function. */
+  /** \brief An expression that calls a function. */
   CXCursor_CallExpr                      = 103,
 
-  /** An expression that sends a message to an Objective-C
+  /** \brief An expression that sends a message to an Objective-C
    object or class. */
   CXCursor_ObjCMessageExpr               = 104,
 
-  /** An expression that represents a block literal. */
+  /** \brief An expression that represents a block literal. */
   CXCursor_BlockExpr                     = 105,
 
-  CXCursor_LastExpr                      = 105,
+  /** \brief An integer literal.
+   */
+  CXCursor_IntegerLiteral                = 106,
+
+  /** \brief A floating point number literal.
+   */
+  CXCursor_FloatingLiteral               = 107,
+
+  /** \brief An imaginary number literal.
+   */
+  CXCursor_ImaginaryLiteral              = 108,
+
+  /** \brief A string literal.
+   */
+  CXCursor_StringLiteral                 = 109,
+
+  /** \brief A character literal.
+   */
+  CXCursor_CharacterLiteral              = 110,
+
+  /** \brief A parenthesized expression, e.g. "(1)".
+   *
+   * This AST node is only formed if full location information is requested.
+   */
+  CXCursor_ParenExpr                     = 111,
+
+  /** \brief This represents the unary-expression's (except sizeof and
+   * alignof).
+   */
+  CXCursor_UnaryOperator                 = 112,
+
+  /** \brief [C99 6.5.2.1] Array Subscripting.
+   */
+  CXCursor_ArraySubscriptExpr            = 113,
+
+  /** \brief A builtin binary operation expression such as "x + y" or
+   * "x <= y".
+   */
+  CXCursor_BinaryOperator                = 114,
+
+  /** \brief Compound assignment such as "+=".
+   */
+  CXCursor_CompoundAssignOperator        = 115,
+
+  /** \brief The ?: ternary operator.
+   */
+  CXCursor_ConditionalOperator           = 116,
+
+  /** \brief An explicit cast in C (C99 6.5.4) or a C-style cast in C++
+   * (C++ [expr.cast]), which uses the syntax (Type)expr.
+   *
+   * For example: (int)f.
+   */
+  CXCursor_CStyleCastExpr                = 117,
+
+  /** \brief [C99 6.5.2.5]
+   */
+  CXCursor_CompoundLiteralExpr           = 118,
+
+  /** \brief Describes an C or C++ initializer list.
+   */
+  CXCursor_InitListExpr                  = 119,
+
+  /** \brief The GNU address of label extension, representing &&label.
+   */
+  CXCursor_AddrLabelExpr                 = 120,
+
+  /** \brief This is the GNU Statement Expression extension: ({int X=4; X;})
+   */
+  CXCursor_StmtExpr                      = 121,
+
+  /** \brief Represents a C1X generic selection.
+   */
+  CXCursor_GenericSelectionExpr          = 122,
+
+  /** \brief Implements the GNU __null extension, which is a name for a null
+   * pointer constant that has integral type (e.g., int or long) and is the same
+   * size and alignment as a pointer.
+   *
+   * The __null extension is typically only used by system headers, which define
+   * NULL as __null in C++ rather than using 0 (which is an integer that may not
+   * match the size of a pointer).
+   */
+  CXCursor_GNUNullExpr                   = 123,
+
+  /** \brief C++'s static_cast<> expression.
+   */
+  CXCursor_CXXStaticCastExpr             = 124,
+
+  /** \brief C++'s dynamic_cast<> expression.
+   */
+  CXCursor_CXXDynamicCastExpr            = 125,
+
+  /** \brief C++'s reinterpret_cast<> expression.
+   */
+  CXCursor_CXXReinterpretCastExpr        = 126,
+
+  /** \brief C++'s const_cast<> expression.
+   */
+  CXCursor_CXXConstCastExpr              = 127,
+
+  /** \brief Represents an explicit C++ type conversion that uses "functional"
+   * notion (C++ [expr.type.conv]).
+   *
+   * Example:
+   * \code
+   *   x = int(0.5);
+   * \endcode
+   */
+  CXCursor_CXXFunctionalCastExpr         = 128,
+
+  /** \brief A C++ typeid expression (C++ [expr.typeid]).
+   */
+  CXCursor_CXXTypeidExpr                 = 129,
+
+  /** \brief [C++ 2.13.5] C++ Boolean Literal.
+   */
+  CXCursor_CXXBoolLiteralExpr            = 130,
+
+  /** \brief [C++0x 2.14.7] C++ Pointer Literal.
+   */
+  CXCursor_CXXNullPtrLiteralExpr         = 131,
+
+  /** \brief Represents the "this" expression in C++
+   */
+  CXCursor_CXXThisExpr                   = 132,
+
+  /** \brief [C++ 15] C++ Throw Expression.
+   *
+   * This handles 'throw' and 'throw' assignment-expression. When
+   * assignment-expression isn't present, Op will be null.
+   */
+  CXCursor_CXXThrowExpr                  = 133,
+
+  /** \brief A new expression for memory allocation and constructor calls, e.g:
+   * "new CXXNewExpr(foo)".
+   */
+  CXCursor_CXXNewExpr                    = 134,
+
+  /** \brief A delete expression for memory deallocation and destructor calls,
+   * e.g. "delete[] pArray".
+   */
+  CXCursor_CXXDeleteExpr                 = 135,
+
+  /** \brief A unary expression.
+   */
+  CXCursor_UnaryExpr                     = 136,
+
+  /** \brief ObjCStringLiteral, used for Objective-C string literals i.e. "foo".
+   */
+  CXCursor_ObjCStringLiteral             = 137,
+
+  /** \brief ObjCEncodeExpr, used for in Objective-C.
+   */
+  CXCursor_ObjCEncodeExpr                = 138,
+
+  /** \brief ObjCSelectorExpr used for in Objective-C.
+   */
+  CXCursor_ObjCSelectorExpr              = 139,
+
+  /** \brief Objective-C's protocol expression.
+   */
+  CXCursor_ObjCProtocolExpr              = 140,
+
+  /** \brief An Objective-C "bridged" cast expression, which casts between
+   * Objective-C pointers and C pointers, transferring ownership in the process.
+   *
+   * \code
+   *   NSString* str = (__bridge_transfer NSString *)CFCreateString();
+   * \endcode
+   */
+  CXCursor_ObjCBridgedCastExpr           = 141,
+
+  /** \brief Represents a C++0x pack expansion that produces a sequence of
+   * expressions.
+   *
+   * A pack expansion expression contains a pattern (which itself is an
+   * expression) followed by an ellipsis. For example:
+   *
+   * \code
+   * template<typename F, typename ...Types>
+   * void forward(F f, Types &&...args) {
+   *  f(static_cast<Types&&>(args)...);
+   * }
+   * \endcode
+   */
+  CXCursor_PackExpansionExpr             = 142,
+
+  /** \brief Represents an expression that computes the length of a parameter
+   * pack.
+   *
+   * \code
+   * template<typename ...Types>
+   * struct count {
+   *   static const uint value = sizeof...(Types);
+   * }
+   * \endcode
+   */
+  CXCursor_SizeOfPackExpr                = 143,
+
+  CXCursor_LastExpr                      = CXCursor_SizeOfPackExpr,
 
   /* Statements */
   CXCursor_FirstStmt                     = 200,
   /**
-   * A statement whose specific kind is not exposed via this
+   * \brief A statement whose specific kind is not exposed via this
    * interface.
    *
    * Unexposed statements have the same operations as any other kind of
@@ -1441,7 +1659,7 @@ enum CXCursorKind {
    */
   CXCursor_UnexposedStmt                 = 200,
   
-  /** A labelled statement in a function. 
+  /** \brief A labelled statement in a function. 
    *
    * This cursor kind is used to describe the "start_over:" label statement in 
    * the following example:
@@ -1453,11 +1671,133 @@ enum CXCursorKind {
    *
    */
   CXCursor_LabelStmt                     = 201,
-  
-  CXCursor_LastStmt                      = CXCursor_LabelStmt,
+
+  /** \brief A group of statements like { stmt stmt }.
+   *
+   * This cursor kind is used to describe compound statements, e.g. function
+   * bodies.
+   */
+  CXCursor_CompoundStmt                  = 202,
+
+  /** \brief A case statment.
+   */
+  CXCursor_CaseStmt                      = 203,
+
+  /** \brief A default statement.
+   */
+  CXCursor_DefaultStmt                   = 204,
+
+  /** \brief An if statement
+   */
+  CXCursor_IfStmt                        = 205,
+
+  /** \brief A switch statement.
+   */
+  CXCursor_SwitchStmt                    = 206,
+
+  /** \brief A while statement.
+   */
+  CXCursor_WhileStmt                     = 207,
+
+  /** \brief A do statement.
+   */
+  CXCursor_DoStmt                        = 208,
+
+  /** \brief A for statement.
+   */
+  CXCursor_ForStmt                       = 209,
+
+  /** \brief A goto statement.
+   */
+  CXCursor_GotoStmt                      = 210,
+
+  /** \brief An indirect goto statement.
+   */
+  CXCursor_IndirectGotoStmt              = 211,
+
+  /** \brief A continue statement.
+   */
+  CXCursor_ContinueStmt                  = 212,
+
+  /** \brief A break statement.
+   */
+  CXCursor_BreakStmt                     = 213,
+
+  /** \brief A return statement.
+   */
+  CXCursor_ReturnStmt                    = 214,
+
+  /** \brief A GNU inline assembly statement extension.
+   */
+  CXCursor_AsmStmt                       = 215,
+
+  /** \brief Objective-C's overall @try-@catc-@finall statement.
+   */
+  CXCursor_ObjCAtTryStmt                 = 216,
+
+  /** \brief Objective-C's @catch statement.
+   */
+  CXCursor_ObjCAtCatchStmt               = 217,
+
+  /** \brief Objective-C's @finally statement.
+   */
+  CXCursor_ObjCAtFinallyStmt             = 218,
+
+  /** \brief Objective-C's @throw statement.
+   */
+  CXCursor_ObjCAtThrowStmt               = 219,
+
+  /** \brief Objective-C's @synchronized statement.
+   */
+  CXCursor_ObjCAtSynchronizedStmt        = 220,
+
+  /** \brief Objective-C's autorelease pool statement.
+   */
+  CXCursor_ObjCAutoreleasePoolStmt       = 221,
+
+  /** \brief Objective-C's collection statement.
+   */
+  CXCursor_ObjCForCollectionStmt         = 222,
+
+  /** \brief C++'s catch statement.
+   */
+  CXCursor_CXXCatchStmt                  = 223,
+
+  /** \brief C++'s try statement.
+   */
+  CXCursor_CXXTryStmt                    = 224,
+
+  /** \brief C++'s for (* : *) statement.
+   */
+  CXCursor_CXXForRangeStmt               = 225,
+
+  /** \brief Windows Structured Exception Handling's try statement.
+   */
+  CXCursor_SEHTryStmt                    = 226,
+
+  /** \brief Windows Structured Exception Handling's except statement.
+   */
+  CXCursor_SEHExceptStmt                 = 227,
+
+  /** \brief Windows Structured Exception Handling's finally statement.
+   */
+  CXCursor_SEHFinallyStmt                = 228,
+
+  /** \brief The null satement ";": C99 6.8.3p3.
+   *
+   * This cursor kind is used to describe the null statement.
+   */
+  CXCursor_NullStmt                      = 230,
+
+  /** \brief Adaptor class for mixing declarations with statements and
+   * expressions.
+   */
+  CXCursor_DeclStmt                      = 231,
+
+  CXCursor_LastStmt                      = CXCursor_DeclStmt,
 
   /**
-   * Cursor that represents the translation unit itself.
+   * \brief Cursor that represents the translation unit itself.
    *
    * The translation unit cursor exists primarily to act as the root
    * cursor for traversing the contents of a translation unit.
@@ -1467,7 +1807,7 @@ enum CXCursorKind {
   /* Attributes */
   CXCursor_FirstAttr                     = 400,
   /**
-   * An attribute whose specific kind is not exposed via this
+   * \brief An attribute whose specific kind is not exposed via this
    * interface.
    */
   CXCursor_UnexposedAttr                 = 400,
@@ -1477,7 +1817,8 @@ enum CXCursorKind {
   CXCursor_IBOutletCollectionAttr        = 403,
   CXCursor_CXXFinalAttr                  = 404,
   CXCursor_CXXOverrideAttr               = 405,
-  CXCursor_LastAttr                      = CXCursor_CXXOverrideAttr,
+  CXCursor_AnnotateAttr                  = 406,
+  CXCursor_LastAttr                      = CXCursor_AnnotateAttr,
      
   /* Preprocessing */
   CXCursor_PreprocessingDirective        = 500,
@@ -1490,7 +1831,7 @@ enum CXCursorKind {
 }
 
 /**
- * A cursor representing some element in the abstract syntax tree for
+ * \brief A cursor representing some element in the abstract syntax tree for
  * a translation unit.
  *
  * The cursor abstraction unifies the different kinds of entities in a
@@ -1509,6 +1850,7 @@ enum CXCursorKind {
  */
 struct CXCursor {
   CXCursorKind kind;
+  int xdata;
   void* data[3];
 }
 
@@ -1519,12 +1861,12 @@ struct CXCursor {
  */
 
 /**
- * Retrieve the NULL cursor, which represents no entity.
+ * \brief Retrieve the NULL cursor, which represents no entity.
  */
 CXCursor clang_getNullCursor();
 
 /**
- * Retrieve the cursor that represents the given translation unit.
+ * \brief Retrieve the cursor that represents the given translation unit.
  *
  * The translation unit cursor can be used to start traversing the
  * various declarations within the given translation unit.
@@ -1532,32 +1874,32 @@ CXCursor clang_getNullCursor();
 CXCursor clang_getTranslationUnitCursor(CXTranslationUnit);
 
 /**
- * Determine whether two cursors are equivalent.
+ * \brief Determine whether two cursors are equivalent.
  */
 uint clang_equalCursors(CXCursor, CXCursor);
 
 /**
- * Returns non-zero if \arg cursor is null.
+ * \brief Returns non-zero if \arg cursor is null.
  */
 int clang_Cursor_isNull(CXCursor);
 
 /**
- * Compute a hash value for the given cursor.
+ * \brief Compute a hash value for the given cursor.
  */
 uint clang_hashCursor(CXCursor);
   
 /**
- * Retrieve the kind of the given cursor.
+ * \brief Retrieve the kind of the given cursor.
  */
 CXCursorKind clang_getCursorKind(CXCursor);
 
 /**
- * Determine whether the given cursor kind represents a declaration.
+ * \brief Determine whether the given cursor kind represents a declaration.
  */
 uint clang_isDeclaration(CXCursorKind);
 
 /**
- * Determine whether the given cursor kind represents a simple
+ * \brief Determine whether the given cursor kind represents a simple
  * reference.
  *
  * Note that other kinds of cursors (such as expressions) can also refer to
@@ -1567,72 +1909,72 @@ uint clang_isDeclaration(CXCursorKind);
 uint clang_isReference(CXCursorKind);
 
 /**
- * Determine whether the given cursor kind represents an expression.
+ * \brief Determine whether the given cursor kind represents an expression.
  */
 uint clang_isExpression(CXCursorKind);
 
 /**
- * Determine whether the given cursor kind represents a statement.
+ * \brief Determine whether the given cursor kind represents a statement.
  */
 uint clang_isStatement(CXCursorKind);
 
 /**
- * Determine whether the given cursor kind represents an attribute.
+ * \brief Determine whether the given cursor kind represents an attribute.
  */
 uint clang_isAttribute(CXCursorKind);
 
 /**
- * Determine whether the given cursor kind represents an invalid
+ * \brief Determine whether the given cursor kind represents an invalid
  * cursor.
  */
 uint clang_isInvalid(CXCursorKind);
 
 /**
- * Determine whether the given cursor kind represents a translation
+ * \brief Determine whether the given cursor kind represents a translation
  * unit.
  */
 uint clang_isTranslationUnit(CXCursorKind);
 
 /***
- * Determine whether the given cursor represents a preprocessing
+ * \brief Determine whether the given cursor represents a preprocessing
  * element, such as a preprocessor directive or macro instantiation.
  */
 uint clang_isPreprocessing(CXCursorKind);
   
 /***
- * Determine whether the given cursor represents a currently
+ * \brief Determine whether the given cursor represents a currently
  *  unexposed piece of the AST (e.g., CXCursor_UnexposedStmt).
  */
 uint clang_isUnexposed(CXCursorKind);
 
 /**
- * Describe the linkage of the entity referred to by a cursor.
+ * \brief Describe the linkage of the entity referred to by a cursor.
  */
 enum CXLinkageKind {
-  /** This value indicates that no linkage information is available
+  /** \brief This value indicates that no linkage information is available
    * for a provided CXCursor. */
   CXLinkage_Invalid,
   /**
-   * This is the linkage for variables, parameters, and so on that
+   * \brief This is the linkage for variables, parameters, and so on that
    *  have automatic storage.  This covers normal (non-extern) local variables.
    */
   CXLinkage_NoLinkage,
-  /** This is the linkage for static variables and static functions. */
+  /** \brief This is the linkage for static variables and static functions. */
   CXLinkage_Internal,
-  /** This is the linkage for entities with external linkage that live
+  /** \brief This is the linkage for entities with external linkage that live
    * in C++ anonymous namespaces.*/
   CXLinkage_UniqueExternal,
-  /** This is the linkage for entities with true, external linkage. */
+  /** \brief This is the linkage for entities with true, external linkage. */
   CXLinkage_External
 }
 
 /**
- * Determine the linkage of the entity referred to by a given cursor.
+ * \brief Determine the linkage of the entity referred to by a given cursor.
  */
 CXLinkageKind clang_getCursorLinkage(CXCursor cursor);
 
 /**
- * Determine the availability of the entity that this cursor refers to.
+ * \brief Determine the availability of the entity that this cursor refers to.
  *
  * \param cursor The cursor to query.
  *
@@ -1642,7 +1984,7 @@ CXAvailabilityKind
 clang_getCursorAvailability(CXCursor cursor);
 
 /**
- * Describe the "language" of the entity referred to by a cursor.
+ * \brief Describe the "language" of the entity referred to by a cursor.
  */
 enum CXLanguageKind {
   CXLanguage_Invalid = 0,
@@ -1652,12 +1994,12 @@ enum CXLanguageKind {
 }
 
 /**
- * Determine the "language" of the entity referred to by a given cursor.
+ * \brief Determine the "language" of the entity referred to by a given cursor.
  */
 CXLanguageKind clang_getCursorLanguage(CXCursor cursor);
 
 /**
- * Returns the translation unit that a cursor originated from.
+ * \brief Returns the translation unit that a cursor originated from.
  */
 CXTranslationUnit clang_Cursor_getTranslationUnit(CXCursor);
 
@@ -1665,22 +2007,22 @@ CXTranslationUnit clang_Cursor_getTranslationUnit(CXCursor);
 struct CXCursorSetImpl;
 
 /**
- * A fast container representing a set of CXCursors.
+ * \brief A fast container representing a set of CXCursors.
  */
 alias CXCursorSetImpl* CXCursorSet;
 
 /**
- * Creates an empty CXCursorSet.
+ * \brief Creates an empty CXCursorSet.
  */
 CXCursorSet clang_createCXCursorSet();
 
 /**
- * Disposes a CXCursorSet and releases its associated memory.
+ * \brief Disposes a CXCursorSet and releases its associated memory.
  */
 void clang_disposeCXCursorSet(CXCursorSet cset);
 
 /**
- * Queries a CXCursorSet to see if it contains a specific CXCursor.
+ * \brief Queries a CXCursorSet to see if it contains a specific CXCursor.
  *
  * \returns non-zero if the set contains the specified cursor.
 */
@@ -1688,7 +2030,7 @@ uint clang_CXCursorSet_contains(CXCursorSet cset,
                                                    CXCursor cursor);
 
 /**
- * Inserts a CXCursor into a CXCursorSet.
+ * \brief Inserts a CXCursor into a CXCursorSet.
  *
  * \returns zero if the CXCursor was already in the set, and non-zero otherwise.
 */
@@ -1696,7 +2038,7 @@ uint clang_CXCursorSet_insert(CXCursorSet cset,
                                                  CXCursor cursor);
 
 /**
- * Determine the semantic parent of the given cursor.
+ * \brief Determine the semantic parent of the given cursor.
  *
  * The semantic parent of a cursor is the cursor that semantically contains
  * the given \p cursor. For many declarations, the lexical and semantic parents
@@ -1731,7 +2073,7 @@ uint clang_CXCursorSet_insert(CXCursorSet cset,
 CXCursor clang_getCursorSemanticParent(CXCursor cursor);
 
 /**
- * Determine the lexical parent of the given cursor.
+ * \brief Determine the lexical parent of the given cursor.
  *
  * The lexical parent of a cursor is the cursor in which the given \p cursor
  * was actually written. For many declarations, the lexical and semantic parents
@@ -1767,7 +2109,7 @@ CXCursor clang_getCursorSemanticParent(CXCursor cursor);
 CXCursor clang_getCursorLexicalParent(CXCursor cursor);
 
 /**
- * Determine the set of methods that are overridden by the given
+ * \brief Determine the set of methods that are overridden by the given
  * method.
  *
  * In both Objective-C and C++, a method (aka virtual member function,
@@ -1813,13 +2155,13 @@ void clang_getOverriddenCursors(CXCursor cursor,
                                                uint* num_overridden);
 
 /**
- * Free the set of overridden cursors returned by \c
+ * \brief Free the set of overridden cursors returned by \c
  * clang_getOverriddenCursors().
  */
 void clang_disposeOverriddenCursors(CXCursor* overridden);
 
 /**
- * Retrieve the file that is included by the given inclusion directive
+ * \brief Retrieve the file that is included by the given inclusion directive
  * cursor.
  */
 CXFile clang_getIncludedFile(CXCursor cursor);
@@ -1840,7 +2182,7 @@ CXFile clang_getIncludedFile(CXCursor cursor);
  */
 
 /**
- * Map a source location to the cursor that describes the entity at that
+ * \brief Map a source location to the cursor that describes the entity at that
  * location in the source code.
  *
  * clang_getCursor() maps an arbitrary source location within a translation
@@ -1857,7 +2199,7 @@ CXFile clang_getIncludedFile(CXCursor cursor);
 CXCursor clang_getCursor(CXTranslationUnit, CXSourceLocation);
 
 /**
- * Retrieve the physical location of the source constructor referenced
+ * \brief Retrieve the physical location of the source constructor referenced
  * by the given cursor.
  *
  * The location of a declaration is typically the location of the name of that
@@ -1869,7 +2211,7 @@ CXCursor clang_getCursor(CXTranslationUnit, CXSourceLocation);
 CXSourceLocation clang_getCursorLocation(CXCursor);
 
 /**
- * Retrieve the physical extent of the source construct referenced by
+ * \brief Retrieve the physical extent of the source construct referenced by
  * the given cursor.
  *
  * The extent of a cursor starts with the file/line/column pointing at the
@@ -1892,16 +2234,16 @@ CXSourceRange clang_getCursorExtent(CXCursor);
  */
 
 /**
- * Describes the kind of type
+ * \brief Describes the kind of type
  */
 enum CXTypeKind {
   /**
-   * Reprents an invalid type (e.g., where no type is available).
+   * \brief Reprents an invalid type (e.g., where no type is available).
    */
   CXType_Invalid = 0,
 
   /**
-   * A type whose specific kind is not exposed via this
+   * \brief A type whose specific kind is not exposed via this
    * interface.
    */
   CXType_Unexposed = 1,
@@ -1954,7 +2296,7 @@ enum CXTypeKind {
 }
 
 /**
- * The type of an element in the abstract syntax tree.
+ * \brief The type of an element in the abstract syntax tree.
  *
  */
 struct CXType {
@@ -1963,7 +2305,7 @@ struct CXType {
 }
 
 /**
- * Retrieve the type of a CXCursor (if any).
+ * \brief Retrieve the type of a CXCursor (if any).
  */
 CXType clang_getCursorType(CXCursor C);
 
@@ -1976,41 +2318,41 @@ CXType clang_getCursorType(CXCursor C);
 uint clang_equalTypes(CXType A, CXType B);
 
 /**
- * Return the canonical type for a CXType.
+ * \brief Return the canonical type for a CXType.
  *
- * Clang's type system explicitly models typedefs and all the ways
+ * Clang's type system explicitly models aliass and all the ways
  * a specific type can be represented.  The canonical type is the underlying
- * type with all the "sugar" removed.  For example, if 'T' is a typedef
+ * type with all the "sugar" removed.  For example, if 'T' is a alias
  * for 'int', the canonical type for 'T' would be 'int'.
  */
 CXType clang_getCanonicalType(CXType T);
 
 /**
  *  \determine Determine whether a CXType has the "const" qualifier set, 
- *  without looking through typedefs that may have added "const" at a different level.
+ *  without looking through aliass that may have added "const" at a different level.
  */
 uint clang_isConstQualifiedType(CXType T);
 
 /**
  *  \determine Determine whether a CXType has the "volatile" qualifier set,
- *  without looking through typedefs that may have added "volatile" at a different level.
+ *  without looking through aliass that may have added "volatile" at a different level.
  */
 uint clang_isVolatileQualifiedType(CXType T);
 
 /**
  *  \determine Determine whether a CXType has the "restrict" qualifier set,
- *  without looking through typedefs that may have added "restrict" at a different level.
+ *  without looking through aliass that may have added "restrict" at a different level.
  */
 uint clang_isRestrictQualifiedType(CXType T);
 
 /**
- * For pointer types, returns the type of the pointee.
+ * \brief For pointer types, returns the type of the pointee.
  *
  */
 CXType clang_getPointeeType(CXType T);
 
 /**
- * Return the cursor for the declaration of the given type.
+ * \brief Return the cursor for the declaration of the given type.
  */
 CXCursor clang_getTypeDeclaration(CXType T);
 
@@ -2020,49 +2362,49 @@ CXCursor clang_getTypeDeclaration(CXType T);
 CXString clang_getDeclObjCTypeEncoding(CXCursor C);
 
 /**
- * Retrieve the spelling of a given CXTypeKind.
+ * \brief Retrieve the spelling of a given CXTypeKind.
  */
 CXString clang_getTypeKindSpelling(CXTypeKind K);
 
 /**
- * Retrieve the result type associated with a function type.
+ * \brief Retrieve the result type associated with a function type.
  */
 CXType clang_getResultType(CXType T);
 
 /**
- * Retrieve the result type associated with a given cursor.  This only
+ * \brief Retrieve the result type associated with a given cursor.  This only
  *  returns a valid type of the cursor refers to a function or method.
  */
 CXType clang_getCursorResultType(CXCursor C);
 
 /**
- * Return 1 if the CXType is a POD (plain old data) type, and 0
+ * \brief Return 1 if the CXType is a POD (plain old data) type, and 0
  *  otherwise.
  */
 uint clang_isPODType(CXType T);
 
 /**
- * Return the element type of an array type.
+ * \brief Return the element type of an array type.
  *
  * If a non-array type is passed in, an invalid type is returned.
  */
 CXType clang_getArrayElementType(CXType T);
 
 /**
- * Return the the array size of a constant array.
+ * \brief Return the the array size of a constant array.
  *
  * If a non-array type is passed in, -1 is returned.
  */
 long clang_getArraySize(CXType T);
 
 /**
- * Returns 1 if the base class specified by the cursor with kind
+ * \brief Returns 1 if the base class specified by the cursor with kind
  *   CX_CXXBaseSpecifier is virtual.
  */
 uint clang_isVirtualBase(CXCursor);
     
 /**
- * Represents the C++ access control level to a base class for a
+ * \brief Represents the C++ access control level to a base class for a
  * cursor with kind CX_CXXBaseSpecifier.
  */
 enum CX_CXXAccessSpecifier {
@@ -2073,14 +2415,14 @@ enum CX_CXXAccessSpecifier {
 }
 
 /**
- * Returns the access control level for the C++ base specifier
+ * \brief Returns the access control level for the C++ base specifier
  * represented by a cursor with kind CXCursor_CXXBaseSpecifier or
  * CXCursor_AccessSpecifier.
  */
 CX_CXXAccessSpecifier clang_getCXXAccessSpecifier(CXCursor);
 
 /**
- * Determine the number of overloaded declarations referenced by a 
+ * \brief Determine the number of overloaded declarations referenced by a 
  * \c CXCursor_OverloadedDeclRef cursor.
  *
  * \param cursor The cursor whose overloaded declarations are being queried.
@@ -2091,7 +2433,7 @@ CX_CXXAccessSpecifier clang_getCXXAccessSpecifier(CXCursor);
 uint clang_getNumOverloadedDecls(CXCursor cursor);
 
 /**
- * Retrieve a cursor for one of the overloaded declarations referenced
+ * \brief Retrieve a cursor for one of the overloaded declarations referenced
  * by a \c CXCursor_OverloadedDeclRef cursor.
  *
  * \param cursor The cursor whose overloaded declarations are being queried.
@@ -2119,7 +2461,7 @@ CXCursor clang_getOverloadedDecl(CXCursor cursor,
 
 
 /**
- * For cursors representing an iboutletcollection attribute,
+ * \brief For cursors representing an iboutletcollection attribute,
  *  this function returns the collection element type.
  *
  */
@@ -2139,7 +2481,7 @@ CXType clang_getIBOutletCollectionType(CXCursor);
  */
 
 /**
- * Describes how the traversal of the children of a particular
+ * \brief Describes how the traversal of the children of a particular
  * cursor should proceed after visiting a particular child cursor.
  *
  * A value of this enumeration type should be returned by each
@@ -2147,23 +2489,23 @@ CXType clang_getIBOutletCollectionType(CXCursor);
  */
 enum CXChildVisitResult {
   /**
-   * Terminates the cursor traversal.
+   * \brief Terminates the cursor traversal.
    */
   CXChildVisit_Break,
   /**
-   * Continues the cursor traversal with the next sibling of
+   * \brief Continues the cursor traversal with the next sibling of
    * the cursor just visited, without visiting its children.
    */
   CXChildVisit_Continue,
   /**
-   * Recursively traverse the children of this cursor, using
+   * \brief Recursively traverse the children of this cursor, using
    * the same visitor and client data.
    */
   CXChildVisit_Recurse
 }
 
 /**
- * Visitor invoked for each cursor found by a traversal.
+ * \brief Visitor invoked for each cursor found by a traversal.
  *
  * This visitor function will be invoked for each cursor found by
  * clang_visitCursorChildren(). Its first argument is the cursor being
@@ -2175,11 +2517,11 @@ enum CXChildVisitResult {
  * to direct clang_visitCursorChildren().
  */
 alias CXChildVisitResult function (CXCursor cursor,
-	CXCursor parent,
-	CXClientData client_data) CXCursorVisitor;
+                                                   CXCursor parent,
+                                                   CXClientData client_data) CXCursorVisitor;
 
 /**
- * Visit the children of a particular cursor.
+ * \brief Visit the children of a particular cursor.
  *
  * This function visits all the direct children of the given cursor,
  * invoking the given \p visitor function with the cursors of each
@@ -2203,6 +2545,30 @@ alias CXChildVisitResult function (CXCursor cursor,
 uint clang_visitChildren(CXCursor parent,
                                             CXCursorVisitor visitor,
                                             CXClientData client_data);
+/+#ifdef __has_feature
+#  if __has_feature(blocks)
+/**
+ * \brief Visitor invoked for each cursor found by a traversal.
+ *
+ * This visitor block will be invoked for each cursor found by
+ * clang_visitChildrenWithBlock(). Its first argument is the cursor being
+ * visited, its second argument is the parent visitor for that cursor.
+ *
+ * The visitor should return one of the \c CXChildVisitResult values
+ * to direct clang_visitChildrenWithBlock().
+ */
+alias CXChildVisitResult 
+     (^CXCursorVisitorBlock)(CXCursor cursor, CXCursor parent);
+
+/**
+ * Visits the children of a cursor using the specified block.  Behaves
+ * identically to clang_visitChildren() in all other respects.
+ */
+uint clang_visitChildrenWithBlock(CXCursor parent,
+                                      CXCursorVisitorBlock block);
+#  endif
+#endif+/
+
 /**
  * @}
  */
@@ -2219,7 +2585,7 @@ uint clang_visitChildren(CXCursor parent,
  */
 
 /**
- * Retrieve a Unified Symbol Resolution (USR) for the entity referenced
+ * \brief Retrieve a Unified Symbol Resolution (USR) for the entity referenced
  * by the given cursor.
  *
  * A Unified Symbol Resolution (USR) is a string that identifies a particular
@@ -2230,53 +2596,53 @@ uint clang_visitChildren(CXCursor parent,
 CXString clang_getCursorUSR(CXCursor);
 
 /**
- * Construct a USR for a specified Objective-C class.
+ * \brief Construct a USR for a specified Objective-C class.
  */
-CXString clang_constructUSR_ObjCClass(const char* class_name);
+CXString clang_constructUSR_ObjCClass(const(char)* class_name);
 
 /**
- * Construct a USR for a specified Objective-C category.
- */
-CXString
-  clang_constructUSR_ObjCCategory(const char* class_name,
-                                 const char* category_name);
-
-/**
- * Construct a USR for a specified Objective-C protocol.
+ * \brief Construct a USR for a specified Objective-C category.
  */
 CXString
-  clang_constructUSR_ObjCProtocol(const char* protocol_name);
+  clang_constructUSR_ObjCCategory(const(char)* class_name,
+                                 const(char)* category_name);
+
+/**
+ * \brief Construct a USR for a specified Objective-C protocol.
+ */
+CXString
+  clang_constructUSR_ObjCProtocol(const(char)* protocol_name);
 
 
 /**
- * Construct a USR for a specified Objective-C instance variable and
+ * \brief Construct a USR for a specified Objective-C instance variable and
  *   the USR for its containing class.
  */
-CXString clang_constructUSR_ObjCIvar(const char* name,
+CXString clang_constructUSR_ObjCIvar(const(char)* name,
                                                     CXString classUSR);
 
 /**
- * Construct a USR for a specified Objective-C method and
+ * \brief Construct a USR for a specified Objective-C method and
  *   the USR for its containing class.
  */
-CXString clang_constructUSR_ObjCMethod(const char* name,
+CXString clang_constructUSR_ObjCMethod(const(char)* name,
                                                       uint isInstanceMethod,
                                                       CXString classUSR);
 
 /**
- * Construct a USR for a specified Objective-C property and the USR
+ * \brief Construct a USR for a specified Objective-C property and the USR
  *  for its containing class.
  */
-CXString clang_constructUSR_ObjCProperty(const char* property,
+CXString clang_constructUSR_ObjCProperty(const(char)* property,
                                                         CXString classUSR);
 
 /**
- * Retrieve a name for the entity referenced by this cursor.
+ * \brief Retrieve a name for the entity referenced by this cursor.
  */
 CXString clang_getCursorSpelling(CXCursor);
 
 /**
- * Retrieve the display name for the entity referenced by this cursor.
+ * \brief Retrieve the display name for the entity referenced by this cursor.
  *
  * The display name contains extra information that helps identify the cursor,
  * such as the parameters of a function or template or the arguments of a 
@@ -2284,7 +2650,7 @@ CXString clang_getCursorSpelling(CXCursor);
  */
 CXString clang_getCursorDisplayName(CXCursor);
   
-/** For a cursor that is a reference, retrieve a cursor representing the
+/** \brief For a cursor that is a reference, retrieve a cursor representing the
  * entity that it references.
  *
  * Reference cursors refer to other entities in the AST. For example, an
@@ -2297,7 +2663,7 @@ CXString clang_getCursorDisplayName(CXCursor);
 CXCursor clang_getCursorReferenced(CXCursor);
 
 /**
- *  For a cursor that is either a reference to or a declaration
+ *  \brief For a cursor that is either a reference to or a declaration
  *  of some entity, retrieve a cursor that describes the definition of
  *  that entity.
  *
@@ -2327,13 +2693,13 @@ CXCursor clang_getCursorReferenced(CXCursor);
 CXCursor clang_getCursorDefinition(CXCursor);
 
 /**
- * Determine whether the declaration pointed to by this cursor
+ * \brief Determine whether the declaration pointed to by this cursor
  * is also a definition of that entity.
  */
 uint clang_isCursorDefinition(CXCursor);
 
 /**
- * Retrieve the canonical cursor corresponding to the given cursor.
+ * \brief Retrieve the canonical cursor corresponding to the given cursor.
  *
  * In the C family of languages, many kinds of entities can be declared several
  * times within a single translation unit. For example, a structure type can
@@ -2372,20 +2738,20 @@ CXCursor clang_getCanonicalCursor(CXCursor);
  */
 
 /**
- * Determine if a C++ member function or member function template is 
+ * \brief Determine if a C++ member function or member function template is 
  * declared 'static'.
  */
 uint clang_CXXMethod_isStatic(CXCursor C);
 
 /**
- * Determine if a C++ member function or member function template is
+ * \brief Determine if a C++ member function or member function template is
  * explicitly declared 'virtual' or if it overrides a virtual method from
  * one of the base classes.
  */
 uint clang_CXXMethod_isVirtual(CXCursor C);
 
 /**
- * Given a cursor that represents a template, determine
+ * \brief Given a cursor that represents a template, determine
  * the cursor kind of the specializations would be generated by instantiating
  * the template.
  *
@@ -2404,7 +2770,7 @@ uint clang_CXXMethod_isVirtual(CXCursor C);
 CXCursorKind clang_getTemplateCursorKind(CXCursor C);
   
 /**
- * Given a cursor that may represent a specialization or instantiation
+ * \brief Given a cursor that may represent a specialization or instantiation
  * of a template, retrieve the cursor that represents the template that it
  * specializes or from which it was instantiated.
  *
@@ -2434,7 +2800,7 @@ CXCursorKind clang_getTemplateCursorKind(CXCursor C);
 CXCursor clang_getSpecializedCursorTemplate(CXCursor C);
 
 /**
- * Given a cursor that references something else, return the source range
+ * \brief Given a cursor that references something else, return the source range
  * covering that reference.
  *
  * \param C A cursor pointing to a member reference, a declaration reference, or
@@ -2457,19 +2823,19 @@ CXSourceRange clang_getCursorReferenceNameRange(CXCursor C,
 
 enum CXNameRefFlags {
   /**
-   * Include the nested-name-specifier, e.g. Foo:: in x.Foo::y, in the
+   * \brief Include the nested-name-specifier, e.g. Foo:: in x.Foo::y, in the
    * range.
    */
   CXNameRange_WantQualifier = 0x1,
   
   /**
-   * Include the explicit template arguments, e.g. <int> in x.f<int>, in 
+   * \brief Include the explicit template arguments, e.g. <int> in x.f<int>, in 
    * the range.
    */
   CXNameRange_WantTemplateArgs = 0x2,
 
   /**
-   * If the name is non-contiguous, return the full spanning range.
+   * \brief If the name is non-contiguous, return the full spanning range.
    *
    * Non-contiguous names occur in Objective-C when a selector with two or more
    * parameters is used, or in C++ when using an operator:
@@ -2496,37 +2862,37 @@ enum CXNameRefFlags {
  */
 
 /**
- * Describes a kind of token.
+ * \brief Describes a kind of token.
  */
 enum CXTokenKind {
   /**
-   * A token that contains some kind of punctuation.
+   * \brief A token that contains some kind of punctuation.
    */
   CXToken_Punctuation,
 
   /**
-   * A language keyword.
+   * \brief A language keyword.
    */
   CXToken_Keyword,
 
   /**
-   * An identifier (that is not a keyword).
+   * \brief An identifier (that is not a keyword).
    */
   CXToken_Identifier,
 
   /**
-   * A numeric, string, or character literal.
+   * \brief A numeric, string, or character literal.
    */
   CXToken_Literal,
 
   /**
-   * A comment.
+   * \brief A comment.
    */
   CXToken_Comment
 }
 
 /**
- * Describes a single preprocessing token.
+ * \brief Describes a single preprocessing token.
  */
 struct CXToken {
   uint int_data[4];
@@ -2534,12 +2900,12 @@ struct CXToken {
 }
 
 /**
- * Determine the kind of the given token.
+ * \brief Determine the kind of the given token.
  */
 CXTokenKind clang_getTokenKind(CXToken);
 
 /**
- * Determine the spelling of the given token.
+ * \brief Determine the spelling of the given token.
  *
  * The spelling of a token is the textual representation of that token, e.g.,
  * the text of an identifier or keyword.
@@ -2547,18 +2913,18 @@ CXTokenKind clang_getTokenKind(CXToken);
 CXString clang_getTokenSpelling(CXTranslationUnit, CXToken);
 
 /**
- * Retrieve the source location of the given token.
+ * \brief Retrieve the source location of the given token.
  */
 CXSourceLocation clang_getTokenLocation(CXTranslationUnit,
                                                        CXToken);
 
 /**
- * Retrieve a source range that covers the given token.
+ * \brief Retrieve a source range that covers the given token.
  */
 CXSourceRange clang_getTokenExtent(CXTranslationUnit, CXToken);
 
 /**
- * Tokenize the source code described by the given range into raw
+ * \brief Tokenize the source code described by the given range into raw
  * lexical tokens.
  *
  * \param TU the translation unit whose text is being tokenized.
@@ -2578,7 +2944,7 @@ void clang_tokenize(CXTranslationUnit TU, CXSourceRange Range,
                                    CXToken **Tokens, uint* NumTokens);
 
 /**
- * Annotate the given set of tokens by providing cursors for each token
+ * \brief Annotate the given set of tokens by providing cursors for each token
  * that can be mapped to a specific entity within the abstract syntax tree.
  *
  * This token-annotation routine is equivalent to invoking
@@ -2612,7 +2978,7 @@ void clang_annotateTokens(CXTranslationUnit TU,
                                          CXCursor* Cursors);
 
 /**
- * Free the given set of tokens.
+ * \brief Free the given set of tokens.
  */
 void clang_disposeTokens(CXTranslationUnit TU,
                                         CXToken* Tokens, uint NumTokens);
@@ -2633,14 +2999,14 @@ void clang_disposeTokens(CXTranslationUnit TU,
 /* for debug/testing */
 CXString clang_getCursorKindSpelling(CXCursorKind Kind);
 void clang_getDefinitionSpellingAndExtent(CXCursor,
-                                          const char **startBuf,
-                                          const char **endBuf,
+                                          const(char)** startBuf,
+                                          const(char)** endBuf,
                                           uint* startLine,
                                           uint* startColumn,
                                           uint* endLine,
                                           uint* endColumn);
 void clang_enableStackTraces();
-void clang_executeOnThread(void function(void*) fn, void* user_data,
+void clang_executeOnThread(void function (void*) fn, void* user_data,
                                           uint stack_size);
 
 /**
@@ -2660,7 +3026,7 @@ void clang_executeOnThread(void function(void*) fn, void* user_data,
  */
 
 /**
- * A semantic string that describes a code-completion result.
+ * \brief A semantic string that describes a code-completion result.
  *
  * A semantic string that describes the formatting of a code-completion
  * result as a single "template" of text that should be inserted into the
@@ -2675,11 +3041,11 @@ void clang_executeOnThread(void function(void*) fn, void* user_data,
 alias void* CXCompletionString;
 
 /**
- * A single result of code completion.
+ * \brief A single result of code completion.
  */
 struct CXCompletionResult {
   /**
-   * The kind of entity that this completion refers to.
+   * \brief The kind of entity that this completion refers to.
    *
    * The cursor kind will be a macro, keyword, or a declaration (one of the
    * *Decl cursor kinds), describing the entity that the completion is
@@ -2691,14 +3057,14 @@ struct CXCompletionResult {
   CXCursorKind CursorKind;
 
   /**
-   * The code-completion string that describes how to insert this
+   * \brief The code-completion string that describes how to insert this
    * code-completion result into the editing buffer.
    */
   CXCompletionString CompletionString;
 }
 
 /**
- * Describes a single piece of text within a code-completion string.
+ * \brief Describes a single piece of text within a code-completion string.
  *
  * Each "chunk" within a code-completion string (\c CXCompletionString) is
  * either a piece of text with a specific "kind" that describes how that text
@@ -2706,7 +3072,7 @@ struct CXCompletionResult {
  */
 enum CXCompletionChunkKind {
   /**
-   * A code-completion string that describes "optional" text that
+   * \brief A code-completion string that describes "optional" text that
    * could be a part of the template (but is not required).
    *
    * The Optional chunk is the only kind of chunk that has a code-completion
@@ -2740,7 +3106,7 @@ enum CXCompletionChunkKind {
    */
   CXCompletionChunk_Optional,
   /**
-   * Text that a user would be expected to type to get this
+   * \brief Text that a user would be expected to type to get this
    * code-completion result.
    *
    * There will be exactly one "typed text" chunk in a semantic string, which
@@ -2751,7 +3117,7 @@ enum CXCompletionChunkKind {
    */
   CXCompletionChunk_TypedText,
   /**
-   * Text that should be inserted as part of a code-completion result.
+   * \brief Text that should be inserted as part of a code-completion result.
    *
    * A "text" chunk represents text that is part of the template to be
    * inserted into user code should this particular code-completion result
@@ -2759,7 +3125,7 @@ enum CXCompletionChunkKind {
    */
   CXCompletionChunk_Text,
   /**
-   * Placeholder text that should be replaced by the user.
+   * \brief Placeholder text that should be replaced by the user.
    *
    * A "placeholder" chunk marks a place where the user should insert text
    * into the code-completion template. For example, placeholders might mark
@@ -2770,7 +3136,7 @@ enum CXCompletionChunkKind {
    */
   CXCompletionChunk_Placeholder,
   /**
-   * Informative text that should be displayed but never inserted as
+   * \brief Informative text that should be displayed but never inserted as
    * part of the template.
    *
    * An "informative" chunk contains annotations that can be displayed to
@@ -2780,7 +3146,7 @@ enum CXCompletionChunkKind {
    */
   CXCompletionChunk_Informative,
   /**
-   * Text that describes the current parameter when code-completion is
+   * \brief Text that describes the current parameter when code-completion is
    * referring to function call, message send, or template specialization.
    *
    * A "current parameter" chunk occurs when code-completion is providing
@@ -2800,45 +3166,45 @@ enum CXCompletionChunkKind {
    */
   CXCompletionChunk_CurrentParameter,
   /**
-   * A left parenthesis ('('), used to initiate a function call or
+   * \brief A left parenthesis ('('), used to initiate a function call or
    * signal the beginning of a function parameter list.
    */
   CXCompletionChunk_LeftParen,
   /**
-   * A right parenthesis (')'), used to finish a function call or
+   * \brief A right parenthesis (')'), used to finish a function call or
    * signal the end of a function parameter list.
    */
   CXCompletionChunk_RightParen,
   /**
-   * A left bracket ('[').
+   * \brief A left bracket ('[').
    */
   CXCompletionChunk_LeftBracket,
   /**
-   * A right bracket (']').
+   * \brief A right bracket (']').
    */
   CXCompletionChunk_RightBracket,
   /**
-   * A left brace ('{').
+   * \brief A left brace ('{').
    */
   CXCompletionChunk_LeftBrace,
   /**
-   * A right brace ('}').
+   * \brief A right brace ('}').
    */
   CXCompletionChunk_RightBrace,
   /**
-   * A left angle bracket ('<').
+   * \brief A left angle bracket ('<').
    */
   CXCompletionChunk_LeftAngle,
   /**
-   * A right angle bracket ('>').
+   * \brief A right angle bracket ('>').
    */
   CXCompletionChunk_RightAngle,
   /**
-   * A comma separator (',').
+   * \brief A comma separator (',').
    */
   CXCompletionChunk_Comma,
   /**
-   * Text that specifies the result type of a given result.
+   * \brief Text that specifies the result type of a given result.
    *
    * This special kind of informative chunk is not meant to be inserted into
    * the text buffer. Rather, it is meant to illustrate the type that an
@@ -2846,15 +3212,15 @@ enum CXCompletionChunkKind {
    */
   CXCompletionChunk_ResultType,
   /**
-   * A colon (':').
+   * \brief A colon (':').
    */
   CXCompletionChunk_Colon,
   /**
-   * A semicolon (';').
+   * \brief A semicolon (';').
    */
   CXCompletionChunk_SemiColon,
   /**
-   * An '=' sign.
+   * \brief An '=' sign.
    */
   CXCompletionChunk_Equal,
   /**
@@ -2869,7 +3235,7 @@ enum CXCompletionChunkKind {
 }
 
 /**
- * Determine the kind of a particular chunk within a completion string.
+ * \brief Determine the kind of a particular chunk within a completion string.
  *
  * \param completion_string the completion string to query.
  *
@@ -2882,7 +3248,7 @@ clang_getCompletionChunkKind(CXCompletionString completion_string,
                              uint chunk_number);
 
 /**
- * Retrieve the text associated with a particular chunk within a
+ * \brief Retrieve the text associated with a particular chunk within a
  * completion string.
  *
  * \param completion_string the completion string to query.
@@ -2896,7 +3262,7 @@ clang_getCompletionChunkText(CXCompletionString completion_string,
                              uint chunk_number);
 
 /**
- * Retrieve the completion string associated with a particular chunk
+ * \brief Retrieve the completion string associated with a particular chunk
  * within a completion string.
  *
  * \param completion_string the completion string to query.
@@ -2904,21 +3270,20 @@ clang_getCompletionChunkText(CXCompletionString completion_string,
  * \param chunk_number the 0-based index of the chunk in the completion string.
  *
  * \returns the completion string associated with the chunk at index
- * \c chunk_number, or NULL if that chunk is not represented by a completion
- * string.
+ * \c chunk_number.
  */
 CXCompletionString
 clang_getCompletionChunkCompletionString(CXCompletionString completion_string,
                                          uint chunk_number);
 
 /**
- * Retrieve the number of chunks in the given code-completion string.
+ * \brief Retrieve the number of chunks in the given code-completion string.
  */
 uint
 clang_getNumCompletionChunks(CXCompletionString completion_string);
 
 /**
- * Determine the priority of this code completion.
+ * \brief Determine the priority of this code completion.
  *
  * The priority of a code completion indicates how likely it is that this 
  * particular completion is the completion that the user will select. The
@@ -2933,7 +3298,7 @@ uint
 clang_getCompletionPriority(CXCompletionString completion_string);
   
 /**
- * Determine the availability of the entity that this code-completion
+ * \brief Determine the availability of the entity that this code-completion
  * string refers to.
  *
  * \param completion_string The completion string to query.
@@ -2944,7 +3309,34 @@ CXAvailabilityKind
 clang_getCompletionAvailability(CXCompletionString completion_string);
 
 /**
- * Retrieve a completion string for an arbitrary declaration or macro
+ * \brief Retrieve the number of annotations associated with the given
+ * completion string.
+ *
+ * \param completion_string the completion string to query.
+ *
+ * \returns the number of annotations associated with the given completion
+ * string.
+ */
+uint
+clang_getCompletionNumAnnotations(CXCompletionString completion_string);
+
+/**
+ * \brief Retrieve the annotation associated with the given completion string.
+ *
+ * \param completion_string the completion string to query.
+ *
+ * \param annotation_number the 0-based index of the annotation of the
+ * completion string.
+ *
+ * \returns annotation string associated with the completion at index
+ * \c annotation_number, or a NULL string if that annotation is not available.
+ */
+CXString
+clang_getCompletionAnnotation(CXCompletionString completion_string,
+                              uint annotation_number);
+
+/**
+ * \brief Retrieve a completion string for an arbitrary declaration or macro
  * definition cursor.
  *
  * \param cursor The cursor to query.
@@ -2956,7 +3348,7 @@ CXCompletionString
 clang_getCursorCompletionString(CXCursor cursor);
   
 /**
- * Contains the results of code-completion.
+ * \brief Contains the results of code-completion.
  *
  * This data structure contains the results of code completion, as
  * produced by \c clang_codeCompleteAt(). Its contents must be freed by
@@ -2964,19 +3356,19 @@ clang_getCursorCompletionString(CXCursor cursor);
  */
 struct CXCodeCompleteResults {
   /**
-   * The code-completion results.
+   * \brief The code-completion results.
    */
   CXCompletionResult* Results;
 
   /**
-   * The number of code-completion results stored in the
+   * \brief The number of code-completion results stored in the
    * \c Results array.
    */
   uint NumResults;
 }
 
 /**
- * Flags that can be passed to \c clang_codeCompleteAt() to
+ * \brief Flags that can be passed to \c clang_codeCompleteAt() to
  * modify its behavior.
  *
  * The enumerators in this enumeration can be bitwise-OR'd together to
@@ -2984,157 +3376,157 @@ struct CXCodeCompleteResults {
  */
 enum CXCodeComplete_Flags {
   /**
-   * Whether to include macros within the set of code
+   * \brief Whether to include macros within the set of code
    * completions returned.
    */
   CXCodeComplete_IncludeMacros = 0x01,
 
   /**
-   * Whether to include code patterns for language constructs
+   * \brief Whether to include code patterns for language constructs
    * within the set of code completions, e.g., for loops.
    */
   CXCodeComplete_IncludeCodePatterns = 0x02
 }
 
 /**
- * Bits that represent the context under which completion is occurring.
+ * \brief Bits that represent the context under which completion is occurring.
  *
  * The enumerators in this enumeration may be bitwise-OR'd together if multiple
  * contexts are occurring simultaneously.
  */
 enum CXCompletionContext {
   /**
-   * The context for completions is unexposed, as only Clang results
+   * \brief The context for completions is unexposed, as only Clang results
    * should be included. (This is equivalent to having no context bits set.)
    */
   CXCompletionContext_Unexposed = 0,
   
   /**
-   * Completions for any possible type should be included in the results.
+   * \brief Completions for any possible type should be included in the results.
    */
   CXCompletionContext_AnyType = 1 << 0,
   
   /**
-   * Completions for any possible value (variables, function calls, etc.)
+   * \brief Completions for any possible value (variables, function calls, etc.)
    * should be included in the results.
    */
   CXCompletionContext_AnyValue = 1 << 1,
   /**
-   * Completions for values that resolve to an Objective-C object should
+   * \brief Completions for values that resolve to an Objective-C object should
    * be included in the results.
    */
   CXCompletionContext_ObjCObjectValue = 1 << 2,
   /**
-   * Completions for values that resolve to an Objective-C selector
+   * \brief Completions for values that resolve to an Objective-C selector
    * should be included in the results.
    */
   CXCompletionContext_ObjCSelectorValue = 1 << 3,
   /**
-   * Completions for values that resolve to a C++ class type should be
+   * \brief Completions for values that resolve to a C++ class type should be
    * included in the results.
    */
   CXCompletionContext_CXXClassTypeValue = 1 << 4,
   
   /**
-   * Completions for fields of the member being accessed using the dot
+   * \brief Completions for fields of the member being accessed using the dot
    * operator should be included in the results.
    */
   CXCompletionContext_DotMemberAccess = 1 << 5,
   /**
-   * Completions for fields of the member being accessed using the arrow
+   * \brief Completions for fields of the member being accessed using the arrow
    * operator should be included in the results.
    */
   CXCompletionContext_ArrowMemberAccess = 1 << 6,
   /**
-   * Completions for properties of the Objective-C object being accessed
+   * \brief Completions for properties of the Objective-C object being accessed
    * using the dot operator should be included in the results.
    */
   CXCompletionContext_ObjCPropertyAccess = 1 << 7,
   
   /**
-   * Completions for enum tags should be included in the results.
+   * \brief Completions for enum tags should be included in the results.
    */
   CXCompletionContext_EnumTag = 1 << 8,
   /**
-   * Completions for union tags should be included in the results.
+   * \brief Completions for union tags should be included in the results.
    */
   CXCompletionContext_UnionTag = 1 << 9,
   /**
-   * Completions for struct tags should be included in the results.
+   * \brief Completions for struct tags should be included in the results.
    */
   CXCompletionContext_StructTag = 1 << 10,
   
   /**
-   * Completions for C++ class names should be included in the results.
+   * \brief Completions for C++ class names should be included in the results.
    */
   CXCompletionContext_ClassTag = 1 << 11,
   /**
-   * Completions for C++ namespaces and namespace aliases should be
+   * \brief Completions for C++ namespaces and namespace aliases should be
    * included in the results.
    */
   CXCompletionContext_Namespace = 1 << 12,
   /**
-   * Completions for C++ nested name specifiers should be included in
+   * \brief Completions for C++ nested name specifiers should be included in
    * the results.
    */
   CXCompletionContext_NestedNameSpecifier = 1 << 13,
   
   /**
-   * Completions for Objective-C interfaces (classes) should be included
+   * \brief Completions for Objective-C interfaces (classes) should be included
    * in the results.
    */
   CXCompletionContext_ObjCInterface = 1 << 14,
   /**
-   * Completions for Objective-C protocols should be included in
+   * \brief Completions for Objective-C protocols should be included in
    * the results.
    */
   CXCompletionContext_ObjCProtocol = 1 << 15,
   /**
-   * Completions for Objective-C categories should be included in
+   * \brief Completions for Objective-C categories should be included in
    * the results.
    */
   CXCompletionContext_ObjCCategory = 1 << 16,
   /**
-   * Completions for Objective-C instance messages should be included
+   * \brief Completions for Objective-C instance messages should be included
    * in the results.
    */
   CXCompletionContext_ObjCInstanceMessage = 1 << 17,
   /**
-   * Completions for Objective-C class messages should be included in
+   * \brief Completions for Objective-C class messages should be included in
    * the results.
    */
   CXCompletionContext_ObjCClassMessage = 1 << 18,
   /**
-   * Completions for Objective-C selector names should be included in
+   * \brief Completions for Objective-C selector names should be included in
    * the results.
    */
   CXCompletionContext_ObjCSelectorName = 1 << 19,
   
   /**
-   * Completions for preprocessor macro names should be included in
+   * \brief Completions for preprocessor macro names should be included in
    * the results.
    */
   CXCompletionContext_MacroName = 1 << 20,
   
   /**
-   * Natural language completions should be included in the results.
+   * \brief Natural language completions should be included in the results.
    */
   CXCompletionContext_NaturalLanguage = 1 << 21,
   
   /**
-   * The current context is unknown, so set all contexts.
+   * \brief The current context is unknown, so set all contexts.
    */
   CXCompletionContext_Unknown = ((1 << 22) - 1)
 }
   
 /**
- * Returns a default set of code-completion options that can be
+ * \brief Returns a default set of code-completion options that can be
  * passed to\c clang_codeCompleteAt(). 
  */
 uint clang_defaultCodeCompleteOptions();
 
 /**
- * Perform code completion at a given location in a translation unit.
+ * \brief Perform code completion at a given location in a translation unit.
  *
  * This function performs code completion at a particular file, line, and
  * column within source code, providing results that suggest potential
@@ -3202,7 +3594,7 @@ uint clang_defaultCodeCompleteOptions();
  * completion fails, returns NULL.
  */
 CXCodeCompleteResults* clang_codeCompleteAt(CXTranslationUnit TU,
-                                            const char* complete_filename,
+                                            const(char)* complete_filename,
                                             uint complete_line,
                                             uint complete_column,
                                             CXUnsavedFile* unsaved_files,
@@ -3210,7 +3602,7 @@ CXCodeCompleteResults* clang_codeCompleteAt(CXTranslationUnit TU,
                                             uint options);
 
 /**
- * Sort the code-completion results in case-insensitive alphabetical 
+ * \brief Sort the code-completion results in case-insensitive alphabetical 
  * order.
  *
  * \param Results The set of results to sort.
@@ -3220,18 +3612,18 @@ void clang_sortCodeCompletionResults(CXCompletionResult* Results,
                                      uint NumResults);
   
 /**
- * Free the given set of code-completion results.
+ * \brief Free the given set of code-completion results.
  */
 void clang_disposeCodeCompleteResults(CXCodeCompleteResults* Results);
   
 /**
- * Determine the number of diagnostics produced prior to the
+ * \brief Determine the number of diagnostics produced prior to the
  * location where code completion was performed.
  */
 uint clang_codeCompleteGetNumDiagnostics(CXCodeCompleteResults* Results);
 
 /**
- * Retrieve a diagnostic associated with the given code completion.
+ * \brief Retrieve a diagnostic associated with the given code completion.
  *
  * \param Result the code completion results to query.
  * \param Index the zero-based diagnostic number to retrieve.
@@ -3243,7 +3635,7 @@ CXDiagnostic clang_codeCompleteGetDiagnostic(CXCodeCompleteResults* Results,
                                              uint Index);
 
 /**
- * Determines what compeltions are appropriate for the context
+ * \brief Determines what compeltions are appropriate for the context
  * the given code completion.
  * 
  * \param Results the code completion results to query
@@ -3255,7 +3647,7 @@ ulong clang_codeCompleteGetContexts(
                                                 CXCodeCompleteResults* Results);
 
 /**
- * Returns the cursor kind for the container for the current code
+ * \brief Returns the cursor kind for the container for the current code
  * completion context. The container is only guaranteed to be set for
  * contexts where a container exists (i.e. member accesses or Objective-C
  * message sends); if there is not a container, this function will return
@@ -3275,7 +3667,7 @@ CXCursorKind clang_codeCompleteGetContainerKind(
                                                      uint* IsIncomplete);
 
 /**
- * Returns the USR for the container for the current code completion
+ * \brief Returns the USR for the container for the current code completion
  * context. If there is not a container for the current context, this
  * function will return the empty string.
  *
@@ -3287,7 +3679,7 @@ CXString clang_codeCompleteGetContainerUSR(CXCodeCompleteResults* Results);
   
   
 /**
- * Returns the currently-entered selector for an Objective-C message
+ * \brief Returns the currently-entered selector for an Objective-C message
  * send, formatted like "initWithFoo:bar:". Only guaranteed to return a
  * non-empty string for CXCompletionContext_ObjCInstanceMessage and
  * CXCompletionContext_ObjCClassMessage.
@@ -3311,14 +3703,14 @@ CXString clang_codeCompleteGetObjCSelector(CXCodeCompleteResults* Results);
  */
 
 /**
- * Return a version string, suitable for showing to a user, but not
+ * \brief Return a version string, suitable for showing to a user, but not
  *        intended to be parsed (the format is not guaranteed to be stable).
  */
 CXString clang_getClangVersion();
 
   
 /**
- * Enable/disable crash recovery.
+ * \brief Enable/disable crash recovery.
  *
  * \param Flag to indicate if crash recovery is enabled.  A non-zero value
  *        enables crash recovery, while 0 disables it.
@@ -3326,7 +3718,7 @@ CXString clang_getClangVersion();
 void clang_toggleCrashRecovery(uint isEnabled);
   
  /**
-  * Visitor invoked for each file in a translation unit
+  * \brief Visitor invoked for each file in a translation unit
   *        (used with clang_getInclusions()).
   *
   * This visitor function will be invoked by clang_getInclusions() for each
@@ -3337,12 +3729,12 @@ void clang_toggleCrashRecovery(uint isEnabled);
   * the first element refers to the location that included 'included_file'.
   */
 alias void function (CXFile included_file,
-                     CXSourceLocation* inclusion_stack,
-                     uint include_len,
-                     CXClientData client_data) CXInclusionVisitor;
+                                   CXSourceLocation* inclusion_stack,
+                                   uint include_len,
+                                   CXClientData client_data) CXInclusionVisitor;
 
 /**
- * Visit the set of preprocessor inclusions in a translation unit.
+ * \brief Visit the set of preprocessor inclusions in a translation unit.
  *   The visitor function is called with the provided data for every included
  *   file.  This does not include headers included by the PCH file (unless one
  *   is inspecting the inclusions in the PCH file itself).
@@ -3361,27 +3753,27 @@ void clang_getInclusions(CXTranslationUnit tu,
  */
 
 /**
- * A remapping of original source files and their translated files.
+ * \brief A remapping of original source files and their translated files.
  */
 alias void* CXRemapping;
 
 /**
- * Retrieve a remapping.
+ * \brief Retrieve a remapping.
  *
  * \param path the path that contains metadata about remappings.
  *
  * \returns the requested remapping. This remapping must be freed
  * via a call to \c clang_remap_dispose(). Can return NULL if an error occurred.
  */
-CXRemapping clang_getRemappings(const char* path);
+CXRemapping clang_getRemappings(const(char)* path);
 
 /**
- * Determine the number of remappings.
+ * \brief Determine the number of remappings.
  */
 uint clang_remap_getNumFiles(CXRemapping);
 
 /**
- * Get the original and the associated filename from the remapping.
+ * \brief Get the original and the associated filename from the remapping.
  * 
  * \param original If non-NULL, will be set to the original filename.
  *
@@ -3392,7 +3784,7 @@ void clang_remap_getFilenames(CXRemapping, uint index,
                                      CXString* original, CXString* transformed);
 
 /**
- * Dispose the remapping.
+ * \brief Dispose the remapping.
  */
 void clang_remap_dispose(CXRemapping);
 
@@ -3400,6 +3792,44 @@ void clang_remap_dispose(CXRemapping);
  * @}
  */
 
-/**
- * @}
+/** \defgroup CINDEX_HIGH Higher level API functions
+ *
+ * @{
  */
+
+enum CXVisitorResult {
+  CXVisit_Break,
+  CXVisit_Continue
+}
+
+struct CXCursorAndRangeVisitor {
+  void* context;
+  CXVisitorResult function (void* context, CXCursor, CXSourceRange) visit;
+}
+
+/**
+ * \brief Find references of a declaration in a specific file.
+ * 
+ * \param cursor pointing to a declaration or a reference of one.
+ *
+ * \param file to search for references.
+ *
+ * \param visitor callback that will receive pairs of CXCursor/CXSourceRange for
+ * each reference found.
+ * The CXSourceRange will point inside the file; if the reference is inside
+ * a macro (and not a macro argument) the CXSourceRange will be invalid.
+ */
+void clang_findReferencesInFile(CXCursor cursor, CXFile file,
+                                               CXCursorAndRangeVisitor visitor);
+
+/+#ifdef __has_feature
+#  if __has_feature(blocks)
+
+typedef enum CXVisitorResult
+    (^CXCursorAndRangeVisitorBlock)(CXCursor, CXSourceRange);
+
+void clang_findReferencesInFileWithBlock(CXCursor, CXFile,
+                                         CXCursorAndRangeVisitorBlock);
+
+#  endif
+#endif+/
