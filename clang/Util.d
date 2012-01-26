@@ -11,12 +11,12 @@ import clang.c.index;
 import std.string;
 import std.conv;
 
-immutable(char)** strToCArray (string[] arr)
+immutable(char*)* strToCArray (string[] arr)
 {
 	if (!arr)
 		return null;
 	
-	immutable(char)*[] cArr;
+	immutable(char*)[] cArr;
 	cArr.reserve(arr.length);
 	
 	foreach (str ; arr)
