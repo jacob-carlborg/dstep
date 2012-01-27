@@ -9,6 +9,7 @@ module clang.TranslationUnit;
 import std.string;
 
 import clang.c.index;
+import clang.Cursor;
 import clang.Diagnostic;
 import clang.Index;
 import clang.UnsavedFile;
@@ -19,6 +20,8 @@ import dstep.core.io;
 struct TranslationUnit
 {
 	mixin CX;
+	alias int (int delegate (ref Cursor, ref Cursor) dg) DeclarationVisitor;
+	private Visitor visitor;
 	
 	static TranslationUnit parse (Index index, string sourceFilename, string[] commandLineArgs,
 		UnsavedFile[] unsavedFiles = null,
@@ -35,9 +38,38 @@ struct TranslationUnit
 				options));
 	}
 	
+	private this (CXTranslationUnit cx)
+	{
+		this.cx = cx;
+	}
+	
 	@property DiagnosticIterator diagnostics ()
 	{
 		return DiagnosticIterator(cx);
+	}
+	
+	@property DeclarationVisitor declarations ()
+	{
+		return &visitorDelegate;
+	}
+	
+	private int visitorDelegate (int delegate (ref Cursor, ref Cursor) dg)
+	{
+		auto start = clang_getTranslationUnitCursor(cx);
+		auto result = clang_visitChildren(start, &visitorFunction, dg);
+		
+		return result == CXChildVisitResult.CXChildVisit_Break ? 1 : 0;
+	}
+	
+	extern (C) private static CXChildVisitResult visitorFunction (CXCursor cursor, CXCursor parent, CXClientData data)
+	{
+		auto dg = cast(int delegate (ref Cursor) data;
+		auto result = dg(Cursor(cursor), Cursor(parent));
+		
+		if (result)
+			return CXChildVisitResult.CXChildVisit_Break;
+			
+		return CXChildVisitResult.CXChildVisit_Continue;
 	}
 }
 
