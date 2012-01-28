@@ -1850,7 +1850,7 @@ enum CXCursorKind {
  */
 struct CXCursor {
   CXCursorKind kind;
-  //int xdata;
+  int xdata;
   void* data[3];
 }
 

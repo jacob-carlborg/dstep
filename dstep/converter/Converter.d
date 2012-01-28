@@ -29,9 +29,8 @@ class Converter
 			
 			clang_getSpellingLocation(cursor.location, &file, null, null, null);
 			auto str = toD(clang_getFileName(file));
-			
-			if (str == "NSObject.h")
-				println(cursor.spelling);
+			println(str);
+			println(cursor.spelling);
 		}
 	}
 }
