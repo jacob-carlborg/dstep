@@ -12,4 +12,19 @@ import clang.Util;
 struct Cursor
 {
 	mixin CX;
+	
+	@property string spelling ()
+	{
+		return toD(clang_getCursorSpelling(cx));
+	}
+	
+	@property CXCursorKind kind ()
+	{
+		return clang_getCursorKind(cx);
+	}
+	
+	@property CXSourceLocation location ()
+	{
+		return clang_getCursorLocation(cx);
+	}
 }

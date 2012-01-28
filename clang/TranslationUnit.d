@@ -20,8 +20,7 @@ import dstep.core.io;
 struct TranslationUnit
 {
 	mixin CX;
-	alias int (int delegate (ref Cursor, ref Cursor) dg) DeclarationVisitor;
-	private Visitor visitor;
+	alias int delegate (int delegate (ref Cursor, ref Cursor) dg) DeclarationVisitor;
 	
 	static TranslationUnit parse (Index index, string sourceFilename, string[] commandLineArgs,
 		UnsavedFile[] unsavedFiles = null,
@@ -56,20 +55,36 @@ struct TranslationUnit
 	private int visitorDelegate (int delegate (ref Cursor, ref Cursor) dg)
 	{
 		auto start = clang_getTranslationUnitCursor(cx);
-		auto result = clang_visitChildren(start, &visitorFunction, dg);
+		auto result = clang_visitChildren(start, &visitorFunction, cast(CXClientData) &dg);
 		
 		return result == CXChildVisitResult.CXChildVisit_Break ? 1 : 0;
 	}
 	
+	private struct Delegate
+	{
+		void* ptr;
+		int function (ref Cursor, ref Cursor) funcptr;
+	}
+	
 	extern (C) private static CXChildVisitResult visitorFunction (CXCursor cursor, CXCursor parent, CXClientData data)
 	{
-		auto dg = cast(int delegate (ref Cursor) data;
-		auto result = dg(Cursor(cursor), Cursor(parent));
+		int delegate (ref Cursor, ref Cursor) dg;
+		auto tmp = cast(Delegate*) data;
 		
-		if (result)
-			return CXChildVisitResult.CXChildVisit_Break;
-			
-		return CXChildVisitResult.CXChildVisit_Continue;
+		dg.ptr = tmp.ptr;
+		dg.funcptr = tmp.funcptr;
+		auto result = cast(CXChildVisitResult) dg(Cursor(cursor), Cursor(parent));
+
+		switch (result)
+		{
+			case CXChildVisitResult.CXChildVisit_Recurse:
+				return result;
+
+			case CXChildVisitResult.CXChildVisit_Break:
+				return CXChildVisitResult.CXChildVisit_Continue;
+				
+			default: return CXChildVisitResult.CXChildVisit_Break;
+		}
 	}
 }
 

@@ -100,7 +100,7 @@ private:
 		
 		scope (exit)
 			clean;
-		
+
 		if (anyErrors)
 			handleDiagnostics;
 			
@@ -112,7 +112,7 @@ private:
 	}
 	
 	bool anyErrors ()
-	{
+	{return false;
 		return diagnostics.length > 0;
 	}
 	

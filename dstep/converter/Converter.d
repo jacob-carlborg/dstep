@@ -8,6 +8,9 @@ module dstep.converter.Converter;
 
 import clang.c.index;
 import clang.TranslationUnit;
+import clang.Util;
+
+import dstep.core.io;
 
 class Converter
 {
@@ -20,6 +23,15 @@ class Converter
 	
 	void convert ()
 	{
-		
+		foreach (cursor, parent ; translationUnit.declarations)
+		{
+			CXFile file;
+			
+			clang_getSpellingLocation(cursor.location, &file, null, null, null);
+			auto str = toD(clang_getFileName(file));
+			
+			if (str == "NSObject.h")
+				println(cursor.spelling);
+		}
 	}
 }
