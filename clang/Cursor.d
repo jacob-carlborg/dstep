@@ -7,6 +7,7 @@
 module clang.Cursor;
 
 import clang.c.index;
+import clang.SourceLocation;
 import clang.Util;
 
 struct Cursor
@@ -23,9 +24,9 @@ struct Cursor
 		return clang_getCursorKind(cx);
 	}
 	
-	@property CXSourceLocation location ()
+	@property SourceLocation location ()
 	{
-		return clang_getCursorLocation(cx);
+		return SourceLocation(clang_getCursorLocation(cx));
 	}
 	
 	@property isDeclaration ()

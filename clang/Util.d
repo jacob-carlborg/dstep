@@ -62,22 +62,7 @@ mixin template CX ()
 {
 	mixin("private alias " ~ cxName!(typeof(this)) ~ " CType;");
 	
-	CType cx_;
-	
-	this (CType cx)
-	{
-		cx_ = cx;
-	}
-	
-	@property CType cx ()
-	{
-		return cx_;
-	}
-	
-	private @property CType cx (CType cx)
-	{
-		return cx_ = cx;
-	}
+	CType cx;
 	
 	void dispose ()
 	{
