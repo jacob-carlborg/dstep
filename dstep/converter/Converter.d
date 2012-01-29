@@ -25,12 +25,16 @@ class Converter
 	{
 		foreach (cursor, parent ; translationUnit.declarations)
 		{
+			println(cursor.spelling);
+			if (cursor.spelling == "SEL")
+				break;
+			
 			CXFile file;
 			
 			clang_getSpellingLocation(cursor.location, &file, null, null, null);
 			auto str = toD(clang_getFileName(file));
 			println(str);
-			println(cursor.spelling);
+			
 		}
 	}
 }

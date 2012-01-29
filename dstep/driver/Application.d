@@ -39,7 +39,7 @@ class Application
 		
 		Index index;
 		TranslationUnit translationUnit;
-		DiagnosticIterator diagnostics;
+		DiagnosticVisitor diagnostics;
 	}
 	
 	int run (string[] args)

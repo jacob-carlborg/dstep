@@ -27,4 +27,9 @@ struct Cursor
 	{
 		return clang_getCursorLocation(cx);
 	}
+	
+	@property isDeclaration ()
+	{
+		return clang_isDeclaration(kind);
+	}
 }

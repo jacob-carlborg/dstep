@@ -20,7 +20,6 @@ import dstep.core.io;
 struct TranslationUnit
 {
 	mixin CX;
-	alias int delegate (int delegate (ref Cursor, ref Cursor) dg) DeclarationVisitor;
 	
 	static TranslationUnit parse (Index index, string sourceFilename, string[] commandLineArgs,
 		UnsavedFile[] unsavedFiles = null,
@@ -42,53 +41,18 @@ struct TranslationUnit
 		this.cx = cx;
 	}
 	
-	@property DiagnosticIterator diagnostics ()
+	@property DiagnosticVisitor diagnostics ()
 	{
-		return DiagnosticIterator(cx);
+		return DiagnosticVisitor(cx);
 	}
 	
 	@property DeclarationVisitor declarations ()
 	{
-		return &visitorDelegate;
-	}
-	
-	private int visitorDelegate (int delegate (ref Cursor, ref Cursor) dg)
-	{
-		auto start = clang_getTranslationUnitCursor(cx);
-		auto result = clang_visitChildren(start, &visitorFunction, cast(CXClientData) &dg);
-		
-		return result == CXChildVisitResult.CXChildVisit_Break ? 1 : 0;
-	}
-	
-	private struct Delegate
-	{
-		void* ptr;
-		int function (ref Cursor, ref Cursor) funcptr;
-	}
-	
-	extern (C) private static CXChildVisitResult visitorFunction (CXCursor cursor, CXCursor parent, CXClientData data)
-	{
-		int delegate (ref Cursor, ref Cursor) dg;
-		auto tmp = cast(Delegate*) data;
-		
-		dg.ptr = tmp.ptr;
-		dg.funcptr = tmp.funcptr;
-		auto result = cast(CXChildVisitResult) dg(Cursor(cursor), Cursor(parent));
-
-		switch (result)
-		{
-			case CXChildVisitResult.CXChildVisit_Recurse:
-				return result;
-
-			case CXChildVisitResult.CXChildVisit_Break:
-				return CXChildVisitResult.CXChildVisit_Continue;
-				
-			default: return CXChildVisitResult.CXChildVisit_Break;
-		}
+		return DeclarationVisitor(cx);
 	}
 }
 
-struct DiagnosticIterator
+struct DiagnosticVisitor
 {
 	private CXTranslationUnit translatoinUnit;
 	
@@ -116,5 +80,44 @@ struct DiagnosticIterator
 		}
 		
 		return result;
+	}
+}
+
+struct DeclarationVisitor
+{
+	private CXTranslationUnit translatoinUnit;
+	private alias int delegate (ref Cursor, ref Cursor) Visitor;
+
+	int opApply (Visitor dg)
+	{
+		auto start = clang_getTranslationUnitCursor(translatoinUnit);
+		auto result = clang_visitChildren(start, &visitorFunction, cast(CXClientData) &dg);
+		
+		return result == CXChildVisitResult.CXChildVisit_Break ? 1 : 0;
+	}
+
+private:
+
+	extern (C) static CXChildVisitResult visitorFunction (CXCursor cursor, CXCursor parent, CXClientData data)
+	{
+		auto c = Cursor(cursor);
+
+		if (!c.isDeclaration)
+			return CXChildVisitResult.CXChildVisit_Continue;
+		
+		Visitor dg;
+		auto tmp = cast(Delegate*) data;
+		
+		dg.ptr = tmp.ptr;
+		dg.funcptr = tmp.funcptr;
+		
+		with (CXChildVisitResult)
+			return dg(c, Cursor(parent)) ? CXChildVisit_Break : CXChildVisit_Continue;
+	}
+	
+	struct Delegate
+	{
+		void* ptr;
+		int function (ref Cursor, ref Cursor) funcptr;
 	}
 }
