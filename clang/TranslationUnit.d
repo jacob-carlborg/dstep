@@ -9,7 +9,7 @@ module clang.TranslationUnit;
 import std.string;
 
 import clang.c.index;
-import clang.Cursor;
+import clang.Visitor;
 import clang.Diagnostic;
 import clang.Index;
 import clang.UnsavedFile;

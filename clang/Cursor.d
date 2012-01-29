@@ -9,6 +9,7 @@ module clang.Cursor;
 import clang.c.index;
 import clang.SourceLocation;
 import clang.Util;
+import clang.Visitor;
 
 struct Cursor
 {
@@ -38,60 +39,25 @@ struct Cursor
 	{
 		return DeclarationVisitor(cx);
 	}
-}
-
-struct Visitor
-{
-	private CXCursor cursor;
-	private alias int delegate (ref Cursor, ref Cursor) VisitorDelegate;
-
-	int opApply (VisitorDelegate dg)
-	{
-		auto result = clang_visitChildren(cursor, &visitorFunction, cast(CXClientData) &dg);
-		return result == CXChildVisitResult.CXChildVisit_Break ? 1 : 0;
-	}
-
-private:
-
-	extern (C) static CXChildVisitResult visitorFunction (CXCursor cursor, CXCursor parent, CXClientData data)
-	{
-		VisitorDelegate dg;
-		auto tmp = cast(Delegate*) data;
-		
-		dg.ptr = tmp.ptr;
-		dg.funcptr = tmp.funcptr;
-		
-		with (CXChildVisitResult)
-			return dg(Cursor(cursor), Cursor(parent)) ? CXChildVisit_Break : CXChildVisit_Continue;
-	}
 	
-	struct Delegate
+	@property ObjcCursor objc ()
 	{
-		void* ptr;
-		int function (ref Cursor, ref Cursor) funcptr;
+		return ObjcCursor(this);
 	}
 }
 
-struct DeclarationVisitor
+struct ObjcCursor
 {
-	private Visitor visitor;
+	private Cursor cursor;
+	alias cursor this;
 	
-	this (CXCursor cursor)
+	@property KindVisitor instanceMethods ()
 	{
-		visitor = Visitor(cursor);
+		return KindVisitor(cursor, CXCursorKind.CXCursor_ObjCInstanceMethodDecl);
 	}
 	
-	this (Visitor visitor)
+	@property KindVisitor classMethods ()
 	{
-		this.visitor = visitor;
-	}
-
-	int opApply (Visitor.VisitorDelegate dg)
-	{
-		foreach (cursor, parent ; visitor)
-			if (auto result = dg(cursor, parent))
-				return result;
-				
-		return 0;
+		return KindVisitor(cursor, CXCursorKind.CXCursor_ObjCClassMethodDecl);
 	}
 }

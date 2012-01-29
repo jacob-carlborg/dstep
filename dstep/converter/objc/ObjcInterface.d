@@ -6,6 +6,8 @@
  */
 module dstep.converter.objc.ObjcInterface;
 
+import std.string;
+
 import dstep.converter.Declaration;
 import dstep.util.Block;
 import dstep.core.io;
@@ -20,7 +22,11 @@ class ObjcInterface : Declaration
 		
 		foreach (cursor, parent ; cursor.declarations)
 		{
-			println(cursor.spelling);
+			if (cursor.spelling.endsWith(":"))
+			{
+				println(cursor.spelling);
+				break;
+			}
 		}
 	}
 }
