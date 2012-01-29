@@ -12,6 +12,9 @@ import dstep.converter.Declaration;
 import dstep.util.Block;
 import dstep.core.io;
 
+import clang.c.index;
+import clang.Util;
+
 class ObjcInterface : Declaration
 {
 	mixin Constructors;
@@ -25,6 +28,13 @@ class ObjcInterface : Declaration
 			if (cursor.spelling.endsWith(":"))
 			{
 				println(cursor.spelling);
+				
+				foreach (cursor, parent ; cursor.declarations)
+				{
+					println(cursor.spelling);
+					println(toD(clang_getTypeKindSpelling(clang_getCursorType(cursor.cx).kind)));
+				}
+				
 				break;
 			}
 		}
