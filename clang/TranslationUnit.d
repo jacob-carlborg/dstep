@@ -48,7 +48,7 @@ struct TranslationUnit
 	
 	@property DeclarationVisitor declarations ()
 	{
-		return DeclarationVisitor(cx);
+		return DeclarationVisitor(clang_getTranslationUnitCursor(cx));
 	}
 }
 
@@ -80,44 +80,5 @@ struct DiagnosticVisitor
 		}
 		
 		return result;
-	}
-}
-
-struct DeclarationVisitor
-{
-	private CXTranslationUnit translatoinUnit;
-	private alias int delegate (ref Cursor, ref Cursor) Visitor;
-
-	int opApply (Visitor dg)
-	{
-		auto start = clang_getTranslationUnitCursor(translatoinUnit);
-		auto result = clang_visitChildren(start, &visitorFunction, cast(CXClientData) &dg);
-		
-		return result == CXChildVisitResult.CXChildVisit_Break ? 1 : 0;
-	}
-
-private:
-
-	extern (C) static CXChildVisitResult visitorFunction (CXCursor cursor, CXCursor parent, CXClientData data)
-	{
-		auto c = Cursor(cursor);
-
-		if (!c.isDeclaration)
-			return CXChildVisitResult.CXChildVisit_Continue;
-		
-		Visitor dg;
-		auto tmp = cast(Delegate*) data;
-		
-		dg.ptr = tmp.ptr;
-		dg.funcptr = tmp.funcptr;
-		
-		with (CXChildVisitResult)
-			return dg(c, Cursor(parent)) ? CXChildVisit_Break : CXChildVisit_Continue;
-	}
-	
-	struct Delegate
-	{
-		void* ptr;
-		int function (ref Cursor, ref Cursor) funcptr;
 	}
 }

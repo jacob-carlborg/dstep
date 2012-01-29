@@ -10,23 +10,39 @@ import clang.c.index;
 import clang.TranslationUnit;
 import clang.Util;
 
+import dstep.converter.Declaration;
+import dstep.converter.Output;
+import dstep.converter.objc.ObjcInterface;
 import dstep.core.io;
 
 class Converter
 {
-	TranslationUnit translationUnit;
+	private
+	{
+		TranslationUnit translationUnit;
+		Output output;
+	}
 	
 	this (TranslationUnit translationUnit)
 	{
 		this.translationUnit = translationUnit;
+		output = new Output;
 	}
 	
 	void convert ()
 	{
 		foreach (cursor, parent ; translationUnit.declarations)
 		{
-			println(cursor.spelling);
-			println(cursor.location.spelling.file.name);
+			Declaration declaration;
+
+			with (CXCursorKind)
+				switch (cursor.kind)
+				{
+					case CXCursor_ObjCInterfaceDecl: declaration = new ObjcInterface(cursor, parent, output); break;
+					default: continue;
+				}
+
+			declaration.convert;
 		}
 	}
 }
