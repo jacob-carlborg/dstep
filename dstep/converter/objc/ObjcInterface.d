@@ -13,6 +13,7 @@ import dstep.util.Block;
 import dstep.core.io;
 
 import clang.c.index;
+import clang.Cursor;
 import clang.Util;
 
 class ObjcInterface : Declaration
@@ -25,18 +26,31 @@ class ObjcInterface : Declaration
 		
 		foreach (cursor, parent ; cursor.declarations)
 		{
-			if (cursor.spelling.endsWith(":"))
-			{
-				println(cursor.spelling);
-				
-				foreach (cursor, parent ; cursor.declarations)
+			with (CXCursorKind)
+				switch ()
 				{
-					println(cursor.spelling);
-					println(toD(clang_getTypeKindSpelling(clang_getCursorType(cursor.cx).kind)));
+					case CXCursor_ObjCInstanceMethodDecl: convertInstanceMethod(cursor, parent); break;
+					case CXCursor_ObjCClassMethodDecl: convertClasseMethod(cursor, parent); break;
+					case CXCursor_ObjCPropertyDecl: convertProperty(cursor, parent); break;
+					default: break;
 				}
-				
-				break;
-			}
 		}
+	}
+
+private:
+	
+	void convertInstanceMethod (Cursor cursor, Cursor parent)
+	{
+		string selector = cursor.spelling;
+	}
+	
+	void convertClasseMethod (Cursor cursor, Cursor parent)
+	{
+		
+	}
+	
+	void convertProperty (Cursor cursor, Cursor parent)
+	{
+		
 	}
 }

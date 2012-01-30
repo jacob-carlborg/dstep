@@ -44,6 +44,11 @@ struct Cursor
 	{
 		return ObjcCursor(this);
 	}
+	
+	@property KindVisitor parameters ()
+	{
+		return KindVisitor(cursor, CXCursorKind.CXCursor_ParmDecl);
+	}
 }
 
 struct ObjcCursor
@@ -59,5 +64,10 @@ struct ObjcCursor
 	@property KindVisitor classMethods ()
 	{
 		return KindVisitor(cursor, CXCursorKind.CXCursor_ObjCClassMethodDecl);
+	}
+	
+	@property KindVisitor properties ()
+	{
+		return KindVisitor(cursor, CXCursorKind.CXCursor_ObjCPropertyDecl);
 	}
 }
