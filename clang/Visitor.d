@@ -119,3 +119,24 @@ struct KindVisitor
 		return 0;
 	}
 }
+
+struct ParamVisitor
+{
+	mixin Visitor.Constructors;
+	
+	int opApply (int delegate (ref ParamCursor) dg)
+	{
+		foreach (cursor, parent ; visitor)
+			if (cursor.kind == CXCursorKind.CXCursor_ParmDecl)
+				if (auto result = dg(ParamCursor(cursor)))
+					return result;
+
+		return 0;
+	}
+	
+	@property bool any ()
+	{
+		//return clang_getNumArgTypes(visitor.cursor.type);
+		return false;
+	}
+}

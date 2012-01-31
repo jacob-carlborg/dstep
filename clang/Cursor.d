@@ -59,7 +59,7 @@ struct Cursor
 
 struct ObjcCursor
 {
-	private Cursor cursor;
+	Cursor cursor;
 	alias cursor this;
 	
 	@property KindVisitor instanceMethods ()
@@ -80,7 +80,7 @@ struct ObjcCursor
 
 struct FunctionCursor
 {
-	private Cursor cursor;
+	Cursor cursor;
 	alias cursor this;
 	
 	@property Type resultType ()
@@ -93,8 +93,14 @@ struct FunctionCursor
 		return clang_isFunctionTypeVariadic(type.cx);
 	}
 	
-	@property KindVisitor parameters ()
+	@property ParamVisitor parameters ()
 	{
-		return KindVisitor(cx, CXCursorKind.CXCursor_ParmDecl);
+		return ParamVisitor(cx);
 	}
+}
+
+struct ParamCursor
+{
+	Cursor cursor;
+	alias cursor this;
 }

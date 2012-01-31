@@ -32,7 +32,7 @@ class ObjcInterface : Declaration
 			with (CXCursorKind)
 				switch (cursor.kind)
 				{
-					case CXCursor_ObjCInstanceMethodDecl: convertInstanceMethod(cursor); break;
+					case CXCursor_ObjCInstanceMethodDecl: convertInstanceMethod(cursor.func); break;
 					case CXCursor_ObjCClassMethodDecl: convertClasseMethod(cursor); break;
 					case CXCursor_ObjCPropertyDecl: convertProperty(cursor); break;
 					default: break;
@@ -43,47 +43,43 @@ class ObjcInterface : Declaration
 
 private:
 	
-	void convertInstanceMethod (FunctionCursor func, Class current)
+	void convertInstanceMethod (FunctionCursor func)
 	{
-		auto output = output.currentClass;
-		
-		output ~= convertType(func.type.result);
-		output ~= dMethodName(func.spelling) ~ " (";
-		
+		auto current = output.currentClass;
+
+		current ~= convertType(func.type.result);
+		current ~= current.getMethodName(func) ~ " (";
+
 		if (func.parameters.any)
 		{
 			foreach (param ; func.parameters)
 			{
-				output ~= convertType(param.type.spelling);
-				output ~= " " ~ convertIdentifier(param.spelling);
+				current ~= convertType(param.type.spelling);
+				current ~= " " ~ convertIdentifier(param.spelling);
 			}
 		}
-		
+
 		if (func.isVariadic)
 		{
 			if (func.parameters.any)
-				output ~= ", ";
-				
-			output ~= "...";
+				current ~= ", ";
+
+			current ~= "...";
 		}
-		
-		output ~= ") [";
-		output ~= func.spelling;
-		output.appendnl("];");
+
+		current ~= ") [";
+		current ~= func.spelling;
+		current ~= "];";
+		current ~= nl;
 	}
 	
-	void convertClasseMethod (Cursor cursor, Class current)
+	void convertClasseMethod (Cursor cursor)
 	{
 		
 	}
 	
-	void convertProperty (Cursor cursor, Class current)
+	void convertProperty (Cursor cursor)
 	{
 		
-	}
-	
-	void string dMethodName (string str)
-	{
-		return str;
 	}
 }
