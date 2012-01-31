@@ -23,4 +23,9 @@ struct Type
 	{
 		return Cursor(clang_getTypeDeclaration(cx)).spelling;
 	}
+	
+	@property Type result ()
+	{
+		return Type(clang_getResultType(cx));
+	}
 }

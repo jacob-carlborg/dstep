@@ -50,10 +50,10 @@ struct Cursor
 	{
 		return ObjcCursor(this);
 	}
-	
-	@property KindVisitor parameters ()
+
+	@property FunctionCursor func ()
 	{
-		return KindVisitor(cx, CXCursorKind.CXCursor_ParmDecl);
+		return FunctionCursor(this);
 	}
 }
 
@@ -75,5 +75,26 @@ struct ObjcCursor
 	@property KindVisitor properties ()
 	{
 		return KindVisitor(cursor, CXCursorKind.CXCursor_ObjCPropertyDecl);
+	}
+}
+
+struct FunctionCursor
+{
+	private Cursor cursor;
+	alias cursor this;
+	
+	@property Type resultType ()
+	{
+		return Type(clang_getCursorResultType(cursor.cx));
+	}
+	
+	@property bool isVariadic ()
+	{
+		return clang_isFunctionTypeVariadic(type.cx);
+	}
+	
+	@property KindVisitor parameters ()
+	{
+		return KindVisitor(cx, CXCursorKind.CXCursor_ParmDecl);
 	}
 }

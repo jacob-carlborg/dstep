@@ -9,9 +9,10 @@ module dstep.converter.objc.ObjcInterface;
 import std.string;
 
 import dstep.converter.Declaration;
+import dstep.converter.Output;
 import dstep.converter.Type;
-import dstep.util.Block;
 import dstep.core.io;
+import dstep.util.Block;
 
 import clang.c.index;
 import clang.Cursor;
@@ -31,9 +32,9 @@ class ObjcInterface : Declaration
 			with (CXCursorKind)
 				switch (cursor.kind)
 				{
-					case CXCursor_ObjCInstanceMethodDecl: convertInstanceMethod(cursor, parent); break;
-					case CXCursor_ObjCClassMethodDecl: convertClasseMethod(cursor, parent); break;
-					case CXCursor_ObjCPropertyDecl: convertProperty(cursor, parent); break;
+					case CXCursor_ObjCInstanceMethodDecl: convertInstanceMethod(cursor); break;
+					case CXCursor_ObjCClassMethodDecl: convertClasseMethod(cursor); break;
+					case CXCursor_ObjCPropertyDecl: convertProperty(cursor); break;
 					default: break;
 				}
 
@@ -42,25 +43,47 @@ class ObjcInterface : Declaration
 
 private:
 	
-	void convertInstanceMethod (Cursor cursor, Cursor parent)
+	void convertInstanceMethod (FunctionCursor func, Class current)
 	{
-		string selector = cursor.spelling;
-		println(selector);
+		auto output = output.currentClass;
 		
-		foreach (cursor, parent ; cursor.parameters)
+		output ~= convertType(func.type.result);
+		output ~= dMethodName(func.spelling) ~ " (";
+		
+		if (func.parameters.any)
 		{
-			println(cursor.spelling);
-			println(cursor.type.spelling);
+			foreach (param ; func.parameters)
+			{
+				output ~= convertType(param.type.spelling);
+				output ~= " " ~ convertIdentifier(param.spelling);
+			}
 		}
+		
+		if (func.isVariadic)
+		{
+			if (func.parameters.any)
+				output ~= ", ";
+				
+			output ~= "...";
+		}
+		
+		output ~= ") [";
+		output ~= func.spelling;
+		output.appendnl("];");
 	}
 	
-	void convertClasseMethod (Cursor cursor, Cursor parent)
+	void convertClasseMethod (Cursor cursor, Class current)
 	{
 		
 	}
 	
-	void convertProperty (Cursor cursor, Cursor parent)
+	void convertProperty (Cursor cursor, Class current)
 	{
 		
+	}
+	
+	void string dMethodName (string str)
+	{
+		return str;
 	}
 }
