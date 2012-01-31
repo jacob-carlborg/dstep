@@ -9,6 +9,7 @@ module dstep.converter.objc.ObjcInterface;
 import std.string;
 
 import dstep.converter.Declaration;
+import dstep.converter.Type;
 import dstep.util.Block;
 import dstep.core.io;
 
@@ -22,18 +23,20 @@ class ObjcInterface : Declaration
 	
 	void convert ()
 	{
-		println(spelling);
-		
 		foreach (cursor, parent ; cursor.declarations)
 		{
+			if (cursor.spelling != "forwardingTargetForSelector:")
+				continue;
+
 			with (CXCursorKind)
-				switch ()
+				switch (cursor.kind)
 				{
 					case CXCursor_ObjCInstanceMethodDecl: convertInstanceMethod(cursor, parent); break;
 					case CXCursor_ObjCClassMethodDecl: convertClasseMethod(cursor, parent); break;
 					case CXCursor_ObjCPropertyDecl: convertProperty(cursor, parent); break;
 					default: break;
 				}
+
 		}
 	}
 
@@ -42,6 +45,13 @@ private:
 	void convertInstanceMethod (Cursor cursor, Cursor parent)
 	{
 		string selector = cursor.spelling;
+		println(selector);
+		
+		foreach (cursor, parent ; cursor.parameters)
+		{
+			println(cursor.spelling);
+			println(cursor.type.spelling);
+		}
 	}
 	
 	void convertClasseMethod (Cursor cursor, Cursor parent)

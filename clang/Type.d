@@ -7,9 +7,20 @@
 module clang.Type;
 
 import clang.c.index;
+import clang.Cursor;
 import clang.Util;
 
 struct Type
 {
 	mixin CX;
+	
+	@property Type pointee ()
+	{
+		return Type(clang_getPointeeType(cx));
+	}
+	
+	@property string spelling ()
+	{
+		return Cursor(clang_getTypeDeclaration(cx)).spelling;
+	}
 }

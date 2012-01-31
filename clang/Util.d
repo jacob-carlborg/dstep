@@ -63,6 +63,7 @@ mixin template CX ()
 	mixin("private alias " ~ cxName!(typeof(this)) ~ " CType;");
 	
 	CType cx;
+	alias cx this;
 	
 	void dispose ()
 	{

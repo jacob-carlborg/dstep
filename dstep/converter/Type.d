@@ -7,6 +7,7 @@
 module dstep.converter.Type;
 
 import clang.c.index;
+import clang.Type;
 
 string convertType (string str)
 {

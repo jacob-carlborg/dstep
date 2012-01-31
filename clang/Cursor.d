@@ -8,6 +8,7 @@ module clang.Cursor;
 
 import clang.c.index;
 import clang.SourceLocation;
+import clang.Type;
 import clang.Util;
 import clang.Visitor;
 
@@ -30,6 +31,11 @@ struct Cursor
 		return SourceLocation(clang_getCursorLocation(cx));
 	}
 	
+	@property Type type ()
+	{
+		return Type(clang_getCursorType(cx));
+	}
+	
 	@property isDeclaration ()
 	{
 		return clang_isDeclaration(kind);
@@ -47,7 +53,7 @@ struct Cursor
 	
 	@property KindVisitor parameters ()
 	{
-		return KindVisitor(cursor, CXCursorKind.CXCursor_ParmDecl);
+		return KindVisitor(cx, CXCursorKind.CXCursor_ParmDecl);
 	}
 }
 
