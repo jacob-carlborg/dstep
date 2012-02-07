@@ -7,9 +7,11 @@
 module dstep.converter.Output;
 
 static import std.array;
+
+import mambo.core.string;
+
 import clang.Cursor;
 import dstep.converter.Type;
-import dstep.core.string;
 
 class Output
 {

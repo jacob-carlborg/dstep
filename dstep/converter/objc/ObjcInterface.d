@@ -8,11 +8,11 @@ module dstep.converter.objc.ObjcInterface;
 
 import std.string;
 
+import mambo.core.io;
+
 import dstep.converter.Declaration;
 import dstep.converter.Output;
 import dstep.converter.Type;
-import dstep.core.io;
-import dstep.util.Block;
 
 import clang.c.index;
 import clang.Cursor;

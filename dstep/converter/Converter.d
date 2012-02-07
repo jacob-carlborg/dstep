@@ -6,6 +6,8 @@
  */
 module dstep.converter.Converter;
 
+import mambo.core.io;
+
 import clang.c.index;
 import clang.TranslationUnit;
 import clang.Util;
@@ -13,7 +15,6 @@ import clang.Util;
 import dstep.converter.Declaration;
 import dstep.converter.Output;
 import dstep.converter.objc.ObjcInterface;
-import dstep.core.io;
 
 class Converter
 {

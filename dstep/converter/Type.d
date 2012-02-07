@@ -6,6 +6,10 @@
  */
 module dstep.converter.Type;
 
+import std.string;
+
+import mambo.core.string;
+
 import clang.c.index;
 import clang.Type;
 
@@ -83,10 +87,10 @@ bool isFunctionPointerType (Type type)
 string convertSelector (string str, bool fullName = false)
 {
 	if (fullName)
-		str = str.replace(':', '_');
+		str = str.replace(":", "_");
 		
 	else
-		str = str.chomp(':');
+		str = str.chomp(":");
 		
 	return convertIdentifier(str);
 }

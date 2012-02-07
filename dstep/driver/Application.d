@@ -10,14 +10,15 @@ import core.stdc.stdlib : EXIT_SUCCESS, EXIT_FAILURE;
 
 import std.stdio;
 
+import mambo.core.io;
+import mambo.util.Singleton;
+import mambo.util.Use;
+
 import clang.Index;
 import clang.TranslationUnit;
 
-import dstep.core.io;
 import dstep.core.Exceptions;
 import dstep.converter.Converter;
-import dstep.util.Singleton;
-import dstep.util.Use;
 
 class Application
 {
