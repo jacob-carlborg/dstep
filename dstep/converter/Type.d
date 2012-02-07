@@ -241,8 +241,6 @@ bool isDKeyword (string str)
 			case "pure":
 			case "shared":
 
-			
-
 			case "__gshared":
 			case "__thread":
 			case "__traits":
