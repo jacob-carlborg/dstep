@@ -45,5 +45,7 @@ class Converter
 
 			declaration.convert;
 		}
+		
+		println(output.toString);
 	}
 }

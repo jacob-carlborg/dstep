@@ -9,7 +9,7 @@ module clang.Type;
 import clang.c.index;
 import clang.Cursor;
 import clang.Util;
-
+import mambo.core.io;
 struct Type
 {
 	mixin CX;
@@ -24,8 +24,43 @@ struct Type
 		return Cursor(clang_getTypeDeclaration(cx)).spelling;
 	}
 	
-	@property Type result ()
+	@property bool isFunctionType ()
 	{
-		return Type(clang_getResultType(cx));
+		with (CXTypeKind)
+			switch (cx.kind)
+			{
+				case CXType_BlockPointer:
+				case CXType_FunctionNoProto:
+				case CXType_FunctionProto:
+					return true;
+			
+				default: return isFunctionPointerType;
+			}
+	}
+	
+	@property bool isFunctionPointerType ()
+	{
+		with (CXTypeKind)
+			return kind == CXType_Pointer && pointee.kind == CXType_FunctionProto;
+	}
+	
+	@property bool isObjCBuiltinType ()
+	{
+		with (CXTypeKind)
+			switch (kind)
+			{
+				case CXType_ObjCId:
+				case CXType_ObjCClass:
+				case CXType_ObjCSel:
+					return true;
+
+				default: return false;
+			}
+	}
+
+	@property bool isWideCharType ()
+	{
+		with (CXTypeKind)
+			return kind == CXType_WChar || kind == CXType_SChar;
 	}
 }

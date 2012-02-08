@@ -12,7 +12,7 @@ import mambo.core.string;
 
 import clang.c.index;
 import clang.Type;
-
+import mambo.core.io;
 string convertType (string str)
 {
 	switch (str)
@@ -26,18 +26,18 @@ string convertType (string str)
 }
 
 string convertType (Type type, bool rewriteIdToObject = true)
-{	
+{
 	with (CXTypeKind)
 	{
-		if (type.kind == CXType_BlockPointer || isFunctionPointerType(type))
+		if (type.kind == CXType_BlockPointer || type.isFunctionPointerType)
 			return convertFunctionPointerType(type);
 			
-		if (type.kind == CXType_ObjCObjectPointer && !isObjCBuiltinType(type.kind))
+		if (type.kind == CXType_ObjCObjectPointer && !type.isObjCBuiltinType)
 			return convertObjCObjectPointerType(type);
 			
-		if (isWideCharType(type.kind))	
+		if (type.isWideCharType)	
 			return "wchar";
-		
+
 		switch (type.kind)
 		{
 			case CXType_Pointer: return convertType(type.pointee) ~ "*";
@@ -56,32 +56,6 @@ string convertFunctionPointerType (Type type)
 string convertObjCObjectPointerType (Type type)
 {
 	return "<unimplemented>";
-}
-
-bool isObjCBuiltinType (CXTypeKind kind)
-{
-	with (CXTypeKind)
-		switch (kind)
-		{
-			case CXType_ObjCId:
-			case CXType_ObjCClass:
-			case CXType_ObjCSel:
-				return true;
-				
-			default: return false;
-		}
-}
-
-bool isWideCharType (CXTypeKind kind)
-{
-	with (CXTypeKind)
-		return CXType_WChar || CXType_SChar;
-}
-
-bool isFunctionPointerType (Type type)
-{
-	with (CXTypeKind)
-		return type.kind == CXType_Pointer && type.pointee.kind == CXType_FunctionProto;
 }
 
 string convertSelector (string str, bool fullName = false)

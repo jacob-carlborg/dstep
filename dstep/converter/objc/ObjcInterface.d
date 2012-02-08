@@ -47,7 +47,8 @@ private:
 	{
 		auto current = output.currentClass;
 
-		current ~= convertType(func.type.result);
+		current ~= convertType(func.resultType);
+		current ~= " ";
 		current ~= current.getMethodName(func) ~ " (";
 
 		if (func.parameters.any)

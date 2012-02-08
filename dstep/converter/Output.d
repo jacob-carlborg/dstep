@@ -27,6 +27,18 @@ class Output
 	Class currentClass;
 	Class currentInterface;
 	
+	this ()
+	{
+		before = new String;
+		after = new String;
+		imports = new String;
+		functions = new String;
+		buffer = new String;
+		
+		currentClass = new Class;
+		currentInterface = new Class;
+	}
+	
 	Output opOpAssign (string op, T) (T t) if (op == "~")
 	{
 		buffer ~= t;
@@ -78,6 +90,11 @@ class Output
 		
 		return buffer.data;
 	}
+	
+	string toString ()
+	{
+		return data;
+	}
 }
 
 class Class : String
@@ -92,7 +109,7 @@ class Class : String
 		if (!(mangledName in mangledMethods))
 		{
 			mangledMethods[mangledName] = true;
-			name = name == "" ? selector : name;
+			name = name.isBlank ? selector : name;
 			return convertSelector(name);
 		}
 		

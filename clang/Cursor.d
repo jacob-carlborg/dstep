@@ -36,9 +36,9 @@ struct Cursor
 		return Type(clang_getCursorType(cx));
 	}
 	
-	@property isDeclaration ()
+	@property bool isDeclaration ()
 	{
-		return clang_isDeclaration(kind);
+		return clang_isDeclaration(cx.kind);
 	}
 	
 	@property DeclarationVisitor declarations ()
@@ -54,6 +54,11 @@ struct Cursor
 	@property FunctionCursor func ()
 	{
 		return FunctionCursor(this);
+	}
+	
+	@property bool isValid ()
+	{
+		return !clang_isInvalid(cx.kind);
 	}
 }
 
@@ -90,7 +95,8 @@ struct FunctionCursor
 	
 	@property bool isVariadic ()
 	{
-		return clang_isFunctionTypeVariadic(type.cx);
+		//return clang_isFunctionTypeVariadic(type.cx);
+		return false;
 	}
 	
 	@property ParamVisitor parameters ()
