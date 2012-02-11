@@ -38,7 +38,7 @@ struct Cursor
 	
 	@property bool isDeclaration ()
 	{
-		return clang_isDeclaration(cx.kind);
+		return clang_isDeclaration(cx.kind) != 0;
 	}
 	
 	@property DeclarationVisitor declarations ()
