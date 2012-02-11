@@ -21,7 +21,8 @@ struct Type
 	
 	@property string spelling ()
 	{
-		return Cursor(clang_getTypeDeclaration(cx)).spelling;
+		auto r = clang_getTypeDeclaration(cx);
+		return Cursor(r).spelling;
 	}
 	
 	@property bool isFunctionType ()
@@ -62,5 +63,16 @@ struct Type
 	{
 		with (CXTypeKind)
 			return kind == CXType_WChar || kind == CXType_SChar;
+	}
+	
+	@property bool isTypedef ()
+	{
+		return kind == CXTypeKind.CXType_Typedef;
+	}
+	
+	@property Type canonicalType ()
+	{
+		auto r = clang_getCanonicalType(cx);
+		return Type(r);
 	}
 }

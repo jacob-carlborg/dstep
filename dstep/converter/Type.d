@@ -37,7 +37,10 @@ string convertType (Type type, bool rewriteIdToObject = true)
 			
 		if (type.isWideCharType)	
 			return "wchar";
-
+			
+		if (type.isTypedef)
+			return convertType(type.canonicalType);
+	
 		switch (type.kind)
 		{
 			case CXType_Pointer: return convertType(type.pointee) ~ "*";

@@ -90,7 +90,8 @@ struct FunctionCursor
 	
 	@property Type resultType ()
 	{
-		return Type(clang_getCursorResultType(cursor.cx));
+		auto r = clang_getCursorResultType(cx);
+		return Type(r);
 	}
 	
 	@property bool isVariadic ()
