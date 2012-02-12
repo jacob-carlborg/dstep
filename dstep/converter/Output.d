@@ -135,27 +135,35 @@ class String
 	{
 		std.array.Appender!(string) appender;
 		ubyte indendationLevel;
+		ubyte prevIndendationLevel;
 		bool shouldIndent;
 	}
 	
 	void opOpAssign (string op, T) (T t) if (op == "~" && !is(T == NewLine))
 	{
-		appender.put(t);
+		put(t);
 	}
 	
 	void opOpAssign (string op) (NewLine) if (op == "~")
 	{
-		appender.put('\n');
+		put(nl);
 	}
 	
-	void put (T) (T t)
+	void put (T) (T t) if (!is(T == NewLine))
 	{
+		if (shouldIndent)
+		{
+			_indent();
+			shouldIndent = false;
+		}
+
 		appender.put(t);
 	}
 	
 	void put () (NewLine)
 	{
 		appender.put('\n');
+		shouldIndent = indendationLevel > 0;
 	}
 	
 	@property string data ()
@@ -170,6 +178,7 @@ class String
 	
 	Indendation indent (ubyte indendationLevel)
 	{
+		prevIndendationLevel = this.indendationLevel;
 		this.indendationLevel = indendationLevel;
 		return Indendation(this);
 	}
@@ -182,7 +191,7 @@ class String
 		{
 			str._indent;
 			dg();
-			str.indendationLevel = 0;
+			str.indendationLevel = str.prevIndendationLevel;
 		}
 	}
 	

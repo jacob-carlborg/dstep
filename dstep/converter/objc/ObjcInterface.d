@@ -32,9 +32,6 @@ class ObjcInterface : Declaration
 		writeClass(spelling, cursor.superClass.spelling, collectInterfaces(cursor.objc)) in {
 			foreach (cursor, parent ; cursor.declarations)
 			{
-				if (cursor.spelling != "forwardingTargetForSelector:")
-					continue;
-		
 				with (CXCursorKind)
 					switch (cursor.kind)
 					{
