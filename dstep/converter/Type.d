@@ -12,7 +12,7 @@ import mambo.core.string;
 
 import clang.c.index;
 import clang.Type;
-import mambo.core.io;
+
 string convertType (string str)
 {
 	switch (str)

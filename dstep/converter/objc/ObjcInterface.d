@@ -40,7 +40,6 @@ class ObjcInterface : Declaration
 						case CXCursor_ObjCPropertyDecl: convertProperty(cursor); break;
 						default: break;
 					}
-		
 			}
 		};
 	}

@@ -40,7 +40,7 @@ struct Type
 	@property bool isFunctionType ()
 	{
 		with (CXTypeKind)
-			return CXType_FunctionNoProto || CXType_FunctionProto;
+			return kind == CXType_FunctionNoProto || kind == CXType_FunctionProto;
 	}
 	
 	@property bool isFunctionPointerType ()
