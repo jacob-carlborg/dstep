@@ -35,8 +35,8 @@ class ObjcInterface : Declaration
 				with (CXCursorKind)
 					switch (cursor.kind)
 					{
-						case CXCursor_ObjCInstanceMethodDecl: convertInstanceMethod(cursor.func); break;
-						case CXCursor_ObjCClassMethodDecl: convertClasseMethod(cursor); break;
+						case CXCursor_ObjCInstanceMethodDecl: convertMethod(cursor.func); break;
+						case CXCursor_ObjCClassMethodDecl: convertMethod(cursor.func, true); break;
 						case CXCursor_ObjCPropertyDecl: convertProperty(cursor); break;
 						default: break;
 					}
@@ -96,10 +96,13 @@ private:
 		current ~= nl;
 	}
 	
-	void convertInstanceMethod (FunctionCursor func)
+	void convertMethod (FunctionCursor func, bool classMethod = false, string name = null)
 	{
 		auto current = output.currentClass;
 
+		if (classMethod)
+			current ~= "static ";
+			
 		current ~= convertType(func.resultType);
 		current ~= " ";
 		current ~= current.getMethodName(func) ~ " (";
@@ -127,11 +130,6 @@ private:
 		current ~= func.spelling;
 		current ~= "];";
 		current ~= nl;
-	}
-	
-	void convertClasseMethod (Cursor cursor)
-	{
-		
 	}
 	
 	void convertProperty (Cursor cursor)

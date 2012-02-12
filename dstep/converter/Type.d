@@ -45,6 +45,7 @@ string convertType (Type type, bool rewriteIdToObject = true)
 		{
 			case CXType_Pointer: return convertType(type.pointee) ~ "*";
 			case CXType_Bool: return "bool";
+			case CXType_Void: return "void";
 			default: return convertType(type.spelling);
 		}
 	}
