@@ -38,14 +38,13 @@ string convertType (Type type, bool rewriteIdToObject = true)
 		if (type.isWideCharType)	
 			return "wchar";
 			
-		if (type.isTypedef)
-			return convertType(type.canonicalType);
-	
+		if (type.isObjCIdType)
+			return rewriteIdToObject ? "Object" : "id";
+
 		switch (type.kind)
 		{
 			case CXType_Pointer: return convertType(type.pointee) ~ "*";
 			case CXType_Bool: return "bool";
-			case CXType_ObjCId: return rewriteIdToObject ? "Object" : "id";
 			default: return convertType(type.spelling);
 		}
 	}
