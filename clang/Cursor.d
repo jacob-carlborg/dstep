@@ -33,7 +33,8 @@ struct Cursor
 	
 	@property Type type ()
 	{
-		return Type(clang_getCursorType(cx));
+		auto r = clang_getCursorType(cx);
+		return Type(r);
 	}
 	
 	@property bool isDeclaration ()

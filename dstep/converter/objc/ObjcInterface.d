@@ -51,14 +51,16 @@ private:
 		current ~= " ";
 		current ~= current.getMethodName(func) ~ " (";
 
-		if (func.parameters.any)
+		string[] params;
+		
+		foreach (param ; func.parameters)
 		{
-			foreach (param ; func.parameters)
-			{
-				current ~= convertType(param.type.spelling);
-				current ~= " " ~ convertIdentifier(param.spelling);
-			}
+			auto p = convertType(param.type);
+			p ~= " " ~ convertIdentifier(param.spelling);
+			params ~= p;
 		}
+		
+		current ~= params.join(",");
 
 		if (func.isVariadic)
 		{
