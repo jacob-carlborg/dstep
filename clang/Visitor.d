@@ -88,25 +88,23 @@ struct DeclarationVisitor
 	}
 }
 
-struct KindVisitor
+struct TypedVisitor (CXCursorKind kind)
 {
 	private Visitor visitor;
-	private CXCursorKind kind;
 	
-	this (Visitor visitor, CXCursorKind kind)
+	this (Visitor visitor)
 	{
 		this.visitor = visitor;
-		this.kind = kind;
 	}
 
-	this (CXCursor cursor, CXCursorKind kind)
+	this (CXCursor cursor)
 	{
-		this(Visitor(cursor), kind);
+		this(Visitor(cursor));
 	}
 	
-	this (Cursor cursor, CXCursorKind kind)
+	this (Cursor cursor)
 	{
-		this(cursor.cx, kind);
+		this(cursor.cx);
 	}
 
 	int opApply (Visitor.Delegate dg)
@@ -119,6 +117,11 @@ struct KindVisitor
 		return 0;
 	}
 }
+
+alias TypedVisitor!(CXCursorKind.CXCursor_ObjCInstanceMethodDecl) ObjCInstanceMethodVisitor;
+alias TypedVisitor!(CXCursorKind.CXCursor_ObjCClassMethodDecl) ObjCClassMethodVisitor;
+alias TypedVisitor!(CXCursorKind.CXCursor_ObjCPropertyDecl) ObjCPropertyVisitor;
+alias TypedVisitor!(CXCursorKind.CXCursor_ObjCProtocolRef ) ObjCProtocolVisitor;
 
 struct ParamVisitor
 {

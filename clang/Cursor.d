@@ -16,6 +16,12 @@ struct Cursor
 {
 	mixin CX;
 	
+	@property static Cursor empty ()
+	{
+		auto r = clang_getNullCursor();
+		return Cursor(r);
+	}
+	
 	@property string spelling ()
 	{
 		return toD(clang_getCursorSpelling(cx));
@@ -61,6 +67,11 @@ struct Cursor
 	{
 		return !clang_isInvalid(cx.kind);
 	}
+	
+	@property Visitor all ()
+	{
+		return Visitor(this);
+	}
 }
 
 struct ObjcCursor
@@ -68,19 +79,32 @@ struct ObjcCursor
 	Cursor cursor;
 	alias cursor this;
 	
-	@property KindVisitor instanceMethods ()
+	@property ObjCInstanceMethodVisitor instanceMethods ()
 	{
-		return KindVisitor(cursor, CXCursorKind.CXCursor_ObjCInstanceMethodDecl);
+		return ObjCInstanceMethodVisitor(cursor);
 	}
 	
-	@property KindVisitor classMethods ()
+	@property ObjCClassMethodVisitor classMethods ()
 	{
-		return KindVisitor(cursor, CXCursorKind.CXCursor_ObjCClassMethodDecl);
+		return ObjCClassMethodVisitor(cursor);
 	}
 	
-	@property KindVisitor properties ()
+	@property ObjCPropertyVisitor properties ()
 	{
-		return KindVisitor(cursor, CXCursorKind.CXCursor_ObjCPropertyDecl);
+		return ObjCPropertyVisitor(cursor);
+	}
+	
+	@property Cursor superClass ()
+	{
+		foreach (cursor, parent ; TypedVisitor!(CXCursorKind.CXCursor_ObjCSuperClassRef)(cursor))
+			return cursor;
+
+		return Cursor.empty;
+	}
+	
+	@property ObjCProtocolVisitor protocols ()
+	{
+		return ObjCProtocolVisitor(cursor);
 	}
 }
 

@@ -145,7 +145,7 @@ class String
 	
 	void opOpAssign (string op) (NewLine) if (op == "~")
 	{
-		appender.put('\t');
+		appender.put('\n');
 	}
 	
 	void put (T) (T t)
