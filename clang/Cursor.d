@@ -121,8 +121,7 @@ struct FunctionCursor
 	
 	@property bool isVariadic ()
 	{
-		//return clang_isFunctionTypeVariadic(type.cx);
-		return false;
+		return clang_isFunctionTypeVariadic(type.cx) != 0;
 	}
 	
 	@property ParamVisitor parameters ()

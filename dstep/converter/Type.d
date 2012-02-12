@@ -9,6 +9,7 @@ module dstep.converter.Type;
 import std.string;
 
 import mambo.core.string;
+import mambo.core.io;
 
 import clang.c.index;
 import clang.Type;
@@ -29,6 +30,9 @@ string convertType (Type type, bool rewriteIdToObject = true)
 {
 	with (CXTypeKind)
 	{
+		if (type.kind == CXType_Pointer)
+			println(type.pointee.kind);
+		
 		if (type.kind == CXType_BlockPointer || type.isFunctionPointerType)
 			return convertFunctionPointerType(type);
 			
