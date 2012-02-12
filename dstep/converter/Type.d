@@ -58,7 +58,17 @@ string convertFunctionPointerType (Type type)
 
 string convertObjCObjectPointerType (Type type)
 {
-	return "<unimplemented>";
+	if (type.kind == CXTypeKind.CXType_ObjCObjectPointer && !type.isObjCBuiltinType)
+	{
+		auto pointee = type.pointee;
+		
+		if (pointee.spelling == "Protocol")
+			return "Protocol*";
+
+		return convertType(pointee);
+	}
+	
+	return convertType(type);
 }
 
 string convertSelector (string str, bool fullName = false)
