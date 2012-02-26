@@ -60,7 +60,7 @@ private:
 	{
 		Block block;
 		
-		block.dg = (void delegate () dg){
+		block.dg = (void delegate () dg) {
 			output.classes ~= output.currentClass;
 			output.currentClass = new Class;
 			output.currentClass ~= "class ";
