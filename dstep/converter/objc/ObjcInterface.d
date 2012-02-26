@@ -37,7 +37,8 @@ class ObjcInterface : Declaration
 					{
 						case CXCursor_ObjCInstanceMethodDecl: convertMethod(cursor.func); break;
 						case CXCursor_ObjCClassMethodDecl: convertMethod(cursor.func, true); break;
-						case CXCursor_ObjCPropertyDecl: convertProperty(cursor); break;
+						case CXCursor_ObjCPropertyDecl: convertProperty(cursor.func); break;
+						case CXCursor_ObjCIvarDecl: convertInstanceVariable(cursor); break;
 						default: break;
 					}
 			}
@@ -131,8 +132,18 @@ private:
 		current ~= nl;
 	}
 	
-	void convertProperty (Cursor cursor)
+	void convertProperty (FunctionCursor cursor)
 	{
 		
+	}
+	
+	void convertInstanceVariable (Cursor cursor)
+	{
+		auto current = output.currentClass;
+		
+		current ~= convertType(cursor.type);
+		current ~= " " ~ convertIdentifier(cursor.spelling);
+		current ~= ";";
+		current ~= nl;
 	}
 }

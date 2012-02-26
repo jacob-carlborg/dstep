@@ -30,9 +30,6 @@ string convertType (Type type, bool rewriteIdToObject = true)
 {
 	with (CXTypeKind)
 	{
-		if (type.kind == CXType_Pointer)
-			println(type.pointee.kind);
-		
 		if (type.kind == CXType_BlockPointer || type.isFunctionPointerType)
 			return convertFunctionPointerType(type);
 			
