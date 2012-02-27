@@ -8,6 +8,7 @@ module dstep.converter.Declaration;
 
 import clang.Cursor;
 
+import dstep.converter.Converter;
 import dstep.converter.Output;
 
 abstract class Declaration
@@ -16,7 +17,8 @@ abstract class Declaration
 	{
 		Cursor cursor;
 		Cursor parent;
-
+		
+		Converter converter;
 		Output output;
 	}
 
@@ -25,17 +27,18 @@ abstract class Declaration
 		import clang.Cursor;
 		import dstep.converter.Output;
 		
-		this (Cursor cursor, Cursor parent, Output output)
+		this (Cursor cursor, Cursor parent, Converter converter)
 		{
-			super(cursor, parent, output);
+			super(cursor, parent, converter);
 		}
 	}
 	
-	this (Cursor cursor, Cursor parent, Output output)
+	this (Cursor cursor, Cursor parent, Converter converter)
 	{
 		this.cursor = cursor;
 		this.parent = parent;
-		this.output = output;
+		this.converter = converter;
+		output = converter.output;
 	}
 	
 	abstract void convert ();

@@ -17,14 +17,18 @@ import clang.Cursor;
 import clang.Visitor;
 import clang.Util;
 
+import dstep.converter.Converter;
 import dstep.converter.Declaration;
 import dstep.converter.Output;
 import dstep.converter.Type;
 
 class ObjcInterface : Declaration
 {
-	mixin Constructors;
-	
+	this (Cursor cursor, Cursor parent, Converter converter)
+	{
+		super(cursor, parent, converter);
+	}
+
 	void convert ()
 	{
 		auto cursor = cursor.objc;
@@ -99,34 +103,11 @@ private:
 	void convertMethod (FunctionCursor func, bool classMethod = false, string name = null)
 	{
 		auto current = output.currentClass;
-
-		if (classMethod)
-			current ~= "static ";
-			
-		current ~= convertType(func.resultType);
-		current ~= " ";
-		current ~= current.getMethodName(func) ~ " (";
-
-		string[] params;
+		name = current.getMethodName(func, name);
 		
-		foreach (param ; func.parameters)
-		{
-			auto p = convertType(param.type);
-			p ~= " " ~ convertIdentifier(param.spelling);
-			params ~= p;
-		}
-		
-		current ~= params.join(",");
+		converter.func(func, name, classMethod, current);
 
-		if (func.isVariadic)
-		{
-			if (func.parameters.any)
-				current ~= ", ";
-
-			current ~= "...";
-		}
-
-		current ~= ") [";
+		current ~= '[';
 		current ~= func.spelling;
 		current ~= "];";
 		current ~= nl;
@@ -140,10 +121,6 @@ private:
 	void convertInstanceVariable (Cursor cursor)
 	{
 		auto current = output.currentClass;
-		
-		current ~= convertType(cursor.type);
-		current ~= " " ~ convertIdentifier(cursor.spelling);
-		current ~= ";";
-		current ~= nl;
+		converter.variable(cursor, current);
 	}
 }

@@ -13,13 +13,13 @@ import mambo.core.string;
 import clang.Cursor;
 import dstep.converter.Type;
 
-class Output
+class Output : String
 {
 	String before;
 	String after;
 	String imports;
 	String functions;
-	String buffer;
+	//String buffer;
 	
 	Class[] classes;
 	Class[] interfaces;
@@ -33,62 +33,30 @@ class Output
 		after = new String;
 		imports = new String;
 		functions = new String;
-		buffer = new String;
 		
 		currentClass = new Class;
 		currentInterface = new Class;
 	}
 	
-	Output opOpAssign (string op, T) (T t) if (op == "~")
-	{
-		buffer ~= t;
-		return this;
-	}
-	
-	Output opOpAssign (string op) (NewLine) if (op == "~")
-	{
-		buffer ~= '\t';
-		return this;
-	}
-	
-	Output append (T) (T t)
-	{
-		buffer ~= t;
-		return this;
-	}
-	
-	Output append () (NewLine)
-	{
-		buffer ~= '\t';
-		return this;
-	}
-	
-	Output appendnl (T) (T t)
-	{
-		buffer ~= t;
-		buffer ~= nl;
-		return this;
-	}
-	
 	@property string data ()
 	{
-		buffer ~= before.data;
-		buffer ~= imports.data;
-		buffer ~= nl;
+		this ~= before.data;
+		this ~= imports.data;
+		this ~= nl;
 		
 		foreach (cls ; classes)
-			buffer ~= cls.data;
+			this ~= cls.data;
 		
-		buffer ~= currentClass.data;
+		this ~= currentClass.data;
 		
 		foreach (e ; interfaces)
-			buffer ~= e.data;
+			this ~= e.data;
 		
-		buffer ~= currentInterface.data;
-		buffer ~= functions.data;
-		buffer ~= after.data;
+		this ~= currentInterface.data;
+		this ~= functions.data;
+		this ~= after.data;
 		
-		return buffer.data;
+		return super.data;
 	}
 	
 	string toString ()
@@ -139,17 +107,17 @@ class String
 		bool shouldIndent;
 	}
 	
-	void opOpAssign (string op, T) (T t) if (op == "~" && !is(T == NewLine))
+	String opOpAssign (string op, T) (T t) if (op == "~" && !is(T == NewLine))
 	{
-		put(t);
+		return put(t);
 	}
 	
-	void opOpAssign (string op) (NewLine) if (op == "~")
+	String opOpAssign (string op) (NewLine) if (op == "~")
 	{
-		put(nl);
+		return put(nl);
 	}
 	
-	void put (T) (T t) if (!is(T == NewLine))
+	String put (T) (T t) if (!is(T == NewLine))
 	{
 		if (shouldIndent)
 		{
@@ -158,12 +126,23 @@ class String
 		}
 
 		appender.put(t);
+		return this;
 	}
 	
-	void put () (NewLine)
+	String put () (NewLine)
 	{
 		appender.put('\n');
 		shouldIndent = indendationLevel > 0;
+		
+		return this;
+	}
+	
+	alias put append;
+
+	String appendnl (T) (T t)
+	{
+		put(t);
+		return put(nl);
 	}
 	
 	@property string data ()
