@@ -3,4 +3,5 @@
 *.o
 *.dylib
 main
-*.h
+NSObject.h
+tmp
