@@ -123,7 +123,7 @@ private:
 	
 	void handleArguments ()
 	{
-		getopt(args, std.getopt.config.caseSensitive, std.getopt.config.passThrough, "out", &output);
+		getopt(args, std.getopt.config.caseSensitive, std.getopt.config.passThrough, "o", &output);
 	}
 	
 	void handleDiagnostics ()
