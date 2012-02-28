@@ -8,6 +8,7 @@ module dstep.driver.Application;
 
 import core.stdc.stdlib : EXIT_SUCCESS, EXIT_FAILURE;
 
+import std.getopt;
 import std.stdio;
 
 import mambo.core.io;
@@ -41,6 +42,8 @@ class Application
 		Index index;
 		TranslationUnit translationUnit;
 		DiagnosticVisitor diagnostics;
+		
+		string output = "foo.d";
 	}
 	
 	int run (string[] args)
@@ -48,6 +51,7 @@ class Application
 		this.args = args;
 		
 		return debugHandleExceptions in {
+			handleArguments;
 			startConversion;
 			return ExitCode.success;
 		};
@@ -107,7 +111,7 @@ private:
 			
 		else
 		{
-			auto converter = new Converter(translationUnit);
+			auto converter = new Converter(translationUnit, output);
 			converter.convert;
 		}
 	}
@@ -115,6 +119,11 @@ private:
 	bool anyErrors ()
 	{return false;
 		return diagnostics.length > 0;
+	}
+	
+	void handleArguments ()
+	{
+		getopt(args, std.getopt.config.caseSensitive, std.getopt.config.passThrough, "out", &output);
 	}
 	
 	void handleDiagnostics ()

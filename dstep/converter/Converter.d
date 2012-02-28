@@ -6,6 +6,8 @@
  */
 module dstep.converter.Converter;
 
+import std.file;
+
 import mambo.core.io;
 import mambo.core.string;
 
@@ -25,11 +27,14 @@ class Converter
 	{
 		TranslationUnit translationUnit;
 		Output output_;
+		string outputFile;
 	}
 	
-	this (TranslationUnit translationUnit)
+	this (TranslationUnit translationUnit, string outputFile)
 	{
 		this.translationUnit = translationUnit;
+		this.outputFile = outputFile;
+
 		output_ = new Output;
 	}
 	
@@ -54,7 +59,7 @@ class Converter
 			declaration.convert;
 		}
 		
-		println(output.toString);
+		write(outputFile, output.toString);
 	}
 	
 	void variable (Cursor cursor, String context = output)
