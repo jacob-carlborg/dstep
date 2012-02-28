@@ -2,7 +2,7 @@ Given /^a test file named "([^"]*)"$/ do |file|
   Given %{a file named "test_files/#{file}.h" should exist}
 end
 
-Given /^a expected file named "([^"]*)"$/ do |arg1|
+Given /^a expected file named "([^"]*)"$/ do |file|
   Given %{a file named "test_files/#{file}.d" should exist}
 end
 
