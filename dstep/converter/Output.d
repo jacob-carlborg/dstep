@@ -67,7 +67,16 @@ class Output : String
 
 class Class : String
 {
+	String methods;
+	String variables;
+	
 	private bool[string] mangledMethods;
+	
+	this ()
+	{
+		methods = new String;
+		variables = new String;
+	}
 	
 	string getMethodName (FunctionCursor func, string name = "")
 	{
@@ -148,6 +157,11 @@ class String
 	@property string data ()
 	{
 		return appender.data;
+	}
+	
+	@property bool isEmpty ()
+	{
+		return appender.data.isEmpty;
 	}
 	
 	Indendation indent ()
