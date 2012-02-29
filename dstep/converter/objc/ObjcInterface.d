@@ -102,15 +102,19 @@ private:
 	
 	void convertMethod (FunctionCursor func, bool classMethod = false, string name = null)
 	{
-		auto current = output.currentClass;
-		name = current.getMethodName(func, name);
+		auto method = new String;
+		auto cls = output.currentClass;
 		
-		converter.func(func, name, classMethod, current);
+		name = cls.getMethodName(func, name);
+		
+		converter.func(func, name, classMethod, method);
 
-		current ~= '[';
-		current ~= func.spelling;
-		current ~= "];";
-		current ~= nl;
+		method ~= '[';
+		method ~= func.spelling;
+		method ~= "];";
+		
+		auto methods = classMethod ? cls.staticMethods : cls.instanceMethods;
+		methods ~= method;
 	}
 	
 	void convertProperty (FunctionCursor cursor)

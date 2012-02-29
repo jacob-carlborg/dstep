@@ -65,18 +65,19 @@ class Output : String
 	}
 }
 
-class Class : String
+class Class
 {
-	String methods;
-	String variables;
+	String[] instanceMethods;
+	String[] staticMethods;
+	
+	String[] instanceVariables;
+	String[] staticVariables;
+	
+	string name;
+	string[] interfaces;
+	string superclass;
 	
 	private bool[string] mangledMethods;
-	
-	this ()
-	{
-		methods = new String;
-		variables = new String;
-	}
 	
 	string getMethodName (FunctionCursor func, string name = "")
 	{
@@ -104,6 +105,16 @@ class Class : String
 			
 		return mangledName;
 	}
+	
+	@property string data ()
+	{
+		auto data = new String;
+		data.put("class ", name, nl, '{');
+		
+		data ~= staticVariables.join("\n");
+		
+		return data.data;
+	}
 }
 
 class String
@@ -126,7 +137,7 @@ class String
 		return put(nl);
 	}
 	
-	String put (T) (T t) if (!is(T == NewLine))
+	String put (Args...) (Args args)// if (!is(T == NewLine))
 	{
 		if (shouldIndent)
 		{
@@ -134,7 +145,15 @@ class String
 			shouldIndent = false;
 		}
 
-		appender.put(t);
+		foreach (arg ; args)
+		{
+			static if (is(typeof(arg) == NewLine))
+				appender.put('\n');
+				
+			else
+				appender.put(arg);
+		}
+
 		return this;
 	}
 	
