@@ -6,7 +6,8 @@
  */
 module dstep.converter.Output;
 
-static import std.array;
+import std.algorithm;
+import std.array;
 
 import mambo.core.string;
 
@@ -108,12 +109,29 @@ class Class
 	
 	@property string data ()
 	{
-		auto data = new String;
-		data.put("class ", name, nl, '{');
+		auto cls = new String;
 		
-		data ~= staticVariables.join("\n");
+		void appendData (String[] data, String[] next = null)
+		{
+			auto newData = join(map!(e => e.data)(data), "\n");
+			cls ~= newData;
+			
+			if (newData.isPresent && next.any)
+				cls ~= nl;
+		}
 		
-		return data.data;
+		cls.put("class ", name, nl, '{', nl);
+		
+		cls.indent in {
+			appendData(staticVariables, instanceVariables);
+			appendData(instanceVariables, staticMethods);
+			appendData(staticMethods, instanceMethods);
+			appendData(instanceMethods);
+		};
+		
+		cls ~= '}';
+		
+		return cls.data;
 	}
 }
 

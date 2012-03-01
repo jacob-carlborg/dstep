@@ -68,14 +68,10 @@ private:
 		block.dg = (void delegate () dg) {
 			output.classes ~= output.currentClass;
 			output.currentClass = new Class;
-			output.currentClass ~= "class ";
-			output.currentClass ~= convertIdentifier(name);
+			output.currentClass.name = convertIdentifier(name);
 			
 			if (superClassName.isPresent)
-			{
-				output.currentClass ~= " : ";
-				output.currentClass ~= convertIdentifier(superClassName);
-			}
+				output.currentClass.superclass ~= convertIdentifier(superClassName);
 			
 			classInterfaceHelper(interfaces, output.currentClass, dg);
 		};
@@ -85,19 +81,7 @@ private:
 	
 	void classInterfaceHelper (string[] interfaces, Class current, void delegate () dg)
 	{
-		if (interfaces.any)
-		{
-			current ~= " : ";
-			current ~= interfaces.join(", ");
-		}
-
-		current ~= nl;
-		current ~= "{";
-		current ~= nl;
-		current.indent in { dg(); };
-		current ~= "}";
-		current ~= nl;
-		current ~= nl;
+		dg();
 	}
 	
 	void convertMethod (FunctionCursor func, bool classMethod = false, string name = null)
@@ -124,7 +108,8 @@ private:
 	
 	void convertInstanceVariable (Cursor cursor)
 	{
-		auto current = output.currentClass;
-		converter.variable(cursor, current);
+		auto var = new String;
+		converter.variable(cursor, var);
+		output.currentClass.instanceVariables ~= var;
 	}
 }
