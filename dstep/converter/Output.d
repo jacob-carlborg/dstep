@@ -9,7 +9,7 @@ module dstep.converter.Output;
 import std.algorithm;
 import std.array;
 
-import mambo.core.string;
+import mambo.core._;
 
 import clang.Cursor;
 import dstep.converter.Type;
@@ -45,15 +45,9 @@ class Output : String
 		this ~= imports.data;
 		this ~= nl;
 		
-		foreach (cls ; classes)
-			this ~= cls.data;
-		
-		this ~= currentClass.data;
-		
-		foreach (e ; interfaces)
-			this ~= e.data;
-		
-		this ~= currentInterface.data;
+		this ~= join(map!(e => e.data)(classes), "\n\n");
+		this ~= join(map!(e => e.data)(interfaces), "\n\n");
+
 		this ~= functions.data;
 		this ~= after.data;
 		
@@ -113,23 +107,23 @@ class Class
 		
 		void appendData (String[] data, String[] next = null)
 		{
-			auto newData = join(map!(e => e.data)(data), "\n");
+			auto newData = join(map!(e => e.data)(data), "\n\t");
 			cls ~= newData;
 			
-			if (newData.isPresent && next.any)
-				cls ~= nl;
+			if (newData.isPresent && next.isPresent)
+				cls ~= "\n\n";
 		}
 		
 		cls.put("class ", name, nl, '{', nl);
 		
 		cls.indent in {
 			appendData(staticVariables, instanceVariables);
-			appendData(instanceVariables, staticMethods);
+			appendData(instanceVariables, staticMethods);println(instanceMethods.length);
 			appendData(staticMethods, instanceMethods);
 			appendData(instanceMethods);
 		};
 		
-		cls ~= '}';
+		cls ~= "\n}";
 		
 		return cls.data;
 	}

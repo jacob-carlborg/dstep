@@ -59,7 +59,8 @@ class Converter
 			declaration.convert;
 		}
 		
-		write(outputFile, output.toString);
+		println(output.data);
+		//write(outputFile, output.toString);
 	}
 	
 	void variable (Cursor cursor, String context = output)
@@ -72,6 +73,9 @@ class Converter
 	
 	void func (FunctionCursor func, string name, bool isStatic = false, String context = output)
 	{
+		if (isStatic)
+			context ~= "static ";
+		
 		context ~= convertType(func.resultType);
 		context ~= ' ';
 		context ~= convertIdentifier(name) ~ " (";

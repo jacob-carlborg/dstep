@@ -8,9 +8,7 @@ module dstep.converter.objc.ObjcInterface;
 
 import std.string;
 
-import mambo.core.io;
-import mambo.core.Block;
-import mambo.core.string;
+import mambo.core._;
 
 import clang.c.index;
 import clang.Cursor;
@@ -66,8 +64,8 @@ private:
 		Block block;
 		
 		block.dg = (void delegate () dg) {
-			output.classes ~= output.currentClass;
 			output.currentClass = new Class;
+			output.classes ~= output.currentClass;
 			output.currentClass.name = convertIdentifier(name);
 			
 			if (superClassName.isPresent)
@@ -93,12 +91,16 @@ private:
 		
 		converter.func(func, name, classMethod, method);
 
-		method ~= '[';
+		method ~= " [";
 		method ~= func.spelling;
 		method ~= "];";
 		
-		auto methods = classMethod ? cls.staticMethods : cls.instanceMethods;
-		methods ~= method;
+		
+		if (classMethod)
+			cls.staticMethods ~= method;
+			
+		else
+			cls.instanceMethods ~= method;
 	}
 	
 	void convertProperty (FunctionCursor cursor)
