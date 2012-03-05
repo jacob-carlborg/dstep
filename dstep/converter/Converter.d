@@ -58,9 +58,8 @@ class Converter
 
 			declaration.convert;
 		}
-		
-		println(output.data);
-		//write(outputFile, output.toString);
+
+		write(outputFile, output.toString);
 	}
 	
 	void variable (Cursor cursor, String context = output)

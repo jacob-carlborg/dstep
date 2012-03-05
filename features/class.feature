@@ -1,4 +1,3 @@
-@announce
 Feature: Class
   
   Scenario: Convert classes
