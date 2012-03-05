@@ -109,16 +109,19 @@ class Class
 		{
 			auto newData = join(map!(e => e.data)(data), "\n\t");
 			cls ~= newData;
-			
+
 			if (newData.isPresent && next.isPresent)
-				cls ~= "\n\n";
+			{
+				cls ~= nl;
+				cls ~= nl;
+			}
 		}
 		
 		cls.put("class ", name, nl, '{', nl);
 		
 		cls.indent in {
 			appendData(staticVariables, instanceVariables);
-			appendData(instanceVariables, staticMethods);println(instanceMethods.length);
+			appendData(instanceVariables, staticMethods);
 			appendData(staticMethods, instanceMethods);
 			appendData(instanceMethods);
 		};
