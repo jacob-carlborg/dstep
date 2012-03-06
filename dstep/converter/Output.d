@@ -20,7 +20,8 @@ class Output : String
 	String after;
 	String imports;
 	String functions;
-	//String buffer;
+	
+	String[] variables;
 	
 	Class[] classes;
 	Class[] interfaces;
@@ -45,6 +46,7 @@ class Output : String
 		this ~= imports.data;
 		this ~= nl;
 		
+		this ~= join(map!(e => e.data)(variables), "\n\n");
 		this ~= join(map!(e => e.data)(classes), "\n\n");
 		this ~= join(map!(e => e.data)(interfaces), "\n\n");
 

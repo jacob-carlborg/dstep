@@ -47,16 +47,19 @@ class Converter
 	{
 		foreach (cursor, parent ; translationUnit.declarations)
 		{
-			Declaration declaration;
-
 			with (CXCursorKind)
 				switch (cursor.kind)
 				{
-					case CXCursor_ObjCInterfaceDecl: declaration = new ObjcInterface(cursor, parent, this); break;
+					case CXCursor_ObjCInterfaceDecl: (new ObjcInterface(cursor, parent, this)).convert; break;
+					
+					case CXCursor_VarDecl:
+						auto var = new String;
+						variable(cursor, var);
+						output.variables ~= var;
+					break;
+					
 					default: continue;
 				}
-
-			declaration.convert;
 		}
 
 		write(outputFile, output.toString);
@@ -67,7 +70,6 @@ class Converter
 		context ~= convertType(cursor.type);
 		context ~= " " ~ convertIdentifier(cursor.spelling);
 		context ~= ";";
-		context ~= nl;
 	}
 	
 	void func (FunctionCursor func, string name, bool isStatic = false, String context = output)
