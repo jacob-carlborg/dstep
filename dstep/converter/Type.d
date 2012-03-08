@@ -35,6 +35,12 @@ string convertType (Type type, bool rewriteIdToObject = true)
 		switch (type.kind)
 		{
 			case CXType_Pointer: return convertType(type.pointee) ~ "*";
+
+			case CXType_Record:
+			case CXType_Enum:
+			case CXType_Typedef:
+				return type.spelling;
+
 			default: return convertType(type.kind, rewriteIdToObject);
 		}
 	}
