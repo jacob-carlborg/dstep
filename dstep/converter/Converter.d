@@ -58,6 +58,13 @@ class Converter
 						output.variables ~= var;
 					break;
 					
+					case CXCursor_FunctionDecl:
+						auto f = new String;
+						func(cursor.func, cursor.spelling, false, f);
+						f ~= ";";
+						output.functions ~= f;
+					break;
+					
 					default: continue;
 				}
 		}

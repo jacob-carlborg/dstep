@@ -19,7 +19,7 @@ class Output : String
 	String before;
 	String after;
 	String imports;
-	String functions;
+	String[] functions;
 	
 	String[] variables;
 	
@@ -34,7 +34,6 @@ class Output : String
 		before = new String;
 		after = new String;
 		imports = new String;
-		functions = new String;
 		
 		currentClass = new Class;
 		currentInterface = new Class;
@@ -50,7 +49,7 @@ class Output : String
 		this ~= join(map!(e => e.data)(classes), "\n\n");
 		this ~= join(map!(e => e.data)(interfaces), "\n\n");
 
-		this ~= functions.data;
+		this ~= join(map!(e => e.data)(functions), "\n");
 		this ~= after.data;
 		
 		return super.data;
