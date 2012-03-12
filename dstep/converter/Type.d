@@ -56,7 +56,7 @@ string convertType (CXTypeKind kind, bool rewriteIdToObject = true)
 			case CXType_Void: return "void";
 			case CXType_Bool: return "bool";
 			case CXType_Char_U: return "";
-			case CXType_UChar: return "";
+			case CXType_UChar: return "byte";
 			case CXType_Char16: return "wchar";
 			case CXType_Char32: return "dchar";
 			case CXType_UShort: return "ushort";
@@ -74,7 +74,7 @@ string convertType (CXTypeKind kind, bool rewriteIdToObject = true)
 			case CXType_Int128: return "";
 			case CXType_Float: return "float";
 			case CXType_Double: return "double";
-			case CXType_LongDouble: return "";
+			case CXType_LongDouble: return "real";
 			case CXType_NullPtr: return "null";
 			case CXType_Overload: return "";
 			case CXType_Dependent: return "";
