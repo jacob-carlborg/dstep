@@ -15,6 +15,8 @@ import mambo.core.io;
 import mambo.util.Singleton;
 import mambo.util.Use;
 
+import clang.c.index;
+
 import clang.Index;
 import clang.TranslationUnit;
 
@@ -105,11 +107,8 @@ private:
 		
 		scope (exit)
 			clean;
-
-		if (anyErrors)
-			handleDiagnostics;
 			
-		else
+		if (handleDiagnostics)
 		{
 			auto converter = new Converter(translationUnit, output);
 			converter.convert;
@@ -117,7 +116,7 @@ private:
 	}
 	
 	bool anyErrors ()
-	{return false;
+	{
 		return diagnostics.length > 0;
 	}
 	
@@ -126,10 +125,22 @@ private:
 		getopt(args, std.getopt.config.caseSensitive, std.getopt.config.passThrough, "o", &output);
 	}
 	
-	void handleDiagnostics ()
-	{		
+	bool handleDiagnostics ()
+	{
+	    bool b = true;
+	    	
 		foreach (diag ; diagnostics)
-			writeln(stderr, diag.format);
+		{
+		    auto severity = diag.severity;
+		    
+		    with (CXDiagnosticSeverity)
+		        if (b)
+	                b = !(severity == CXDiagnostic_Error || severity == CXDiagnostic_Fatal);
+
+	        writeln(stderr, diag.format);
+		}
+
+		return b;
 	}
 	
 	void clean ()

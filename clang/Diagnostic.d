@@ -17,4 +17,9 @@ struct Diagnostic
 	{
 		return toD(clang_formatDiagnostic(cx, options));
 	}
+	
+	@property CXDiagnosticSeverity severity ()
+	{
+	    return clang_getDiagnosticSeverity(cx);
+	}
 }
