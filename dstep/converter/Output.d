@@ -58,7 +58,7 @@ class Output : String
 	
 	string toString ()
 	{
-		return data;
+		return data[0 .. $ - 2];
 	}
 
 private:

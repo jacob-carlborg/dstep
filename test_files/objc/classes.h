@@ -1,2 +1,2 @@
-@interface Class
+@interface Foo
 @end
