@@ -1,5 +1,3 @@
-bool x1;
-bool x2;
 c_long x3;
 long x4;
 char x5;

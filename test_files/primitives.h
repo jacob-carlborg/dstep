@@ -1,5 +1,3 @@
-BOOL x1;
-bool x2;
 long x3;
 long long x4;
 char x5;
