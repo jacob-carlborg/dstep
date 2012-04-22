@@ -13,6 +13,7 @@ import mambo.core.io;
 import clang.c.index;
 import clang.Visitor;
 import clang.Diagnostic;
+import clang.File;
 import clang.Index;
 import clang.UnsavedFile;
 import clang.Util;
@@ -50,6 +51,11 @@ struct TranslationUnit
 	{
 		return DeclarationVisitor(clang_getTranslationUnitCursor(cx));
 	}
+	
+    File file (string filename)
+    {
+        return File(clang_getFile(cx, filename.toStringz));
+    }
 }
 
 struct DiagnosticVisitor

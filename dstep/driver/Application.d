@@ -11,7 +11,7 @@ import core.stdc.stdlib : EXIT_SUCCESS, EXIT_FAILURE;
 import std.getopt;
 import std.stdio;
 
-import mambo.core.io;
+import mambo.core._;
 import mambo.util.Singleton;
 import mambo.util.Use;
 
@@ -40,6 +40,7 @@ class Application
 		alias ExitCode delegate () Runnable;	
 		
 		string[] args;
+		string[] inputFiles;
 		
 		Index index;
 		TranslationUnit translationUnit;
@@ -98,7 +99,7 @@ private:
 	void startConversion ()
 	{
 		index = Index(false, false);
-		translationUnit = TranslationUnit.parse(index, null, args);
+		translationUnit = TranslationUnit.parse(index, inputFiles.first, args);
 		
 		if (!translationUnit.isValid)
 			throw new DStepException("An unknown error occurred");
@@ -110,7 +111,7 @@ private:
 			
 		if (handleDiagnostics)
 		{
-			auto converter = new Converter(translationUnit, output);
+			auto converter = new Converter(inputFiles.first, translationUnit, output);
 			converter.convert;
 		}
 	}
@@ -123,24 +124,30 @@ private:
 	void handleArguments ()
 	{
 		getopt(args, std.getopt.config.caseSensitive, std.getopt.config.passThrough, "o", &output);
+
+        foreach (arg ; args[1 .. $])
+            if (arg.first != '-')
+                inputFiles ~= arg;
+
+        args = args.remove(inputFiles);
 	}
 	
 	bool handleDiagnostics ()
 	{
-	    bool b = true;
+	    bool convert = true;
 	    	
 		foreach (diag ; diagnostics)
 		{
 		    auto severity = diag.severity;
 		    
 		    with (CXDiagnosticSeverity)
-		        if (b)
-	                b = !(severity == CXDiagnostic_Error || severity == CXDiagnostic_Fatal);
+		        if (convert)
+	                convert = !(severity == CXDiagnostic_Error || severity == CXDiagnostic_Fatal);
 
 	        writeln(stderr, diag.format);
 		}
 
-		return b;
+		return convert;
 	}
 	
 	void clean ()

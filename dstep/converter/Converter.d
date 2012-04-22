@@ -13,6 +13,7 @@ import mambo.core.string;
 
 import clang.c.index;
 import clang.Cursor;
+import clang.File;
 import clang.TranslationUnit;
 import clang.Util;
 
@@ -27,13 +28,18 @@ class Converter
 	{
 		TranslationUnit translationUnit;
 		Output output_;
+
 		string outputFile;
+        string inputFilename;
+        File inputFile;
 	}
 	
-	this (TranslationUnit translationUnit, string outputFile)
+	this (string inputFilename, TranslationUnit translationUnit, string outputFile)
 	{
 		this.translationUnit = translationUnit;
 		this.outputFile = outputFile;
+        this.inputFilename = inputFilename;
+        inputFile = translationUnit.file(inputFilename);
 
 		output_ = new Output;
 	}
@@ -47,6 +53,9 @@ class Converter
 	{
 		foreach (cursor, parent ; translationUnit.declarations)
 		{
+		    if (skipDeclaration(cursor))
+		        continue;
+		    
 			with (CXCursorKind)
 				switch (cursor.kind)
 				{
@@ -109,6 +118,13 @@ class Converter
 		
 		context ~= ')';
 	}
+	
+private
+
+    bool skipDeclaration (Cursor cursor)
+    {
+        return inputFile != cursor.location.spelling.file;
+    }
 }
 
 string convertIdentifier (string str)
