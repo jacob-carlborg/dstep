@@ -6,8 +6,6 @@
  */
 module dstep.converter.Output;
 
-import std.array;
-
 import mambo.core._;
 
 import clang.Cursor;
@@ -58,7 +56,7 @@ class Output : String
 	
 	string toString ()
 	{
-		return data[0 .. $ - 2];
+		return data.strip('\n');
 	}
 
 private:

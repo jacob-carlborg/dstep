@@ -89,7 +89,7 @@ private:
 		
 		name = cls.getMethodName(func, name);
 		
-		converter.func(func, name, classMethod, method);
+		convertFunction(func, name, method, classMethod);
 
 		method ~= " [";
 		method ~= func.spelling;

@@ -69,7 +69,8 @@ class Converter
 					
 					case CXCursor_FunctionDecl:
 						auto f = new String;
-						func(cursor.func, cursor.spelling, false, f);
+						auto name = convertIdentifier(cursor.spelling);
+						convertFunction(cursor.func, name, f);
 						f ~= ";";
 						output.functions ~= f;
 					break;
@@ -88,47 +89,70 @@ class Converter
 		context ~= ";";
 	}
 	
-	void func (FunctionCursor func, string name, bool isStatic = false, String context = output)
-	{
-		if (isStatic)
-			context ~= "static ";
-		
-		context ~= convertType(func.resultType);
-		context ~= ' ';
-		context ~= convertIdentifier(name) ~ " (";
-
-		string[] params;
-		
-		foreach (param ; func.parameters)
-		{
-			auto p = convertType(param.type);
-			auto paramSpelling = param.spelling;
-			
-			if (paramSpelling.any)
-			    p ~= " " ~ convertIdentifier(paramSpelling);
-
-			params ~= p;
-		}
-		
-		context ~= params.join(", ");
-
-		if (func.isVariadic)
-		{
-			if (func.parameters.any)
-				context ~= ", ";
-
-			context ~= "...";
-		}
-		
-		context ~= ')';
-	}
-	
 private
 
     bool skipDeclaration (Cursor cursor)
     {
         return inputFile != cursor.location.spelling.file;
     }
+}
+
+String convertFunction (FunctionCursor func, string name, String context, bool isStatic = false)
+{
+	if (isStatic)
+		context ~= "static ";
+		
+	Parameter[] params;
+	params.reserve(func.type.func.arguments.length);
+	
+	foreach (param ; func.parameters)
+	{
+		auto type = convertType(param.type);
+		auto spelling = param.spelling;
+		
+		params ~= Parameter(type, spelling);
+	}
+	
+	auto resultType = convertType(func.resultType);
+
+	return convertFunction(resultType, name, params, func.isVariadic, context);
+}
+
+package struct Parameter
+{
+	string type;
+	string name;
+}
+
+package String convertFunction (string result, string name, Parameter[] parameters, bool variadic, String context)
+{
+	context ~= result;
+	context ~= ' ';
+	context ~= name ~ " (";
+
+	string[] params;
+	
+	foreach (param ; parameters)
+	{
+		params ~= param.type;
+		
+		if (param.name.any)
+			params[$ - 1] ~= " " ~ param.name.any;
+	}
+	
+	context ~= params.join(", ");
+
+	if (variadic)
+	{
+		if (parameters.any)
+			context ~= ", ";
+
+		context ~= "...";
+	}
+	
+	context ~= ')';
+	
+	return context;
 }
 
 string convertIdentifier (string str)

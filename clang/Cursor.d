@@ -72,6 +72,11 @@ struct Cursor
 	{
 		return Visitor(this);
 	}
+	
+	equals_t opEquals (const ref Cursor cursor) const
+	{
+		return clang_equalCursors(cast(CXCursor) cursor.cx, cast(CXCursor) cx) == 0;
+	}
 }
 
 struct ObjcCursor
@@ -121,7 +126,7 @@ struct FunctionCursor
 	
 	@property bool isVariadic ()
 	{
-		return clang_isFunctionTypeVariadic(type.cx) == 1;
+		return type.func.isVariadic;
 	}
 	
 	@property ParamVisitor parameters ()

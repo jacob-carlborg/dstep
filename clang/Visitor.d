@@ -139,6 +139,6 @@ struct ParamVisitor
 	
 	@property bool any ()
 	{
-		return clang_getNumArgTypes(Cursor(visitor.cursor).type) > 0;
+	    return Cursor(visitor.cursor).type.func.arguments.length > 0;
 	}
 }

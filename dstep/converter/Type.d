@@ -15,6 +15,7 @@ import clang.c.index;
 import clang.Type;
 
 import dstep.converter.Converter;
+import dstep.converter.Output;
 
 string convertType (Type type, bool rewriteIdToObject = true)
 {
@@ -34,7 +35,7 @@ string convertType (Type type, bool rewriteIdToObject = true)
 
 		switch (type.kind)
 		{
-			case CXType_Pointer: return convertType(type.pointee) ~ "*";
+			case CXType_Pointer: return convertType(type.pointeeType) ~ "*";
 
 			case CXType_Typedef: return convertTypedef(type);
 
@@ -129,7 +130,17 @@ string convertType (CXTypeKind kind, bool rewriteIdToObject = true)
 
 string convertFunctionPointerType (Type type)
 {
-	return "<unimplemented>";
+	auto func = type.pointeeType.func;
+
+	Parameter[] params;
+	params.reserve(func.arguments.length);
+	
+	foreach (type ; func.arguments)
+		params ~= Parameter(convertType(type));
+
+	auto resultType = convertType(func.resultType);
+	
+	return convertFunction(resultType, "function", params, func.isVariadic, new String).data;
 }
 
 string convertObjCObjectPointerType (Type type)
@@ -139,7 +150,7 @@ in
 }
 body
 {
-	auto pointee = type.pointee;
+	auto pointee = type.pointeeType;
 
 	if (pointee.spelling == "Protocol")
 		return "Protocol*";
