@@ -102,11 +102,15 @@ class Converter
 		foreach (param ; func.parameters)
 		{
 			auto p = convertType(param.type);
-			p ~= " " ~ convertIdentifier(param.spelling);
+			auto paramSpelling = param.spelling;
+			
+			if (paramSpelling.any)
+			    p ~= " " ~ convertIdentifier(paramSpelling);
+
 			params ~= p;
 		}
 		
-		context ~= params.join(",");
+		context ~= params.join(", ");
 
 		if (func.isVariadic)
 		{
