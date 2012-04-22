@@ -86,7 +86,7 @@ string convertType (CXTypeKind kind, bool rewriteIdToObject = true)
 			case CXType_Void: return "void";
 			case CXType_Bool: return "bool";
 			case CXType_Char_U: return "<unimplemented>";
-			case CXType_UChar: return "byte";
+			case CXType_UChar: return "ubyte";
 			case CXType_Char16: return "wchar";
 			case CXType_Char32: return "dchar";
 			case CXType_UShort: return "ushort";

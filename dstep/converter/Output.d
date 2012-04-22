@@ -6,7 +6,6 @@
  */
 module dstep.converter.Output;
 
-import std.algorithm;
 import std.array;
 
 import mambo.core._;
@@ -43,13 +42,15 @@ class Output : String
 	{
 		this ~= before.data;
 		this ~= imports.data;
-		this ~= nl;
 		
-		this ~= join(map!(e => e.data)(variables), "\n\n");
-		this ~= join(map!(e => e.data)(classes), "\n\n");
-		this ~= join(map!(e => e.data)(interfaces), "\n\n");
+		if (imports.any)
+		    this ~= nl;
+		
+		addDeclarations(variables);
+		addDeclarations(classes);
+		addDeclarations(interfaces);
+		addDeclarations(functions);
 
-		this ~= join(map!(e => e.data)(functions), "\n");
 		this ~= after.data;
 		
 		return super.data;
@@ -59,6 +60,24 @@ class Output : String
 	{
 		return data;
 	}
+
+private:
+
+    void addDeclarations (String[] declarations)
+    {
+        this ~= declarations.map!(e => e.data).join("\n");
+        
+        if (declarations.any)
+            this ~= "\n\n";
+    }
+    
+    void addDeclarations (Class[] declarations)
+    {
+        this ~= declarations.map!(e => e.data).join("\n");
+        
+        if (declarations.any)
+            this ~= "\n\n";
+    }
 }
 
 class Class
