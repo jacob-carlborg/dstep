@@ -59,12 +59,12 @@ private:
 		return interfaces;
 	}
 	
-	Block writeClass (string name, string superClassName, string[] interfaces)
+	Block!() writeClass (string name, string superClassName, string[] interfaces)
 	{
-		Block block;
+		Block!() block;
 		
 		block.dg = (void delegate () dg) {
-			output.currentClass = new Class;
+			output.currentClass = new ClassData;
 			output.classes ~= output.currentClass;
 			output.currentClass.name = convertIdentifier(name);
 			
@@ -77,7 +77,7 @@ private:
 		return block;
 	}
 	
-	void classInterfaceHelper (string[] interfaces, Class current, void delegate () dg)
+	void classInterfaceHelper (string[] interfaces, ClassData current, void delegate () dg)
 	{
 		dg();
 	}

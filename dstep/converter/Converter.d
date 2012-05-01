@@ -20,6 +20,7 @@ import clang.Util;
 import dstep.converter.Declaration;
 import dstep.converter.Output;
 import dstep.converter.objc.ObjcInterface;
+import dstep.converter.Struct;
 import dstep.converter.Type;
 
 class Converter
@@ -59,14 +60,12 @@ class Converter
 			with (CXCursorKind)
 				switch (cursor.kind)
 				{
-					case CXCursor_ObjCInterfaceDecl: (new ObjcInterface(cursor, parent, this)).convert; break;
+					case CXCursor_ObjCInterfaceDecl:
+						(new ObjcInterface(cursor, parent, this)).convert;
+					break;
 					
 					case CXCursor_VarDecl:
-					{
-						auto var = new String;
-						variable(cursor, var);
-						output.variables ~= var;
-					}
+						output.variables ~= variable(cursor, new String);
 					break;
 					
 					case CXCursor_FunctionDecl:
@@ -83,6 +82,8 @@ class Converter
 						output.typedefs ~= typedef_(cursor, new String);
 					break;
 					
+					case CXCursor_StructDecl: (new Struct(cursor, parent, this)).convert; break;
+					
 					default: continue;
 				}
 		}
@@ -90,11 +91,13 @@ class Converter
 		write(outputFile, output.toString);
 	}
 	
-	void variable (Cursor cursor, String context = output)
+	String variable (Cursor cursor, String context = output)
 	{
 		context ~= convertType(cursor.type);
 		context ~= " " ~ convertIdentifier(cursor.spelling);
 		context ~= ";";
+		
+		return context;
 	}
 	
 	String typedef_ (Cursor cursor, String context = output)

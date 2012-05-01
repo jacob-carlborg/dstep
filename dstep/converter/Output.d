@@ -21,11 +21,12 @@ class Output : String
 	String[] variables;
 	String[] typedefs;
 	
-	Class[] classes;
-	Class[] interfaces;
+	ClassData[] classes;
+	ClassData[] interfaces;
+	StructData[] structs;
 	
-	Class currentClass;
-	Class currentInterface;
+	ClassData currentClass;
+	ClassData currentInterface;
 	
 	this ()
 	{
@@ -33,8 +34,8 @@ class Output : String
 		after = new String;
 		imports = new String;
 		
-		currentClass = new Class;
-		currentInterface = new Class;
+		currentClass = new ClassData;
+		currentInterface = new ClassData;
 	}
 	
 	@property string data ()
@@ -47,6 +48,7 @@ class Output : String
 		
 		addDeclarations(typedefs);
 		addDeclarations(variables);
+		addDeclarations(structs);
 		addDeclarations(classes);
 		addDeclarations(interfaces);
 		addDeclarations(functions);
@@ -70,8 +72,16 @@ private:
         if (declarations.any)
             this ~= "\n\n";
     }
-    
-    void addDeclarations (Class[] declarations)
+
+    void addDeclarations (StructData[] declarations)
+    {
+        this ~= declarations.map!(e => e.data).join("\n");
+        
+        if (declarations.any)
+            this ~= "\n\n";
+    }
+
+    void addDeclarations (ClassData[] declarations)
     {
         this ~= declarations.map!(e => e.data).join("\n");
         
@@ -80,12 +90,43 @@ private:
     }
 }
 
-class Class
+class StructData
+{
+	string name;
+
+	String[] instanceVariables;
+	
+	@property string data ()
+	{
+		auto context = new String;
+		
+		context.put("struct ", name, nl, '{', nl);
+		
+		context.indent in {
+			addDeclarations(context, instanceVariables);
+		};
+		
+		context ~= "\n}";
+		
+		return context.data.strip('\n');
+	}
+	
+protected:
+
+	void addDeclarations (String context, String[] declarations)
+    {
+        context ~= declarations.map!(e => e.data).join("\n");
+
+        if (declarations.any)
+            context ~= "\n\n";
+    }
+}
+
+class ClassData : StructData
 {
 	String[] instanceMethods;
 	String[] staticMethods;
 	
-	String[] instanceVariables;
 	String[] staticVariables;
 	
 	string name;
@@ -125,30 +166,19 @@ class Class
 	{
 		auto cls = new String;
 		
-		void appendData (String[] data, String[] next = null)
-		{
-			auto newData = join(map!(e => e.data)(data), "\n\t");
-			cls ~= newData;
-
-			if (newData.isPresent && next.isPresent)
-			{
-				cls ~= nl;
-				cls ~= nl;
-			}
-		}
-		
 		cls.put("class ", name, nl, '{', nl);
 		
 		cls.indent in {
-			appendData(staticVariables, instanceVariables);
-			appendData(instanceVariables, staticMethods);
-			appendData(staticMethods, instanceMethods);
-			appendData(instanceMethods);
+			addDeclarations(cls, typedefs);
+			addDeclarations(cls, staticVariables);
+			addDeclarations(cls, instanceVariables);
+			addDeclarations(cls, staticMethods);
+			addDeclarations(cls, instanceMethods);
 		};
 		
 		cls ~= "\n}";
 		
-		return cls.data;
+		return cls.data.strip('\n');
 	}
 }
 
