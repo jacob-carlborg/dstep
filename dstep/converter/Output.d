@@ -19,6 +19,7 @@ class Output : String
 	String[] functions;
 	
 	String[] variables;
+	String[] typedefs;
 	
 	Class[] classes;
 	Class[] interfaces;
@@ -44,6 +45,7 @@ class Output : String
 		if (imports.any)
 		    this ~= nl;
 		
+		addDeclarations(typedefs);
 		addDeclarations(variables);
 		addDeclarations(classes);
 		addDeclarations(interfaces);

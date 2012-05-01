@@ -1354,7 +1354,7 @@ enum CXCursorKind {
   /** \brief An Objective-C @implementation for a category. */
   CXCursor_ObjCCategoryImplDecl          = 19,
   /** \brief A alias */
-  CXCursor_aliasDecl                   = 20,
+  CXCursor_TypedefDecl                   = 20,
   /** \brief A C++ class method. */
   CXCursor_CXXMethod                     = 21,
   /** \brief A C++ namespace. */

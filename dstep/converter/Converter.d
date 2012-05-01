@@ -62,17 +62,25 @@ class Converter
 					case CXCursor_ObjCInterfaceDecl: (new ObjcInterface(cursor, parent, this)).convert; break;
 					
 					case CXCursor_VarDecl:
+					{
 						auto var = new String;
 						variable(cursor, var);
 						output.variables ~= var;
+					}
 					break;
 					
 					case CXCursor_FunctionDecl:
+					{
 						auto f = new String;
 						auto name = convertIdentifier(cursor.spelling);
 						convertFunction(cursor.func, name, f);
 						f ~= ";";
 						output.functions ~= f;
+					}
+					break;
+					
+					case CXCursor_TypedefDecl:
+						output.typedefs ~= typedef_(cursor, new String);
 					break;
 					
 					default: continue;
@@ -87,6 +95,16 @@ class Converter
 		context ~= convertType(cursor.type);
 		context ~= " " ~ convertIdentifier(cursor.spelling);
 		context ~= ";";
+	}
+	
+	String typedef_ (Cursor cursor, String context = output)
+	{
+		context ~= "alias ";
+		context ~= convertType(cursor.type.canonicalType);
+		context ~= " " ~ cursor.spelling;
+		context ~= ";";
+		
+		return context;
 	}
 	
 private
