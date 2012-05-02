@@ -124,7 +124,9 @@ String convertFunction (FunctionCursor func, string name, String context, bool i
 		context ~= "static ";
 		
 	Parameter[] params;
-	params.reserve(func.type.func.arguments.length);
+
+	if (func.type.isValid) // This will be invalid of Objective-C methods
+		params.reserve(func.type.func.arguments.length);
 	
 	foreach (param ; func.parameters)
 	{

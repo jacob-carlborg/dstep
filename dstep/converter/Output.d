@@ -113,10 +113,19 @@ protected:
 
 	void addDeclarations (String context, String[] declarations)
     {
-        context ~= declarations.map!(e => e.data).join("\n");
+		foreach (i, e ; declarations)
+		{
+			if (i != 0)
+				context ~= nl;
+
+			context ~= e.data;
+		}
 
         if (declarations.any)
-            context ~= "\n\n";
+		{
+			context ~= nl;
+			context ~= nl;
+		}
     }
 }
 
@@ -160,7 +169,7 @@ class ClassData : StructData
 		return mangledName;
 	}
 	
-	@property string data ()
+	@property override string data ()
 	{
 		auto cls = new String;
 		
@@ -173,9 +182,7 @@ class ClassData : StructData
 			addDeclarations(cls, instanceMethods);
 		};
 		
-		cls ~= "\n}";
-		
-		return cls.data.strip('\n');
+		return cls.data.strip('\n') ~ "\n}";
 	}
 }
 

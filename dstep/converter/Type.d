@@ -55,8 +55,13 @@ string convertSelector (string str, bool fullName = false)
 		str = str.replace(":", "_");
 		
 	else
-		str = str.chomp(":");
+	{
+		auto i = str.indexOf(":");
 		
+		if (i > -1)
+			str = str[0 .. i];
+	}
+
 	return convertIdentifier(str);
 }
 
