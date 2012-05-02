@@ -29,16 +29,12 @@ class Struct : Declaration
 	{
 		writeStruct(spelling) in (context) {
 			foreach (cursor, parent ; cursor.declarations)
-			{println(cursor.kind);
+			{
 				with (CXCursorKind)
 					switch (cursor.kind)
 					{
 						case CXCursor_FieldDecl:
 							context.instanceVariables ~= converter.variable(cursor, new String);
-						break;
-						
-						case CXCursor_TypedefDecl:
-							context.typedefs ~= converter.typedef_(cursor, new String);
 						break;
 						
 						default: break;

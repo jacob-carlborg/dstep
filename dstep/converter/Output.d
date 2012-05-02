@@ -106,9 +106,7 @@ class StructData
 			addDeclarations(context, instanceVariables);
 		};
 		
-		context ~= "\n}";
-		
-		return context.data.strip('\n');
+		return context.data.strip('\n') ~ "\n}";
 	}
 	
 protected:
@@ -169,7 +167,6 @@ class ClassData : StructData
 		cls.put("class ", name, nl, '{', nl);
 		
 		cls.indent in {
-			addDeclarations(cls, typedefs);
 			addDeclarations(cls, staticVariables);
 			addDeclarations(cls, instanceVariables);
 			addDeclarations(cls, staticMethods);
