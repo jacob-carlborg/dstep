@@ -156,9 +156,9 @@ package String convertFunction (string result, string name, Parameter[] paramete
 	foreach (param ; parameters)
 	{
 		params ~= param.type;
-		
+
 		if (param.name.any)
-			params[$ - 1] ~= " " ~ param.name.any;
+			params[$ - 1] ~= " " ~ param.name;
 	}
 	
 	context ~= params.join(", ");
