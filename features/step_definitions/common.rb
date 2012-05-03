@@ -6,11 +6,11 @@ Given /^a test file named "([^"]*)" in "([^"]*)"$/ do |file, path|
   step %{a file named "test_files/#{path}/#{file}.h" should exist}
 end
 
-Given /^a expected file named "([^"]*)"$/ do |file|
+Given /^an expected file named "([^"]*)"$/ do |file|
   step %{a file named "test_files/#{file}.d" should exist}
 end
 
-Given /^a expected file named "([^"]*)" in "([^"]*)"$/ do |file, path|
+Given /^an expected file named "([^"]*)" in "([^"]*)"$/ do |file, path|
   step %{a file named "test_files/#{path}/#{file}.d" should exist}
 end
 
@@ -33,21 +33,21 @@ end
 
 Then /^I test the file "([^"]*)"$/ do |file|
   step %{a test file named "#{file}"}
-  step %{a expected file named "#{file}"}
+  step %{an expected file named "#{file}"}
   step %{I successfully convert the test file "#{file}"}
   step %{the files "#{file}.d" and "test_files/#{file}.d" should be equal}
 end
 
 Then /^I test the file "([^"]*)" in "([^"]*)"$/ do |file, path|
   step %{a test file named "#{file}" in "#{path}"}
-  step %{a expected file named "#{file}" in "#{path}"}
+  step %{an expected file named "#{file}" in "#{path}"}
   step %{I successfully convert the test file "#{file}" in "#{path}"}
   step %{the files "#{file}.d" and "test_files/#{path}/#{file}.d" should be equal}
 end
 
 Then /^I test the Objective\-C file "([^"]*)" in "([^"]*)"$/ do |file, path|
   step %{a test file named "#{file}" in "#{path}"}
-  step %{a expected file named "#{file}" in "#{path}"}
+  step %{an expected file named "#{file}" in "#{path}"}
   step %{I successfully convert the test file "#{file}" in "#{path}" with the flags "-ObjC"}
   step %{the files "#{file}.d" and "test_files/#{path}/#{file}.d" should be equal}
 end
