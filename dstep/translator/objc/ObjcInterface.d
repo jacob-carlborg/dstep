@@ -4,7 +4,7 @@
  * Version: Initial created: Jan 29, 2012
  * License: $(LINK2 http://www.boost.org/LICENSE_1_0.txt, Boost Software License 1.0)
  */
-module dstep.converter.objc.ObjcInterface;
+module dstep.translator.objc.ObjcInterface;
 
 import std.string;
 
@@ -15,16 +15,16 @@ import clang.Cursor;
 import clang.Visitor;
 import clang.Util;
 
-import dstep.converter.Converter;
-import dstep.converter.Declaration;
-import dstep.converter.Output;
-import dstep.converter.Type;
+import dstep.translator.Translator;
+import dstep.translator.Declaration;
+import dstep.translator.Output;
+import dstep.translator.Type;
 
 class ObjcInterface : Declaration
 {
-	this (Cursor cursor, Cursor parent, Converter converter)
+	this (Cursor cursor, Cursor parent, Translator translator)
 	{
-		super(cursor, parent, converter);
+		super(cursor, parent, translator);
 	}
 
 	void convert ()
@@ -111,7 +111,7 @@ private:
 	void convertInstanceVariable (Cursor cursor)
 	{
 		auto var = new String;
-		converter.variable(cursor, var);
+		translator.variable(cursor, var);
 		output.currentClass.instanceVariables ~= var;
 	}
 }

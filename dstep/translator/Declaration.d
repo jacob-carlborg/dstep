@@ -4,12 +4,12 @@
  * Version: Initial created: Jan 29, 2012
  * License: $(LINK2 http://www.boost.org/LICENSE_1_0.txt, Boost Software License 1.0)
  */
-module dstep.converter.Declaration;
+module dstep.translator.Declaration;
 
 import clang.Cursor;
 
-import dstep.converter.Converter;
-import dstep.converter.Output;
+import dstep.translator.Translator;
+import dstep.translator.Output;
 
 abstract class Declaration
 {
@@ -18,27 +18,27 @@ abstract class Declaration
 		Cursor cursor;
 		Cursor parent;
 		
-		Converter converter;
+		Translator translator;
 		Output output;
 	}
 
 	template Constructors ()
 	{
 		import clang.Cursor;
-		import dstep.converter.Output;
+		import dstep.translator.Output;
 		
-		this (Cursor cursor, Cursor parent, Converter converter)
+		this (Cursor cursor, Cursor parent, Translator translator)
 		{
-			super(cursor, parent, converter);
+			super(cursor, parent, translator);
 		}
 	}
 	
-	this (Cursor cursor, Cursor parent, Converter converter)
+	this (Cursor cursor, Cursor parent, Translator translator)
 	{
 		this.cursor = cursor;
 		this.parent = parent;
-		this.converter = converter;
-		output = converter.output;
+		this.translator = translator;
+		output = translator.output;
 	}
 	
 	abstract void convert ();

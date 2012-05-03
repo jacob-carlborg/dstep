@@ -4,7 +4,7 @@
  * Version: Initial created: Jan 30, 2012
  * License: $(LINK2 http://www.boost.org/LICENSE_1_0.txt, Boost Software License 1.0)
  */
-module dstep.converter.Type;
+module dstep.translator.Type;
 
 import std.string;
 
@@ -14,8 +14,8 @@ import mambo.core.io;
 import clang.c.index;
 import clang.Type;
 
-import dstep.converter.Converter;
-import dstep.converter.Output;
+import dstep.translator.Translator;
+import dstep.translator.Output;
 
 string convertType (Type type, bool rewriteIdToObject = true)
 {

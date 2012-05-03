@@ -21,7 +21,7 @@ import clang.Index;
 import clang.TranslationUnit;
 
 import dstep.core.Exceptions;
-import dstep.converter.Converter;
+import dstep.translator.Translator;
 
 class Application
 {
@@ -111,8 +111,8 @@ private:
 			
 		if (handleDiagnostics)
 		{
-			auto converter = new Converter(inputFiles.first, translationUnit, output);
-			converter.convert;
+			auto translator = new Translator(inputFiles.first, translationUnit, output);
+			translator.convert;
 		}
 	}
 	

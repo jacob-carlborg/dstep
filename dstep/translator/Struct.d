@@ -4,7 +4,7 @@
  * Version: Initial created: may 1, 2012
  * License: $(LINK2 http://www.boost.org/LICENSE_1_0.txt, Boost Software License 1.0)
  */
-module dstep.converter.Struct;
+module dstep.translator.Struct;
 
 import mambo.core._;
 
@@ -13,16 +13,16 @@ import clang.Cursor;
 import clang.Visitor;
 import clang.Util;
 
-import dstep.converter.Converter;
-import dstep.converter.Declaration;
-import dstep.converter.Output;
-import dstep.converter.Type;
+import dstep.translator.Translator;
+import dstep.translator.Declaration;
+import dstep.translator.Output;
+import dstep.translator.Type;
 
 class Struct : Declaration
 {
-	this (Cursor cursor, Cursor parent, Converter converter)
+	this (Cursor cursor, Cursor parent, Translator translator)
 	{
-		super(cursor, parent, converter);
+		super(cursor, parent, translator);
 	}
 	
 	void convert ()
@@ -34,7 +34,7 @@ class Struct : Declaration
 					switch (cursor.kind)
 					{
 						case CXCursor_FieldDecl:
-							context.instanceVariables ~= converter.variable(cursor, new String);
+							context.instanceVariables ~= translator.variable(cursor, new String);
 						break;
 						
 						default: break;

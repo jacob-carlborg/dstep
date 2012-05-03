@@ -4,7 +4,7 @@
  * Version: Initial created: Oct 6, 2011
  * License: $(LINK2 http://www.boost.org/LICENSE_1_0.txt, Boost Software License 1.0)
  */
-module dstep.converter.Converter;
+module dstep.translator.Translator;
 
 import std.file;
 
@@ -17,13 +17,13 @@ import clang.File;
 import clang.TranslationUnit;
 import clang.Util;
 
-import dstep.converter.Declaration;
-import dstep.converter.Output;
-import dstep.converter.objc.ObjcInterface;
-import dstep.converter.Struct;
-import dstep.converter.Type;
+import dstep.translator.Declaration;
+import dstep.translator.Output;
+import dstep.translator.objc.ObjcInterface;
+import dstep.translator.Struct;
+import dstep.translator.Type;
 
-class Converter
+class Translator
 {
 	private
 	{
