@@ -5,4 +5,4 @@ if [ -s "$HOME/.dvm/scripts/dvm" ] ; then
 fi
 
 dvm use 2.059
-rdmd -m32 --build-only -debug -gc -ofbin/dstep -L-L. -L-lclang -L-rpath -L. "$@" dstep/driver/DStep.d
+rdmd -m32 --build-only -debug -gc -ofbin/dstep -Idstack -L-L. -L-lclang -L-ltango -L-rpath -L. "$@" dstep/driver/DStep.d

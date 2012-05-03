@@ -10,5 +10,5 @@ import dstep.driver.Application;
 
 int main (string[] args)
 {
-	return Application.instance.run(args);
+	return Application.start(args);
 }

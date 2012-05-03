@@ -6,10 +6,10 @@
  */
 module dstep.driver.Application;
 
-import core.stdc.stdlib : EXIT_SUCCESS, EXIT_FAILURE;
-
 import std.getopt;
 import std.stdio;
+
+import DStack = dstack.application.Application;
 
 import mambo.core._;
 import mambo.util.Singleton;
@@ -23,7 +23,7 @@ import clang.TranslationUnit;
 import dstep.core.Exceptions;
 import dstep.translator.Translator;
 
-class Application
+class Application : DStack.Application
 {
 	mixin Singleton;
 	
@@ -31,15 +31,6 @@ class Application
 	
 	private
 	{
-		enum ExitCode
-		{
-			success = EXIT_SUCCESS,
-			failure = EXIT_FAILURE
-		}
-		
-		alias ExitCode delegate () Runnable;	
-		
-		string[] args;
 		string[] inputFiles;
 		
 		Index index;
@@ -49,52 +40,13 @@ class Application
 		string output = "foo.d";
 	}
 	
-	int run (string[] args)
+	override void run ()
 	{
-		this.args = args;
-		
-		return debugHandleExceptions in {
-			handleArguments;
-			startConversion;
-			return ExitCode.success;
-		};
+		handleArguments;
+		startConversion;
 	}
 
 private:
-
-	Use!(Runnable) handleExceptions ()
-	{
-		Use!(Runnable) use;
-		
-		use.args[0] = (Runnable dg) {
-			try
-				return dg();
-			
-			catch (DStepException e)
-			{
-				println("An error occurred: ", e);
-				return ExitCode.failure;
-			}
-			
-			catch (Exception e)
-			{
-				println("An unknown error occurred:");
-				throw e;
-			}
-		};
-		
-		return use;
-	}
-	
-	auto debugHandleExceptions ()
-	{
-		Use!(Runnable) use;
-		use.args[0] = (Runnable dg) {
-			return dg();
-		};
-		
-		return use;
-	}
 	
 	void startConversion ()
 	{

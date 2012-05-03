@@ -1,3 +1,6 @@
 [submodule "mambo"]
 	path = mambo
 	url = git://github.com/jacob-carlborg/mambo.git
+[submodule "dstack"]
+	path = dstack
+	url = git://github.com/jacob-carlborg/dstack.git
