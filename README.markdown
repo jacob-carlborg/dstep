@@ -6,20 +6,24 @@ DStep is a tool for translating C and Objective-C headers to D modules.
 
 ### Requirements
 
+* Clang - http://clang.llvm.org
 * DVM - https://bitbucket.org/doob/dvm
 * DMD 2.059 - install using DVM
 * Tango - https://github.com/SiegeLord/Tango-D2
 
-1. Clone the repository
-2. Pull down the submodules by running
+### Building
 
-	git submodule init
-	git submodule update
-	cd dstack
-	git submodule init
-	git submodule update
+1. Install all requirements
+2. Clone the repository
+3. Pull down the submodules by running:
 
-3. run `./build.sh`
+		git submodule init
+		git submodule update
+		cd dstack
+		git submodule init
+		git submodule update
+
+4. run `./build.sh`
 
 ## Usage
 
