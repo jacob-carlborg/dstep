@@ -14,16 +14,11 @@ DStep is a tool for translating C and Objective-C headers to D modules.
 ### Building
 
 1. Install all requirements
-2. Clone the repository
-3. Pull down the submodules by running:
+2. Clone the repository by running:
 
-		git submodule init
-		git submodule update
-		cd dstack
-		git submodule init
-		git submodule update
+		git clone --recursive git://github.com/jacob-carlborg/dstep.git
 
-4. run `./build.sh`
+3. run `./build.sh`
 
 ## Usage
 
