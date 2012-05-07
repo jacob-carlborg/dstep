@@ -151,20 +151,20 @@ class ClassData : StructData
 		{
 			mangledMethods[mangledName] = true;
 			name = name.isBlank ? selector : name;
-			return convertSelector(name);
+			return translateSelector(name);
 		}
 		
-		return convertSelector(name, true);
+		return translateSelector(name, true);
 	}
 	
 	private string mangle (FunctionCursor func, string name)
 	{
 		auto selector = func.spelling;
-		name = name.isBlank ? convertSelector(selector) : name;
+		name = name.isBlank ? translateSelector(selector) : name;
 		auto mangledName = name;
 		
 		foreach (param ; func.parameters)
-			mangledName ~= "_" ~ convertType(param.type);
+			mangledName ~= "_" ~ translateType(param.type);
 			
 		return mangledName;
 	}

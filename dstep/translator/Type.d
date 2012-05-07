@@ -17,15 +17,15 @@ import clang.Type;
 import dstep.translator.Translator;
 import dstep.translator.Output;
 
-string convertType (Type type, bool rewriteIdToObject = true)
+string translateType (Type type, bool rewriteIdToObject = true)
 {
 	with (CXTypeKind)
 	{
 		if (type.kind == CXType_BlockPointer || type.isFunctionPointerType)
-			return convertFunctionPointerType(type);
+			return translateFunctionPointerType(type);
 			
 		if (type.kind == CXType_ObjCObjectPointer && !type.isObjCBuiltinType)
-			return convertObjCObjectPointerType(type);
+			return translateObjCObjectPointerType(type);
 			
 		if (type.isWideCharType)	
 			return "wchar";
@@ -35,21 +35,21 @@ string convertType (Type type, bool rewriteIdToObject = true)
 
 		switch (type.kind)
 		{
-			case CXType_Pointer: return convertType(type.pointeeType) ~ "*";
+			case CXType_Pointer: return translateType(type.pointeeType) ~ "*";
 
-			case CXType_Typedef: return convertTypedef(type);
+			case CXType_Typedef: return translateTypedef(type);
 
 			case CXType_Record:
 			case CXType_Enum:
 			case CXType_ObjCInterface:
 				return type.spelling;
 
-			default: return convertType(type.kind, rewriteIdToObject);
+			default: return translateType(type.kind, rewriteIdToObject);
 		}
 	}
 }
 
-string convertSelector (string str, bool fullName = false)
+string translateSelector (string str, bool fullName = false)
 {
 	if (fullName)
 		str = str.replace(":", "_");
@@ -62,12 +62,12 @@ string convertSelector (string str, bool fullName = false)
 			str = str[0 .. i];
 	}
 
-	return convertIdentifier(str);
+	return translateIdentifier(str);
 }
 
 private:
 
-string convertTypedef (Type type)
+string translateTypedef (Type type)
 in
 {
     assert(type.kind == CXTypeKind.CXType_Typedef);
@@ -82,7 +82,7 @@ body
     return spelling;
 }
 
-string convertType (CXTypeKind kind, bool rewriteIdToObject = true)
+string translateType (CXTypeKind kind, bool rewriteIdToObject = true)
 {
 	with (CXTypeKind)
 		switch (kind)
@@ -133,7 +133,7 @@ string convertType (CXTypeKind kind, bool rewriteIdToObject = true)
 		}
 }
 
-string convertFunctionPointerType (Type type)
+string translateFunctionPointerType (Type type)
 {
 	auto func = type.pointeeType.func;
 
@@ -141,14 +141,14 @@ string convertFunctionPointerType (Type type)
 	params.reserve(func.arguments.length);
 	
 	foreach (type ; func.arguments)
-		params ~= Parameter(convertType(type));
+		params ~= Parameter(translateType(type));
 
-	auto resultType = convertType(func.resultType);
+	auto resultType = translateType(func.resultType);
 	
-	return convertFunction(resultType, "function", params, func.isVariadic, new String).data;
+	return translateFunction(resultType, "function", params, func.isVariadic, new String).data;
 }
 
-string convertObjCObjectPointerType (Type type)
+string translateObjCObjectPointerType (Type type)
 in
 {
     assert(type.kind == CXTypeKind.CXType_ObjCObjectPointer && !type.isObjCBuiltinType);
@@ -161,5 +161,5 @@ body
 		return "Protocol*";
 
     else
-        return convertType(pointee);
+        return translateType(pointee);
 }

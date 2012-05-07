@@ -41,7 +41,7 @@ abstract class Declaration
 		output = translator.output;
 	}
 	
-	abstract void convert ();
+	abstract void translate ();
 	
 	@property spelling ()
 	{

@@ -50,7 +50,7 @@ class Translator
 		return output_;
 	}
 	
-	void convert ()
+	void translate ()
 	{
 		foreach (cursor, parent ; translationUnit.declarations)
 		{
@@ -61,7 +61,7 @@ class Translator
 				switch (cursor.kind)
 				{
 					case CXCursor_ObjCInterfaceDecl:
-						(new ObjcInterface(cursor, parent, this)).convert;
+						(new ObjcInterface(cursor, parent, this)).translate;
 					break;
 					
 					case CXCursor_VarDecl:
@@ -71,8 +71,8 @@ class Translator
 					case CXCursor_FunctionDecl:
 					{
 						auto f = new String;
-						auto name = convertIdentifier(cursor.spelling);
-						convertFunction(cursor.func, name, f);
+						auto name = translateIdentifier(cursor.spelling);
+						translateFunction(cursor.func, name, f);
 						f ~= ";";
 						output.functions ~= f;
 					}
@@ -82,7 +82,7 @@ class Translator
 						output.typedefs ~= typedef_(cursor, new String);
 					break;
 					
-					case CXCursor_StructDecl: (new Struct(cursor, parent, this)).convert; break;
+					case CXCursor_StructDecl: (new Struct(cursor, parent, this)).translate; break;
 					
 					default: continue;
 				}
@@ -93,8 +93,8 @@ class Translator
 	
 	String variable (Cursor cursor, String context = output)
 	{
-		context ~= convertType(cursor.type);
-		context ~= " " ~ convertIdentifier(cursor.spelling);
+		context ~= translateType(cursor.type);
+		context ~= " " ~ translateIdentifier(cursor.spelling);
 		context ~= ";";
 		
 		return context;
@@ -103,7 +103,7 @@ class Translator
 	String typedef_ (Cursor cursor, String context = output)
 	{
 		context ~= "alias ";
-		context ~= convertType(cursor.type.canonicalType);
+		context ~= translateType(cursor.type.canonicalType);
 		context ~= " " ~ cursor.spelling;
 		context ~= ";";
 		
@@ -118,7 +118,7 @@ private
     }
 }
 
-String convertFunction (FunctionCursor func, string name, String context, bool isStatic = false)
+String translateFunction (FunctionCursor func, string name, String context, bool isStatic = false)
 {
 	if (isStatic)
 		context ~= "static ";
@@ -130,15 +130,15 @@ String convertFunction (FunctionCursor func, string name, String context, bool i
 	
 	foreach (param ; func.parameters)
 	{
-		auto type = convertType(param.type);
+		auto type = translateType(param.type);
 		auto spelling = param.spelling;
 		
 		params ~= Parameter(type, spelling);
 	}
 	
-	auto resultType = convertType(func.resultType);
+	auto resultType = translateType(func.resultType);
 
-	return convertFunction(resultType, name, params, func.isVariadic, context);
+	return translateFunction(resultType, name, params, func.isVariadic, context);
 }
 
 package struct Parameter
@@ -147,7 +147,7 @@ package struct Parameter
 	string name;
 }
 
-package String convertFunction (string result, string name, Parameter[] parameters, bool variadic, String context)
+package String translateFunction (string result, string name, Parameter[] parameters, bool variadic, String context)
 {
 	context ~= result;
 	context ~= ' ';
@@ -178,7 +178,7 @@ package String convertFunction (string result, string name, Parameter[] paramete
 	return context;
 }
 
-string convertIdentifier (string str)
+string translateIdentifier (string str)
 {
 	return isDKeyword(str) ? str ~ '_' : str;
 }

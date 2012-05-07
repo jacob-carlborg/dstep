@@ -27,7 +27,7 @@ class ObjcInterface : Declaration
 		super(cursor, parent, translator);
 	}
 
-	void convert ()
+	void translate ()
 	{
 		auto cursor = cursor.objc;
 
@@ -37,10 +37,10 @@ class ObjcInterface : Declaration
 				with (CXCursorKind)
 					switch (cursor.kind)
 					{
-						case CXCursor_ObjCInstanceMethodDecl: convertMethod(cursor.func); break;
-						case CXCursor_ObjCClassMethodDecl: convertMethod(cursor.func, true); break;
-						case CXCursor_ObjCPropertyDecl: convertProperty(cursor.func); break;
-						case CXCursor_ObjCIvarDecl: convertInstanceVariable(cursor); break;
+						case CXCursor_ObjCInstanceMethodDecl: translateMethod(cursor.func); break;
+						case CXCursor_ObjCClassMethodDecl: translateMethod(cursor.func, true); break;
+						case CXCursor_ObjCPropertyDecl: translateProperty(cursor.func); break;
+						case CXCursor_ObjCIvarDecl: translateInstanceVariable(cursor); break;
 						default: break;
 					}
 			}
@@ -54,7 +54,7 @@ private:
 		string[] interfaces;
 
 		foreach (cursor , parent ; cursor.protocols)
-			interfaces ~= convertIdentifier(cursor.spelling);
+			interfaces ~= translateIdentifier(cursor.spelling);
 
 		return interfaces;
 	}
@@ -66,10 +66,10 @@ private:
 		block.dg = (void delegate () dg) {
 			output.currentClass = new ClassData;
 			output.classes ~= output.currentClass;
-			output.currentClass.name = convertIdentifier(name);
+			output.currentClass.name = translateIdentifier(name);
 			
 			if (superClassName.isPresent)
-				output.currentClass.superclass ~= convertIdentifier(superClassName);
+				output.currentClass.superclass ~= translateIdentifier(superClassName);
 			
 			classInterfaceHelper(interfaces, output.currentClass, dg);
 		};
@@ -82,14 +82,14 @@ private:
 		dg();
 	}
 	
-	void convertMethod (FunctionCursor func, bool classMethod = false, string name = null)
+	void translateMethod (FunctionCursor func, bool classMethod = false, string name = null)
 	{
 		auto method = new String;
 		auto cls = output.currentClass;
 		
 		name = cls.getMethodName(func, name);
 		
-		convertFunction(func, name, method, classMethod);
+		translateFunction(func, name, method, classMethod);
 
 		method ~= " [";
 		method ~= func.spelling;
@@ -103,12 +103,12 @@ private:
 			cls.instanceMethods ~= method;
 	}
 	
-	void convertProperty (FunctionCursor cursor)
+	void translateProperty (FunctionCursor cursor)
 	{
 		
 	}
 	
-	void convertInstanceVariable (Cursor cursor)
+	void translateInstanceVariable (Cursor cursor)
 	{
 		auto var = new String;
 		translator.variable(cursor, var);

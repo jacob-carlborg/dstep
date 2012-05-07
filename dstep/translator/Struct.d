@@ -25,7 +25,7 @@ class Struct : Declaration
 		super(cursor, parent, translator);
 	}
 	
-	void convert ()
+	void translate ()
 	{
 		writeStruct(spelling) in (context) {
 			foreach (cursor, parent ; cursor.declarations)
@@ -52,7 +52,7 @@ private:
 		block.dg = (dg) {
 			auto context = new StructData;
 			output.structs ~= context;
-			context.name = convertIdentifier(name);
+			context.name = translateIdentifier(name);
 			
 			dg(context);
 		};

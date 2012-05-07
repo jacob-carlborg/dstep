@@ -64,7 +64,7 @@ private:
 		if (handleDiagnostics)
 		{
 			auto translator = new Translator(inputFiles.first, translationUnit, output);
-			translator.convert;
+			translator.translate;
 		}
 	}
 	
@@ -86,20 +86,20 @@ private:
 	
 	bool handleDiagnostics ()
 	{
-	    bool convert = true;
+	    bool translate = true;
 	    	
 		foreach (diag ; diagnostics)
 		{
 		    auto severity = diag.severity;
 		    
 		    with (CXDiagnosticSeverity)
-		        if (convert)
-	                convert = !(severity == CXDiagnostic_Error || severity == CXDiagnostic_Fatal);
+		        if (translate)
+	                translate = !(severity == CXDiagnostic_Error || severity == CXDiagnostic_Fatal);
 
 	        writeln(stderr, diag.format);
 		}
 
-		return convert;
+		return translate;
 	}
 	
 	void clean ()
