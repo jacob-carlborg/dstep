@@ -71,11 +71,10 @@ class Translator
 					
 					case CXCursor_FunctionDecl:
 					{
-						auto f = new String;
 						auto name = translateIdentifier(cursor.spelling);
-						translateFunction(cursor.func, name, f);
-						f ~= ";";
-						output.functions ~= f;
+						auto context = translateFunction(cursor.func, name, new String);
+						context ~= ";";
+						output.functions ~= context;
 					}
 					break;
 					

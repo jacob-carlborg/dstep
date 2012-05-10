@@ -252,7 +252,7 @@ class String
 		foreach (arg ; args)
 		{
 			static if (is(typeof(arg) == NewLine))
-				appender.put('\n');
+				put(nl);
 				
 			else
 				appender.put(arg);
