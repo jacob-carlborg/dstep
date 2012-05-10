@@ -132,9 +132,7 @@ String translateFunction (FunctionCursor func, string name, String context, bool
 	foreach (param ; func.parameters)
 	{
 		auto type = translateType(param.type);
-		auto spelling = param.spelling;
-		
-		params ~= Parameter(type, spelling);
+		params ~= Parameter(type, param.spelling);
 	}
 	
 	auto resultType = translateType(func.resultType);
@@ -146,6 +144,7 @@ package struct Parameter
 {
 	string type;
 	string name;
+	bool isConst;
 }
 
 package String translateFunction (string result, string name, Parameter[] parameters, bool variadic, String context)
@@ -158,10 +157,20 @@ package String translateFunction (string result, string name, Parameter[] parame
 	
 	foreach (param ; parameters)
 	{
-		params ~= param.type;
+		string p;
+
+		if (param.isConst)
+			p ~= "const(";
+
+		p ~= param.type;
+		
+		if (param.isConst)
+			p ~= ')';
 
 		if (param.name.any)
-			params[$ - 1] ~= " " ~ param.name;
+			p ~= " " ~ param.name;
+		
+		params ~= p;
 	}
 	
 	context ~= params.join(", ");

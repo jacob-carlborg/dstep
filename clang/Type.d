@@ -37,6 +37,11 @@ struct Type
 		return Type(r);
 	}
 	
+	@property bool isValid ()
+	{
+	    return kind != CXTypeKind.CXType_Invalid;
+	}
+	
 	@property bool isFunctionType ()
 	{
 		with (CXTypeKind)
@@ -91,15 +96,15 @@ struct Type
 			return kind == CXType_WChar || kind == CXType_SChar;
 	}
 	
+	@property bool isConst ()
+	{
+		return clang_isConstQualifiedType(cx) == 1;
+	}
+	
 	@property Cursor declaration ()
 	{
 	    auto r = clang_getTypeDeclaration(cx);
 	    return Cursor(r);
-	}
-	
-	@property bool isValid ()
-	{
-	    return kind != CXTypeKind.CXType_Invalid;
 	}
 	
 	@property FuncType func ()

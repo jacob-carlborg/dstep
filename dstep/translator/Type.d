@@ -50,8 +50,6 @@ string translateType (Type type, bool rewriteIdToObject = true)
 			default: return translateType(type.kind, rewriteIdToObject);
 		}
 	}
-
-
 }
 
 string translateSelector (string str, bool fullName = false)
