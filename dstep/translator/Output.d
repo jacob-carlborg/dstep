@@ -75,7 +75,7 @@ private:
 
     void addDeclarations (StructData[] declarations)
     {
-        this ~= declarations.map!(e => e.data).join("\n");
+        this ~= declarations.map!(e => e.data).join("\n\n");
         
         if (declarations.any)
             this ~= "\n\n";
@@ -83,7 +83,7 @@ private:
 
     void addDeclarations (ClassData[] declarations)
     {
-        this ~= declarations.map!(e => e.data).join("\n");
+        this ~= declarations.map!(e => e.data).join("\n\n");
         
         if (declarations.any)
             this ~= "\n\n";

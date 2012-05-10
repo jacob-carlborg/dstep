@@ -44,9 +44,22 @@ string translateType (Type type, bool rewriteIdToObject = true)
 			case CXType_ObjCInterface:
 				return type.spelling;
 
+			case CXType_Unexposed:
+			{
+				auto declaration = type.declaration;
+
+				if (declaration.isValid)
+					return translateType(declaration.type, rewriteIdToObject);
+					
+				else
+					return translateType(type.kind, rewriteIdToObject);
+			}
+
 			default: return translateType(type.kind, rewriteIdToObject);
 		}
 	}
+
+
 }
 
 string translateSelector (string str, bool fullName = false)
