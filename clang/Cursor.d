@@ -63,6 +63,11 @@ struct Cursor
 		return FunctionCursor(this);
 	}
 	
+	@property EnumCursor enum_ ()
+	{
+		return EnumCursor(this);
+	}
+	
 	@property bool isValid ()
 	{
 		return !clang_isInvalid(cx.kind);
@@ -139,4 +144,28 @@ struct ParamCursor
 {
 	Cursor cursor;
 	alias cursor this;
+}
+
+struct EnumCursor
+{
+	Cursor cursor;
+	alias cursor this;
+	
+	@property long value ()
+	{
+		return clang_getEnumConstantDeclValue(cx);
+	}
+
+	// These are available in Clang 3.1.
+	// @property ulong unsignedValue ()
+	// {
+	// 	return clang_getEnumConstantDeclUnsignedValue(cx);
+	// }
+	// 
+	// @property bool unsigned ()
+	// {
+	// 	auto type = clang_getTypedefDeclUnderlyingType(cx);
+	// 	println(type.kind);
+	// 	return false;
+	// }
 }

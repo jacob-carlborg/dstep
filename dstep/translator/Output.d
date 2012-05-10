@@ -100,7 +100,7 @@ class StructData
 	{
 		auto context = new String;
 		
-		context.put("struct ", name, nl, '{', nl);
+		context.put(type, ' ', name, nl, '{', nl);
 		
 		context.indent in {
 			addDeclarations(context, instanceVariables);
@@ -110,6 +110,11 @@ class StructData
 	}
 	
 protected:
+	
+	@property string type ()
+	{
+		return "struct";
+	}
 
 	void addDeclarations (String context, String[] declarations)
     {
@@ -117,6 +122,36 @@ protected:
 		{
 			if (i != 0)
 				context ~= nl;
+
+			context ~= e.data;
+		}
+
+        if (declarations.any)
+		{
+			context ~= nl;
+			context ~= nl;
+		}
+    }
+}
+
+class EnumData : StructData
+{
+	@property override string type ()
+	{
+		return "enum";
+	}
+	
+protected:
+
+	override void addDeclarations (String context, String[] declarations)
+    {
+		foreach (i, e ; declarations)
+		{
+			if (i != 0)
+			{
+				context ~= ",";
+				context ~= nl;
+			}
 
 			context ~= e.data;
 		}
