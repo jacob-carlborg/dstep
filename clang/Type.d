@@ -106,11 +106,17 @@ struct Type
 	{
 		return FuncType(this);
 	}
+	
+	@property ArrayType array ()
+	{
+		return ArrayType(this);
+	}
 }
 
 struct FuncType
 {
 	Type type;
+	alias type this;
 
 	@property Type resultType ()
 	{
@@ -126,6 +132,23 @@ struct FuncType
 	@property bool isVariadic ()
 	{
 		return clang_isFunctionTypeVariadic(type.cx) == 1;
+	}
+}
+
+struct ArrayType
+{
+	Type type;
+	alias type this;
+	
+	@property Type elementType ()
+	{
+		auto r = clang_getArrayElementType(cx);
+		return Type(r);
+	}
+	
+	@property long size ()
+	{
+		return clang_getArraySize(cx);
 	}
 }
 

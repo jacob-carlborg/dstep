@@ -43,17 +43,9 @@ string translateType (Type type, bool rewriteIdToObject = true)
 			case CXType_Enum:
 			case CXType_ObjCInterface:
 				return type.spelling;
-
-			case CXType_Unexposed:
-			{
-				auto declaration = type.declaration;
-
-				if (declaration.isValid)
-					return translateType(declaration.type, rewriteIdToObject);
-					
-				else
-					return translateType(type.kind, rewriteIdToObject);
-			}
+				
+			case CXType_ConstantArray: return translateConstantArray(type, rewriteIdToObject);
+			case CXType_Unexposed: return translateUnexposed(type, rewriteIdToObject);
 
 			default: return translateType(type.kind, rewriteIdToObject);
 		}
@@ -93,6 +85,25 @@ body
         spelling = "bool";
 
     return spelling;
+}
+
+string translateUnexposed (Type type, bool rewriteIdToObject)
+{
+	auto declaration = type.declaration;
+
+	if (declaration.isValid)
+		return translateType(declaration.type, rewriteIdToObject);
+		
+	else
+		return translateType(type.kind, rewriteIdToObject);
+}
+
+string translateConstantArray (Type type, bool rewriteIdToObject)
+{
+	auto array = type.array;
+	auto elementType = translateType(array.elementType, rewriteIdToObject);
+	
+	return elementType ~ '[' ~ array.size.toString ~ ']';
 }
 
 string translateType (CXTypeKind kind, bool rewriteIdToObject = true)
@@ -142,7 +153,7 @@ string translateType (CXTypeKind kind, bool rewriteIdToObject = true)
 			case CXType_FunctionProto: return "<unimplemented>";
 			case CXType_ConstantArray: return "<unimplemented>";
 			case CXType_Vector: return "<unimplemented>";
-			default: assert(0, "Unhandled type kind");
+			default: assert(0, "Unhandled type kind " ~ kind.toString);
 		}
 }
 
