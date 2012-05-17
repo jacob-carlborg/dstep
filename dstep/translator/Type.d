@@ -18,6 +18,11 @@ import dstep.translator.Translator;
 import dstep.translator.Output;
 
 string translateType (Type type, bool rewriteIdToObject = true, bool applyConst = true)
+in
+{
+	assert(type.isValid);
+}
+body
 {
 	string result;
 
@@ -94,6 +99,11 @@ body
 }
 
 string translateUnexposed (Type type, bool rewriteIdToObject)
+in
+{
+	assert(type.kind == CXTypeKind.CXType_Unexposed);
+}
+body
 {
 	auto declaration = type.declaration;
 
@@ -105,6 +115,11 @@ string translateUnexposed (Type type, bool rewriteIdToObject)
 }
 
 string translateConstantArray (Type type, bool rewriteIdToObject)
+in
+{
+	assert(type.kind == CXTypeKind.CXType_ConstantArray);
+}
+body
 {
 	auto array = type.array;
 	auto elementType = translateType(array.elementType, rewriteIdToObject);
@@ -113,6 +128,11 @@ string translateConstantArray (Type type, bool rewriteIdToObject)
 }
 
 string translatePointer (Type type, bool rewriteIdToObject, bool applyConst)
+in
+{
+	assert(type.kind == CXTypeKind.CXType_Pointer);
+}
+body
 {
 	static bool valueTypeIsConst (Type type)
 	{
@@ -139,6 +159,42 @@ string translatePointer (Type type, bool rewriteIdToObject, bool applyConst)
 		result = result ~ '*';
 
 	return result;
+}
+
+string translateFunctionPointerType (Type type)
+in
+{
+	assert(type.kind == CXTypeKind.CXType_BlockPointer || type.isFunctionPointerType);
+}
+body
+{
+	auto func = type.pointeeType.func;
+
+	Parameter[] params;
+	params.reserve(func.arguments.length);
+
+	foreach (type ; func.arguments)
+		params ~= Parameter(translateType(type));
+
+	auto resultType = translateType(func.resultType);
+
+	return translateFunction(resultType, "function", params, func.isVariadic, new String).data;
+}
+
+string translateObjCObjectPointerType (Type type)
+in
+{
+    assert(type.kind == CXTypeKind.CXType_ObjCObjectPointer && !type.isObjCBuiltinType);
+}
+body
+{
+	auto pointee = type.pointeeType;
+
+	if (pointee.spelling == "Protocol")
+		return "Protocol*";
+
+    else
+        return translateType(pointee);
 }
 
 string translateType (CXTypeKind kind, bool rewriteIdToObject = true)
@@ -189,35 +245,4 @@ string translateType (CXTypeKind kind, bool rewriteIdToObject = true)
 			case CXType_Vector: return "<unimplemented>";
 			default: assert(0, "Unhandled type kind " ~ kind.toString);
 		}
-}
-
-string translateFunctionPointerType (Type type)
-{
-	auto func = type.pointeeType.func;
-
-	Parameter[] params;
-	params.reserve(func.arguments.length);
-	
-	foreach (type ; func.arguments)
-		params ~= Parameter(translateType(type));
-
-	auto resultType = translateType(func.resultType);
-	
-	return translateFunction(resultType, "function", params, func.isVariadic, new String).data;
-}
-
-string translateObjCObjectPointerType (Type type)
-in
-{
-    assert(type.kind == CXTypeKind.CXType_ObjCObjectPointer && !type.isObjCBuiltinType);
-}
-body
-{
-	auto pointee = type.pointeeType;
-
-	if (pointee.spelling == "Protocol")
-		return "Protocol*";
-
-    else
-        return translateType(pointee);
 }
