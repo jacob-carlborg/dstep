@@ -17,39 +17,47 @@ import clang.Type;
 import dstep.translator.Translator;
 import dstep.translator.Output;
 
-string translateType (Type type, bool rewriteIdToObject = true)
+string translateType (Type type, bool rewriteIdToObject = true, bool applyConst = true)
 {
+	string result;
+
 	with (CXTypeKind)
 	{
 		if (type.kind == CXType_BlockPointer || type.isFunctionPointerType)
-			return translateFunctionPointerType(type);
+			result = translateFunctionPointerType(type);
 			
-		if (type.kind == CXType_ObjCObjectPointer && !type.isObjCBuiltinType)
-			return translateObjCObjectPointerType(type);
+		else if (type.kind == CXType_ObjCObjectPointer && !type.isObjCBuiltinType)
+			result = translateObjCObjectPointerType(type);
 			
-		if (type.isWideCharType)	
-			return "wchar";
+		else if (type.isWideCharType)
+			result = "wchar";
 			
-		if (type.isObjCIdType)
-			return rewriteIdToObject ? "Object" : "id";
+		else if (type.isObjCIdType)
+			result = rewriteIdToObject ? "Object" : "id";
 
-		switch (type.kind)
-		{
-			case CXType_Pointer: return translateType(type.pointeeType) ~ "*";
+		else
+			switch (type.kind)
+			{
+				case CXType_Pointer: return translatePointer(type, rewriteIdToObject, applyConst);
+				case CXType_Typedef: result = translateTypedef(type); break;
 
-			case CXType_Typedef: return translateTypedef(type);
-
-			case CXType_Record:
-			case CXType_Enum:
-			case CXType_ObjCInterface:
-				return type.spelling;
+				case CXType_Record:
+				case CXType_Enum:
+				case CXType_ObjCInterface:
+					result = type.spelling;
+				break;
 				
-			case CXType_ConstantArray: return translateConstantArray(type, rewriteIdToObject);
-			case CXType_Unexposed: return translateUnexposed(type, rewriteIdToObject);
+				case CXType_ConstantArray: result = translateConstantArray(type, rewriteIdToObject); break;
+				case CXType_Unexposed: result = translateUnexposed(type, rewriteIdToObject); break;
 
-			default: return translateType(type.kind, rewriteIdToObject);
-		}
+				default: result = translateType(type.kind, rewriteIdToObject);
+			}
 	}
+
+	if (applyConst && type.isConst)
+		result = "const " ~ result;
+
+	return result;
 }
 
 string translateSelector (string str, bool fullName = false)
@@ -104,6 +112,35 @@ string translateConstantArray (Type type, bool rewriteIdToObject)
 	return elementType ~ '[' ~ array.size.toString ~ ']';
 }
 
+string translatePointer (Type type, bool rewriteIdToObject, bool applyConst)
+{
+	static bool valueTypeIsConst (Type type)
+	{
+		auto pointee = type.pointeeType;
+
+		while (pointee.kind == CXTypeKind.CXType_Pointer)
+			pointee = pointee.pointeeType;
+
+		return pointee.isConst;
+	}
+
+	auto result = translateType(type.pointeeType, rewriteIdToObject, false);
+
+	if (applyConst && valueTypeIsConst(type))
+	{
+		if (type.isConst)
+			result = "const " ~ result ~ '*';
+
+		else
+			result = "const(" ~ result ~ ")*";
+	}
+
+	else
+		result = result ~ '*';
+
+	return result;
+}
+
 string translateType (CXTypeKind kind, bool rewriteIdToObject = true)
 {
 	with (CXTypeKind)
@@ -149,7 +186,6 @@ string translateType (CXTypeKind kind, bool rewriteIdToObject = true)
 			case CXType_Typedef: return "<unimplemented>";
 			case CXType_FunctionNoProto: return "<unimplemented>";
 			case CXType_FunctionProto: return "<unimplemented>";
-			case CXType_ConstantArray: return "<unimplemented>";
 			case CXType_Vector: return "<unimplemented>";
 			default: assert(0, "Unhandled type kind " ~ kind.toString);
 		}
