@@ -77,8 +77,8 @@ private:
 	{
 		getopt(args, std.getopt.config.caseSensitive, std.getopt.config.passThrough, "o", &output);
 
-        foreach (arg ; args[1 .. $])
-            if (arg.first != '-')
+        foreach (i, arg ; args[1 .. $])
+            if (arg.first != '-' && args[i].first != '-')
                 inputFiles ~= arg;
 
         args = args.remove(inputFiles);
