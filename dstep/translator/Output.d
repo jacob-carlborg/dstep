@@ -24,6 +24,7 @@ class Output : String
 	ClassData[] classes;
 	ClassData[] interfaces;
 	StructData[] structs;
+	StructData[] unions;
 	
 	ClassData currentClass;
 	ClassData currentInterface;
@@ -49,6 +50,7 @@ class Output : String
 		addDeclarations(typedefs);
 		addDeclarations(variables);
 		addDeclarations(structs);
+		addDeclarations(unions);
 		addDeclarations(classes);
 		addDeclarations(interfaces);
 		addDeclarations(functions);
@@ -162,6 +164,14 @@ protected:
 			context ~= nl;
 		}
     }
+}
+
+class UnionData : StructData
+{
+	@property override string type ()
+	{
+		return "union";
+	}
 }
 
 class ClassData : StructData

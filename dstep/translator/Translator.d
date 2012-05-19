@@ -23,6 +23,7 @@ import dstep.translator.objc.ObjcInterface;
 import dstep.translator.Output;
 import dstep.translator.Struct;
 import dstep.translator.Type;
+import dstep.translator.Union;
 
 class Translator
 {
@@ -84,6 +85,7 @@ class Translator
 					
 					case CXCursor_StructDecl: (new Struct(cursor, parent, this)).translate; break;
 					case CXCursor_EnumDecl: (new Enum(cursor, parent, this)).translate; break;
+					case CXCursor_UnionDecl: (new Union(cursor, parent, this)).translate; break;
 					
 					default: continue;
 				}
