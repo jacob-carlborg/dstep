@@ -16,15 +16,16 @@ class Output : String
 	String before;
 	String after;
 	String imports;
-	String[] functions;
+
+	string[] typedefs;	
+	string[] variables;
 	
-	String[] variables;
-	String[] typedefs;
-	
-	ClassData[] classes;
-	ClassData[] interfaces;
-	StructData[] structs;
-	StructData[] unions;
+	string[] classes;
+	string[] interfaces;
+	string[] structs;
+	string[] enums;
+	string[] unions;
+	string[] functions;
 	
 	ClassData currentClass;
 	ClassData currentInterface;
@@ -47,13 +48,14 @@ class Output : String
 		if (imports.any)
 		    this ~= nl;
 		
-		addDeclarations(typedefs);
-		addDeclarations(variables);
+		addDeclarations(typedefs, false);
+		addDeclarations(variables, false);
+		addDeclarations(enums);
 		addDeclarations(structs);
 		addDeclarations(unions);
 		addDeclarations(classes);
 		addDeclarations(interfaces);
-		addDeclarations(functions);
+		addDeclarations(functions, false);
 
 		this ~= after.data;
 		
@@ -67,26 +69,15 @@ class Output : String
 
 private:
 
-    void addDeclarations (String[] declarations)
+    void addDeclarations (string[] declarations, bool extraNewline = true)
     {
-        this ~= declarations.map!(e => e.data).join("\n");
-        
-        if (declarations.any)
-            this ~= "\n\n";
-    }
+		auto newline = "\n";
+		
+		if (extraNewline)
+			newline ~= "\n";
+		
+        this ~= declarations.join(newline);
 
-    void addDeclarations (StructData[] declarations)
-    {
-        this ~= declarations.map!(e => e.data).join("\n\n");
-        
-        if (declarations.any)
-            this ~= "\n\n";
-    }
-
-    void addDeclarations (ClassData[] declarations)
-    {
-        this ~= declarations.map!(e => e.data).join("\n\n");
-        
         if (declarations.any)
             this ~= "\n\n";
     }
@@ -96,7 +87,7 @@ class StructData
 {
 	string name;
 
-	String[] instanceVariables;
+	string[] instanceVariables;
 	
 	@property string data ()
 	{
@@ -118,14 +109,14 @@ protected:
 		return "struct";
 	}
 
-	void addDeclarations (String context, String[] declarations)
+	void addDeclarations (String context, string[] declarations)
     {
 		foreach (i, e ; declarations)
 		{
 			if (i != 0)
 				context ~= nl;
 
-			context ~= e.data;
+			context ~= e;
 		}
 
         if (declarations.any)
@@ -145,7 +136,7 @@ class EnumData : StructData
 	
 protected:
 
-	override void addDeclarations (String context, String[] declarations)
+	override void addDeclarations (String context, string[] declarations)
     {
 		foreach (i, e ; declarations)
 		{
@@ -155,7 +146,7 @@ protected:
 				context ~= nl;
 			}
 
-			context ~= e.data;
+			context ~= e;
 		}
 
         if (declarations.any)
@@ -176,10 +167,10 @@ class UnionData : StructData
 
 class ClassData : StructData
 {
-	String[] instanceMethods;
-	String[] staticMethods;
+	string[] instanceMethods;
+	string[] staticMethods;
 	
-	String[] staticVariables;
+	string[] staticVariables;
 	
 	string name;
 	string[] interfaces;

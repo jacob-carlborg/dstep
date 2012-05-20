@@ -25,38 +25,39 @@ class Struct : Declaration
 		super(cursor, parent, translator);
 	}
 	
-	void translate ()
+	string translate ()
 	{
-		writeStruct(spelling) in (context) {
+		return writeStruct(spelling, (context) {
 			foreach (cursor, parent ; cursor.declarations)
 			{
 				with (CXCursorKind)
 					switch (cursor.kind)
 					{
 						case CXCursor_FieldDecl:
+						
+							if (cursor.type.kind == CXTypeKind.CXType_Unexposed)
+							{
+								println(cursor.type.declaration.kind);
+							}
+							
 							context.instanceVariables ~= translator.variable(cursor, new String);
 						break;
 						
 						default: break;
 					}
 			}
-		};
+		});
 	}
 
 private:
 
-	Block!(StructData) writeStruct (string name)
+	string writeStruct (string name, void delegate (StructData context) dg)
 	{
-		Block!(StructData) block;
+		auto context = new StructData;
+		context.name = translateIdentifier(name);
 		
-		block.dg = (dg) {
-			auto context = new StructData;
-			output.structs ~= context;
-			context.name = translateIdentifier(name);
-			
-			dg(context);
-		};
+		dg(context);
 		
-		return block;
+		return context.data;
 	}
 }

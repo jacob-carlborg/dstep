@@ -25,9 +25,9 @@ class Union : Declaration
 		super(cursor, parent, translator);
 	}
 	
-	void translate ()
+	string translate ()
 	{
-		writeUnion(spelling) in (context) {
+		return writeUnion(spelling, (context) {
 			foreach (cursor, parent ; cursor.declarations)
 			{
 				with (CXCursorKind)
@@ -40,23 +40,18 @@ class Union : Declaration
 						default: break;
 					}
 			}
-		};
+		});
 	}
 
 private:
 
-	auto writeUnion (string name)
+	string writeUnion (string name, void delegate (UnionData context) dg)
 	{
-		Block!(UnionData) block;
+		auto context = new UnionData;
+		context.name = translateIdentifier(name);
+
+		dg(context);
 		
-		block.dg = (dg) {
-			auto context = new UnionData;
-			output.structs ~= context;
-			context.name = translateIdentifier(name);
-			
-			dg(context);
-		};
-		
-		return block;
+		return context.data;
 	}
 }

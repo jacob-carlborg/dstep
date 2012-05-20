@@ -58,35 +58,20 @@ class Translator
 		{
 		    if (skipDeclaration(cursor))
 		        continue;
-		    
+
+			auto code = translate(cursor, parent);
+			
 			with (CXCursorKind)
 				switch (cursor.kind)
 				{
-					case CXCursor_ObjCInterfaceDecl:
-						(new ObjcInterface(cursor, parent, this)).translate;
-					break;
-					
-					case CXCursor_VarDecl:
-						output.variables ~= variable(cursor, new String);
-					break;
-					
-					case CXCursor_FunctionDecl:
-					{
-						auto name = translateIdentifier(cursor.spelling);
-						auto context = translateFunction(cursor.func, name, new String);
-						context ~= ";";
-						output.functions ~= context;
-					}
-					break;
-					
-					case CXCursor_TypedefDecl:
-						output.typedefs ~= typedef_(cursor, new String);
-					break;
-					
-					case CXCursor_StructDecl: (new Struct(cursor, parent, this)).translate; break;
-					case CXCursor_EnumDecl: (new Enum(cursor, parent, this)).translate; break;
-					case CXCursor_UnionDecl: (new Union(cursor, parent, this)).translate; break;
-					
+					case CXCursor_ObjCInterfaceDecl: output.classes ~= code; break;
+					case CXCursor_StructDecl: output.structs ~= code; break;
+					case CXCursor_EnumDecl: output.enums ~= code; break;
+					case CXCursor_UnionDecl: output.unions ~= code; break;
+					case CXCursor_VarDecl: output.variables ~= code; break;
+					case CXCursor_FunctionDecl: output.functions ~= code; break;
+					case CXCursor_TypedefDecl: output.typedefs ~= code; break;
+
 					default: continue;
 				}
 		}
@@ -94,23 +79,55 @@ class Translator
 		write(outputFile, output.toString);
 	}
 	
-	String variable (Cursor cursor, String context = output)
+	string translate (Cursor cursor, Cursor parent = Cursor.empty)
+	{
+		with (CXCursorKind)
+			switch (cursor.kind)
+			{
+				case CXCursor_ObjCInterfaceDecl:
+					return (new ObjcInterface(cursor, parent, this)).translate;
+				break;
+			
+				case CXCursor_VarDecl:
+					return variable(cursor, new String);
+				break;
+			
+				case CXCursor_FunctionDecl:
+				{
+					auto name = translateIdentifier(cursor.spelling);
+					return translateFunction(cursor.func, name, new String) ~ ";";
+				}
+				break;
+			
+				case CXCursor_TypedefDecl:
+					return typedef_(cursor, new String);
+				break;
+			
+				case CXCursor_StructDecl: return (new Struct(cursor, parent, this)).translate; break;
+				case CXCursor_EnumDecl: return (new Enum(cursor, parent, this)).translate; break;
+				case CXCursor_UnionDecl: return (new Union(cursor, parent, this)).translate; break;
+			
+				default: assert(0, "Missing implementation for Translator.translate.");
+			}
+	}
+	
+	string variable (Cursor cursor, String context = output)
 	{
 		context ~= translateType(cursor.type);
 		context ~= " " ~ translateIdentifier(cursor.spelling);
 		context ~= ";";
 		
-		return context;
+		return context.data;
 	}
 	
-	String typedef_ (Cursor cursor, String context = output)
+	string typedef_ (Cursor cursor, String context = output)
 	{
 		context ~= "alias ";
 		context ~= translateType(cursor.type.canonicalType);
 		context ~= " " ~ cursor.spelling;
 		context ~= ";";
 		
-		return context;
+		return context.data;
 	}
 	
 private
@@ -121,7 +138,7 @@ private
     }
 }
 
-String translateFunction (FunctionCursor func, string name, String context, bool isStatic = false)
+string translateFunction (FunctionCursor func, string name, String context, bool isStatic = false)
 {
 	if (isStatic)
 		context ~= "static ";
@@ -149,7 +166,7 @@ package struct Parameter
 	bool isConst;
 }
 
-package String translateFunction (string result, string name, Parameter[] parameters, bool variadic, String context)
+package string translateFunction (string result, string name, Parameter[] parameters, bool variadic, String context)
 {
 	context ~= result;
 	context ~= ' ';
@@ -187,7 +204,7 @@ package String translateFunction (string result, string name, Parameter[] parame
 	
 	context ~= ')';
 	
-	return context;
+	return context.data;
 }
 
 string translateIdentifier (string str)

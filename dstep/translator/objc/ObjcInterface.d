@@ -27,11 +27,11 @@ class ObjcInterface : Declaration
 		super(cursor, parent, translator);
 	}
 
-	void translate ()
+	string translate ()
 	{
 		auto cursor = cursor.objc;
 
-		writeClass(spelling, cursor.superClass.spelling, collectInterfaces(cursor.objc)) in {
+		return writeClass(spelling, cursor.superClass.spelling, collectInterfaces(cursor.objc), {
 			foreach (cursor, parent ; cursor.declarations)
 			{
 				with (CXCursorKind)
@@ -44,7 +44,7 @@ class ObjcInterface : Declaration
 						default: break;
 					}
 			}
-		};
+		});
 	}
 
 private:
@@ -59,27 +59,17 @@ private:
 		return interfaces;
 	}
 	
-	Block!() writeClass (string name, string superClassName, string[] interfaces)
+	string writeClass (string name, string superClassName, string[] interfaces, void delegate () dg)
 	{
-		Block!() block;
+		output.currentClass = new ClassData;
+		output.currentClass.name = translateIdentifier(name);
 		
-		block.dg = (void delegate () dg) {
-			output.currentClass = new ClassData;
-			output.classes ~= output.currentClass;
-			output.currentClass.name = translateIdentifier(name);
-			
-			if (superClassName.isPresent)
-				output.currentClass.superclass ~= translateIdentifier(superClassName);
-			
-			classInterfaceHelper(interfaces, output.currentClass, dg);
-		};
+		if (superClassName.isPresent)
+			output.currentClass.superclass ~= translateIdentifier(superClassName);
 		
-		return block;
-	}
-	
-	void classInterfaceHelper (string[] interfaces, ClassData current, void delegate () dg)
-	{
 		dg();
+		
+		return output.currentClass.data;
 	}
 	
 	void translateMethod (FunctionCursor func, bool classMethod = false, string name = null)
@@ -97,10 +87,10 @@ private:
 		
 		
 		if (classMethod)
-			cls.staticMethods ~= method;
+			cls.staticMethods ~= method.data;
 			
 		else
-			cls.instanceMethods ~= method;
+			cls.instanceMethods ~= method.data;
 	}
 	
 	void translateProperty (FunctionCursor cursor)
@@ -112,6 +102,6 @@ private:
 	{
 		auto var = new String;
 		translator.variable(cursor, var);
-		output.currentClass.instanceVariables ~= var;
+		output.currentClass.instanceVariables ~= var.data;
 	}
 }
