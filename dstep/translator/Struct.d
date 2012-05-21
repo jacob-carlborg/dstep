@@ -34,10 +34,10 @@ class Struct : Declaration
 					switch (cursor.kind)
 					{
 						case CXCursor_FieldDecl:
-						
-							if (cursor.type.kind == CXTypeKind.CXType_Unexposed)
+							if (cursor.type.isUnexposed && cursor.type.declaration.isValid)
 							{
-								println(cursor.type.declaration.kind);
+
+								context.instanceVariables ~= translator.translate(cursor.type.declaration);
 							}
 							
 							context.instanceVariables ~= translator.variable(cursor, new String);

@@ -11,8 +11,12 @@ import mambo.core._;
 import clang.Cursor;
 import dstep.translator.Type;
 
-class Output : String
+class Output
 {
+	String currentContext;
+	
+	alias currentContext this;
+	
 	String before;
 	String after;
 	String imports;
@@ -35,6 +39,7 @@ class Output : String
 		before = new String;
 		after = new String;
 		imports = new String;
+		currentContext = new String;
 		
 		currentClass = new ClassData;
 		currentInterface = new ClassData;
@@ -42,6 +47,8 @@ class Output : String
 	
 	@property string data ()
 	{
+		newContext();
+
 		this ~= before.data;
 		this ~= imports.data;
 		
@@ -59,7 +66,14 @@ class Output : String
 
 		this ~= after.data;
 		
-		return super.data;
+		return currentContext.data;
+	}
+	
+	void newContext ()
+	{
+		auto context = new String;
+		context.indendationLevel = currentContext.indendationLevel;
+		currentContext = context;
 	}
 	
 	string toString ()
@@ -224,11 +238,12 @@ class ClassData : StructData
 
 class String
 {
+	int indendationLevel;
+
 	private
 	{
 		std.array.Appender!(string) appender;
-		ubyte indendationLevel;
-		ubyte prevIndendationLevel;
+		int prevIndendationLevel;
 		bool shouldIndent;
 	}
 	
@@ -293,7 +308,7 @@ class String
 		return indent(1);
 	}
 	
-	Indendation indent (ubyte indendationLevel)
+	Indendation indent (int indendationLevel)
 	{
 		prevIndendationLevel = this.indendationLevel;
 		this.indendationLevel = indendationLevel;
@@ -306,7 +321,7 @@ class String
 		
 		void opIn (void delegate () dg)
 		{
-			str._indent;
+			str.shouldIndent = str.indendationLevel > 0;
 			dg();
 			str.indendationLevel = str.prevIndendationLevel;
 		}

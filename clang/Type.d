@@ -101,6 +101,11 @@ struct Type
 		return clang_isConstQualifiedType(cx) == 1;
 	}
 	
+	@property bool isUnexposed ()
+	{
+		return kind == CXTypeKind.CXType_Unexposed;
+	}
+	
 	@property Cursor declaration ()
 	{
 	    auto r = clang_getTypeDeclaration(cx);

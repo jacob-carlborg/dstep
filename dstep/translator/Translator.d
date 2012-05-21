@@ -76,7 +76,9 @@ class Translator
 				}
 		}
 
-		write(outputFile, output.toString);
+		auto data = output.toString;
+		write(outputFile, data);
+		println(data);
 	}
 	
 	string translate (Cursor cursor, Cursor parent = Cursor.empty)
@@ -107,7 +109,8 @@ class Translator
 				case CXCursor_EnumDecl: return (new Enum(cursor, parent, this)).translate; break;
 				case CXCursor_UnionDecl: return (new Union(cursor, parent, this)).translate; break;
 			
-				default: assert(0, "Missing implementation for Translator.translate.");
+				default:
+					assert(0, `Translator.translate: missing implementation for "` ~ cursor.kind.toString ~ `".`);
 			}
 	}
 	
