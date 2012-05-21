@@ -59,6 +59,7 @@ class Translator
 		    if (skipDeclaration(cursor))
 		        continue;
 
+			output.newContext();
 			auto code = translate(cursor, parent);
 			
 			with (CXCursorKind)
@@ -91,18 +92,18 @@ class Translator
 				break;
 			
 				case CXCursor_VarDecl:
-					return variable(cursor, new String);
+					return variable(cursor, output.newContext());
 				break;
 			
 				case CXCursor_FunctionDecl:
 				{
 					auto name = translateIdentifier(cursor.spelling);
-					return translateFunction(cursor.func, name, new String) ~ ";";
+					return translateFunction(cursor.func, name, output) ~ ";";
 				}
 				break;
 			
 				case CXCursor_TypedefDecl:
-					return typedef_(cursor, new String);
+					return typedef_(cursor, output.newContext);
 				break;
 			
 				case CXCursor_StructDecl: return (new Struct(cursor, parent, this)).translate; break;
@@ -114,8 +115,11 @@ class Translator
 			}
 	}
 	
-	string variable (Cursor cursor, String context = output)
+	string variable (Cursor cursor, String context = null)
 	{
+		if (!context)
+			context = output;
+
 		context ~= translateType(cursor.type);
 		context ~= " " ~ translateIdentifier(cursor.spelling);
 		context ~= ";";

@@ -74,7 +74,7 @@ private:
 	
 	void translateMethod (FunctionCursor func, bool classMethod = false, string name = null)
 	{
-		auto method = new String;
+		auto method = output.newContext();
 		auto cls = output.currentClass;
 		
 		name = cls.getMethodName(func, name);
@@ -100,7 +100,7 @@ private:
 	
 	void translateInstanceVariable (Cursor cursor)
 	{
-		auto var = new String;
+		auto var = output.newContext();
 		translator.variable(cursor, var);
 		output.currentClass.instanceVariables ~= var.data;
 	}

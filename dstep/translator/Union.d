@@ -34,7 +34,8 @@ class Union : Declaration
 					switch (cursor.kind)
 					{
 						case CXCursor_FieldDecl:
-							context.instanceVariables ~= translator.variable(cursor, new String);
+							output.newContext();
+							context.instanceVariables ~= translator.variable(cursor);
 						break;
 						
 						default: break;

@@ -34,11 +34,11 @@ class Enum : Declaration
 					switch (cursor.kind)
 					{
 						case CXCursor_EnumConstantDecl:
-							auto str = new String;
-							str ~= translateIdentifier(cursor.spelling);
-							str ~= " = ";
-							str ~= cursor.enum_.value.toString;
-							context.instanceVariables ~= str.data;
+							output.newContext();
+							output ~= translateIdentifier(cursor.spelling);
+							output ~= " = ";
+							output ~= cursor.enum_.value.toString;
+							context.instanceVariables ~= output.currentContext.data;
 						break;
 						
 						default: break;

@@ -36,11 +36,14 @@ class Struct : Declaration
 						case CXCursor_FieldDecl:
 							if (cursor.type.isUnexposed && cursor.type.declaration.isValid)
 							{
-
-								context.instanceVariables ~= translator.translate(cursor.type.declaration);
+								output.newContext();
+								output.currentContext.indent in {
+									context.instanceVariables ~= translator.translate(cursor.type.declaration);
+								};
 							}
 							
-							context.instanceVariables ~= translator.variable(cursor, new String);
+							output.newContext();
+							context.instanceVariables ~= translator.variable(cursor);
 						break;
 						
 						default: break;

@@ -69,11 +69,15 @@ class Output
 		return currentContext.data;
 	}
 	
-	void newContext ()
+	/**
+	 * Creates a new context and sets it as the current context. Returns the newly created
+	 * context.
+	 */ 
+	String newContext ()
 	{
 		auto context = new String;
 		context.indendationLevel = currentContext.indendationLevel;
-		currentContext = context;
+		return currentContext = context;
 	}
 	
 	string toString ()
