@@ -51,7 +51,7 @@ private:
 	void startConversion ()
 	{
 		index = Index(false, false);
-		translationUnit = TranslationUnit.parse(index, inputFiles.first, args);
+		translationUnit = TranslationUnit.parse(index, inputFiles.first, args[1 .. $]);
 		
 		if (!translationUnit.isValid)
 			throw new DStepException("An unknown error occurred");
