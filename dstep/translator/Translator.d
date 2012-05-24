@@ -30,7 +30,6 @@ class Translator
 	private
 	{
 		TranslationUnit translationUnit;
-		Output output_;
 
 		string outputFile;
         string inputFilename;
@@ -43,13 +42,6 @@ class Translator
 		this.outputFile = outputFile;
         this.inputFilename = inputFilename;
         inputFile = translationUnit.file(inputFilename);
-
-		output_ = new Output;
-	}
-	
-	@property Output output ()
-	{
-		return output_;
 	}
 	
 	void translate ()
@@ -61,7 +53,7 @@ class Translator
 
 			output.newContext();
 			auto code = translate(cursor, parent);
-			
+
 			with (CXCursorKind)
 				switch (cursor.kind)
 				{

@@ -11,6 +11,8 @@ import clang.Cursor;
 import dstep.translator.Translator;
 import dstep.translator.Output;
 
+alias dstep.translator.Output.output output;
+
 abstract class Declaration
 {
 	protected
@@ -19,7 +21,6 @@ abstract class Declaration
 		Cursor parent;
 		
 		Translator translator;
-		Output output;
 	}
 
 	template Constructors ()
@@ -38,7 +39,6 @@ abstract class Declaration
 		this.cursor = cursor;
 		this.parent = parent;
 		this.translator = translator;
-		output = translator.output;
 	}
 	
 	abstract string translate ();

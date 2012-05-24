@@ -11,6 +11,13 @@ import mambo.core._;
 import clang.Cursor;
 import dstep.translator.Type;
 
+Output output;
+
+static this ()
+{
+	output = new Output;
+}
+
 class Output
 {
 	String currentContext;
@@ -76,7 +83,7 @@ class Output
 	String newContext ()
 	{
 		auto context = new String;
-		context.indendationLevel = currentContext.indendationLevel;
+		context.indentationLevel = currentContext.indentationLevel;
 		return currentContext = context;
 	}
 	
@@ -109,8 +116,8 @@ class StructData
 	
 	@property string data ()
 	{
-		auto context = new String;
-		
+		auto context = output.newContext();
+
 		context.put(type, ' ', name, nl, '{', nl);
 		
 		context.indent in {
@@ -225,7 +232,7 @@ class ClassData : StructData
 	
 	@property override string data ()
 	{
-		auto cls = new String;
+		auto cls = output.newContext();
 		
 		cls.put("class ", name, nl, '{', nl);
 		
@@ -242,7 +249,7 @@ class ClassData : StructData
 
 class String
 {
-	int indendationLevel;
+	int indentationLevel;
 
 	private
 	{
@@ -263,19 +270,21 @@ class String
 	
 	String put (Args...) (Args args)// if (!is(T == NewLine))
 	{
-		if (shouldIndent)
-		{
-			_indent();
-			shouldIndent = false;
-		}
-
 		foreach (arg ; args)
 		{
 			static if (is(typeof(arg) == NewLine))
 				put(nl);
 				
 			else
+			{
+				if (shouldIndent)
+				{
+					_indent();
+					shouldIndent = false;
+				}
+
 				appender.put(arg);
+			}
 		}
 
 		return this;
@@ -284,7 +293,7 @@ class String
 	String put () (NewLine)
 	{
 		appender.put('\n');
-		shouldIndent = indendationLevel > 0;
+		shouldIndent = indentationLevel > 0;
 		
 		return this;
 	}
@@ -312,10 +321,10 @@ class String
 		return indent(1);
 	}
 	
-	Indendation indent (int indendationLevel)
+	Indendation indent (int indentationLevel)
 	{
-		prevIndendationLevel = this.indendationLevel;
-		this.indendationLevel = indendationLevel;
+		prevIndendationLevel = this.indentationLevel;
+		this.indentationLevel = indentationLevel;
 		return Indendation(this);
 	}
 	
@@ -325,9 +334,9 @@ class String
 		
 		void opIn (void delegate () dg)
 		{
-			str.shouldIndent = str.indendationLevel > 0;
+			str.shouldIndent = str.indentationLevel > 0;
 			dg();
-			str.indendationLevel = str.prevIndendationLevel;
+			str.indentationLevel = str.prevIndendationLevel;
 		}
 	}
 	
@@ -335,7 +344,7 @@ private:
 	
 	void _indent ()
 	{
-		foreach (i ; 0 .. indendationLevel)
+		foreach (i ; 0 .. indentationLevel)
 			appender.put('\t');
 	}
 }
