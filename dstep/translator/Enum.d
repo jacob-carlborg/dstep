@@ -25,42 +25,37 @@ class Enum : Declaration
 		super(cursor, parent, translator);
 	}
 	
-	void translate ()
+	string translate ()
 	{
-		writeEnum(spelling) in (context) {
+		return writeEnum(spelling, (context) {
 			foreach (cursor, parent ; cursor.declarations)
 			{
 				with (CXCursorKind)
 					switch (cursor.kind)
 					{
 						case CXCursor_EnumConstantDecl:
-							auto str = new String;
-							str ~= translateIdentifier(cursor.spelling);
-							str ~= " = ";
-							str ~= cursor.enum_.value.toString;
-							context.instanceVariables ~= str;
+							output.newContext();
+							output ~= translateIdentifier(cursor.spelling);
+							output ~= " = ";
+							output ~= cursor.enum_.value.toString;
+							context.instanceVariables ~= output.currentContext.data;
 						break;
 						
 						default: break;
 					}
 			}
-		};
+		});
 	}
 
 private:
 
-	Block!(EnumData) writeEnum (string name)
+	string writeEnum (string name, void delegate (EnumData context) dg)
 	{
-		Block!(EnumData) block;
+		auto context = new EnumData;
+		context.name = translateIdentifier(name);
 		
-		block.dg = (dg) {
-			auto context = new EnumData;
-			output.structs ~= context;
-			context.name = translateIdentifier(name);
-			
-			dg(context);
-		};
+		dg(context);
 		
-		return block;
+		return context.data;
 	}
 }

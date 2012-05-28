@@ -11,19 +11,25 @@ import mambo.core._;
 import clang.Cursor;
 import dstep.translator.Type;
 
-class Output : String
+class Output
 {
+	String currentContext;
+	
+	alias currentContext this;
+	
 	String before;
 	String after;
 	String imports;
-	String[] functions;
+
+	string[] typedefs;	
+	string[] variables;
 	
-	String[] variables;
-	String[] typedefs;
-	
-	ClassData[] classes;
-	ClassData[] interfaces;
-	StructData[] structs;
+	string[] classes;
+	string[] interfaces;
+	string[] structs;
+	string[] enums;
+	string[] unions;
+	string[] functions;
 	
 	ClassData currentClass;
 	ClassData currentInterface;
@@ -33,6 +39,7 @@ class Output : String
 		before = new String;
 		after = new String;
 		imports = new String;
+		currentContext = new String;
 		
 		currentClass = new ClassData;
 		currentInterface = new ClassData;
@@ -40,22 +47,37 @@ class Output : String
 	
 	@property string data ()
 	{
+		newContext();
+
 		this ~= before.data;
 		this ~= imports.data;
 		
 		if (imports.any)
 		    this ~= nl;
 		
-		addDeclarations(typedefs);
-		addDeclarations(variables);
+		addDeclarations(typedefs, false);
+		addDeclarations(variables, false);
+		addDeclarations(enums);
 		addDeclarations(structs);
+		addDeclarations(unions);
 		addDeclarations(classes);
 		addDeclarations(interfaces);
-		addDeclarations(functions);
+		addDeclarations(functions, false);
 
 		this ~= after.data;
 		
-		return super.data;
+		return currentContext.data;
+	}
+	
+	/**
+	 * Creates a new context and sets it as the current context. Returns the newly created
+	 * context.
+	 */ 
+	String newContext ()
+	{
+		auto context = new String;
+		context.indendationLevel = currentContext.indendationLevel;
+		return currentContext = context;
 	}
 	
 	string toString ()
@@ -65,26 +87,15 @@ class Output : String
 
 private:
 
-    void addDeclarations (String[] declarations)
+    void addDeclarations (string[] declarations, bool extraNewline = true)
     {
-        this ~= declarations.map!(e => e.data).join("\n");
-        
-        if (declarations.any)
-            this ~= "\n\n";
-    }
+		auto newline = "\n";
+		
+		if (extraNewline)
+			newline ~= "\n";
+		
+        this ~= declarations.join(newline);
 
-    void addDeclarations (StructData[] declarations)
-    {
-        this ~= declarations.map!(e => e.data).join("\n\n");
-        
-        if (declarations.any)
-            this ~= "\n\n";
-    }
-
-    void addDeclarations (ClassData[] declarations)
-    {
-        this ~= declarations.map!(e => e.data).join("\n\n");
-        
         if (declarations.any)
             this ~= "\n\n";
     }
@@ -94,7 +105,7 @@ class StructData
 {
 	string name;
 
-	String[] instanceVariables;
+	string[] instanceVariables;
 	
 	@property string data ()
 	{
@@ -116,14 +127,14 @@ protected:
 		return "struct";
 	}
 
-	void addDeclarations (String context, String[] declarations)
+	void addDeclarations (String context, string[] declarations)
     {
 		foreach (i, e ; declarations)
 		{
 			if (i != 0)
 				context ~= nl;
 
-			context ~= e.data;
+			context ~= e;
 		}
 
         if (declarations.any)
@@ -143,7 +154,7 @@ class EnumData : StructData
 	
 protected:
 
-	override void addDeclarations (String context, String[] declarations)
+	override void addDeclarations (String context, string[] declarations)
     {
 		foreach (i, e ; declarations)
 		{
@@ -153,7 +164,7 @@ protected:
 				context ~= nl;
 			}
 
-			context ~= e.data;
+			context ~= e;
 		}
 
         if (declarations.any)
@@ -164,12 +175,20 @@ protected:
     }
 }
 
+class UnionData : StructData
+{
+	@property override string type ()
+	{
+		return "union";
+	}
+}
+
 class ClassData : StructData
 {
-	String[] instanceMethods;
-	String[] staticMethods;
+	string[] instanceMethods;
+	string[] staticMethods;
 	
-	String[] staticVariables;
+	string[] staticVariables;
 	
 	string name;
 	string[] interfaces;
@@ -223,11 +242,12 @@ class ClassData : StructData
 
 class String
 {
+	int indendationLevel;
+
 	private
 	{
 		std.array.Appender!(string) appender;
-		ubyte indendationLevel;
-		ubyte prevIndendationLevel;
+		int prevIndendationLevel;
 		bool shouldIndent;
 	}
 	
@@ -292,7 +312,7 @@ class String
 		return indent(1);
 	}
 	
-	Indendation indent (ubyte indendationLevel)
+	Indendation indent (int indendationLevel)
 	{
 		prevIndendationLevel = this.indendationLevel;
 		this.indendationLevel = indendationLevel;
@@ -305,7 +325,7 @@ class String
 		
 		void opIn (void delegate () dg)
 		{
-			str._indent;
+			str.shouldIndent = str.indendationLevel > 0;
 			dg();
 			str.indendationLevel = str.prevIndendationLevel;
 		}

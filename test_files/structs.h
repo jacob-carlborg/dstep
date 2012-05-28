@@ -9,3 +9,11 @@ struct Bar
 } b;
 
 struct Foo c;
+
+struct A
+{
+	struct B
+	{
+		int x;
+	} b;
+};

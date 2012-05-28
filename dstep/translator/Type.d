@@ -178,7 +178,7 @@ body
 
 	auto resultType = translateType(func.resultType);
 
-	return translateFunction(resultType, "function", params, func.isVariadic, new String).data;
+	return translateFunction(resultType, "function", params, func.isVariadic, new String);
 }
 
 string translateObjCObjectPointerType (Type type)
