@@ -43,15 +43,15 @@ class Application : DStack.Application
 	override void run ()
 	{
 		handleArguments;
-		startConversion;
+		startConversion(inputFiles.first);
 	}
 
 private:
 	
-	void startConversion ()
+	void startConversion (string file)
 	{
 		index = Index(false, false);
-		translationUnit = TranslationUnit.parse(index, inputFiles.first, args[1 .. $]);
+		translationUnit = TranslationUnit.parse(index, file, args[1 .. $]);
 		
 		if (!translationUnit.isValid)
 			throw new DStepException("An unknown error occurred");
@@ -63,7 +63,7 @@ private:
 			
 		if (handleDiagnostics)
 		{
-			auto translator = new Translator(inputFiles.first, translationUnit, output);
+			auto translator = new Translator(file, translationUnit, output);
 			translator.translate;
 		}
 	}
