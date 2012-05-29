@@ -117,14 +117,18 @@ class StructData
 	@property string data ()
 	{
 		auto context = output.newContext();
-
 		context.put(type, ' ', name, nl, '{', nl);
-		
+
 		context.indent in {
 			addDeclarations(context, instanceVariables);
 		};
 		
-		return context.data.strip('\n') ~ "\n}";
+		auto str = context.data.strip('\n');
+		context = output.newContext();
+		context ~= str;
+		context.put(nl, '}');
+
+		return context.data;
 	}
 	
 protected:
@@ -243,7 +247,11 @@ class ClassData : StructData
 			addDeclarations(cls, instanceMethods);
 		};
 		
-		return cls.data.strip('\n') ~ "\n}";
+		auto context = output.newContext();
+		context ~= cls.data.strip('\n');
+		context.put(nl, '}');
+
+		return context.data;
 	}
 }
 
@@ -318,7 +326,7 @@ class String
 	
 	Indendation indent ()
 	{
-		return indent(1);
+		return indent(indentationLevel + 1);
 	}
 	
 	Indendation indent (int indentationLevel)
@@ -336,6 +344,7 @@ class String
 		{
 			str.shouldIndent = str.indentationLevel > 0;
 			dg();
+			output.currentContext = str;
 			str.indentationLevel = str.prevIndendationLevel;
 		}
 	}

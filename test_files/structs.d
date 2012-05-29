@@ -10,3 +10,12 @@ struct Bar
 {
 	int x;
 }
+
+struct A
+{
+	struct B
+	{
+		int x;
+	}
+	B b;
+}
