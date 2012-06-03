@@ -190,3 +190,20 @@ struct Arguments
 		return 0;
 	}
 }
+
+@property bool isUnsigned (CXTypeKind kind)
+{
+	with (CXTypeKind)
+		switch (kind)
+		{
+			case CXType_Char_U: return true;
+			case CXType_UChar: return true;
+			case CXType_UShort: return true;
+			case CXType_UInt: return true;
+			case CXType_ULong: return true;
+			case CXType_ULongLong: return true;
+			case CXType_UInt128: return true;
+
+			default: return false;
+		}
+}

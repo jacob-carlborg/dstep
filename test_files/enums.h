@@ -1,6 +1,6 @@
 enum Foo
 {
-	a = 1u
+	a = 1
 };
 
 enum Bar

@@ -6,6 +6,8 @@
  */
 module clang.Cursor;
 
+import mambo.core._;
+
 import clang.c.index;
 import clang.SourceLocation;
 import clang.Type;
@@ -150,22 +152,19 @@ struct EnumCursor
 {
 	Cursor cursor;
 	alias cursor this;
+
+	@property string value ()
+	{
+		return type.kind.isUnsigned ? unsignedValue.toString : signedValue.toString;
+	}
 	
-	@property long value ()
+	@property long signedValue ()
 	{
 		return clang_getEnumConstantDeclValue(cx);
 	}
 
-	// These are available in Clang 3.1.
-	// @property ulong unsignedValue ()
-	// {
-	// 	return clang_getEnumConstantDeclUnsignedValue(cx);
-	// }
-	// 
-	// @property bool unsigned ()
-	// {
-	// 	auto type = clang_getTypedefDeclUnderlyingType(cx);
-	// 	println(type.kind);
-	// 	return false;
-	// }
+	@property ulong unsignedValue ()
+	{
+		return clang_getEnumConstantDeclUnsignedValue(cx);
+	}
 }

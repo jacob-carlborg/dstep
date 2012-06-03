@@ -37,7 +37,7 @@ class Enum : Declaration
 							output.newContext();
 							output ~= translateIdentifier(cursor.spelling);
 							output ~= " = ";
-							output ~= cursor.enum_.value.toString;
+							output ~= cursor.enum_.value;
 							context.instanceVariables ~= output.currentContext.data;
 						break;
 						
