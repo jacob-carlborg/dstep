@@ -1,5 +1,5 @@
-Bar b;
-Foo c;
+extern __gshared Bar b;
+extern __gshared Foo c;
 
 struct Foo
 {

@@ -84,7 +84,11 @@ class Translator
 				break;
 			
 				case CXCursor_VarDecl:
-					return variable(cursor, output.newContext());
+				{
+					auto contex = output.newContext();
+					contex ~= "extern __gshared ";
+					return variable(cursor, contex);
+				}
 				break;
 			
 				case CXCursor_FunctionDecl:

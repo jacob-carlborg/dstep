@@ -1,1 +1,1 @@
-int a;
+extern __gshared int a;

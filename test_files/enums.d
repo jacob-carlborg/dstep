@@ -1,5 +1,5 @@
-Bar e;
-Foo f;
+extern __gshared Bar e;
+extern __gshared Foo f;
 
 enum Foo
 {
