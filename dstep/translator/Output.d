@@ -27,6 +27,7 @@ class Output
 	String before;
 	String after;
 	String imports;
+	string externDeclaration;
 
 	string[] typedefs;	
 	string[] variables;
@@ -62,6 +63,12 @@ class Output
 		if (imports.any)
 		    this ~= nl;
 		
+		if (externDeclaration.isPresent)
+		{
+			this ~= externDeclaration;
+			put(nl, nl);
+		}
+
 		addDeclarations(typedefs, false);
 		addDeclarations(variables, false);
 		addDeclarations(enums);

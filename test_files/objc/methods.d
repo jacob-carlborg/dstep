@@ -1,3 +1,5 @@
+extern (Objective-C):
+
 class Foo
 {
 	static void classMethod () [classMethod];

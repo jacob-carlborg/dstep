@@ -26,7 +26,13 @@ import dstep.translator.Type;
 import dstep.translator.Union;
 
 class Translator
-{
+{	
+	static struct Options
+	{
+		string outputFile;
+		Language language = Language.c;
+	}
+	
 	private
 	{
 		TranslationUnit translationUnit;
@@ -34,13 +40,16 @@ class Translator
 		string outputFile;
         string inputFilename;
         File inputFile;
+		Language language;
 	}
 	
-	this (string inputFilename, TranslationUnit translationUnit, string outputFile)
+	this (string inputFilename, TranslationUnit translationUnit, const Options options = Options.init)
 	{
+		this.inputFilename = inputFilename;
 		this.translationUnit = translationUnit;
-		this.outputFile = outputFile;
-        this.inputFilename = inputFilename;
+		outputFile = options.outputFile;
+		language = options.language;
+
         inputFile = translationUnit.file(inputFilename);
 	}
 	
@@ -68,6 +77,8 @@ class Translator
 					default: continue;
 				}
 		}
+
+		output.externDeclaration = externDeclaration();
 
 		auto data = output.toString;
 		write(outputFile, data);
@@ -133,12 +144,23 @@ class Translator
 		return context.data;
 	}
 	
-private
+private:
 
     bool skipDeclaration (Cursor cursor)
     {
         return inputFile != cursor.location.spelling.file;
     }
+
+	string externDeclaration ()
+	{
+		final switch (language)
+		{
+			case Language.c: return "extern (C):";
+			case Language.objectiveC: return "extern (Objective-C):";
+			case Language.cPlusPlus: return "extern (C++):";
+			case Language.objectiveCPlusPlus: return "extern (Objective-C++):";
+		}
+	}
 }
 
 string translateFunction (FunctionCursor func, string name, String context, bool isStatic = false)
@@ -372,4 +394,12 @@ bool isDKeyword (string str)
 	}
 	
 	return false;
+}
+
+enum Language
+{
+	c,
+	objectiveC,
+	cPlusPlus,
+	objectiveCPlusPlus,
 }

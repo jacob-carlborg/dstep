@@ -6,8 +6,6 @@
  */
 module dstep.translator.Type;
 
-import std.string;
-
 import mambo.core.string;
 import mambo.core.io;
 

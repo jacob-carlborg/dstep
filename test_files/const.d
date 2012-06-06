@@ -1,3 +1,5 @@
+extern (C):
+
 extern __gshared const int a;
 extern __gshared const(int)* b;
 extern __gshared int* c;

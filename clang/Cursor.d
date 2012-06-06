@@ -80,6 +80,11 @@ struct Cursor
 		return Visitor(this);
 	}
 	
+	@property CXLanguageKind language ()
+	{
+		return clang_getCursorLanguage(cx);
+	}
+
 	equals_t opEquals (const ref Cursor cursor) const
 	{
 		return clang_equalCursors(cast(CXCursor) cursor.cx, cast(CXCursor) cx) == 0;

@@ -1,3 +1,5 @@
+extern (C):
+
 extern __gshared c_long x3;
 extern __gshared long x4;
 extern __gshared char x5;

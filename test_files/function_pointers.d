@@ -1,3 +1,5 @@
+extern (C):
+
 extern __gshared void function () a;
 extern __gshared int function () b;
 extern __gshared void function (int) c;

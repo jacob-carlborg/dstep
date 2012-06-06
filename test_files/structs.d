@@ -1,3 +1,5 @@
+extern (C):
+
 extern __gshared Bar b;
 extern __gshared Foo c;
 

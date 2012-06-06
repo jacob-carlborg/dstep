@@ -11,12 +11,13 @@ import std.string;
 import mambo.core.io;
 
 import clang.c.index;
-import clang.Visitor;
+import clang.Cursor;
 import clang.Diagnostic;
 import clang.File;
 import clang.Index;
 import clang.UnsavedFile;
 import clang.Util;
+import clang.Visitor;
 
 struct TranslationUnit
 {
@@ -56,6 +57,12 @@ struct TranslationUnit
     {
         return File(clang_getFile(cx, filename.toStringz));
     }
+
+	@property Cursor cursor ()
+	{
+		auto r = clang_getTranslationUnitCursor(cx);
+		return Cursor(r);
+	}
 }
 
 struct DiagnosticVisitor
