@@ -96,9 +96,8 @@ private:
 	
 	void handleObjectiveC ()
 	{
-		language = Language.objectiveC;
+		language = Language.objC;
 		args = args.remove("-ObjC");
-		println(args.indexOf("test_files/objc/classes.h"));
 		argsToRestore ~= "-ObjC";
 	}
 
@@ -111,22 +110,20 @@ private:
 				this.language = Language.c;
 			break;
 		
-			case "c++":
-			case "c++-header":
-				this.language = Language.cPlusPlus;
-			break;
+			// Can't handle C++ yet
+			//
+			// case "c++":
+			// case "c++-header":
+			// 	this.language = Language.cpp;
+			// break;
 		
 			case "objective-c":
 			case "objective-c-header":
-				this.language = Language.objectiveC;
+				this.language = Language.objC;
 			break;
-		
-			case "objective-c++":
-			case "objective-c++-header":
-				this.language = Language.objectiveCPlusPlus;
-			break;
-		
-			default: // do nothing
+
+			default:
+				throw new DStepException(`Unrecognized language "` ~ language ~ `"`);
 		}
 
 		argsToRestore ~= "-x";

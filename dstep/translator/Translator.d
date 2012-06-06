@@ -156,9 +156,8 @@ private:
 		final switch (language)
 		{
 			case Language.c: return "extern (C):";
-			case Language.objectiveC: return "extern (Objective-C):";
-			case Language.cPlusPlus: return "extern (C++):";
-			case Language.objectiveCPlusPlus: return "extern (Objective-C++):";
+			case Language.objC: return "extern (Objective-C):";
+			// case Language.cpp: return "extern (C++):";
 		}
 	}
 }
@@ -399,7 +398,7 @@ bool isDKeyword (string str)
 enum Language
 {
 	c,
-	objectiveC,
-	cPlusPlus,
-	objectiveCPlusPlus,
+	objC
+// Can't handle C++ yet
+//	cpp
 }
