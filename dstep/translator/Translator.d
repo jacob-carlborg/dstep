@@ -15,10 +15,12 @@ import clang.c.index;
 import clang.Cursor;
 import clang.File;
 import clang.TranslationUnit;
+import clang.Type;
 import clang.Util;
 
 import dstep.translator.Declaration;
 import dstep.translator.Enum;
+import dstep.translator.IncludeHandler;
 import dstep.translator.objc.ObjcInterface;
 import dstep.translator.Output;
 import dstep.translator.Struct;
@@ -127,7 +129,7 @@ class Translator
 		if (!context)
 			context = output;
 
-		context ~= translateType(cursor.type);
+		context ~= handleType(cursor.type);
 		context ~= " " ~ translateIdentifier(cursor.spelling);
 		context ~= ";";
 		
@@ -137,7 +139,7 @@ class Translator
 	string typedef_ (Cursor cursor, String context = output)
 	{
 		context ~= "alias ";
-		context ~= translateType(cursor.type.canonicalType);
+		context ~= handleType(cursor.type.canonicalType);
 		context ~= " " ~ cursor.spelling;
 		context ~= ";";
 		
@@ -174,11 +176,11 @@ string translateFunction (FunctionCursor func, string name, String context, bool
 	
 	foreach (param ; func.parameters)
 	{
-		auto type = translateType(param.type);
+		auto type = handleType(param.type);
 		params ~= Parameter(type, param.spelling);
 	}
-	
-	auto resultType = translateType(func.resultType);
+
+	auto resultType = handleType(func.resultType);
 
 	return translateFunction(resultType, name, params, func.isVariadic, context);
 }
@@ -234,6 +236,29 @@ package string translateFunction (string result, string name, Parameter[] parame
 string translateIdentifier (string str)
 {
 	return isDKeyword(str) ? str ~ '_' : str;
+}
+
+string getInclude (Type type)
+in
+{
+	assert(type.isValid);
+}
+body
+{
+	return type.declaration.location.spelling.file.name;
+}
+
+private string handleType (Type type)
+{
+	//if (!type.isBuiltin)
+		handleInclude(type);
+
+	return translateType(type);
+}
+
+private void handleInclude (Type type)
+{
+	includeHandler.addInclude(getInclude(type));
 }
 
 bool isDKeyword (string str)

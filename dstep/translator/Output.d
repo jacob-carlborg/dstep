@@ -6,6 +6,8 @@
  */
 module dstep.translator.Output;
 
+static import std.array;
+
 import mambo.core._;
 
 import clang.Cursor;
@@ -66,7 +68,7 @@ class Output
 		if (externDeclaration.isPresent)
 		{
 			this ~= externDeclaration;
-			put(nl, nl);
+			currentContext.put(nl, nl);
 		}
 
 		addDeclarations(typedefs, false);

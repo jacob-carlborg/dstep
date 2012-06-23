@@ -7,7 +7,7 @@
 module dstep.driver.Application;
 
 import std.getopt;
-import std.stdio;
+import std.stdio : writeln, stderr;
 
 import DStack = dstack.application.Application;
 
@@ -97,7 +97,7 @@ private:
 	void handleObjectiveC ()
 	{
 		language = Language.objC;
-		args = args.remove("-ObjC");
+		//args = remove(args, "-ObjC");
 		argsToRestore ~= "-ObjC";
 	}
 

@@ -160,7 +160,8 @@ struct EnumCursor
 
 	@property string value ()
 	{
-		return type.kind.isUnsigned ? unsignedValue.toString : signedValue.toString;
+		//return type.kind.isUnsigned ? unsignedValue.toString : signedValue.toString;
+		return signedValue.toString;
 	}
 	
 	@property long signedValue ()
