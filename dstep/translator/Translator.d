@@ -120,7 +120,8 @@ class Translator
 				case CXCursor_UnionDecl: return (new Union(cursor, parent, this)).translate; break;
 			
 				default:
-					assert(0, `Translator.translate: missing implementation for "` ~ cursor.kind.toString ~ `".`);
+					return "";
+					//assert(0, `Translator.translate: missing implementation for "` ~ cursor.kind.toString ~ `".`);
 			}
 	}
 	
@@ -129,7 +130,7 @@ class Translator
 		if (!context)
 			context = output;
 
-		context ~= handleType(cursor.type);
+		context ~= translateType(cursor.type);
 		context ~= " " ~ translateIdentifier(cursor.spelling);
 		context ~= ";";
 		
@@ -139,7 +140,7 @@ class Translator
 	string typedef_ (Cursor cursor, String context = output)
 	{
 		context ~= "alias ";
-		context ~= handleType(cursor.type.canonicalType);
+		context ~= translateType(cursor.type.canonicalType);
 		context ~= " " ~ cursor.spelling;
 		context ~= ";";
 		
@@ -176,11 +177,11 @@ string translateFunction (FunctionCursor func, string name, String context, bool
 	
 	foreach (param ; func.parameters)
 	{
-		auto type = handleType(param.type);
+		auto type = translateType(param.type);
 		params ~= Parameter(type, param.spelling);
 	}
 
-	auto resultType = handleType(func.resultType);
+	auto resultType = translateType(func.resultType);
 
 	return translateFunction(resultType, name, params, func.isVariadic, context);
 }
@@ -248,15 +249,7 @@ body
 	return type.declaration.location.spelling.file.name;
 }
 
-private string handleType (Type type)
-{
-	//if (!type.isBuiltin)
-		handleInclude(type);
-
-	return translateType(type);
-}
-
-private void handleInclude (Type type)
+void handleInclude (Type type)
 {
 	includeHandler.addInclude(getInclude(type));
 }

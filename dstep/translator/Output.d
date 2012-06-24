@@ -11,6 +11,7 @@ static import std.array;
 import mambo.core._;
 
 import clang.Cursor;
+import dstep.translator.IncludeHandler;
 import dstep.translator.Type;
 
 Output output;
@@ -60,6 +61,7 @@ class Output
 		newContext();
 
 		this ~= before.data;
+		addDeclarations(includeHandler.toImports());
 		this ~= imports.data;
 		
 		if (imports.any)

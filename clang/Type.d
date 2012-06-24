@@ -6,6 +6,8 @@
  */
 module clang.Type;
 
+import mambo.core._;
+
 import clang.c.index;
 import clang.Cursor;
 import clang.Util;
@@ -105,7 +107,7 @@ struct Type
 	{
 		return kind == CXTypeKind.CXType_Unexposed;
 	}
-	
+
 	@property Cursor declaration ()
 	{
 	    auto r = clang_getTypeDeclaration(cx);

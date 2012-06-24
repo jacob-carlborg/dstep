@@ -12,6 +12,7 @@ import mambo.core.io;
 import clang.c.index;
 import clang.Type;
 
+import dstep.translator.IncludeHandler;
 import dstep.translator.Translator;
 import dstep.translator.Output;
 
@@ -48,6 +49,7 @@ body
 				case CXType_Enum:
 				case CXType_ObjCInterface:
 					result = type.spelling;
+					handleInclude(type);
 				break;
 				
 				case CXType_ConstantArray: result = translateConstantArray(type, rewriteIdToObject); break;
@@ -92,6 +94,13 @@ body
     
     if (spelling == "BOOL")
         spelling = "bool";
+
+	else if (spelling != "size_t" &&
+		spelling != "ptrdiff_t" &&
+		spelling != "sizediff_t")
+	{
+		handleInclude(type);
+	}
 
     return spelling;
 }
@@ -210,7 +219,11 @@ string translateType (CXTypeKind kind, bool rewriteIdToObject = true)
 			case CXType_Char32: return "dchar";
 			case CXType_UShort: return "ushort";
 			case CXType_UInt: return "uint";
-			case CXType_ULong: return "c_ulong";
+
+			case CXType_ULong:
+				includeHandler.addCompatible();
+				return "c_ulong";
+
 			case CXType_ULongLong: return "ulong";
 			case CXType_UInt128: return "<unimplemented>";
 			case CXType_Char_S: return "char";
@@ -218,7 +231,11 @@ string translateType (CXTypeKind kind, bool rewriteIdToObject = true)
 			case CXType_WChar: return "wchar";
 			case CXType_Short: return "short";
 			case CXType_Int: return "int";
-			case CXType_Long: return "c_long";
+
+			case CXType_Long:
+				includeHandler.addCompatible();
+				return "c_long";
+
 			case CXType_LongLong: return "long";
 			case CXType_Int128: return "<unimplemented>";
 			case CXType_Float: return "float";

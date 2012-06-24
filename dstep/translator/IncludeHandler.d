@@ -25,6 +25,7 @@ static this ()
 class IncludeHandler
 {
 	private string[] rawIncludes;
+	private string[] imports;
 	static string[string] knownIncludes;
 	
 	static this ()
@@ -97,29 +98,45 @@ class IncludeHandler
 		rawIncludes ~= include;
 	}
 
+	void addImport (string imp)
+	{
+		imports ~= imp;
+	}
+
+	void addCompatible ()
+	{
+		imports ~= "core.stdc.config";
+	}
+
+	string[] toImports ()
+    {
+		auto r =  rawIncludes.map!((e) {
+			if (auto i = isKnownInclude(e))
+				return toImport(i);
+
+			else
+				return "";
+		});
+
+		auto imps = imports.map!(e => toImport(e));
+
+		return r.append(imps).filter!(e => e.any).unique.toArray;
+    }
+
 private:
+
+	string toImport (string str)
+	{
+		return "import " ~ str ~ ";";
+	}
 
     string isKnownInclude (string include)
     {
 		include = Path.stripExtension(include);
 
-		// Using type inference for the delegate arguments triggers issue 7827
-		if (auto r = knownIncludes.find!((string k, string _) => include.endsWith(k)))
+		if (auto r = knownIncludes.find!((k, _) => include.endsWith(k)))
 			return r.value;
-		
+
 		return null;
-    }
-
-    string toImports ()
-    {
-		auto r =  rawIncludes.map!((e) {
-			if (auto i = isKnownInclude(e))
-				return "import " ~ i ~ ";";
-					
-			else
-				return "";
-		});
-
-		return r.filter!(e => e.any).join("\n");
     }
 }
