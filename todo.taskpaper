@@ -1,0 +1,17 @@
+- Multiple input files
+- Framework as input file
+C:
+	- Anonymous structs
+	- Self includes
+	- Hardcode the translation of some typedefs
+
+	Preprocessor:
+		- Constants  - #define foo 1
+		- Versions - #if __APPLE__
+		- Function macros - #define foo (a, b) a + b
+		- Syntactic macros - #define foo (a, b) a##b
+Objective-C:
+	- Protocols
+	- Properties
+	- Blocks
+	- Categories
