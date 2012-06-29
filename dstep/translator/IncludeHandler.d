@@ -84,6 +84,7 @@ class IncludeHandler
 	        "sys/stat" : "core.sys.posix.sys.stat",
 	        "sys/time" : "core.sys.posix.sys.time",
 	        "sys/types" : "core.sys.posix.sys.types",
+	        "sys/_types" : "core.sys.posix.sys.types",
 	        "sys/uio" : "core.sys.posix.sys.uio",
 	        "sys/un" : "core.sys.posix.sys.un",
 	        "sys/utsname" : "core.sys.posix.sys.utsname",
