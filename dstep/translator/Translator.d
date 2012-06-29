@@ -8,8 +8,7 @@ module dstep.translator.Translator;
 
 import std.file;
 
-import mambo.core.io;
-import mambo.core.string;
+import mambo.core._;
 
 import clang.c.index;
 import clang.Cursor;
@@ -26,6 +25,8 @@ import dstep.translator.Output;
 import dstep.translator.Struct;
 import dstep.translator.Type;
 import dstep.translator.Union;
+
+private static string[Cursor] anonymousNames;
 
 class Translator
 {	
@@ -184,6 +185,27 @@ string translateFunction (FunctionCursor func, string name, String context, bool
 	auto resultType = translateType(func.resultType);
 
 	return translateFunction(resultType, name, params, func.isVariadic, context);
+}
+
+string getAnonymousName (Cursor cursor)
+{
+	if (auto name = cursor in anonymousNames)
+		return *name;
+
+	return "";
+}
+
+string generateAnonymousName (Cursor cursor)
+{
+	auto name = getAnonymousName(cursor);
+
+	if (name.isBlank)
+	{
+		name = "_Anonymous_" ~ anonymousNames.length.toString;
+		anonymousNames[cursor] = name;
+	}
+
+	return name;
 }
 
 package struct Parameter

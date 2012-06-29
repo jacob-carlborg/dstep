@@ -11,3 +11,26 @@ enum Bar
 } e;
 
 enum Foo f;
+
+struct A
+{
+	enum B
+	{
+		g = 1
+	} h;
+};
+
+struct C
+{
+	enum
+	{
+		i = 1,
+		j = 2
+	} point;
+};
+
+typedef enum
+{
+	k = 1,
+	l = 2
+} D;

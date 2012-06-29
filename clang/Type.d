@@ -26,6 +26,11 @@ struct Type
 	{
 		return kind == CXTypeKind.CXType_Typedef;
 	}
+
+	@property bool isEnum ()
+	{
+		return kind == CXTypeKind.CXType_Enum;
+	}
 	
 	@property Type canonicalType ()
 	{
@@ -103,9 +108,14 @@ struct Type
 		return clang_isConstQualifiedType(cx) == 1;
 	}
 	
-	@property bool isUnexposed ()
+	@property bool isExposed ()
 	{
-		return kind == CXTypeKind.CXType_Unexposed;
+		return kind != CXTypeKind.CXType_Unexposed;
+	}
+
+	@property bool isAnonymous ()
+	{
+		return spelling.isEmpty;
 	}
 
 	@property Cursor declaration ()

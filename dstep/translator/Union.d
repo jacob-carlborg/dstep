@@ -34,8 +34,19 @@ class Union : Declaration
 					switch (cursor.kind)
 					{
 						case CXCursor_FieldDecl:
-							output.newContext();
-							context.instanceVariables ~= translator.variable(cursor);
+							if (!cursor.type.isExposed && cursor.type.declaration.isValid)
+							{
+								output.newContext();
+								output.currentContext.indent in {
+									context.instanceVariables ~= translator.translate(cursor.type.declaration);
+								};
+
+								if (cursor.type.declaration.type.isEnum || !cursor.type.isAnonymous)
+									translateVariable(cursor, context);
+							}
+
+							else
+								translateVariable(cursor, context);
 						break;
 						
 						default: break;
@@ -54,5 +65,11 @@ private:
 		dg(context);
 		
 		return context.data;
+	}
+
+	void translateVariable (Cursor cursor, UnionData context)
+	{
+		output.newContext();
+		context.instanceVariables ~= translator.variable(cursor);
 	}
 }

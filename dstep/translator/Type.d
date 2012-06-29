@@ -49,6 +49,10 @@ body
 				case CXType_Enum:
 				case CXType_ObjCInterface:
 					result = type.spelling;
+
+					if (result.isEmpty)
+						result = getAnonymousName(type.declaration);
+
 					handleInclude(type);
 				break;
 				

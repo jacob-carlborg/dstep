@@ -17,3 +17,18 @@ struct A
 		int x;
 	} b;
 };
+
+struct C
+{
+	struct
+	{
+		int x;
+		int y;
+	} point;
+};
+
+typedef struct
+{
+	int x;
+	int y;
+} D;

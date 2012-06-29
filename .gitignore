@@ -3,8 +3,7 @@
 *.o
 *.dylib
 main
-NSObject.h
 tmp
 .rvmrc
 foo.d
-foo.h
+*.h

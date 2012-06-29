@@ -47,6 +47,12 @@ class Enum : Declaration
 		});
 	}
 
+	@property override string spelling ()
+	{
+		auto name = cursor.spelling;
+		return name.isPresent ? name : generateAnonymousName(cursor);
+	}
+
 private:
 
 	string writeEnum (string name, void delegate (EnumData context) dg)

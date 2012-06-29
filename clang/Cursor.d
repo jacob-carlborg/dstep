@@ -75,6 +75,11 @@ struct Cursor
 		return !clang_isInvalid(cx.kind);
 	}
 	
+	@property bool isEmpty ()
+	{
+		return clang_Cursor_isNull(cx) != 0;
+	}
+
 	@property Visitor all ()
 	{
 		return Visitor(this);
@@ -88,6 +93,11 @@ struct Cursor
 	equals_t opEquals (const ref Cursor cursor) const
 	{
 		return clang_equalCursors(cast(CXCursor) cursor.cx, cast(CXCursor) cx) == 0;
+	}
+
+	hash_t toHash () const
+	{
+		return clang_hashCursor(cast(CXCursor) cx);
 	}
 }
 

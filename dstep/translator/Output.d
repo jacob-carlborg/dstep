@@ -128,7 +128,11 @@ class StructData
 	@property string data ()
 	{
 		auto context = output.newContext();
-		context.put(type, ' ', name, nl, '{', nl);
+
+		if (name.isPresent)
+			name = ' ' ~ name;
+
+		context.put(type, name, nl, '{', nl);
 
 		context.indent in {
 			addDeclarations(context, instanceVariables);
