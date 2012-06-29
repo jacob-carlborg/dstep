@@ -4,7 +4,7 @@
  * Version: Initial created: may 1, 2012
  * License: $(LINK2 http://www.boost.org/LICENSE_1_0.txt, Boost Software License 1.0)
  */
-module dstep.translator.Struct;
+module dstep.translator.Record;
 
 import mambo.core._;
 
@@ -18,16 +18,16 @@ import dstep.translator.Declaration;
 import dstep.translator.Output;
 import dstep.translator.Type;
 
-class Struct : Declaration
+class Record (Data) : Declaration
 {
 	this (Cursor cursor, Cursor parent, Translator translator)
 	{
 		super(cursor, parent, translator);
 	}
-	
+
 	string translate ()
 	{
-		return writeStruct(spelling, (context) {
+		return writeRecord(spelling, (context) {
 			foreach (cursor, parent ; cursor.declarations)
 			{
 				with (CXCursorKind)
@@ -48,7 +48,7 @@ class Struct : Declaration
 							else
 								translateVariable(cursor, context);
 						break;
-						
+
 						default: break;
 					}
 			}
@@ -57,17 +57,17 @@ class Struct : Declaration
 
 private:
 
-	string writeStruct (string name, void delegate (StructData context) dg)
+	string writeRecord (string name, void delegate (Data context) dg)
 	{
-		auto context = new StructData;
+		auto context = new Data;
 		context.name = translateIdentifier(name);
-		
+
 		dg(context);
-		
+
 		return context.data;
 	}
 
-	void translateVariable (Cursor cursor, StructData context)
+	void translateVariable (Cursor cursor, Data context)
 	{
 		output.newContext();
 		context.instanceVariables ~= translator.variable(cursor);

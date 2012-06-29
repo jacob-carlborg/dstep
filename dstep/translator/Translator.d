@@ -22,9 +22,8 @@ import dstep.translator.Enum;
 import dstep.translator.IncludeHandler;
 import dstep.translator.objc.ObjcInterface;
 import dstep.translator.Output;
-import dstep.translator.Struct;
+import dstep.translator.Record;
 import dstep.translator.Type;
-import dstep.translator.Union;
 
 private static string[Cursor] anonymousNames;
 
@@ -116,9 +115,9 @@ class Translator
 					return typedef_(cursor, output.newContext);
 				break;
 			
-				case CXCursor_StructDecl: return (new Struct(cursor, parent, this)).translate; break;
+				case CXCursor_StructDecl: return (new Record!(StructData)(cursor, parent, this)).translate; break;
 				case CXCursor_EnumDecl: return (new Enum(cursor, parent, this)).translate; break;
-				case CXCursor_UnionDecl: return (new Union(cursor, parent, this)).translate; break;
+				case CXCursor_UnionDecl: return (new Record!(UnionData)(cursor, parent, this)).translate; break;
 			
 				default:
 					return "";
