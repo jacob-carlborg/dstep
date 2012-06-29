@@ -2,7 +2,7 @@
 - Framework as input file
 - Add module declaration
 - Add user supplied footer and header
-- Formatting of imports
+- Formatting of imports @done(2012-06-29)
 C:
 	- Anonymous structs
 	- Self includes

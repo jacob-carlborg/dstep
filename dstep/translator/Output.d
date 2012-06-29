@@ -61,7 +61,7 @@ class Output
 		newContext();
 
 		this ~= before.data;
-		addDeclarations(includeHandler.toImports());
+		addDeclarations(includeHandler.toImports(), false);
 		this ~= imports.data;
 		
 		if (imports.any)
