@@ -50,7 +50,7 @@ class IncludeHandler
 	        "string" : "core.stdc.string",
 	        "tgmath" : "core.stdc.tgmath",
 	        "time" : "core.stdc.time",
-	        "wchar" : "core.stdc.wchar",
+	        "wchar" : "core.stdc.wchar_",
 	        "wctype" : "core.stdc.wctype",        
 
 	        "dirent" : "core.sys.posix.dirent",

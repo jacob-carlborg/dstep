@@ -95,16 +95,40 @@ in
 body
 {
     auto spelling = type.spelling;
-    
-    if (spelling == "BOOL")
-        spelling = "bool";
 
-	else if (spelling != "size_t" &&
-		spelling != "ptrdiff_t" &&
-		spelling != "sizediff_t")
-	{
-		handleInclude(type);
-	}
+	with (CXTypeKind)
+		switch (spelling)
+		{
+			case "BOOL": return translateType(CXType_Bool);
+
+			case "int64_t": return translateType(CXType_LongLong);
+			case "int32_t": return translateType(CXType_Int);
+			case "int16_t": return translateType(CXType_Short);
+			case "int8_t": return "byte";
+
+			case "uint64_t": return translateType(CXType_ULongLong);
+			case "uint32_t": return translateType(CXType_UInt);
+			case "uint16_t": return translateType(CXType_UShort);
+			case "uint8_t": return translateType(CXType_UChar);
+
+			case "size_t":
+			case "ptrdiff_t":
+			case "sizediff_t":
+				return spelling;
+
+			case "wchar_t":
+				auto kind = type.canonicalType.kind;
+
+				if (kind == CXType_Int)
+					return "dchar";
+
+				else if (kind == CXType_Short)
+					return "wchar";
+
+			default: break;
+		}
+
+	handleInclude(type);
 
     return spelling;
 }
