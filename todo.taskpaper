@@ -1,13 +1,18 @@
 - Multiple input files
 - Framework as input file
 - Add module declaration
-- Add user supplied footer and header
+- Option for specifying before and after code
 - Formatting of imports @done(2012-06-29)
+- Option for specifying package
+- Compile on Windows
+- Compile on Linux
 C:
 	- Anonymous structs @done(2012-06-30)
 	- Self includes
 	- Hardcode the translation of some typedefs @done(2012-06-30)
 	- Out of order typedefs of structs
+	- Bitfields
+	- Non-standard extensions
 
 	Preprocessor:
 		- Better handling of includes
@@ -20,3 +25,6 @@ Objective-C:
 	- Properties
 	- Blocks
 	- Categories
+	- Actions
+	- Outlets
+	- Selectors
