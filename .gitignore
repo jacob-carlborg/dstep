@@ -9,3 +9,4 @@ main
 tmp
 .rvmrc
 foo.d
+*.zip
