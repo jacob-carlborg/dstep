@@ -48,6 +48,6 @@ end
 Then /^I test the Objective\-C file "([^"]*)" in "([^"]*)"$/ do |file, path|
   step %{a test file named "#{file}" in "#{path}"}
   step %{an expected file named "#{file}" in "#{path}"}
-  step %{I successfully convert the test file "#{file}" in "#{path}" with the flags "-ObjC"}
+  step %{I successfully convert the test file "#{file}" in "#{path}" with the flags "-ObjC -I/usr/include/GNUstep"}
   step %{the files "#{file}.d" and "test_files/#{path}/#{file}.d" should be equal}
 end
