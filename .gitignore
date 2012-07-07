@@ -1,9 +1,11 @@
+*.h
 *.deps
 *.a
 *.o
 *.dylib
+*.dll
+*.so
 main
 tmp
 .rvmrc
 foo.d
-*.h
