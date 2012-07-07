@@ -27,7 +27,7 @@ class Application : DStack.Application
 {
 	mixin Singleton;
 	
-	enum Version = "0.0.0";
+	enum Version = "0.0.1";
 	
 	private
 	{
@@ -40,12 +40,15 @@ class Application : DStack.Application
 		string output = "foo.d";
 		Language language;
 		string[] argsToRestore;
+		bool helpFlag;
 	}
 	
 	override void run ()
 	{
 		handleArguments;
-		startConversion(inputFiles.first);
+
+		if (!helpFlag)
+			startConversion(inputFiles.first);
 	}
 
 private:
@@ -84,8 +87,12 @@ private:
 		getopt(args,
 			std.getopt.config.caseSensitive,
 			std.getopt.config.passThrough,
-			"o", &output,
-			"x", &handleLanguage);
+			"o|output", &output,
+			"x", &handleLanguage,
+			"h|help", &help);
+
+		if (helpFlag)
+			return;
 
 		if (args.any!(e => e == "-ObjC"))
 			handleObjectiveC();
@@ -154,7 +161,10 @@ private:
                 inputFiles ~= arg;
 
 		if (inputFiles.isEmpty)
-			throw new DStepException("No input files");
+		{
+			help();
+			return;
+		}
 
 		args = args.remove(inputFiles);
 	}
@@ -176,7 +186,25 @@ private:
 
 		return translate;
 	}
-	
+
+	void help ()
+	{
+		helpFlag = true;
+
+		println("Usage: dstep [options] <input>");
+		println("Version: ", Version);
+		println();
+		println("Options:");
+		println("    -o, --output <file>    Write output to <file>.");
+		println("    -ObjC                  Treat source input file as Objective-C input.");
+		println("    -x <language>          Treat subsequent input files as having type <language>.");
+		println("    -h, --help             Show this message and exit.");
+		println();
+		println("All options that Clang accepts can be used as well.");
+		println();
+		println("Use the `-h' flag for help.");
+	}
+
 	void clean ()
 	{
 		translationUnit.dispose;
