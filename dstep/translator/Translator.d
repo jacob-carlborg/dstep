@@ -221,7 +221,8 @@ package string translateFunction (string result, string name, Parameter[] parame
 	context ~= name ~ " (";
 
 	string[] params;
-	
+	params.reserve(parameters.length);
+
 	foreach (param ; parameters)
 	{
 		string p;
@@ -235,23 +236,17 @@ package string translateFunction (string result, string name, Parameter[] parame
 			p ~= ')';
 
 		if (param.name.any)
-			p ~= " " ~ param.name;
+			p ~= " " ~ translateIdentifier(param.name);
 		
 		params ~= p;
 	}
-	
-	context ~= params.join(", ");
 
 	if (variadic)
-	{
-		if (parameters.any)
-			context ~= ", ";
+		params ~= "...";
 
-		context ~= "...";
-	}
-	
+	context ~= params.join(", ");
 	context ~= ')';
-	
+
 	return context.data;
 }
 
