@@ -43,12 +43,28 @@ class Application : DStack.Application
 		bool helpFlag;
 	}
 	
-	override void run ()
+	protected override void run ()
 	{
 		handleArguments;
+		inputFiles ~= arguments.argument.input;
+		startConversion(inputFiles.first);
+	}
 
-		if (!helpFlag)
-			startConversion(inputFiles.first);
+	protected override void setupArguments ()
+	{
+		arguments.sloppy = true;
+		arguments.passThrough = true;
+
+		arguments.argument("input", "input files");
+
+		arguments('o', "output", "Write output to")
+			.params(1);
+
+		// Temporarily comment this out since it's not working properly
+		/*arguments('x', "Treat subsequent input files as having type")
+			.params(1)
+			.restrict("c", "c-header", "objective-c", "objective-c-header")
+			.on(&handleLanguage);*/
 	}
 
 private:
@@ -56,7 +72,7 @@ private:
 	void startConversion (string file)
 	{
 		index = Index(false, false);
-		translationUnit = TranslationUnit.parse(index, file, args[1 .. $]);
+		translationUnit = TranslationUnit.parse(index, file, arguments.args[1 .. $]);
 		
 		if (!translationUnit.isValid)
 			throw new DStepException("An unknown error occurred");
@@ -76,6 +92,12 @@ private:
 			translator.translate;
 		}
 	}
+
+	void clean ()
+	{
+		translationUnit.dispose;
+		index.dispose;
+	}
 	
 	bool anyErrors ()
 	{
@@ -84,31 +106,18 @@ private:
 	
 	void handleArguments ()
 	{
-		getopt(args,
-			std.getopt.config.caseSensitive,
-			std.getopt.config.passThrough,
-			"o|output", &output,
-			"x", &handleLanguage,
-			"h|help", &help);
-
-		if (helpFlag)
-			return;
-
-		if (args.any!(e => e == "-ObjC"))
+		if (arguments.args.any!(e => e == "-ObjC"))
 			handleObjectiveC();
 
-		collectInputFiles();
 		restoreArguments(argsToRestore);
 	}
 	
 	void handleObjectiveC ()
 	{
 		language = Language.objC;
-		//args = remove(args, "-ObjC");
-		argsToRestore ~= "-ObjC";
 	}
 
-	void handleLanguage (string option, string language)
+	void handleLanguage (string language)
 	{
 		switch (language)
 		{
@@ -151,22 +160,7 @@ private:
 		 * We're inserting the argument(s) at the beginning of the argument list to avoid
 		 * being processed by std.getopt again, resulting in an infinite loop.
 		 */
-		this.args.insertInPlace(1, args);
-	}
-
-	void collectInputFiles ()
-	{
-		foreach (i, arg ; args[1 .. $])
-			if (arg.first != '-' && args[i].first != '-')
-                inputFiles ~= arg;
-
-		if (inputFiles.isEmpty)
-		{
-			help();
-			return;
-		}
-
-		args = args.remove(inputFiles);
+		//arguments.args.insertInPlace(1, args);
 	}
 	
 	bool handleDiagnostics ()
@@ -203,11 +197,5 @@ private:
 		println("All options that Clang accepts can be used as well.");
 		println();
 		println("Use the `-h' flag for help.");
-	}
-
-	void clean ()
-	{
-		translationUnit.dispose;
-		index.dispose;
 	}
 }
