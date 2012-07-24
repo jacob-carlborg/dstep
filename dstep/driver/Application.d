@@ -36,8 +36,7 @@ class Application : DStack.Application
 		Index index;
 		TranslationUnit translationUnit;
 		DiagnosticVisitor diagnostics;
-		
-		string output = "foo.d";
+
 		Language language;
 		string[] argsToRestore;
 		bool helpFlag;
@@ -58,13 +57,13 @@ class Application : DStack.Application
 		arguments.argument("input", "input files");
 
 		arguments('o', "output", "Write output to")
-			.params(1);
+			.params(1)
+			.defaults("foo.d");
 
-		// Temporarily comment this out since it's not working properly
-		/*arguments('x', "Treat subsequent input files as having type")
+		arguments('x', "Treat subsequent input files as having type")
 			.params(1)
 			.restrict("c", "c-header", "objective-c", "objective-c-header")
-			.on(&handleLanguage);*/
+			.on(&handleLanguage);
 	}
 
 private:
@@ -72,7 +71,7 @@ private:
 	void startConversion (string file)
 	{
 		index = Index(false, false);
-		translationUnit = TranslationUnit.parse(index, file, arguments.args[1 .. $]);
+		translationUnit = TranslationUnit.parse(index, file, remainingArgs);
 		
 		if (!translationUnit.isValid)
 			throw new DStepException("An unknown error occurred");
@@ -85,7 +84,7 @@ private:
 		if (handleDiagnostics)
 		{
 			Translator.Options options;
-			options.outputFile = output;
+			options.outputFile = arguments.output;
 			options.language = language;
 
 			auto translator = new Translator(file, translationUnit, options);
@@ -108,8 +107,6 @@ private:
 	{
 		if (arguments.args.any!(e => e == "-ObjC"))
 			handleObjectiveC();
-
-		restoreArguments(argsToRestore);
 	}
 	
 	void handleObjectiveC ()
@@ -146,23 +143,11 @@ private:
 		argsToRestore ~= language;
 	}
 
-	/**
-	 * Restores the given arguments back into the list of argument passed to the application
-	 * on the command line.
-	 * 
-	 * Use this method to restore arguments that were remove by std.getopt. This method is
-	 * available since we want to handle some arguments ourself but also let Clang handle
-	 * them.
-	 */
-	void restoreArguments (string[] args ...)
+	@property string[] remainingArgs ()
 	{
-		/*
-		 * We're inserting the argument(s) at the beginning of the argument list to avoid
-		 * being processed by std.getopt again, resulting in an infinite loop.
-		 */
-		//arguments.args.insertInPlace(1, args);
+		return arguments.args[1 .. $] ~ argsToRestore;
 	}
-	
+
 	bool handleDiagnostics ()
 	{
 	    bool translate = true;
