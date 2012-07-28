@@ -5,7 +5,7 @@
 - Formatting of imports @done(2012-06-29)
 - Option for specifying package
 - Compile on Windows
-- Compile on Linux
+- Compile on Linux @done(2012-07-28)
 C:
 	- Anonymous structs @done(2012-06-30)
 	- Self includes
