@@ -60,7 +60,7 @@ class Application : DStack.Application
 			.params(1)
 			.defaults("foo.d");
 
-		arguments('x', "language", "Treat subsequent input files as having type")
+		arguments('x', "language", "Treat subsequent input files as having type <arg>")
 			.params(1)
 			.restrict("c", "c-header", "objective-c", "objective-c-header")
 			.on(&handleLanguage);
