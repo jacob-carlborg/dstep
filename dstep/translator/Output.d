@@ -8,6 +8,8 @@ module dstep.translator.Output;
 
 static import std.array;
 
+import tango.util.container.HashSet;
+
 import mambo.core._;
 
 import clang.Cursor;
@@ -213,15 +215,23 @@ class ClassData : StructData
 {
 	string[] instanceMethods;
 	string[] staticMethods;
+	string[] properties;
 	
 	string[] staticVariables;
 	
 	string name;
 	string[] interfaces;
 	string superclass;
-	
+
+	HashSet!(string) propertyList;
+
 	private bool[string] mangledMethods;
-	
+
+	this ()
+	{
+		propertyList = new HashSet!(string);
+	}
+
 	string getMethodName (FunctionCursor func, string name = "")
 	{
 		auto mangledName = mangle(func, name);
@@ -256,6 +266,7 @@ class ClassData : StructData
 		cls.put("class ", name, nl, '{', nl);
 		
 		cls.indent in {
+			addDeclarations(cls, properties);
 			addDeclarations(cls, staticVariables);
 			addDeclarations(cls, instanceVariables);
 			addDeclarations(cls, staticMethods);
