@@ -136,9 +136,46 @@ struct ParamVisitor
 
 		return 0;
 	}
-	
+
+	@property size_t length ()
+	{
+		auto type = Cursor(visitor.cursor).type;
+
+		if (type.isValid)
+			return type.func.arguments.length;
+
+		else
+		{
+			size_t i;
+
+			foreach (_ ; this)
+				i++;
+
+			return i;
+		}
+	}
+
 	@property bool any ()
 	{
-	    return Cursor(visitor.cursor).type.func.arguments.length > 0;
+	    return length > 0;
+	}
+
+	@property bool isEmpty ()
+	{
+		return !any;
+	}
+
+	@property ParamCursor first ()
+	{
+		assert(any, "Cannot get the first parameter of an empty parameter list");
+		ParamCursor param;
+
+		foreach (c ; this)
+		{
+			param = c;
+			break;
+		}
+
+		return param;
 	}
 }

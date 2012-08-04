@@ -12,8 +12,9 @@ import mambo.core._;
 
 import clang.c.index;
 import clang.Cursor;
-import clang.Visitor;
+import clang.Type;
 import clang.Util;
+import clang.Visitor;
 
 import dstep.translator.Translator;
 import dstep.translator.Declaration;
@@ -82,18 +83,31 @@ private:
 		if (cls.propertyList.contains(func.spelling))
 			return;
 
-		translateFunction(func, name, method, classMethod);
+		if (isGetter(func, name))
+			translateGetter(func.resultType, method, name, cls);
 
-		method ~= " [";
-		method ~= func.spelling;
-		method ~= "];";
-		
-		
-		if (classMethod)
-			cls.staticMethods ~= method.data;
-			
+		else if (isSetter(func, name))
+		{
+			auto param = func.parameters.first;
+			name = toDSetterName(name);
+			translateSetter(param.type, method, name, cls, param.spelling);
+		}
+
 		else
-			cls.instanceMethods ~= method.data;
+		{
+			translateFunction(func, name, method, classMethod);
+
+			method ~= " [";
+			method ~= func.spelling;
+			method ~= "];";
+
+
+			if (classMethod)
+				cls.staticMethods ~= method.data;
+
+			else
+				cls.instanceMethods ~= method.data;
+		}
 	}
 	
 	void translateProperty (Cursor cursor)
@@ -102,12 +116,9 @@ private:
 		auto cls = output.currentClass;
 		auto name = cls.getMethodName(cursor.func, "");
 		
-		translateGetter(cursor, context, name, cls);
-		cls.properties ~= context.data;
+		translateGetter(cursor.type, context, name, cls);
 		context = output.newContext();
-
-		translateSetter(cursor, context, name, cls);
-		cls.properties ~= context.data;
+		translateSetter(cursor.type, context, name, cls);
 	}
 	
 	void translateInstanceVariable (Cursor cursor)
@@ -117,18 +128,19 @@ private:
 		output.currentClass.instanceVariables ~= var.data;
 	}
 
-	void translateGetter (Cursor cursor, String context, string name, ClassData cls)
+	void translateGetter (Type type, String context, string name, ClassData cls)
 	{
 		context ~= "@property ";
-		context ~= translateType(cursor.type);
+		context ~= translateType(type);
 		context ~= " ";
 		context ~= name;
 		context ~= " ();";
 
+		cls.properties ~= context.data;
 		cls.propertyList.add(name);
 	}
 
-	void translateSetter (Cursor cursor, String context, string name, ClassData cls)
+	void translateSetter (Type type, String context, string name, ClassData cls, string parameterName = "")
 	{
 		auto selector = toObjcSetterName(name) ~ ':';
 
@@ -136,15 +148,55 @@ private:
 		context ~= "void ";
 		context ~= name;
 		context ~= " (";
-		context ~= translateType(cursor.type);
+		context ~= translateType(type);
+
+		if (parameterName.any)
+		{
+			context ~= " ";
+			context ~= parameterName;
+		}
+
 		context ~= ");";
 
 		cls.propertyList.add(selector);
+		cls.properties ~= context.data;
+	}
+
+	string toDSetterName (string name)
+	{
+		assert(isSetter(name));
+		name = name[3 .. $];
+		auto firstLetter = name[0 .. 1];
+		auto r = firstLetter.toLower ~ name[1 .. $];
+		return r.assumeUnique;
 	}
 
 	string toObjcSetterName (string name)
 	{
 		auto r = "set" ~ name[0 .. 1].toUpper ~ name[1 .. $];
 		return r.assumeUnique;
+	}
+
+	bool isGetter (FunctionCursor cursor, string name)
+	{
+		return cursor.resultType.kind != CXTypeKind.CXType_Void && cursor.parameters.isEmpty;
+	}
+
+	bool isSetter (string name)
+	{
+		if (name.length > 3 && name.startsWith("set"))
+		{
+			auto firstLetter = name[3 .. $].first;
+			return firstLetter.isUpper;
+		}
+
+		return false;
+	}
+
+	bool isSetter (FunctionCursor cursor, string name)
+	{
+		return isSetter(name) &&
+			cursor.resultType.kind == CXTypeKind.CXType_Void &&
+			cursor.parameters.length == 1;
 	}
 }
