@@ -263,7 +263,7 @@ class ClassData : StructData
 	{
 		auto cls = output.newContext();
 		
-		cls.put("class ", name, nl, '{', nl);
+		cls.put(type, ' ', name, nl, '{', nl);
 		
 		cls.indent in {
 			addDeclarations(cls, properties);
@@ -278,6 +278,19 @@ class ClassData : StructData
 		context.put(nl, '}');
 
 		return context.data;
+	}
+
+	protected @property string type ()
+	{
+		return "class";
+	}
+}
+
+class InterfaceData : ClassData
+{
+	protected @property string type ()
+	{
+		return "interface";
 	}
 }
 

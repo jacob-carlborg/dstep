@@ -22,7 +22,7 @@ C:
 		- Syntactic macros - #define foo (a, b) a##b
 Objective-C:
 	- Protocols
-	- Properties
+	- Properties @done(2012-08-05)
 	- Blocks
 	- Categories
 	- Actions

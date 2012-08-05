@@ -68,7 +68,11 @@ class Translator
 			with (CXCursorKind)
 				switch (cursor.kind)
 				{
-					case CXCursor_ObjCInterfaceDecl: output.classes ~= code; break;
+					case CXCursor_ObjCInterfaceDecl:
+					case CXCursor_ObjCProtocolDecl:
+						output.classes ~= code;
+					break;
+
 					case CXCursor_StructDecl: output.structs ~= code; break;
 					case CXCursor_EnumDecl: output.enums ~= code; break;
 					case CXCursor_UnionDecl: output.unions ~= code; break;
@@ -93,7 +97,11 @@ class Translator
 			switch (cursor.kind)
 			{
 				case CXCursor_ObjCInterfaceDecl:
-					return (new ObjcInterface(cursor, parent, this)).translate;
+					return (new ObjcInterface!(ClassData)(cursor, parent, this)).translate;
+				break;
+
+				case CXCursor_ObjCProtocolDecl:
+					return (new ObjcInterface!(InterfaceData)(cursor, parent, this)).translate;
 				break;
 			
 				case CXCursor_VarDecl:

@@ -2,7 +2,7 @@
  * Copyright: Copyright (c) 2011 Jacob Carlborg. All rights reserved.
  * Authors: Jacob Carlborg
  * Version: Initial created: Jan 29, 2012
- * License: $(LINK2 http://www.boo<strong></strong>st.org/LICENSE_1_0.txt, Boost Software License 1.0)
+ * License: $(LINK2 http://www.boost.org/LICENSE_1_0.txt, Boost Software License 1.0)
  */
 module dstep.translator.objc.ObjcInterface;
 
@@ -21,7 +21,7 @@ import dstep.translator.Declaration;
 import dstep.translator.Output;
 import dstep.translator.Type;
 
-class ObjcInterface : Declaration
+class ObjcInterface (Data) : Declaration
 {
 	this (Cursor cursor, Cursor parent, Translator translator)
 	{
@@ -62,7 +62,7 @@ private:
 	
 	string writeClass (string name, string superClassName, string[] interfaces, void delegate () dg)
 	{
-		output.currentClass = new ClassData;
+		output.currentClass = new Data;
 		output.currentClass.name = translateIdentifier(name);
 		
 		if (superClassName.isPresent)
