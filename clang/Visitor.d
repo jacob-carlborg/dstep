@@ -28,28 +28,35 @@ struct Visitor
 
 	int opApply (Delegate dg)
 	{
-		auto result = clang_visitChildren(cursor, &visitorFunction, cast(CXClientData) &dg);
-		return result == CXChildVisitResult.CXChildVisit_Break ? 1 : 0;
+		auto data = OpApplyData(dg);
+		clang_visitChildren(cursor, &visitorFunction, cast(CXClientData) &data);
+
+		return data.returnCode;
 	}
 
 private:
 
 	extern (C) static CXChildVisitResult visitorFunction (CXCursor cursor, CXCursor parent, CXClientData data)
 	{
-		Delegate dg;
-		auto tmp = cast(_Delegate*) data;
-		
-		dg.ptr = tmp.ptr;
-		dg.funcptr = tmp.funcptr;
-		
+		auto tmp = cast(OpApplyData*) data;
+
 		with (CXChildVisitResult)
-			return dg(Cursor(cursor), Cursor(parent)) ? CXChildVisit_Break : CXChildVisit_Continue;
+		{
+			auto r = tmp.dg(Cursor(cursor), Cursor(parent));
+			tmp.returnCode = r;
+			return r ? CXChildVisit_Break : CXChildVisit_Continue;
+		}
 	}
-	
-	struct _Delegate
+
+	static struct OpApplyData
 	{
-		void* ptr;
-		int function (ref Cursor, ref Cursor) funcptr;
+		int returnCode;
+		Delegate dg;
+
+		this (Delegate dg)
+		{
+			this.dg = dg;
+		}
 	}
 	
 	template Constructors ()
@@ -168,14 +175,10 @@ struct ParamVisitor
 	@property ParamCursor first ()
 	{
 		assert(any, "Cannot get the first parameter of an empty parameter list");
-		ParamCursor param;
 
 		foreach (c ; this)
-		{
-			param = c;
-			break;
-		}
+			return c;
 
-		return param;
+		assert(0, "Cannot get the first parameter of an empty parameter list");
 	}
 }
