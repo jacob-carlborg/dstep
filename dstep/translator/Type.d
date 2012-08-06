@@ -69,7 +69,7 @@ body
 	return result;
 }
 
-string translateSelector (string str, bool fullName = false)
+string translateSelector (string str, bool fullName = false, bool translateIdentifier = true)
 {
 	if (fullName)
 		str = str.replace(":", "_");
@@ -82,7 +82,7 @@ string translateSelector (string str, bool fullName = false)
 			str = str[0 .. i];
 	}
 
-	return translateIdentifier(str);
+	return translateIdentifier ? .translateIdentifier(str) : str;
 }
 
 private:

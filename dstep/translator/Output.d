@@ -232,7 +232,7 @@ class ClassData : StructData
 		propertyList = new HashSet!(string);
 	}
 
-	string getMethodName (FunctionCursor func, string name = "")
+	string getMethodName (FunctionCursor func, string name = "", bool translateIdentifier = true)
 	{
 		auto mangledName = mangle(func, name);
 		auto selector = func.spelling;
@@ -241,10 +241,10 @@ class ClassData : StructData
 		{
 			mangledMethods[mangledName] = true;
 			name = name.isBlank ? selector : name;
-			return translateSelector(name);
+			return translateSelector(name, false, translateIdentifier);
 		}
 		
-		return translateSelector(name, true);
+		return translateSelector(name, true, translateIdentifier);
 	}
 	
 	private string mangle (FunctionCursor func, string name)

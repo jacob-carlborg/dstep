@@ -78,11 +78,11 @@ private:
 	{
 		auto method = output.newContext();
 		auto cls = output.currentClass;
-		
-		name = cls.getMethodName(func, name);
 
 		if (cls.propertyList.contains(func.spelling))
 			return;
+
+		name = cls.getMethodName(func, name, false);
 
 		if (isGetter(func, name))
 			translateGetter(func.resultType, method, name, cls);
@@ -96,12 +96,12 @@ private:
 
 		else
 		{
+			name = translateIdentifier(name);
 			translateFunction(func, name, method, classMethod);
 
 			method ~= " [";
 			method ~= func.spelling;
 			method ~= "];";
-
 
 			if (classMethod)
 				cls.staticMethods ~= method.data;
@@ -115,7 +115,7 @@ private:
 	{
 		auto context = output.newContext();
 		auto cls = output.currentClass;
-		auto name = cls.getMethodName(cursor.func, "");
+		auto name = cls.getMethodName(cursor.func, "", false);
 		
 		translateGetter(cursor.type, context, name, cls);
 		context = output.newContext();
@@ -134,8 +134,9 @@ private:
 		context ~= "@property ";
 		context ~= translateType(type);
 		context ~= " ";
-		context ~= name;
-		context ~= " ();";
+		context ~= translateIdentifier(name);
+		context ~= " () ";
+		context.put('[', name, "];");
 
 		cls.properties ~= context.data;
 		cls.propertyList.add(name);
@@ -147,7 +148,7 @@ private:
 
 		context ~= "@property ";
 		context ~= "void ";
-		context ~= name;
+		context ~= translateIdentifier(name);
 		context ~= " (";
 		context ~= translateType(type);
 
@@ -157,7 +158,9 @@ private:
 			context ~= parameterName;
 		}
 
-		context ~= ");";
+		context ~= ") [";
+		context ~= selector;
+		context ~= "];";
 
 		cls.propertyList.add(selector);
 		cls.properties ~= context.data;
