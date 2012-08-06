@@ -21,10 +21,11 @@ C:
 		- Function macros - #define foo (a, b) a + b
 		- Syntactic macros - #define foo (a, b) a##b
 Objective-C:
-	- Protocols
+	- Protocols @done(2012-08-06)
 	- Properties @done(2012-08-05)
 	- Blocks
 	- Categories @done(2012-08-06)
 	- Actions
 	- Outlets
 	- Selectors
+	- Constructors
