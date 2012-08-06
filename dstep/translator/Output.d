@@ -216,12 +216,12 @@ class ClassData : StructData
 	string[] instanceMethods;
 	string[] staticMethods;
 	string[] properties;
-	
+	string[] staticProperties;
 	string[] staticVariables;
 	
 	string name;
-	string[] interfaces;
 	string superclass;
+	string[] interfaces;
 
 	HashSet!(string) propertyList;
 
@@ -308,6 +308,7 @@ private:
 		cls.indent in {
 			addDeclarations(cls, staticVariables);
 			addDeclarations(cls, instanceVariables);
+			addDeclarations(cls, staticProperties);
 			addDeclarations(cls, properties);
 			addDeclarations(cls, staticMethods);
 			addDeclarations(cls, instanceMethods);

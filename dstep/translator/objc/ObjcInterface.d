@@ -85,13 +85,13 @@ private:
 		name = cls.getMethodName(func, name, false);
 
 		if (isGetter(func, name))
-			translateGetter(func.resultType, method, name, cls);
+			translateGetter(func.resultType, method, name, cls, classMethod);
 
 		else if (isSetter(func, name))
 		{
 			auto param = func.parameters.first;
 			name = toDSetterName(name);
-			translateSetter(param.type, method, name, cls, param.spelling);
+			translateSetter(param.type, method, name, cls, classMethod, param.spelling);
 		}
 
 		else
@@ -117,9 +117,9 @@ private:
 		auto cls = output.currentClass;
 		auto name = cls.getMethodName(cursor.func, "", false);
 		
-		translateGetter(cursor.type, context, name, cls);
+		translateGetter(cursor.type, context, name, cls, false);
 		context = output.newContext();
-		translateSetter(cursor.type, context, name, cls);
+		translateSetter(cursor.type, context, name, cls, false);
 	}
 	
 	void translateInstanceVariable (Cursor cursor)
@@ -129,24 +129,41 @@ private:
 		output.currentClass.instanceVariables ~= var.data;
 	}
 
-	void translateGetter (Type type, String context, string name, ClassData cls)
+	void translateGetter (Type type, String context, string name, ClassData cls, bool classMethod)
 	{
+		auto dName = name == "class" ? name : translateIdentifier(name);
+
 		context ~= "@property ";
+
+		if (classMethod)
+			context ~= "static ";
+
 		context ~= translateType(type);
 		context ~= " ";
-		context ~= translateIdentifier(name);
+		context ~= dName;
 		context ~= " () ";
 		context.put('[', name, "];");
 
-		cls.properties ~= context.data;
+		auto data = context.data;
+
+		if (classMethod)
+			cls.staticProperties ~= data;
+
+		else
+			cls.properties ~= data;
+
 		cls.propertyList.add(name);
 	}
 
-	void translateSetter (Type type, String context, string name, ClassData cls, string parameterName = "")
+	void translateSetter (Type type, String context, string name, ClassData cls, bool classMethod, string parameterName = "")
 	{
 		auto selector = toObjcSetterName(name) ~ ':';
 
 		context ~= "@property ";
+
+		if (classMethod)
+			context ~= "static ";
+
 		context ~= "void ";
 		context ~= translateIdentifier(name);
 		context ~= " (";
@@ -162,8 +179,15 @@ private:
 		context ~= selector;
 		context ~= "];";
 
+		auto data = context.data;
+
+		if (classMethod)
+			cls.staticProperties ~= data;
+
+		else
+			cls.properties ~= data;
+
 		cls.propertyList.add(selector);
-		cls.properties ~= context.data;
 	}
 
 	string toDSetterName (string name)

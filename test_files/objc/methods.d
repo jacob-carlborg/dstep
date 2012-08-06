@@ -4,11 +4,12 @@ extern (Objective-C):
 
 class Foo
 {
-	@property Object new_ () [new];
-	@property Class class_ () [class];
+	@property static Object new_ () [new];
+	@property static Class class () [class];
+	@property static NSInteger version_ () [version];
+	@property static void version_ (NSInteger aVersion) [setVersion:];
+
 	@property Object init () [init];
-	@property NSInteger version_ () [version];
-	@property void version_ (NSInteger aVersion) [setVersion:];
 
 	static void classMethod () [classMethod];
 	static void initialize () [initialize];
