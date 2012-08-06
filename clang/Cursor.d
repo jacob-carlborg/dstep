@@ -133,6 +133,16 @@ struct ObjcCursor
 	{
 		return ObjCProtocolVisitor(cursor);
 	}
+
+	@property Cursor category ()
+	{
+		assert(cursor.kind == CXCursorKind.CXCursor_ObjCCategoryDecl);
+
+		foreach (c, _ ; TypedVisitor!(CXCursorKind.CXCursor_ObjCClassRef)(cursor))
+			return c;
+
+		assert(0, "This cursor does not have a class reference.");
+	}
 }
 
 struct FunctionCursor

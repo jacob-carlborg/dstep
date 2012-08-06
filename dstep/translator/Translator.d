@@ -20,6 +20,7 @@ import clang.Util;
 import dstep.translator.Declaration;
 import dstep.translator.Enum;
 import dstep.translator.IncludeHandler;
+import dstep.translator.objc.Category;
 import dstep.translator.objc.ObjcInterface;
 import dstep.translator.Output;
 import dstep.translator.Record;
@@ -70,6 +71,7 @@ class Translator
 				{
 					case CXCursor_ObjCInterfaceDecl:
 					case CXCursor_ObjCProtocolDecl:
+					case CXCursor_ObjCCategoryDecl:
 						output.classes ~= code;
 					break;
 
@@ -103,7 +105,11 @@ class Translator
 				case CXCursor_ObjCProtocolDecl:
 					return (new ObjcInterface!(InterfaceData)(cursor, parent, this)).translate;
 				break;
-			
+
+				case CXCursor_ObjCCategoryDecl:
+					return (new Category(cursor, parent, this)).translate;
+				break;
+
 				case CXCursor_VarDecl:
 				{
 					auto contex = output.newContext();

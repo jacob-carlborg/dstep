@@ -263,16 +263,15 @@ class ClassData : StructData
 	{
 		auto cls = output.newContext();
 		
-		cls.put(type, ' ', name, nl, '{', nl);
-		
-		cls.indent in {
-			addDeclarations(cls, properties);
-			addDeclarations(cls, staticVariables);
-			addDeclarations(cls, instanceVariables);
-			addDeclarations(cls, staticMethods);
-			addDeclarations(cls, instanceMethods);
-		};
-		
+		cls.put(type, ' ', name);
+
+		if (superclass.any)
+			cls.put(" : ", superclass);
+
+		writeInterfaces(cls);
+		cls.put(nl, '{', nl);
+		writeMembers(cls);
+
 		auto context = output.newContext();
 		context ~= cls.data.strip('\n');
 		context.put(nl, '}');
@@ -284,6 +283,36 @@ class ClassData : StructData
 	{
 		return "class";
 	}
+
+private:
+
+	void writeInterfaces (String cls)
+	{
+		if (interfaces.any)
+		{
+			if (superclass.isEmpty)
+				cls ~= " : ";
+
+			foreach (i, s ; interfaces)
+			{
+				if (i != 0)
+					cls ~= ", ";
+
+				cls ~= s;
+			}
+		}
+	}
+
+	void writeMembers (String cls)
+	{
+		cls.indent in {
+			addDeclarations(cls, staticVariables);
+			addDeclarations(cls, instanceVariables);
+			addDeclarations(cls, properties);
+			addDeclarations(cls, staticMethods);
+			addDeclarations(cls, instanceMethods);
+		};
+	}
 }
 
 class InterfaceData : ClassData
@@ -291,6 +320,14 @@ class InterfaceData : ClassData
 	protected @property string type ()
 	{
 		return "interface";
+	}
+}
+
+class ClassExtensionData : ClassData
+{
+	protected @property string type ()
+	{
+		return "__classext";
 	}
 }
 

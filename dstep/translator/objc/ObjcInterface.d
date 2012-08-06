@@ -48,9 +48,7 @@ class ObjcInterface (Data) : Declaration
 		});
 	}
 
-private:
-	
-	string[] collectInterfaces (ObjcCursor cursor)
+	protected string[] collectInterfaces (ObjcCursor cursor)
 	{
 		string[] interfaces;
 
@@ -59,11 +57,14 @@ private:
 
 		return interfaces;
 	}
-	
+
+private:
+
 	string writeClass (string name, string superClassName, string[] interfaces, void delegate () dg)
 	{
 		output.currentClass = new Data;
 		output.currentClass.name = translateIdentifier(name);
+		output.currentClass.interfaces = interfaces;
 		
 		if (superClassName.isPresent)
 			output.currentClass.superclass ~= translateIdentifier(superClassName);
