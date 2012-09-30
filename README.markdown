@@ -8,7 +8,7 @@ DStep is a tool for translating C and Objective-C headers to D modules.
 
 * Clang - http://clang.llvm.org - 3.1
 * DVM - https://bitbucket.org/doob/dvm
-* DMD 2.059 - install using DVM
+* DMD 2.060 - install using DVM
 * Tango - https://github.com/SiegeLord/Tango-D2
 
 ### Building
@@ -32,7 +32,7 @@ Any flags recognized by Clang can be used.
 
 ## Install Requirements
 
-These are install instructions for Mac OS X 10.7. It should be easy to modify to work on other
+These are install instructions for Mac OS X 10.7 and later. It should be easy to modify to work on other
 Posix platforms.
 
 ### LLVM and Clang
@@ -41,9 +41,10 @@ Posix platforms.
 	$ cd llvm
 	$ git co -b release_31
 	$ cd tools
-	$ git submodule add http://llvm.org/git/clang.git
+	$ git clone http://llvm.org/git/clang.git
+	$ cd clang
 	$ git co -b release_31
-	$ cd ..
+	$ cd ../..
 	$ ./configure --build=i686-apple-darwin11 --enable-optimized
 	$ cp Release+Asserts/lib/libclang.dylib <path/to/dstep>
 
@@ -55,12 +56,12 @@ Posix platforms.
 
 ### DMD
 
-	$ dvm install 2.059
-	$ dvm use 2.059
+	$ dvm install 2.060
+	$ dvm use 2.060
 
 ### Tango
 
 	$ git clone https://github.com/SiegeLord/Tango-D2
 	$ cd Tango-D2
-	$ ./build/bin/osx32/bin -r=dmd -c=dmd .
+	$ ./build/script/bob.rb -r dmd -c dmd .
 	$ cp libtango.a <path/to/dstep>
