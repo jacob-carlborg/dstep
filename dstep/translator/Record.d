@@ -25,7 +25,7 @@ class Record (Data) : Declaration
 		super(cursor, parent, translator);
 	}
 
-	string translate ()
+	override string translate ()
 	{
 		return writeRecord(spelling, (context) {
 			foreach (cursor, parent ; cursor.declarations)

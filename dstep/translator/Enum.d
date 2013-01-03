@@ -25,7 +25,7 @@ class Enum : Declaration
 		super(cursor, parent, translator);
 	}
 	
-	string translate ()
+	override string translate ()
 	{
 		return writeEnum(spelling, (context) {
 			foreach (cursor, parent ; cursor.declarations)

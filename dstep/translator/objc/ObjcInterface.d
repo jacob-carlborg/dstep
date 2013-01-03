@@ -28,7 +28,7 @@ class ObjcInterface (Data) : Declaration
 		super(cursor, parent, translator);
 	}
 
-	string translate ()
+	override string translate ()
 	{
 		auto cursor = cursor.objc;
 

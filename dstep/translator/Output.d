@@ -100,7 +100,7 @@ class Output
 		return currentContext = context;
 	}
 	
-	string toString ()
+	override string toString ()
 	{
 		return data.strip('\n');
 	}
@@ -279,7 +279,7 @@ class ClassData : StructData
 		return context.data;
 	}
 
-	protected @property string type ()
+	override protected @property string type ()
 	{
 		return "class";
 	}
@@ -318,7 +318,7 @@ private:
 
 class InterfaceData : ClassData
 {
-	protected @property string type ()
+	protected @property override string type ()
 	{
 		return "interface";
 	}
@@ -326,7 +326,7 @@ class InterfaceData : ClassData
 
 class ClassExtensionData : ClassData
 {
-	protected @property string type ()
+	protected @property override string type ()
 	{
 		return "__classext";
 	}

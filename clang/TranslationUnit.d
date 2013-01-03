@@ -86,7 +86,8 @@ struct DiagnosticVisitor
 		foreach (i ; 0 .. length)
 		{
 			auto diag = clang_getDiagnostic(translatoinUnit, cast(uint) i);
-			result = dg(Diagnostic(diag));
+			auto dDiag = Diagnostic(diag);
+			result = dg(dDiag);
 
 			if (result)
 				break;

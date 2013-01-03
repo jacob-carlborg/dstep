@@ -23,7 +23,7 @@ class Category : ObjcInterface!(ClassExtensionData)
 		super(cursor, parent, translator);
 	}
 
-	protected string[] collectInterfaces (ObjcCursor cursor)
+	protected override string[] collectInterfaces (ObjcCursor cursor)
 	{
 		auto interfaces = super.collectInterfaces(cursor);
 		auto category = translateIdentifier(cursor.category.spelling);
