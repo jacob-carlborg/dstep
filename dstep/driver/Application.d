@@ -105,7 +105,8 @@ private:
 	
 	void handleArguments ()
 	{
-		if (arguments.args.any!(e => e == "-ObjC"))
+		// FIXME: Cannot use type interference here, probably a bug. Results in segfault.
+		if (arguments.args.any!((string e) => e == "-ObjC"))
 			handleObjectiveC();
 	}
 	
