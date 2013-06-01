@@ -2,13 +2,19 @@
 
 DStep is a tool for translating C and Objective-C headers to D modules.
 
+## Download
+
+Pre compiled binaries are available for Mac OS X and Linux 32bit.
+
+https://github.com/jacob-carlborg/dstep/downloads
+
 ## Building
 
 ### Requirements
 
 * Clang - http://clang.llvm.org - 3.1
 * DVM - https://bitbucket.org/doob/dvm
-* DMD 2.060 - install using DVM
+* DMD 2.061 (2.062 probably works) - install using DVM
 * Tango - https://github.com/SiegeLord/Tango-D2
 
 ### Building
@@ -50,14 +56,14 @@ Posix platforms.
 
 ### DVM
 
-	$ wget -O dvm https://bitbucket.org/doob/dvm/downloads/dvm-0.4.0-osx
+	$ wget -O dvm https://github.com/downloads/jacob-carlborg/dvm/dvm-0.4.1-osx
 	$ chmod +x dvm
 	$ ./dvm install dvm
 
 ### DMD
 
-	$ dvm install 2.060
-	$ dvm use 2.060
+	$ dvm install 2.061
+	$ dvm use 2.061
 
 ### Tango
 
