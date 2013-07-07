@@ -167,7 +167,7 @@ private:
 		return translate;
 	}
 
-	void help ()
+	override protected void showHelp ()
 	{
 		helpFlag = true;
 
