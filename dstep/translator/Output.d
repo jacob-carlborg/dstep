@@ -107,18 +107,18 @@ class Output
 
 private:
 
-    void addDeclarations (string[] declarations, bool extraNewline = true)
-    {
+	void addDeclarations (string[] declarations, bool extraNewline = true)
+	{
 		auto newline = "\n";
 		
 		if (extraNewline)
 			newline ~= "\n";
-		
-        this ~= declarations.join(newline);
 
-        if (declarations.any)
-            this ~= "\n\n";
-    }
+		this ~= declarations.join(newline);
+
+		if (declarations.any)
+			this ~= "\n\n";
+	}
 }
 
 class StructData
@@ -126,24 +126,36 @@ class StructData
 	string name;
 
 	string[] instanceVariables;
+
+	bool isFwdDeclaration;
 	
 	@property string data ()
 	{
+		import std.stdio;
+
 		auto context = output.newContext();
 
 		if (name.isPresent)
 			name = ' ' ~ name;
 
-		context.put(type, name, nl, '{', nl);
+		if (isFwdDeclaration)
+		{
+			context.put(type, name, ";", nl);
+			isFwdDeclaration = true;
+		}
+		else
+		{
+			context.put(type, name, nl, '{', nl);
 
-		context.indent in {
-			addDeclarations(context, instanceVariables);
-		};
-		
-		auto str = context.data.strip('\n');
-		context = output.newContext();
-		context ~= str;
-		context.put(nl, '}');
+			context.indent in {
+				addDeclarations(context, instanceVariables);
+			};
+			
+			auto str = context.data.strip('\n');
+			context = output.newContext();
+			context ~= str;
+			context.put(nl, '}');
+		}
 
 		return context.data;
 	}
@@ -156,7 +168,7 @@ protected:
 	}
 
 	void addDeclarations (String context, string[] declarations)
-    {
+	{
 		foreach (i, e ; declarations)
 		{
 			if (i != 0)
@@ -165,12 +177,12 @@ protected:
 			context ~= e;
 		}
 
-        if (declarations.any)
+		if (declarations.any)
 		{
 			context ~= nl;
 			context ~= nl;
 		}
-    }
+	}
 }
 
 class EnumData : StructData
@@ -183,7 +195,7 @@ class EnumData : StructData
 protected:
 
 	override void addDeclarations (String context, string[] declarations)
-    {
+	{
 		foreach (i, e ; declarations)
 		{
 			if (i != 0)
@@ -195,12 +207,12 @@ protected:
 			context ~= e;
 		}
 
-        if (declarations.any)
+		if (declarations.any)
 		{
 			context ~= nl;
 			context ~= nl;
 		}
-    }
+	}
 }
 
 class UnionData : StructData

@@ -32,3 +32,5 @@ typedef struct
 	int x;
 	int y;
 } D;
+
+struct E;
