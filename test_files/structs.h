@@ -34,3 +34,9 @@ typedef struct
 } D;
 
 struct E;
+
+struct E
+{
+};
+
+struct F;

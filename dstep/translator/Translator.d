@@ -44,6 +44,7 @@ class Translator
 		string inputFilename;
 		File inputFile;
 		Language language;
+		string[string] deferredDeclarations;
 	}
 	
 	this (string inputFilename, TranslationUnit translationUnit, const Options options = Options.init)
@@ -75,7 +76,10 @@ class Translator
 						output.classes ~= code;
 					break;
 
-					case CXCursor_StructDecl: output.structs ~= code; break;
+					case CXCursor_StructDecl:
+						if (cursor.isDefinition)
+							output.structs ~= code;
+						break;
 					case CXCursor_EnumDecl: output.enums ~= code; break;
 					case CXCursor_UnionDecl: output.unions ~= code; break;
 					case CXCursor_VarDecl: output.variables ~= code; break;
@@ -86,6 +90,7 @@ class Translator
 				}
 		}
 
+		output.structs ~= deferredDeclarations.values;
 		output.externDeclaration = externDeclaration();
 
 		auto data = output.toString;
@@ -132,7 +137,20 @@ class Translator
 					return typedef_(cursor, output.newContext);
 				break;
 			
-				case CXCursor_StructDecl: return (new Record!(StructData)(cursor, parent, this)).translate; break;
+				case CXCursor_StructDecl:
+					auto code = (new Record!(StructData)(cursor, parent, this)).translate;
+					if (cursor.isDefinition)
+					{
+						if (cursor.spelling in deferredDeclarations)
+							deferredDeclarations.remove(cursor.spelling);
+						return code;
+					}
+					else
+					{
+						deferredDeclarations[cursor.spelling] = code;
+						return "";
+					}
+					break;
 				case CXCursor_EnumDecl: return (new Enum(cursor, parent, this)).translate; break;
 				case CXCursor_UnionDecl: return (new Record!(UnionData)(cursor, parent, this)).translate; break;
 			

@@ -39,4 +39,8 @@ struct _Anonymous_0
 	int y;
 }
 
-struct E;
+struct E
+{
+}
+
+struct F;

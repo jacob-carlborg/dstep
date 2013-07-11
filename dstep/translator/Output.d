@@ -131,8 +131,6 @@ class StructData
 	
 	@property string data ()
 	{
-		import std.stdio;
-
 		auto context = output.newContext();
 
 		if (name.isPresent)
