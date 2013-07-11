@@ -4,5 +4,6 @@
 @interface Foo
 
 @property int foo;
+@property int version;
 
 @end
