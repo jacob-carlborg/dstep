@@ -63,8 +63,15 @@ body
 			}
 	}
 
-	if (applyConst && type.isConst)
-		result = "const " ~ result;
+	version (D1)
+	{
+		// ignore const
+	}
+	else
+	{
+		if (applyConst && type.isConst)
+			result = "const " ~ result;
+	}
 
 	return result;
 }
@@ -181,17 +188,23 @@ body
 
 	auto result = translateType(type.pointeeType, rewriteIdToObject, false);
 
-	if (applyConst && valueTypeIsConst(type))
+	version (D1)
 	{
-		if (type.isConst)
-			result = "const " ~ result ~ '*';
-
-		else
-			result = "const(" ~ result ~ ")*";
-	}
-
-	else
 		result = result ~ '*';
+	}
+	else
+	{
+		if (applyConst && valueTypeIsConst(type))
+		{
+			if (type.isConst)
+				result = "const " ~ result ~ '*';
+
+			else
+				result = "const(" ~ result ~ ")*";
+		}
+		else
+			result = result ~ '*';
+	}
 
 	return result;
 }
