@@ -137,7 +137,7 @@ body
 
 	handleInclude(type);
 
-    return spelling;
+	return spelling;
 }
 
 string translateUnexposed (Type type, bool rewriteIdToObject)
@@ -232,7 +232,7 @@ body
 string translateObjCObjectPointerType (Type type)
 in
 {
-    assert(type.kind == CXTypeKind.CXType_ObjCObjectPointer && !type.isObjCBuiltinType);
+	assert(type.kind == CXTypeKind.CXType_ObjCObjectPointer && !type.isObjCBuiltinType);
 }
 body
 {
@@ -241,8 +241,8 @@ body
 	if (pointee.spelling == "Protocol")
 		return "Protocol*";
 
-    else
-        return translateType(pointee);
+	else
+		return translateType(pointee);
 }
 
 string translateType (CXTypeKind kind, bool rewriteIdToObject = true)

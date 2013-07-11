@@ -41,8 +41,8 @@ class Translator
 		TranslationUnit translationUnit;
 
 		string outputFile;
-        string inputFilename;
-        File inputFile;
+		string inputFilename;
+		File inputFile;
 		Language language;
 	}
 	
@@ -53,15 +53,15 @@ class Translator
 		outputFile = options.outputFile;
 		language = options.language;
 
-        inputFile = translationUnit.file(inputFilename);
+		inputFile = translationUnit.file(inputFilename);
 	}
 	
 	void translate ()
 	{
 		foreach (cursor, parent ; translationUnit.declarations)
 		{
-		    if (skipDeclaration(cursor))
-		        continue;
+			if (skipDeclaration(cursor))
+				continue;
 
 			output.newContext();
 			auto code = translate(cursor, parent);
@@ -166,10 +166,10 @@ class Translator
 	
 private:
 
-    bool skipDeclaration (Cursor cursor)
-    {
-        return inputFile != cursor.location.spelling.file;
-    }
+	bool skipDeclaration (Cursor cursor)
+	{
+		return inputFile != cursor.location.spelling.file;
+	}
 
 	string externDeclaration ()
 	{
