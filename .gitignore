@@ -1,4 +1,6 @@
 *.h
+!test_files/**/*.h
+!test_files/*.h
 *.deps
 *.a
 *.o
