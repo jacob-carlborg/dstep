@@ -41,8 +41,8 @@ class Translator
 		TranslationUnit translationUnit;
 
 		string outputFile;
-        string inputFilename;
-        File inputFile;
+		string inputFilename;
+		File inputFile;
 		Language language;
 	}
 	
@@ -53,15 +53,15 @@ class Translator
 		outputFile = options.outputFile;
 		language = options.language;
 
-        inputFile = translationUnit.file(inputFilename);
+		inputFile = translationUnit.file(inputFilename);
 	}
 	
 	void translate ()
 	{
 		foreach (cursor, parent ; translationUnit.declarations)
 		{
-		    if (skipDeclaration(cursor))
-		        continue;
+			if (skipDeclaration(cursor))
+				continue;
 
 			output.newContext();
 			auto code = translate(cursor, parent);
@@ -112,9 +112,12 @@ class Translator
 
 				case CXCursor_VarDecl:
 				{
-					auto contex = output.newContext();
-					contex ~= "extern __gshared ";
-					return variable(cursor, contex);
+					auto context = output.newContext();
+					version (D1)
+						context ~= "extern ";
+					else
+						context ~= "extern __gshared ";
+					return variable(cursor, context);
 				}
 				break;
 			
@@ -163,10 +166,10 @@ class Translator
 	
 private:
 
-    bool skipDeclaration (Cursor cursor)
-    {
-        return inputFile != cursor.location.spelling.file;
-    }
+	bool skipDeclaration (Cursor cursor)
+	{
+		return inputFile != cursor.location.spelling.file;
+	}
 
 	string externDeclaration ()
 	{
@@ -241,13 +244,20 @@ package string translateFunction (string result, string name, Parameter[] parame
 	{
 		string p;
 
-		if (param.isConst)
-			p ~= "const(";
-
-		p ~= param.type;
+		version(D1)
+		{
+			p ~= param.type;
+		}
+		else
+		{
+			if (param.isConst)
+				p ~= "const(";
 		
-		if (param.isConst)
-			p ~= ')';
+			p ~= param.type;
+
+			if (param.isConst)
+				p ~= ')';
+		}
 
 		if (param.name.any)
 			p ~= " " ~ translateIdentifier(param.name);
