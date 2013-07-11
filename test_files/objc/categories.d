@@ -1,5 +1,9 @@
 extern (Objective-C):
 
-__classext Foo : NSObject
+class Foo
+{
+}
+
+__classext Ext : Foo
 {
 }
