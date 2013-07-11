@@ -99,6 +99,11 @@ struct Cursor
 	{
 		return clang_hashCursor(cast(CXCursor) cx);
 	}
+
+	bool isDefinition () const
+	{
+		return clang_isCursorDefinition(cast(CXCursor) cx) != 0;
+	}
 }
 
 struct ObjcCursor

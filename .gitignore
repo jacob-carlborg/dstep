@@ -12,3 +12,4 @@ tmp
 .rvmrc
 foo.d
 *.zip
+*.swp

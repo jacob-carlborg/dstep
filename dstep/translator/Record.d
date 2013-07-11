@@ -60,6 +60,8 @@ private:
 	string writeRecord (string name, void delegate (Data context) dg)
 	{
 		auto context = new Data;
+		static if (is(typeof(context.isFwdDeclaration) == bool))
+			context.isFwdDeclaration = !cursor.isDefinition;
 		context.name = translateIdentifier(name);
 
 		dg(context);

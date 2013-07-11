@@ -38,3 +38,9 @@ struct _Anonymous_0
 	int x;
 	int y;
 }
+
+struct E
+{
+}
+
+struct F;
