@@ -63,8 +63,15 @@ body
 			}
 	}
 
-	if (applyConst && type.isConst)
-		result = "const " ~ result;
+	version (D1)
+	{
+		// ignore const
+	}
+	else
+	{
+		if (applyConst && type.isConst)
+			result = "const " ~ result;
+	}
 
 	return result;
 }
@@ -130,7 +137,7 @@ body
 
 	handleInclude(type);
 
-    return spelling;
+	return spelling;
 }
 
 string translateUnexposed (Type type, bool rewriteIdToObject)
@@ -181,17 +188,23 @@ body
 
 	auto result = translateType(type.pointeeType, rewriteIdToObject, false);
 
-	if (applyConst && valueTypeIsConst(type))
+	version (D1)
 	{
-		if (type.isConst)
-			result = "const " ~ result ~ '*';
-
-		else
-			result = "const(" ~ result ~ ")*";
-	}
-
-	else
 		result = result ~ '*';
+	}
+	else
+	{
+		if (applyConst && valueTypeIsConst(type))
+		{
+			if (type.isConst)
+				result = "const " ~ result ~ '*';
+
+			else
+				result = "const(" ~ result ~ ")*";
+		}
+		else
+			result = result ~ '*';
+	}
 
 	return result;
 }
@@ -219,7 +232,7 @@ body
 string translateObjCObjectPointerType (Type type)
 in
 {
-    assert(type.kind == CXTypeKind.CXType_ObjCObjectPointer && !type.isObjCBuiltinType);
+	assert(type.kind == CXTypeKind.CXType_ObjCObjectPointer && !type.isObjCBuiltinType);
 }
 body
 {
@@ -228,8 +241,8 @@ body
 	if (pointee.spelling == "Protocol")
 		return "Protocol*";
 
-    else
-        return translateType(pointee);
+	else
+		return translateType(pointee);
 }
 
 string translateType (CXTypeKind kind, bool rewriteIdToObject = true)
