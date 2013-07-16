@@ -38,7 +38,7 @@ struct TranslationUnit
 				options));
 	}
 	
-	private this (CXTranslationUnit cx)
+	this (CXTranslationUnit cx)
 	{
 		this.cx = cx;
 	}
@@ -74,11 +74,16 @@ struct DiagnosticVisitor
 		this.translatoinUnit = translatoinUnit;
 	}
 	
-	size_t length ()
+	@property size_t length ()
 	{
 		return clang_getNumDiagnostics(translatoinUnit);
 	}
-	
+
+	@property bool any ()
+	{
+		return length > 0;
+	}
+
 	int opApply (int delegate (ref Diagnostic) dg)
 	{
 		int result;

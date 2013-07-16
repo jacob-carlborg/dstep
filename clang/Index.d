@@ -17,4 +17,9 @@ struct Index
 	{
 		cx = clang_createIndex(excludeDeclarationsFromPCH ? 1 : 0, displayDiagnostics ? 1 : 0);
 	}
+
+	this (CXIndex cx)
+	{
+		this.cx = cx;
+	}
 }
