@@ -178,12 +178,12 @@ struct Arguments
 {
 	FuncType type;
 	
-    @property size_t length ()
+    @property uint length ()
     {
 		return clang_getNumArgTypes(type.type.cx);
     }
 
-	Type opIndex (size_t i)
+	Type opIndex (uint i)
 	{
 		auto r = clang_getArgType(type.type.cx, i);
 		return Type(r);
