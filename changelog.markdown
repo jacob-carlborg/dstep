@@ -3,6 +3,8 @@
 ## Version 0.0.2
 ### New/Changed Features
 
+* Add support for compiling as 64bit
+
 #### Objective-C
 * Support for properties
 
