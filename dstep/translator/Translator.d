@@ -95,7 +95,6 @@ class Translator
 
 		auto data = output.toString;
 		write(outputFile, data);
-		println(data);
 	}
 	
 	string translate (Cursor cursor, Cursor parent = Cursor.empty)
