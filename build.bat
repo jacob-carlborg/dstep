@@ -1,0 +1,1 @@
+rdmd --build-only -debug -gc -ofbin\dstep.exe -Idstack\mambo -Idstack -L+tango -L+\ -L+clang dstep\driver\DStep.d
