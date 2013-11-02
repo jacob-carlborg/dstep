@@ -1,6 +1,6 @@
 # DStep Change Log
 
-## Version 0.0.2
+## Version 0.1.0
 ### New/Changed Features
 
 * Add support for compiling as 64bit
