@@ -61,10 +61,12 @@ class Application : DStack.Application
 			.params(1)
 			.defaults(&defaultOutputFilename);
 
-		arguments('x', "language", "Treat subsequent input files as having type <arg>")
+		arguments('x', "language", "Treat subsequent input files as having type <language>")
 			.params(1)
 			.restrict("c", "c-header", "objective-c", "objective-c-header")
 			.on(&handleLanguage);
+
+		arguments("objective-c", "Treat source input file as Objective-C input.");
 	}
 
 private:
@@ -76,6 +78,9 @@ private:
 
 	void startConversion (string file)
 	{
+		if (arguments["objective-c"])
+			argsToRestore ~= "-ObjC";
+
 		index = Index(false, false);
 		translationUnit = TranslationUnit.parse(index, file, remainingArgs);
 		
@@ -111,13 +116,13 @@ private:
 	
 	void handleArguments ()
 	{
-		// FIXME: Cannot use type interference here, probably a bug. Results in segfault.
-		if (arguments.args.any!((string e) => e == "-ObjC"))
+		if (arguments.args.any!(e => e == "-ObjC"))
 			handleObjectiveC();
 	}
 	
 	void handleObjectiveC ()
 	{
+		argsToRestore ~= "-ObjC";
 		language = Language.objC;
 	}
 
@@ -181,10 +186,10 @@ private:
 		println("Version: ", Version);
 		println();
 		println("Options:");
-		println("    -o, --output <file>    Write output to <file>.");
-		println("    -ObjC                  Treat source input file as Objective-C input.");
-		println("    -x <language>          Treat subsequent input files as having type <language>.");
-		println("    -h, --help             Show this message and exit.");
+		println("    -o, --output <file>          Write output to <file>.");
+		println("    -ObjC, --objective-c         Treat source input file as Objective-C input.");
+		println("    -x, --language <language>    Treat subsequent input files as having type <language>.");
+		println("    -h, --help                   Show this message and exit.");
 		println();
 		println("All options that Clang accepts can be used as well.");
 		println();

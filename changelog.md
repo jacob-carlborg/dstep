@@ -6,6 +6,8 @@
 * Add support for compiling as 64bit
 * Removed printing of output to stdout
 * Add support for Windows (32bit) and FreeBSD (32 and 64bit)
+* Infer the output filename of the input filename
+* Make arguments more consistent
 
 #### Objective-C
 
