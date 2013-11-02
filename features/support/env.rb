@@ -29,5 +29,10 @@ Before do
   FileUtils.cp_r "test_files", WORKING_DIRECTORY
   
   name = lib_name("clang")
-  File.symlink File.join("..", "..", name), File.join(WORKING_DIRECTORY, name)
+
+  if WINDOWS
+    FileUtils.cp name, File.join(WORKING_DIRECTORY, name)
+  else
+    File.symlink "../../#{name}", File.join(WORKING_DIRECTORY, name)
+  end
 end
