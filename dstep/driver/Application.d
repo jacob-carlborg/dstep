@@ -8,6 +8,7 @@ module dstep.driver.Application;
 
 import std.getopt;
 import std.stdio : writeln, stderr;
+import Path = std.path : setExtension;
 
 import DStack = dstack.application.Application;
 
@@ -58,7 +59,7 @@ class Application : DStack.Application
 
 		arguments('o', "output", "Write output to")
 			.params(1)
-			.defaults("foo.d");
+			.defaults(&defaultOutputFilename);
 
 		arguments('x', "language", "Treat subsequent input files as having type <arg>")
 			.params(1)
@@ -67,7 +68,12 @@ class Application : DStack.Application
 	}
 
 private:
-	
+
+	string defaultOutputFilename ()
+	{
+		return Path.setExtension(arguments.argument.input, "d");
+	}
+
 	void startConversion (string file)
 	{
 		index = Index(false, false);
