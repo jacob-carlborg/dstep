@@ -116,7 +116,8 @@ private:
 	
 	void handleArguments ()
 	{
-		if (arguments.args.any!(e => e == "-ObjC"))
+		// FIXME: Cannot use type inference here, probably a bug. Results in segfault.
+		if (arguments.rawArgs.any!((string e) => e == "-ObjC"))
 			handleObjectiveC();
 	}
 	
@@ -157,7 +158,7 @@ private:
 
 	@property string[] remainingArgs ()
 	{
-		return arguments.args[1 .. $] ~ argsToRestore;
+		return arguments.rawArgs[1 .. $] ~ argsToRestore;
 	}
 
 	bool handleDiagnostics ()

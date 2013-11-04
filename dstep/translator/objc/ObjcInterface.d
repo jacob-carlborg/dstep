@@ -6,8 +6,6 @@
  */
 module dstep.translator.objc.ObjcInterface;
 
-import std.exception;
-
 import mambo.core._;
 
 import clang.c.index;
