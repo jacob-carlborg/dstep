@@ -9,6 +9,10 @@ For the latest release see: [releases/latest](https://github.com/jacob-carlborg/
 Pre-compiled binaries are available for Mac OS X, Linux and FreeBSD. As 32 and 64bit. See the
 [releases](https://github.com/jacob-carlborg/dstep/releases) section.
 
+Arch packages are available at (thanks to Михаил Страшун):
+
+[https://www.archlinux.org/packages/?q=dstep](https://www.archlinux.org/packages/?q=dstep)
+
 ## License
 
 The source code is available under the [Boost Software License 1.0](http://www.boost.org/LICENSE_1_0.txt)
