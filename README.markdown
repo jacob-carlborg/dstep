@@ -4,6 +4,8 @@ DStep is a tool for translating C and Objective-C headers to D modules.
 
 ## Download
 
+For the latest release see: [releases/latest](https://github.com/jacob-carlborg/dstep/releases/latest).
+
 Pre-compiled binaries are available for Mac OS X, Linux and FreeBSD. As 32 and 64bit. See the
 [releases](https://github.com/jacob-carlborg/dstep/releases) section.
 
