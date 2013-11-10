@@ -21,7 +21,7 @@ The source code is available under the [Boost Software License 1.0](http://www.b
 
 ### Building
 
-1. Install all requirements, see [below](#requirements)
+1. Install all requirements, see [below](#requirements-1)
 2. Clone the repository by running:
 
 		$ git clone --recursive git://github.com/jacob-carlborg/dstep.git
@@ -38,9 +38,9 @@ For translating Objective-C headers add the `-ObjC` flag.
 
 Use `-h` for usage information. Any flags recognized by Clang can be used.
 
-## <a id="requirements"></a>Requirements
+## Requirements
 
-### <a id="libclang"></a>libclang
+### libclang
 
 This tool requires libclang. Any version that is 3.1 or later and binary compatible with 3.1
 should work. Either download the pre-compatible libraries from the LLVM site or use libclang
