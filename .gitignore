@@ -13,3 +13,4 @@ tmp
 foo.d
 *.zip
 *.swp
+.dub
