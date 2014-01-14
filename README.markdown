@@ -80,3 +80,14 @@ Alternatively compile libclang yourself:
 	$ cd Tango-D2
 	$ ./build/script/bob.rb -r dmd -c dmd .
 	$ cp libtango.a <path/to/dstep>
+
+## Limitations/Known issues
+
+* Doesn't translate preprocessor macros of any kind
+* Doesn't translate `#include` to `import`. A few standard C headers are translated
+* Doesn't translate C++ at all
+* Umbrella headers. Some headers just serve to include other headers. If these other headers contain some form of protection, like `#error`, to be included directly this can cause problems for DStep
+* Some headers are designed to always be included together with other header files. These headers may very well use symbols from other header files without including them itself. Since DStep is designed to convert header files one-by-one this doesn't work. There are two workarounds for this:
+
+	1. Add `#include`-directives for the header files the header file is actually using
+	2. Use the `-include <file>` flag available in Clang to indicate the given `<file>` should be processed before the file that should be translated. DStep accepts all flags Clang accepts
