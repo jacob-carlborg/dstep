@@ -13,6 +13,8 @@ Arch packages are available in [community] repository (thanks to Михаил С
 
 [https://www.archlinux.org/packages/?q=dstep](https://www.archlinux.org/packages/?q=dstep)
 
+Alternatively install via [Dub](http://code.dlang.org/download)
+
 ## License
 
 The source code is available under the [Boost Software License 1.0](http://www.boost.org/LICENSE_1_0.txt)
@@ -32,7 +34,7 @@ The source code is available under the [Boost Software License 1.0](http://www.b
 
 		$ git clone --recursive git://github.com/jacob-carlborg/dstep.git
 
-3. run `./build.sh`
+3. run `dub build`
 
 ## Usage
 
@@ -74,12 +76,7 @@ Alternatively compile libclang yourself:
 	$ ./configure --enable-optimized
 	$ cp Release+Asserts/lib/libclang.<dylib|so> <path/to/dstep>
 
-### Tango
-
-	$ git clone https://github.com/SiegeLord/Tango-D2
-	$ cd Tango-D2
-	$ ./build/script/bob.rb -r dmd -c dmd .
-	$ cp libtango.a <path/to/dstep>
+### [Dub](http://code.dlang.org/download)
 
 ## Limitations/Known issues
 
