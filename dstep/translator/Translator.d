@@ -90,7 +90,8 @@ class Translator
 				}
 		}
 
-		output.structs ~= deferredDeclarations.values;
+		output.structs ~= mambo.core.AssociativeArray.values(deferredDeclarations); //mambo issue #2
+		//output.structs ~= deferredDeclarations.values;
 		output.externDeclaration = externDeclaration();
 
 		auto data = output.toString;
