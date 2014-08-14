@@ -100,7 +100,7 @@ struct Type
 	@property bool isWideCharType ()
 	{
 		with (CXTypeKind)
-			return kind == CXType_WChar || kind == CXType_SChar;
+			return kind == CXType_WChar;
 	}
 	
 	@property bool isConst ()

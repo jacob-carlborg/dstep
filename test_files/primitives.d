@@ -12,4 +12,5 @@ extern __gshared c_ulong x14;
 extern __gshared ulong x15;
 extern __gshared ushort x16;
 extern __gshared ubyte x17;
+extern __gshared byte x27;
 extern __gshared real x18;

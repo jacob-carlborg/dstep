@@ -12,4 +12,7 @@ unsigned long long x15;
 unsigned short x16;
 unsigned char x17;
 
+// issue 27
+signed char x27;
+
 long double x18;

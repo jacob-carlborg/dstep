@@ -268,7 +268,7 @@ string translateType (CXTypeKind kind, bool rewriteIdToObject = true)
 			case CXType_ULongLong: return "ulong";
 			case CXType_UInt128: return "<unimplemented>";
 			case CXType_Char_S: return "char";
-			case CXType_SChar: return "<unimplemented>";
+			case CXType_SChar: return "byte";
 			case CXType_WChar: return "wchar";
 			case CXType_Short: return "short";
 			case CXType_Int: return "int";
