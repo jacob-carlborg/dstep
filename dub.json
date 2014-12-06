@@ -13,12 +13,12 @@
 	"sourcePaths": ["dstep", "clang"],
 	"importPaths": ["dstep", "clang"],
 
-	"lflags-posix": ["-lclang", "-rpath", "."],
+	"lflags-posix": ["-lclang", "-rpath", ".", "-L."],
 	"lflags-windows": ["+\\", "+clang"],
 
 	"buildRequirements": ["silenceWarnings"],
 
 	"dependencies": {
-		"dstack": "0.0.1-alpha"
+		"dstack": "0.0.2"
 	}
 }
