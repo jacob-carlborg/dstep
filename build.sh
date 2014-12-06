@@ -5,4 +5,5 @@ if [ -s "$HOME/.dvm/scripts/dvm" ] ; then
     dvm use 2.066.1
 fi
 
-rdmd --build-only -debug -gc -ofbin/dstep -Idstack/mambo -Idstack -L-L. -L-lclang -L-ltango -L-rpath -L. "$@" dstep/driver/DStep.d
+dub build
+#rdmd --build-only -debug -gc -ofbin/dstep -Idstack/mambo -Idstack -L-L. -L-lclang -L-ltango -L-rpath -L. "$@" dstep/driver/DStep.d
