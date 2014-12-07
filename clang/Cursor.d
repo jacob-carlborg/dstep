@@ -92,7 +92,7 @@ struct Cursor
 
 	equals_t opEquals (const ref Cursor cursor) const
 	{
-		return clang_equalCursors(cast(CXCursor) cursor.cx, cast(CXCursor) cx) == 0;
+		return clang_equalCursors(cast(CXCursor) cursor.cx, cast(CXCursor) cx) != 0;
 	}
 
 	hash_t toHash () const
