@@ -16,7 +16,7 @@ import dstep.translator.IncludeHandler;
 import dstep.translator.Translator;
 import dstep.translator.Output;
 
-string translateType (Type type, bool rewriteIdToObject = true, bool applyConst = true)
+string translateType (Type type, bool rewriteIdToObjcObject = true, bool applyConst = true)
 in
 {
 	assert(type.isValid);
@@ -37,12 +37,12 @@ body
 			result = "wchar";
 			
 		else if (type.isObjCIdType)
-			result = rewriteIdToObject ? "Object" : "id";
+			result = rewriteIdToObjcObject ? "ObjcObject" : "id";
 
 		else
 			switch (type.kind)
 			{
-				case CXType_Pointer: return translatePointer(type, rewriteIdToObject, applyConst);
+				case CXType_Pointer: return translatePointer(type, rewriteIdToObjcObject, applyConst);
 				case CXType_Typedef: result = translateTypedef(type); break;
 
 				case CXType_Record:
@@ -56,10 +56,10 @@ body
 					handleInclude(type);
 				break;
 				
-				case CXType_ConstantArray: result = translateConstantArray(type, rewriteIdToObject); break;
-				case CXType_Unexposed: result = translateUnexposed(type, rewriteIdToObject); break;
+				case CXType_ConstantArray: result = translateConstantArray(type, rewriteIdToObjcObject); break;
+				case CXType_Unexposed: result = translateUnexposed(type, rewriteIdToObjcObject); break;
 
-				default: result = translateType(type.kind, rewriteIdToObject);
+				default: result = translateType(type.kind, rewriteIdToObjcObject);
 			}
 	}
 
@@ -140,7 +140,7 @@ body
 	return spelling;
 }
 
-string translateUnexposed (Type type, bool rewriteIdToObject)
+string translateUnexposed (Type type, bool rewriteIdToObjcObject)
 in
 {
 	assert(type.kind == CXTypeKind.CXType_Unexposed);
@@ -150,13 +150,13 @@ body
 	auto declaration = type.declaration;
 
 	if (declaration.isValid)
-		return translateType(declaration.type, rewriteIdToObject);
+		return translateType(declaration.type, rewriteIdToObjcObject);
 		
 	else
-		return translateType(type.kind, rewriteIdToObject);
+		return translateType(type.kind, rewriteIdToObjcObject);
 }
 
-string translateConstantArray (Type type, bool rewriteIdToObject)
+string translateConstantArray (Type type, bool rewriteIdToObjcObject)
 in
 {
 	assert(type.kind == CXTypeKind.CXType_ConstantArray);
@@ -164,12 +164,12 @@ in
 body
 {
 	auto array = type.array;
-	auto elementType = translateType(array.elementType, rewriteIdToObject);
+	auto elementType = translateType(array.elementType, rewriteIdToObjcObject);
 	
 	return elementType ~ '[' ~ array.size.toString ~ ']';
 }
 
-string translatePointer (Type type, bool rewriteIdToObject, bool applyConst)
+string translatePointer (Type type, bool rewriteIdToObjcObject, bool applyConst)
 in
 {
 	assert(type.kind == CXTypeKind.CXType_Pointer);
@@ -186,7 +186,7 @@ body
 		return pointee.isConst;
 	}
 
-	auto result = translateType(type.pointeeType, rewriteIdToObject, false);
+	auto result = translateType(type.pointeeType, rewriteIdToObjcObject, false);
 
 	version (D1)
 	{
@@ -245,7 +245,7 @@ body
 		return translateType(pointee);
 }
 
-string translateType (CXTypeKind kind, bool rewriteIdToObject = true)
+string translateType (CXTypeKind kind, bool rewriteIdToObjcObject = true)
 {
 	with (CXTypeKind)
 		switch (kind)
@@ -285,7 +285,7 @@ string translateType (CXTypeKind kind, bool rewriteIdToObject = true)
 			case CXType_NullPtr: return "null";
 			case CXType_Overload: return "<unimplemented>";
 			case CXType_Dependent: return "<unimplemented>";
-			case CXType_ObjCId: return rewriteIdToObject ? "Object" : "id";
+			case CXType_ObjCId: return rewriteIdToObjcObject ? "ObjcObject" : "id";
 			case CXType_ObjCClass: return "Class";
 			case CXType_ObjCSel: return "SEL";
 			case CXType_Complex: return "<unimplemented>";
