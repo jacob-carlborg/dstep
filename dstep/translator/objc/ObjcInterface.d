@@ -97,9 +97,9 @@ private:
 			name = translateIdentifier(name);
 			translateFunction(func, name, method, classMethod);
 
-			method ~= " [";
+			method ~= ` @selector("`;
 			method ~= func.spelling;
-			method ~= "];";
+			method ~= `");`;
 
 			if (classMethod)
 				cls.staticMethods ~= method.data;
