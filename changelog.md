@@ -1,5 +1,14 @@
 # DStep Change Log
 
+## Version 0.1.1
+### New/Changed Features
+
+* DStep can now be compiled with DMD 2.066.1
+
+### Bugs Fixed
+
+* Fix paths in the tests on OS X Yosemite
+
 ## Version 0.1.0
 ### New/Changed Features
 
