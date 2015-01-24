@@ -4,18 +4,18 @@ extern (Objective-C):
 
 class Foo
 {
-	@property static Object new_ () [new];
-	@property static Class class () [class];
-	@property static NSInteger version_ () [version];
-	@property static void version_ (NSInteger aVersion) [setVersion:];
+	@property static ObjcObject new_ () @selector("new");
+	@property static Class class () @selector("class");
+	@property static NSInteger version_ () @selector("version");
+	@property static void version_ (NSInteger aVersion) @selector("setVersion:");
 
-	@property Object init () [init];
+	@property ObjcObject init () @selector("init");
 
-	static void classMethod () [classMethod];
-	static void initialize () [initialize];
-	static Object allocWithZone (NSZone* zone) [allocWithZone:];
+	static void classMethod () @selector("classMethod");
+	static void initialize () @selector("initialize");
+	static ObjcObject allocWithZone (NSZone* zone) @selector("allocWithZone:");
 
-	void instanceMethod () [instanceMethod];
-	IMP methodForSelector (SEL aSelector) [methodForSelector:];
-	Object performSelector (SEL aSelector, Object object) [performSelector:withObject:];
+	void instanceMethod () @selector("instanceMethod");
+	IMP methodForSelector (SEL aSelector) @selector("methodForSelector:");
+	ObjcObject performSelector (SEL aSelector, ObjcObject object) @selector("performSelector:withObject:");
 }

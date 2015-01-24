@@ -97,9 +97,9 @@ private:
 			name = translateIdentifier(name);
 			translateFunction(func, name, method, classMethod);
 
-			method ~= ` @selector("`;
-			method ~= func.spelling;
-			method ~= `");`;
+			method ~= ' ';
+			writeSelector(method, func.spelling);
+			method ~= ';';
 
 			if (classMethod)
 				cls.staticMethods ~= method.data;
@@ -140,7 +140,8 @@ private:
 		context ~= " ";
 		context ~= dName;
 		context ~= " () ";
-		context.put('[', name, "];");
+		writeSelector(context, name);
+		context ~= ';';
 
 		auto data = context.data;
 
@@ -173,9 +174,9 @@ private:
 			context ~= parameterName;
 		}
 
-		context ~= ") [";
-		context ~= selector;
-		context ~= "];";
+		context ~= ") ";
+		writeSelector(context, selector);
+		context ~= ';';
 
 		auto data = context.data;
 
@@ -224,5 +225,10 @@ private:
 		return isSetter(name) &&
 			cursor.resultType.kind == CXTypeKind.CXType_Void &&
 			cursor.parameters.length == 1;
+	}
+
+	void writeSelector (String context, string selector)
+	{
+		context.put(`@selector("`, selector, `")`);
 	}
 }

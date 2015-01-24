@@ -27,8 +27,7 @@ Given /^an expected file named "([^"]*)" in "([^"]*)"$/ do |file, path|
 end
 
 Then /^the files "([^"]*)" and "([^"]*)" should be equal$/ do |file1, file2|
-  file2_content = IO.read(file2)
-  step %{the file "#{file1}" should contain "#{file2_content}"}
+  check_file_content(file1, IO.read(file2), true)
 end
 
 When /^I successfully convert the test file "([^"]*)"$/ do |file|
