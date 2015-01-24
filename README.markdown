@@ -32,17 +32,17 @@ The source code is available under the [Boost Software License 1.0](http://www.b
 1. Install all requirements, see [below](#requirements-1)
 2. Clone the repository by running:
 
-		$ git clone --recursive git://github.com/jacob-carlborg/dstep.git
+        $ git clone --recursive git://github.com/jacob-carlborg/dstep.git
 
 3. run `dub build`
 
 ## Usage
 
-	$ dstep Foo.h -o Foo.d
+    $ dstep Foo.h -o Foo.d
 
 For translating Objective-C headers add the `-ObjC` flag.
 
-	$ dstep Foo.h -o Foo.d -ObjC
+    $ dstep Foo.h -o Foo.d -ObjC
 
 Use `-h` for usage information. Any flags recognized by Clang can be used.
 
@@ -65,16 +65,16 @@ Download the pre-compiled libraries here:
 
 Alternatively compile libclang yourself:
 
-	$ git clone http://llvm.org/git/llvm.git
-	$ cd llvm
-	$ git checkout release_31
-	$ cd tools
-	$ git clone http://llvm.org/git/clang.git
-	$ cd clang
-	$ git checkout release_31
-	$ cd ../..
-	$ ./configure --enable-optimized
-	$ cp Release+Asserts/lib/libclang.<dylib|so> <path/to/dstep>
+    $ git clone http://llvm.org/git/llvm.git
+    $ cd llvm
+    $ git checkout release_31
+    $ cd tools
+    $ git clone http://llvm.org/git/clang.git
+    $ cd clang
+    $ git checkout release_31
+    $ cd ../..
+    $ ./configure --enable-optimized
+    $ cp Release+Asserts/lib/libclang.<dylib|so> <path/to/dstep>
 
 ### [Dub](http://code.dlang.org/download)
 
@@ -86,5 +86,5 @@ Alternatively compile libclang yourself:
 * Umbrella headers. Some headers just serve to include other headers. If these other headers contain some form of protection, like `#error`, to be included directly this can cause problems for DStep
 * Some headers are designed to always be included together with other header files. These headers may very well use symbols from other header files without including them itself. Since DStep is designed to convert header files one-by-one this doesn't work. There are two workarounds for this:
 
-	1. Add `#include`-directives for the header files the header file is actually using
-	2. Use the `-include <file>` flag available in Clang to indicate the given `<file>` should be processed before the file that should be translated. DStep accepts all flags Clang accepts
+    1. Add `#include`-directives for the header files the header file is actually using
+    2. Use the `-include <file>` flag available in Clang to indicate the given `<file>` should be processed before the file that should be translated. DStep accepts all flags Clang accepts

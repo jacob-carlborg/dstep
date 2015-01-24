@@ -18,16 +18,16 @@ import dstep.translator.Translator;
 
 class Category : ObjcInterface!(ClassExtensionData)
 {
-	this (Cursor cursor, Cursor parent, Translator translator)
-	{
-		super(cursor, parent, translator);
-	}
+    this (Cursor cursor, Cursor parent, Translator translator)
+    {
+        super(cursor, parent, translator);
+    }
 
-	protected override string[] collectInterfaces (ObjcCursor cursor)
-	{
-		auto interfaces = super.collectInterfaces(cursor);
-		auto category = translateIdentifier(cursor.category.spelling);
+    protected override string[] collectInterfaces (ObjcCursor cursor)
+    {
+        auto interfaces = super.collectInterfaces(cursor);
+        auto category = translateIdentifier(cursor.category.spelling);
 
-		return category ~ interfaces;
-	}	
+        return category ~ interfaces;
+    }    
 }

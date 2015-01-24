@@ -11,5 +11,5 @@ import clang.Util;
 
 struct UnsavedFile
 {
-	mixin CX;
+    mixin CX;
 }

@@ -11,6 +11,6 @@ import dstep.config.Configuration;
 
 int main (string[] args)
 {
-	Application.instance.config = new Configuration;
-	return Application.start!Application(args);
+    Application.instance.config = new Configuration;
+    return Application.start!Application(args);
 }

@@ -20,58 +20,58 @@ import dstep.translator.Type;
 
 class Record (Data) : Declaration
 {
-	this (Cursor cursor, Cursor parent, Translator translator)
-	{
-		super(cursor, parent, translator);
-	}
+    this (Cursor cursor, Cursor parent, Translator translator)
+    {
+        super(cursor, parent, translator);
+    }
 
-	override string translate ()
-	{
-		return writeRecord(spelling, (context) {
-			foreach (cursor, parent ; cursor.declarations)
-			{
-				with (CXCursorKind)
-					switch (cursor.kind)
-					{
-						case CXCursor_FieldDecl:
-							if (!cursor.type.isExposed && cursor.type.declaration.isValid)
-							{
-								output.newContext();
-								output.currentContext.indent in {
-									context.instanceVariables ~= translator.translate(cursor.type.declaration);
-								};
+    override string translate ()
+    {
+        return writeRecord(spelling, (context) {
+            foreach (cursor, parent ; cursor.declarations)
+            {
+                with (CXCursorKind)
+                    switch (cursor.kind)
+                    {
+                        case CXCursor_FieldDecl:
+                            if (!cursor.type.isExposed && cursor.type.declaration.isValid)
+                            {
+                                output.newContext();
+                                output.currentContext.indent in {
+                                    context.instanceVariables ~= translator.translate(cursor.type.declaration);
+                                };
 
-								if (cursor.type.declaration.type.isEnum || !cursor.type.isAnonymous)
-									translateVariable(cursor, context);
-							}
+                                if (cursor.type.declaration.type.isEnum || !cursor.type.isAnonymous)
+                                    translateVariable(cursor, context);
+                            }
 
-							else
-								translateVariable(cursor, context);
-						break;
+                            else
+                                translateVariable(cursor, context);
+                        break;
 
-						default: break;
-					}
-			}
-		});
-	}
+                        default: break;
+                    }
+            }
+        });
+    }
 
 private:
 
-	string writeRecord (string name, void delegate (Data context) dg)
-	{
-		auto context = new Data;
-		static if (is(typeof(context.isFwdDeclaration) == bool))
-			context.isFwdDeclaration = !cursor.isDefinition;
-		context.name = translateIdentifier(name);
+    string writeRecord (string name, void delegate (Data context) dg)
+    {
+        auto context = new Data;
+        static if (is(typeof(context.isFwdDeclaration) == bool))
+            context.isFwdDeclaration = !cursor.isDefinition;
+        context.name = translateIdentifier(name);
 
-		dg(context);
+        dg(context);
 
-		return context.data;
-	}
+        return context.data;
+    }
 
-	void translateVariable (Cursor cursor, Data context)
-	{
-		output.newContext();
-		context.instanceVariables ~= translator.variable(cursor);
-	}
+    void translateVariable (Cursor cursor, Data context)
+    {
+        output.newContext();
+        context.instanceVariables ~= translator.variable(cursor);
+    }
 }

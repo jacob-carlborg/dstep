@@ -12,22 +12,22 @@ import clang.Util;
 
 struct SourceLocation
 {
-	mixin CX;
-	
-	struct Spelling
-	{
-		File file;
-		uint line;
-		uint column;
-		uint offset;
-	}
-	
-	@property Spelling spelling ()
-	{
-		Spelling spell;
-		
-		clang_getSpellingLocation(cx, &spell.file.cx, &spell.line, &spell.column, &spell.offset);
-		
-		return spell;
-	}
+    mixin CX;
+    
+    struct Spelling
+    {
+        File file;
+        uint line;
+        uint column;
+        uint offset;
+    }
+    
+    @property Spelling spelling ()
+    {
+        Spelling spell;
+        
+        clang_getSpellingLocation(cx, &spell.file.cx, &spell.line, &spell.column, &spell.offset);
+        
+        return spell;
+    }
 }

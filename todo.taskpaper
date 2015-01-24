@@ -7,25 +7,25 @@
 - Compile on Windows @done(2013-11-02)
 - Compile on Linux @done(2012-07-28)
 C:
-	- Anonymous structs @done(2012-06-30)
-	- Self includes
-	- Hardcode the translation of some typedefs @done(2012-06-30)
-	- Out of order typedefs of structs @done(2013-11-02)
-	- Bitfields
-	- Non-standard extensions
+    - Anonymous structs @done(2012-06-30)
+    - Self includes
+    - Hardcode the translation of some typedefs @done(2012-06-30)
+    - Out of order typedefs of structs @done(2013-11-02)
+    - Bitfields
+    - Non-standard extensions
 
-	Preprocessor:
-		- Better handling of includes
-		- Constants  - #define foo 1
-		- Versions - #if __APPLE__
-		- Function macros - #define foo (a, b) a + b
-		- Syntactic macros - #define foo (a, b) a##b
+    Preprocessor:
+        - Better handling of includes
+        - Constants  - #define foo 1
+        - Versions - #if __APPLE__
+        - Function macros - #define foo (a, b) a + b
+        - Syntactic macros - #define foo (a, b) a##b
 Objective-C:
-	- Protocols @done(2012-08-06)
-	- Properties @done(2012-08-05)
-	- Blocks
-	- Categories @done(2012-08-06)
-	- Actions
-	- Outlets
-	- Selectors
-	- Constructors
+    - Protocols @done(2012-08-06)
+    - Properties @done(2012-08-05)
+    - Blocks
+    - Categories @done(2012-08-06)
+    - Actions
+    - Outlets
+    - Selectors
+    - Constructors

@@ -1,24 +1,24 @@
 {
-	"name": "dstep",
-	"description": "A tool for translating C and Objective-C headers to D modules",
-	"authors": ["Jacob Carlborg"],
-	"homepage": "https://github.com/jacob-carlborg/dstep",
-	"license": "BSL-1.0",
-	"copyright": "Copyright (c) 2011-2013 Jacob Carlborg. All rights reserved.",
+    "name": "dstep",
+    "description": "A tool for translating C and Objective-C headers to D modules",
+    "authors": ["Jacob Carlborg"],
+    "homepage": "https://github.com/jacob-carlborg/dstep",
+    "license": "BSL-1.0",
+    "copyright": "Copyright (c) 2011-2013 Jacob Carlborg. All rights reserved.",
 
-	"mainSourceFile": "dstep/driver/DStep.d",
-	"targetType": "executable",
-	"targetName": "dstep",
-	"targetPath": "bin",
-	"sourcePaths": ["dstep", "clang"],
-	"importPaths": ["dstep", "clang"],
+    "mainSourceFile": "dstep/driver/DStep.d",
+    "targetType": "executable",
+    "targetName": "dstep",
+    "targetPath": "bin",
+    "sourcePaths": ["dstep", "clang"],
+    "importPaths": ["dstep", "clang"],
 
-	"lflags-posix": ["-lclang", "-rpath", ".", "-L."],
-	"lflags-windows": ["+\\", "+clang"],
+    "lflags-posix": ["-lclang", "-rpath", ".", "-L."],
+    "lflags-windows": ["+\\", "+clang"],
 
-	"buildRequirements": ["silenceWarnings"],
+    "buildRequirements": ["silenceWarnings"],
 
-	"dependencies": {
-		"dstack": "0.0.2"
-	}
+    "dependencies": {
+        "dstack": "0.0.2"
+    }
 }

@@ -10,11 +10,11 @@ import DStack = dstack.application.Configuration;
 
 class Configuration : DStack.Configuration
 {
-	auto appName = "DStep";
-	auto appVersion = "0.0.1";
+    auto appName = "DStep";
+    auto appVersion = "0.0.1";
 
-	this ()
-	{
-		super(this);
-	}
+    this ()
+    {
+        super(this);
+    }
 }

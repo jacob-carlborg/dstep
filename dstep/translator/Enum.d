@@ -20,48 +20,48 @@ import dstep.translator.Type;
 
 class Enum : Declaration
 {
-	this (Cursor cursor, Cursor parent, Translator translator)
-	{
-		super(cursor, parent, translator);
-	}
-	
-	override string translate ()
-	{
-		return writeEnum(spelling, (context) {
-			foreach (cursor, parent ; cursor.declarations)
-			{
-				with (CXCursorKind)
-					switch (cursor.kind)
-					{
-						case CXCursor_EnumConstantDecl:
-							output.newContext();
-							output ~= translateIdentifier(cursor.spelling);
-							output ~= " = ";
-							output ~= cursor.enum_.value;
-							context.instanceVariables ~= output.currentContext.data;
-						break;
-						
-						default: break;
-					}
-			}
-		});
-	}
+    this (Cursor cursor, Cursor parent, Translator translator)
+    {
+        super(cursor, parent, translator);
+    }
+    
+    override string translate ()
+    {
+        return writeEnum(spelling, (context) {
+            foreach (cursor, parent ; cursor.declarations)
+            {
+                with (CXCursorKind)
+                    switch (cursor.kind)
+                    {
+                        case CXCursor_EnumConstantDecl:
+                            output.newContext();
+                            output ~= translateIdentifier(cursor.spelling);
+                            output ~= " = ";
+                            output ~= cursor.enum_.value;
+                            context.instanceVariables ~= output.currentContext.data;
+                        break;
+                        
+                        default: break;
+                    }
+            }
+        });
+    }
 
-	@property override string spelling ()
-	{
-		auto name = cursor.spelling;
-		return name.isPresent ? name : generateAnonymousName(cursor);
-	}
+    @property override string spelling ()
+    {
+        auto name = cursor.spelling;
+        return name.isPresent ? name : generateAnonymousName(cursor);
+    }
 
 private:
 
-	string writeEnum (string name, void delegate (EnumData context) dg)
-	{
-		auto context = new EnumData;
-		context.name = translateIdentifier(name);
-		
-		dg(context);
-		
-		return context.data;
-	}
+    string writeEnum (string name, void delegate (EnumData context) dg)
+    {
+        auto context = new EnumData;
+        context.name = translateIdentifier(name);
+        
+        dg(context);
+        
+        return context.data;
+    }
 }

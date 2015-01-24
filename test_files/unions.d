@@ -7,34 +7,34 @@ extern __gshared Foo c;
 
 union Foo
 {
-	int a;
+    int a;
 }
 
 union Bar
 {
-	int x;
+    int x;
 }
 
 union A
 {
-	union B
-	{
-		int x;
-	}
-	B b;
+    union B
+    {
+        int x;
+    }
+    B b;
 }
 
 union C
 {
-	union
-	{
-		int x;
-		int y;
-	}
+    union
+    {
+        int x;
+        int y;
+    }
 }
 
 union _Anonymous_0
 {
-	int x;
-	int y;
+    int x;
+    int y;
 }

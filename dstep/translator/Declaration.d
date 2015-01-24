@@ -17,37 +17,37 @@ alias dstep.translator.Output.output output;
 
 abstract class Declaration
 {
-	protected
-	{
-		Cursor cursor;
-		Cursor parent;
-		
-		Translator translator;
-	}
+    protected
+    {
+        Cursor cursor;
+        Cursor parent;
+        
+        Translator translator;
+    }
 
-	template Constructors ()
-	{
-		import clang.Cursor;
-		import dstep.translator.Output;
-		
-		this (Cursor cursor, Cursor parent, Translator translator)
-		{
-			super(cursor, parent, translator);
-		}
-	}
-	
-	this (Cursor cursor, Cursor parent, Translator translator)
-	{
-		this.cursor = cursor;
-		this.parent = parent;
-		this.translator = translator;
-	}
-	
-	abstract string translate ();
-	
-	@property string spelling ()
-	{
-		auto name = cursor.spelling;
-		return name.isPresent || parent.isEmpty ? name : generateAnonymousName(cursor);
-	}
+    template Constructors ()
+    {
+        import clang.Cursor;
+        import dstep.translator.Output;
+        
+        this (Cursor cursor, Cursor parent, Translator translator)
+        {
+            super(cursor, parent, translator);
+        }
+    }
+    
+    this (Cursor cursor, Cursor parent, Translator translator)
+    {
+        this.cursor = cursor;
+        this.parent = parent;
+        this.translator = translator;
+    }
+    
+    abstract string translate ();
+    
+    @property string spelling ()
+    {
+        auto name = cursor.spelling;
+        return name.isPresent || parent.isEmpty ? name : generateAnonymousName(cursor);
+    }
 }

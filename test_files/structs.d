@@ -7,36 +7,36 @@ extern __gshared Foo c;
 
 struct Foo
 {
-	int a;
+    int a;
 }
 
 struct Bar
 {
-	int x;
+    int x;
 }
 
 struct A
 {
-	struct B
-	{
-		int x;
-	}
-	B b;
+    struct B
+    {
+        int x;
+    }
+    B b;
 }
 
 struct C
 {
-	struct
-	{
-		int x;
-		int y;
-	}
+    struct
+    {
+        int x;
+        int y;
+    }
 }
 
 struct _Anonymous_0
 {
-	int x;
-	int y;
+    int x;
+    int y;
 }
 
 struct E

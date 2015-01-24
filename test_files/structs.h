@@ -1,36 +1,36 @@
 struct Foo
 {
-	int a;
+    int a;
 };
 
 struct Bar
 {
-	int x;
+    int x;
 } b;
 
 struct Foo c;
 
 struct A
 {
-	struct B
-	{
-		int x;
-	} b;
+    struct B
+    {
+        int x;
+    } b;
 };
 
 struct C
 {
-	struct
-	{
-		int x;
-		int y;
-	} point;
+    struct
+    {
+        int x;
+        int y;
+    } point;
 };
 
 typedef struct
 {
-	int x;
-	int y;
+    int x;
+    int y;
 } D;
 
 struct E;
