@@ -29,5 +29,5 @@ class Category : ObjcInterface!(ClassExtensionData)
         auto category = translateIdentifier(cursor.category.spelling);
 
         return category ~ interfaces;
-    }    
+    }
 }

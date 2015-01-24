@@ -17,44 +17,44 @@ import clang.Visitor;
 struct Cursor
 {
     mixin CX;
-    
+
     @property static Cursor empty ()
     {
         auto r = clang_getNullCursor();
         return Cursor(r);
     }
-    
+
     @property string spelling ()
     {
         return toD(clang_getCursorSpelling(cx));
     }
-    
+
     @property CXCursorKind kind ()
     {
         return clang_getCursorKind(cx);
     }
-    
+
     @property SourceLocation location ()
     {
         return SourceLocation(clang_getCursorLocation(cx));
     }
-    
+
     @property Type type ()
     {
         auto r = clang_getCursorType(cx);
         return Type(r);
     }
-    
+
     @property bool isDeclaration ()
     {
         return clang_isDeclaration(cx.kind) != 0;
     }
-    
+
     @property DeclarationVisitor declarations ()
     {
         return DeclarationVisitor(cx);
     }
-    
+
     @property ObjcCursor objc ()
     {
         return ObjcCursor(this);
@@ -64,17 +64,17 @@ struct Cursor
     {
         return FunctionCursor(this);
     }
-    
+
     @property EnumCursor enum_ ()
     {
         return EnumCursor(this);
     }
-    
+
     @property bool isValid ()
     {
         return !clang_isInvalid(cx.kind);
     }
-    
+
     @property bool isEmpty ()
     {
         return clang_Cursor_isNull(cx) != 0;
@@ -84,7 +84,7 @@ struct Cursor
     {
         return Visitor(this);
     }
-    
+
     @property CXLanguageKind language ()
     {
         return clang_getCursorLanguage(cx);
@@ -110,22 +110,22 @@ struct ObjcCursor
 {
     Cursor cursor;
     alias cursor this;
-    
+
     @property ObjCInstanceMethodVisitor instanceMethods ()
     {
         return ObjCInstanceMethodVisitor(cursor);
     }
-    
+
     @property ObjCClassMethodVisitor classMethods ()
     {
         return ObjCClassMethodVisitor(cursor);
     }
-    
+
     @property ObjCPropertyVisitor properties ()
     {
         return ObjCPropertyVisitor(cursor);
     }
-    
+
     @property Cursor superClass ()
     {
         foreach (cursor, parent ; TypedVisitor!(CXCursorKind.CXCursor_ObjCSuperClassRef)(cursor))
@@ -133,7 +133,7 @@ struct ObjcCursor
 
         return Cursor.empty;
     }
-    
+
     @property ObjCProtocolVisitor protocols ()
     {
         return ObjCProtocolVisitor(cursor);
@@ -154,18 +154,18 @@ struct FunctionCursor
 {
     Cursor cursor;
     alias cursor this;
-    
+
     @property Type resultType ()
     {
         auto r = clang_getCursorResultType(cx);
         return Type(r);
     }
-    
+
     @property bool isVariadic ()
     {
         return type.func.isVariadic;
     }
-    
+
     @property ParamVisitor parameters ()
     {
         return ParamVisitor(cx);
@@ -188,7 +188,7 @@ struct EnumCursor
         //return type.kind.isUnsigned ? unsignedValue.toString : signedValue.toString;
         return signedValue.toString;
     }
-    
+
     @property long signedValue ()
     {
         return clang_getEnumConstantDeclValue(cx);

@@ -27,7 +27,7 @@ class IncludeHandler
     private string[] rawIncludes;
     private string[] imports;
     static string[string] knownIncludes;
-    
+
     static this ()
     {
         knownIncludes = [
@@ -51,7 +51,7 @@ class IncludeHandler
             "tgmath" : "core.stdc.tgmath",
             "time" : "core.stdc.time",
             "wchar" : "core.stdc.wchar_",
-            "wctype" : "core.stdc.wctype",        
+            "wctype" : "core.stdc.wctype",
 
             "dirent" : "core.sys.posix.dirent",
             "dlfcn" : "core.sys.posix.dlfcn",

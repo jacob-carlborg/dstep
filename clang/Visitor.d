@@ -13,14 +13,14 @@ struct Visitor
 {
     alias int delegate (ref Cursor, ref Cursor) Delegate;
     alias int delegate (Delegate dg) OpApply;
-    
+
     private CXCursor cursor;
-    
+
     this (CXCursor cursor)
     {
         this.cursor = cursor;
     }
-    
+
     this (Cursor cursor)
     {
         this.cursor = cursor.cx;
@@ -60,7 +60,7 @@ private:
             this.dg = dg;
         }
     }
-    
+
     template Constructors ()
     {
         private Visitor visitor;
@@ -74,7 +74,7 @@ private:
         {
             visitor = Visitor(cursor);
         }
-        
+
         this (Cursor cursor)
         {
             visitor = Visitor(cursor);
@@ -92,7 +92,7 @@ struct DeclarationVisitor
             if (cursor.isDeclaration)
                 if (auto result = dg(cursor, parent))
                     return result;
-                
+
         return 0;
     }
 }
@@ -100,7 +100,7 @@ struct DeclarationVisitor
 struct TypedVisitor (CXCursorKind kind)
 {
     private Visitor visitor;
-    
+
     this (Visitor visitor)
     {
         this.visitor = visitor;
@@ -110,7 +110,7 @@ struct TypedVisitor (CXCursorKind kind)
     {
         this(Visitor(cursor));
     }
-    
+
     this (Cursor cursor)
     {
         this(cursor.cx);
@@ -122,7 +122,7 @@ struct TypedVisitor (CXCursorKind kind)
             if (cursor.kind == kind)
                 if (auto result = dg(cursor, parent))
                     return result;
-                
+
         return 0;
     }
 }
@@ -135,7 +135,7 @@ alias TypedVisitor!(CXCursorKind.CXCursor_ObjCProtocolRef) ObjCProtocolVisitor;
 struct ParamVisitor
 {
     mixin Visitor.Constructors;
-    
+
     int opApply (int delegate (ref ParamCursor) dg)
     {
         foreach (cursor, parent ; visitor)

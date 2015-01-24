@@ -63,15 +63,15 @@ private:
         output.currentClass = new Data;
         output.currentClass.name = translateIdentifier(name);
         output.currentClass.interfaces = interfaces;
-        
+
         if (superClassName.isPresent)
             output.currentClass.superclass ~= translateIdentifier(superClassName);
-        
+
         dg();
-        
+
         return output.currentClass.data;
     }
-    
+
     void translateMethod (FunctionCursor func, bool classMethod = false, string name = null)
     {
         auto method = output.newContext();
@@ -108,18 +108,18 @@ private:
                 cls.instanceMethods ~= method.data;
         }
     }
-    
+
     void translateProperty (Cursor cursor)
     {
         auto context = output.newContext();
         auto cls = output.currentClass;
         auto name = cls.getMethodName(cursor.func, "", false);
-        
+
         translateGetter(cursor.type, context, name, cls, false);
         context = output.newContext();
         translateSetter(cursor.type, context, name, cls, false);
     }
-    
+
     void translateInstanceVariable (Cursor cursor)
     {
         auto var = output.newContext();

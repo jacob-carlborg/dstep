@@ -29,13 +29,13 @@ import dstep.translator.Type;
 private static string[Cursor] anonymousNames;
 
 class Translator
-{    
+{
     static struct Options
     {
         string outputFile;
         Language language = Language.c;
     }
-    
+
     private
     {
         TranslationUnit translationUnit;
@@ -46,7 +46,7 @@ class Translator
         Language language;
         string[string] deferredDeclarations;
     }
-    
+
     this (string inputFilename, TranslationUnit translationUnit, const Options options = Options.init)
     {
         this.inputFilename = inputFilename;
@@ -56,7 +56,7 @@ class Translator
 
         inputFile = translationUnit.file(inputFilename);
     }
-    
+
     void translate ()
     {
         foreach (cursor, parent ; translationUnit.declarations)
@@ -96,7 +96,7 @@ class Translator
         auto data = output.toString;
         write(outputFile, data);
     }
-    
+
     string translate (Cursor cursor, Cursor parent = Cursor.empty)
     {
         with (CXCursorKind)
@@ -124,18 +124,18 @@ class Translator
                     return variable(cursor, context);
                 }
                 break;
-            
+
                 case CXCursor_FunctionDecl:
                 {
                     auto name = translateIdentifier(cursor.spelling);
                     return translateFunction(cursor.func, name, output) ~ ";";
                 }
                 break;
-            
+
                 case CXCursor_TypedefDecl:
                     return typedef_(cursor, output.newContext);
                 break;
-            
+
                 case CXCursor_StructDecl:
                     auto code = (new Record!(StructData)(cursor, parent, this)).translate;
                     if (cursor.isDefinition)
@@ -152,13 +152,13 @@ class Translator
                     break;
                 case CXCursor_EnumDecl: return (new Enum(cursor, parent, this)).translate; break;
                 case CXCursor_UnionDecl: return (new Record!(UnionData)(cursor, parent, this)).translate; break;
-            
+
                 default:
                     return "";
                     //assert(0, `Translator.translate: missing implementation for "` ~ cursor.kind.toString ~ `".`);
             }
     }
-    
+
     string variable (Cursor cursor, String context = null)
     {
         if (!context)
@@ -167,20 +167,20 @@ class Translator
         context ~= translateType(cursor.type);
         context ~= " " ~ translateIdentifier(cursor.spelling);
         context ~= ";";
-        
+
         return context.data;
     }
-    
+
     string typedef_ (Cursor cursor, String context = output)
     {
         context ~= "alias ";
         context ~= translateType(cursor.type.canonicalType);
         context ~= " " ~ cursor.spelling;
         context ~= ";";
-        
+
         return context.data;
     }
-    
+
 private:
 
     bool skipDeclaration (Cursor cursor)
@@ -203,12 +203,12 @@ string translateFunction (FunctionCursor func, string name, String context, bool
 {
     if (isStatic)
         context ~= "static ";
-        
+
     Parameter[] params;
 
     if (func.type.isValid) // This will be invalid of Objective-C methods
         params.reserve(func.type.func.arguments.length);
-    
+
     foreach (param ; func.parameters)
     {
         auto type = translateType(param.type);
@@ -269,7 +269,7 @@ package string translateFunction (string result, string name, Parameter[] parame
         {
             if (param.isConst)
                 p ~= "const(";
-        
+
             p ~= param.type;
 
             if (param.isConst)
@@ -278,7 +278,7 @@ package string translateFunction (string result, string name, Parameter[] parame
 
         if (param.name.any)
             p ~= " " ~ translateIdentifier(param.name);
-        
+
         params ~= p;
     }
 
@@ -466,7 +466,7 @@ bool isDKeyword (string str)
             default: return str.any && str.first == '@';
         }
     }
-    
+
     return false;
 }
 

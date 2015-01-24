@@ -13,7 +13,7 @@ import clang.Util;
 struct SourceLocation
 {
     mixin CX;
-    
+
     struct Spelling
     {
         File file;
@@ -21,13 +21,13 @@ struct SourceLocation
         uint column;
         uint offset;
     }
-    
+
     @property Spelling spelling ()
     {
         Spelling spell;
-        
+
         clang_getSpellingLocation(cx, &spell.file.cx, &spell.line, &spell.column, &spell.offset);
-        
+
         return spell;
     }
 }

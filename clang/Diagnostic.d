@@ -12,12 +12,12 @@ import clang.Util;
 struct Diagnostic
 {
     mixin CX;
-    
+
     string format (uint options = clang_defaultDiagnosticDisplayOptions)
     {
         return toD(clang_formatDiagnostic(cx, options));
     }
-    
+
     @property CXDiagnosticSeverity severity ()
     {
         return clang_getDiagnosticSeverity(cx);

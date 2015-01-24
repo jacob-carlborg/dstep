@@ -24,7 +24,7 @@ class Enum : Declaration
     {
         super(cursor, parent, translator);
     }
-    
+
     override string translate ()
     {
         return writeEnum(spelling, (context) {
@@ -40,7 +40,7 @@ class Enum : Declaration
                             output ~= cursor.enum_.value;
                             context.instanceVariables ~= output.currentContext.data;
                         break;
-                        
+
                         default: break;
                     }
             }
@@ -59,9 +59,9 @@ private:
     {
         auto context = new EnumData;
         context.name = translateIdentifier(name);
-        
+
         dg(context);
-        
+
         return context.data;
     }
 }

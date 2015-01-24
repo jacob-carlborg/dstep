@@ -29,13 +29,13 @@ body
     {
         if (type.kind == CXType_BlockPointer || type.isFunctionPointerType)
             result = translateFunctionPointerType(type);
-            
+
         else if (type.kind == CXType_ObjCObjectPointer && !type.isObjCBuiltinType)
             result = translateObjCObjectPointerType(type);
-            
+
         else if (type.isWideCharType)
             result = "wchar";
-            
+
         else if (type.isObjCIdType)
             result = rewriteIdToObjcObject ? "ObjcObject" : "id";
 
@@ -55,7 +55,7 @@ body
 
                     handleInclude(type);
                 break;
-                
+
                 case CXType_ConstantArray: result = translateConstantArray(type, rewriteIdToObjcObject); break;
                 case CXType_Unexposed: result = translateUnexposed(type, rewriteIdToObjcObject); break;
 
@@ -80,11 +80,11 @@ string translateSelector (string str, bool fullName = false, bool translateIdent
 {
     if (fullName)
         str = str.replace(":", "_");
-        
+
     else
     {
         auto i = str.indexOf(":");
-        
+
         if (i > -1)
             str = str[0 .. i];
     }
@@ -151,7 +151,7 @@ body
 
     if (declaration.isValid)
         return translateType(declaration.type, rewriteIdToObjcObject);
-        
+
     else
         return translateType(type.kind, rewriteIdToObjcObject);
 }
@@ -165,7 +165,7 @@ body
 {
     auto array = type.array;
     auto elementType = translateType(array.elementType, rewriteIdToObjcObject);
-    
+
     return elementType ~ '[' ~ array.size.toString ~ ']';
 }
 

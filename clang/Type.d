@@ -21,7 +21,7 @@ struct Type
         auto r = clang_getTypeDeclaration(cx);
         return Cursor(r).spelling;
     }
-    
+
     @property bool isTypedef ()
     {
         return kind == CXTypeKind.CXType_Typedef;
@@ -31,53 +31,53 @@ struct Type
     {
         return kind == CXTypeKind.CXType_Enum;
     }
-    
+
     @property Type canonicalType ()
     {
         auto r = clang_getCanonicalType(cx);
         return Type(r);
     }
-    
+
     @property Type pointeeType ()
     {
         auto r = clang_getPointeeType(cx);
         return Type(r);
     }
-    
+
     @property bool isValid ()
     {
         return kind != CXTypeKind.CXType_Invalid;
     }
-    
+
     @property bool isFunctionType ()
     {
         with (CXTypeKind)
             return kind == CXType_FunctionNoProto ||
-                kind == CXType_FunctionProto || 
+                kind == CXType_FunctionProto ||
                 // FIXME: This "hack" shouldn't be needed.
                 func.resultType.isValid;
     }
-    
+
     @property bool isFunctionPointerType ()
     {
         with (CXTypeKind)
             return kind == CXType_Pointer && pointeeType.isFunctionType;
     }
-    
+
     @property bool isObjCIdType ()
     {
         return isTypedef &&
             canonicalType.kind ==  CXTypeKind.CXType_ObjCObjectPointer &&
             spelling == "id";
     }
-    
+
     @property bool isObjCClassType ()
     {
         return isTypedef &&
             canonicalType.kind ==  CXTypeKind.CXType_ObjCObjectPointer &&
             spelling == "Class";
     }
-    
+
     @property bool isObjCSelType ()
     {
         with(CXTypeKind)
@@ -87,11 +87,11 @@ struct Type
                 return c.kind == CXType_Pointer &&
                     c.pointeeType.kind == CXType_ObjCSel;
             }
-        
+
             else
                 return false;
     }
-    
+
     @property bool isObjCBuiltinType ()
     {
         return isObjCIdType || isObjCClassType || isObjCSelType;
@@ -102,12 +102,12 @@ struct Type
         with (CXTypeKind)
             return kind == CXType_WChar;
     }
-    
+
     @property bool isConst ()
     {
         return clang_isConstQualifiedType(cx) == 1;
     }
-    
+
     @property bool isExposed ()
     {
         return kind != CXTypeKind.CXType_Unexposed;
@@ -123,12 +123,12 @@ struct Type
         auto r = clang_getTypeDeclaration(cx);
         return Cursor(r);
     }
-    
+
     @property FuncType func ()
     {
         return FuncType(this);
     }
-    
+
     @property ArrayType array ()
     {
         return ArrayType(this);
@@ -145,12 +145,12 @@ struct FuncType
         auto r = clang_getResultType(type.cx);
         return Type(r);
     }
-    
+
     @property Arguments arguments ()
     {
         return Arguments(this);
     }
-    
+
     @property bool isVariadic ()
     {
         return clang_isFunctionTypeVariadic(type.cx) == 1;
@@ -161,13 +161,13 @@ struct ArrayType
 {
     Type type;
     alias type this;
-    
+
     @property Type elementType ()
     {
         auto r = clang_getArrayElementType(cx);
         return Type(r);
     }
-    
+
     @property long size ()
     {
         return clang_getArraySize(cx);
@@ -177,7 +177,7 @@ struct ArrayType
 struct Arguments
 {
     FuncType type;
-    
+
     @property uint length ()
     {
         return clang_getNumArgTypes(type.type.cx);
@@ -188,13 +188,13 @@ struct Arguments
         auto r = clang_getArgType(type.type.cx, i);
         return Type(r);
     }
-    
+
     int opApply (int delegate (ref Type) dg)
     {
         foreach (i ; 0 .. length)
         {
             auto type = this[i];
-            
+
             if (auto result = dg(type))
                 return result;
         }

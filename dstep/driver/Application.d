@@ -27,13 +27,13 @@ import dstep.translator.Translator;
 class Application : DStack.Application
 {
     mixin Singleton;
-    
+
     enum Version = "0.1.0";
-    
+
     private
     {
         string[] inputFiles;
-        
+
         Index index;
         TranslationUnit translationUnit;
         DiagnosticVisitor diagnostics;
@@ -42,7 +42,7 @@ class Application : DStack.Application
         string[] argsToRestore;
         bool helpFlag;
     }
-    
+
     protected override void run ()
     {
         handleArguments;
@@ -83,15 +83,15 @@ private:
 
         index = Index(false, false);
         translationUnit = TranslationUnit.parse(index, file, remainingArgs);
-        
+
         if (!translationUnit.isValid)
             throw new DStepException("An unknown error occurred");
-        
+
         diagnostics = translationUnit.diagnostics;
-        
+
         scope (exit)
             clean;
-            
+
         if (handleDiagnostics)
         {
             Translator.Options options;
@@ -108,19 +108,19 @@ private:
         translationUnit.dispose;
         index.dispose;
     }
-    
+
     bool anyErrors ()
     {
         return diagnostics.length > 0;
     }
-    
+
     void handleArguments ()
     {
         // FIXME: Cannot use type inference here, probably a bug. Results in segfault.
         if (arguments.rawArgs.any!((string e) => e == "-ObjC"))
             handleObjectiveC();
     }
-    
+
     void handleObjectiveC ()
     {
         argsToRestore ~= "-ObjC";
@@ -135,14 +135,14 @@ private:
             case "c-header":
                 this.language = Language.c;
             break;
-        
+
             // Can't handle C++ yet
             //
             // case "c++":
             // case "c++-header":
             //     this.language = Language.cpp;
             // break;
-        
+
             case "objective-c":
             case "objective-c-header":
                 this.language = Language.objC;
@@ -164,11 +164,11 @@ private:
     bool handleDiagnostics ()
     {
         bool translate = true;
-            
+
         foreach (diag ; diagnostics)
         {
             auto severity = diag.severity;
-            
+
             with (CXDiagnosticSeverity)
                 if (translate)
                     translate = !(severity == CXDiagnostic_Error || severity == CXDiagnostic_Fatal);

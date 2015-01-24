@@ -12,7 +12,7 @@ import clang.Util;
 struct File
 {
     mixin CX;
-    
+
     @property string name ()
     {
         return toD(clang_getFileName(cx));

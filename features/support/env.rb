@@ -27,7 +27,7 @@ end
 Before do
   FileUtils.mkdir_p WORKING_DIRECTORY
   FileUtils.cp_r "test_files", WORKING_DIRECTORY
-  
+
   name = lib_name("clang")
 
   if WINDOWS

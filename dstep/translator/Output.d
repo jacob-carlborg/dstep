@@ -26,38 +26,38 @@ static this ()
 class Output
 {
     String currentContext;
-    
+
     alias currentContext this;
-    
+
     String before;
     String after;
     String imports;
     string externDeclaration;
 
-    string[] typedefs;    
+    string[] typedefs;
     string[] variables;
-    
+
     string[] classes;
     string[] interfaces;
     string[] structs;
     string[] enums;
     string[] unions;
     string[] functions;
-    
+
     ClassData currentClass;
     ClassData currentInterface;
-    
+
     this ()
     {
         before = new String;
         after = new String;
         imports = new String;
         currentContext = new String;
-        
+
         currentClass = new ClassData;
         currentInterface = new ClassData;
     }
-    
+
     @property string data ()
     {
         newContext();
@@ -65,10 +65,10 @@ class Output
         this ~= before.data;
         addDeclarations(includeHandler.toImports(), false);
         this ~= imports.data;
-        
+
         if (imports.any)
             this ~= nl;
-        
+
         if (externDeclaration.isPresent)
         {
             this ~= externDeclaration;
@@ -85,21 +85,21 @@ class Output
         addDeclarations(functions, false);
 
         this ~= after.data;
-        
+
         return currentContext.data;
     }
-    
+
     /**
      * Creates a new context and sets it as the current context. Returns the newly created
      * context.
-     */ 
+     */
     String newContext ()
     {
         auto context = new String;
         context.indentationLevel = currentContext.indentationLevel;
         return currentContext = context;
     }
-    
+
     override string toString ()
     {
         return data.strip('\n');
@@ -110,7 +110,7 @@ private:
     void addDeclarations (string[] declarations, bool extraNewline = true)
     {
         auto newline = "\n";
-        
+
         if (extraNewline)
             newline ~= "\n";
 
@@ -128,7 +128,7 @@ class StructData
     string[] instanceVariables;
 
     bool isFwdDeclaration;
-    
+
     @property string data ()
     {
         auto context = output.newContext();
@@ -148,7 +148,7 @@ class StructData
             context.indent in {
                 addDeclarations(context, instanceVariables);
             };
-            
+
             auto str = context.data.strip('\n');
             context = output.newContext();
             context ~= str;
@@ -157,9 +157,9 @@ class StructData
 
         return context.data;
     }
-    
+
 protected:
-    
+
     @property string type ()
     {
         return "struct";
@@ -189,7 +189,7 @@ class EnumData : StructData
     {
         return "enum";
     }
-    
+
 protected:
 
     override void addDeclarations (String context, string[] declarations)
@@ -228,7 +228,7 @@ class ClassData : StructData
     string[] properties;
     string[] staticProperties;
     string[] staticVariables;
-    
+
     string name;
     string superclass;
     string[] interfaces;
@@ -246,33 +246,33 @@ class ClassData : StructData
     {
         auto mangledName = mangle(func, name);
         auto selector = func.spelling;
-        
+
         if (!(mangledName in mangledMethods))
         {
             mangledMethods[mangledName] = true;
             name = name.isBlank ? selector : name;
             return translateSelector(name, false, translateIdentifier);
         }
-        
+
         return translateSelector(name, true, translateIdentifier);
     }
-    
+
     private string mangle (FunctionCursor func, string name)
     {
         auto selector = func.spelling;
         name = name.isBlank ? translateSelector(selector) : name;
         auto mangledName = name;
-        
+
         foreach (param ; func.parameters)
             mangledName ~= "_" ~ translateType(param.type);
-            
+
         return mangledName;
     }
-    
+
     @property override string data ()
     {
         auto cls = output.newContext();
-        
+
         cls.put(type, ' ', name);
 
         if (superclass.any)
@@ -352,24 +352,24 @@ class String
         int prevIndendationLevel;
         bool shouldIndent;
     }
-    
+
     String opOpAssign (string op, T) (T t) if (op == "~" && !is(T == NewLine))
     {
         return put(t);
     }
-    
+
     String opOpAssign (string op) (NewLine) if (op == "~")
     {
         return put(nl);
     }
-    
+
     String put (Args...) (Args args)// if (!is(T == NewLine))
     {
         foreach (arg ; args)
         {
             static if (is(typeof(arg) == NewLine))
                 put(nl);
-                
+
             else
             {
                 if (shouldIndent)
@@ -384,15 +384,15 @@ class String
 
         return this;
     }
-    
+
     String put () (NewLine)
     {
         appender.put('\n');
         shouldIndent = indentationLevel > 0;
-        
+
         return this;
     }
-    
+
     alias put append;
 
     String appendnl (T) (T t)
@@ -400,33 +400,33 @@ class String
         put(t);
         return put(nl);
     }
-    
+
     @property string data ()
     {
         return appender.data;
     }
-    
+
     @property bool isEmpty ()
     {
         return appender.data.isEmpty;
     }
-    
+
     Indendation indent ()
     {
         return indent(indentationLevel + 1);
     }
-    
+
     Indendation indent (int indentationLevel)
     {
         prevIndendationLevel = this.indentationLevel;
         this.indentationLevel = indentationLevel;
         return Indendation(this);
     }
-    
+
     static struct Indendation
     {
         private String str;
-        
+
         void opIn (void delegate () dg)
         {
             str.shouldIndent = str.indentationLevel > 0;
@@ -435,9 +435,9 @@ class String
             str.indentationLevel = str.prevIndendationLevel;
         }
     }
-    
+
 private:
-    
+
     void _indent ()
     {
         foreach (i ; 0 .. indentationLevel)
