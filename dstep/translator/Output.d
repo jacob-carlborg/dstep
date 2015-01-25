@@ -441,7 +441,7 @@ private:
     void _indent ()
     {
         foreach (i ; 0 .. indentationLevel)
-            appender.put('\t');
+            appender.put("    ");
     }
 }
 
