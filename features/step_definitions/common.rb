@@ -1,5 +1,3 @@
-OSX = RUBY_PLATFORM =~ /darwin/
-
 if OSX
   OSX_SDK_PATH = '/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.10.sdk'
   OSX_INTERNAL_INCLUDE_PATH = '/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/6.0/include'
