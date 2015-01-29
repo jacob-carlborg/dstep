@@ -6,17 +6,29 @@
     "license": "BSL-1.0",
     "copyright": "Copyright (c) 2011-2013 Jacob Carlborg. All rights reserved.",
 
-    "mainSourceFile": "dstep/driver/DStep.d",
     "targetType": "executable",
-    "targetName": "dstep",
     "targetPath": "bin",
-    "sourcePaths": ["dstep", "clang"],
-    "importPaths": ["dstep", "clang"],
-
-    "lflags-posix": ["-lclang", "-rpath", ".", "-L."],
-    "lflags-windows": ["+\\", "+clang"],
 
     "buildRequirements": ["silenceWarnings"],
+
+    "configurations": [
+        {
+            "name": "default",
+            "mainSourceFile": "dstep/driver/DStep.d",
+            "targetName": "dstep",
+            "sourcePaths": ["dstep", "clang"],
+            "importPaths": ["dstep", "clang"],
+            "lflags-posix": ["-lclang", "-rpath", ".", "-L."],
+            "lflags-windows": ["+\\", "+clang"]
+        },
+
+        {
+            "name": "test",
+            "mainSourceFile": "test.d",
+            "targetName": "test",
+            "excludedSourceFiles": ["dstep/*", "clang/*"]
+        }
+    ],
 
     "dependencies": {
         "dstack": "0.0.2"
