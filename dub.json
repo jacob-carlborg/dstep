@@ -10,6 +10,7 @@
     "targetPath": "bin",
 
     "buildRequirements": ["silenceWarnings"],
+    "stringImportPaths": ["resources"],
 
     "configurations": [
         {

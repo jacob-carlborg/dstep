@@ -15,7 +15,6 @@ import clang.Cursor;
 import clang.Diagnostic;
 import clang.File;
 import clang.Index;
-import clang.UnsavedFile;
 import clang.Util;
 import clang.Visitor;
 
@@ -24,7 +23,7 @@ struct TranslationUnit
     mixin CX;
 
     static TranslationUnit parse (Index index, string sourceFilename, string[] commandLineArgs,
-        UnsavedFile[] unsavedFiles = null,
+        CXUnsavedFile[] unsavedFiles = null,
         uint options = CXTranslationUnit_Flags.CXTranslationUnit_None)
     {
         return TranslationUnit(

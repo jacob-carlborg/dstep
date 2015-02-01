@@ -18,8 +18,10 @@ import mambo.util.Use;
 
 import clang.c.index;
 
+import clang.Compiler;
 import clang.Index;
 import clang.TranslationUnit;
+import clang.Util;
 
 import dstep.core.Exceptions;
 import dstep.translator.Translator;
@@ -41,6 +43,7 @@ class Application : DStack.Application
         Language language;
         string[] argsToRestore;
         bool helpFlag;
+        Compiler compiler;
     }
 
     protected override void run ()
@@ -82,7 +85,8 @@ private:
             argsToRestore ~= "-ObjC";
 
         index = Index(false, false);
-        translationUnit = TranslationUnit.parse(index, file, remainingArgs);
+        translationUnit = TranslationUnit.parse(index, file, compilerArgs,
+            compiler.extraHeaders);
 
         if (!translationUnit.isValid)
             throw new DStepException("An unknown error occurred");
@@ -159,6 +163,16 @@ private:
     @property string[] remainingArgs ()
     {
         return arguments.rawArgs[1 .. $] ~ argsToRestore;
+    }
+
+    string[] extraArgs ()
+    {
+        return compiler.extraIncludePaths.map!(e => "-I" ~ e).toArray;
+    }
+
+    string[] compilerArgs ()
+    {
+        return remainingArgs ~ extraArgs;
     }
 
     bool handleDiagnostics ()

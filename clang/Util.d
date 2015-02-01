@@ -6,9 +6,10 @@
  */
 module clang.Util;
 
+import mambo.core._;
+
 import clang.c.index;
 
-import std.string;
 import std.conv;
 
 immutable(char*)* strToCArray (string[] arr)
@@ -49,13 +50,11 @@ U* toCArray (U, T) (T[] arr)
     if (!arr)
         return null;
 
-    U[] cArr;
-    cArr.reserve(arr.length);
+    static if (is(typeof(T.init.cx)))
+        return arr.map!(e => e.cx).toArray.ptr;
 
-    foreach (e ; arr)
-        cArr ~= e.cx;
-
-    return cArr.ptr;
+    else
+        return arr.ptr;
 }
 
 mixin template CX ()

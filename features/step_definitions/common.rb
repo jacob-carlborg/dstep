@@ -1,10 +1,6 @@
 if OSX
-  OSX_SDK_PATH = '/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.10.sdk'
-  OSX_INTERNAL_INCLUDE_PATH = '/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/6.0/include'
-  EXTRA_FLAGS = "-isysroot #{OSX_SDK_PATH} -I#{OSX_INTERNAL_INCLUDE_PATH}"
   EXTRA_OBJC_FLAGS = ''
 else
-  EXTRA_FLAGS = ''
   EXTRA_OBJC_FLAGS = '-I/usr/include/GNUstep'
 end
 
@@ -29,11 +25,11 @@ Then /^the files "([^"]*)" and "([^"]*)" should be equal$/ do |file1, file2|
 end
 
 When /^I successfully convert the test file "([^"]*)"$/ do |file|
-  step %{I successfully run `dstep test_files/#{file}.h -o #{file}.d -isysroot #{OSX_SDK_PATH} -I#{OSX_INTERNAL_INCLUDE_PATH}`}
+  step %{I successfully run `dstep test_files/#{file}.h -o #{file}.d`}
 end
 
 When /^I successfully convert the test file "([^"]*)" in "([^"]*)" with the flags "([^"]*)"$/ do |file, path, flags|
-  step %{I successfully run `dstep test_files/#{path}/#{file}.h #{flags} -o #{file}.d #{EXTRA_FLAGS}`}
+  step %{I successfully run `dstep test_files/#{path}/#{file}.h #{flags} -o #{file}.d`}
 end
 
 When /^I successfully convert the test file "([^"]*)" in "([^"]*)"$/ do |file, path|
