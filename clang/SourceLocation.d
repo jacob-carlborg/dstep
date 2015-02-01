@@ -6,7 +6,7 @@
  */
 module clang.SourceLocation;
 
-import clang.c.index;
+import clang.c.Index;
 import clang.File;
 import clang.Util;
 

@@ -8,7 +8,7 @@ module dstep.translator.objc.ObjcInterface;
 
 import mambo.core._;
 
-import clang.c.index;
+import clang.c.Index;
 import clang.Cursor;
 import clang.Type;
 import clang.Util;

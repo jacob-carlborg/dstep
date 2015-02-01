@@ -13,7 +13,7 @@
 |*                                                                            *|
 \*===----------------------------------------------------------------------===*/
 
-module clang.c.index;
+module clang.c.Index;
 
 import core.stdc.config;
 import core.stdc.time;

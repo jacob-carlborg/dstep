@@ -6,7 +6,7 @@
  */
 module clang.Visitor;
 
-import clang.c.index;
+import clang.c.Index;
 import clang.Cursor;
 
 struct Visitor

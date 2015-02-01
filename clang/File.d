@@ -6,7 +6,7 @@
  */
 module clang.File;
 
-import clang.c.index;
+import clang.c.Index;
 import clang.Util;
 
 struct File

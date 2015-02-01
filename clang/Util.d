@@ -8,7 +8,7 @@ module clang.Util;
 
 import mambo.core._;
 
-import clang.c.index;
+import clang.c.Index;
 
 import std.conv;
 

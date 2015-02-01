@@ -11,7 +11,7 @@ import std.typetuple : staticMap;
 
 import mambo.core._;
 
-import clang.c.index;
+import clang.c.Index;
 
 struct Compiler
 {

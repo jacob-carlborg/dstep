@@ -9,7 +9,7 @@ module dstep.translator.Type;
 import mambo.core.string;
 import mambo.core.io;
 
-import clang.c.index;
+import clang.c.Index;
 import clang.Type;
 
 import dstep.translator.IncludeHandler;

@@ -10,7 +10,7 @@ import std.string;
 
 import mambo.core.io;
 
-import clang.c.index;
+import clang.c.Index;
 import clang.Cursor;
 import clang.Diagnostic;
 import clang.File;

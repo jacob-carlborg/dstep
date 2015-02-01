@@ -16,7 +16,7 @@ import mambo.core._;
 import mambo.util.Singleton;
 import mambo.util.Use;
 
-import clang.c.index;
+import clang.c.Index;
 
 import clang.Compiler;
 import clang.Index;

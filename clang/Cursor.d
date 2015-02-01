@@ -8,7 +8,7 @@ module clang.Cursor;
 
 import mambo.core._;
 
-import clang.c.index;
+import clang.c.Index;
 import clang.SourceLocation;
 import clang.Type;
 import clang.Util;
