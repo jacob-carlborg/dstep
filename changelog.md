@@ -1,5 +1,17 @@
 # DStep Change Log
 
+## Unreleased
+### New/Changed Features
+
+* Clang internal header files are now included in the executable
+* A script for testing multiple versions of libclang has been added
+* DStep outputs spaces instead of tabs for indentation
+
+#### Objective-C
+
+* Selectors are translated to `@selector("foo")`
+* `id` is translated to `ObjcObject`
+
 ## Version 0.1.1
 ### New/Changed Features
 
