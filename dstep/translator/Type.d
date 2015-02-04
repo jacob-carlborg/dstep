@@ -288,17 +288,24 @@ string translateType (CXTypeKind kind, bool rewriteIdToObjcObject = true)
             case CXType_ObjCId: return rewriteIdToObjcObject ? "ObjcObject" : "id";
             case CXType_ObjCClass: return "Class";
             case CXType_ObjCSel: return "SEL";
-            case CXType_Complex: return "<unimplemented>";
-            case CXType_Pointer: return "<unimplemented>";
-            case CXType_BlockPointer: return "<unimplemented>";
-            case CXType_LValueReference: return "<unimplemented>";
-            case CXType_RValueReference: return "<unimplemented>";
-            case CXType_Record: return "<unimplemented>";
-            case CXType_Enum: return "<unimplemented>";
-            case CXType_Typedef: return "<unimplemented>";
-            case CXType_FunctionNoProto: return "<unimplemented>";
-            case CXType_FunctionProto: return "<unimplemented>";
-            case CXType_Vector: return "<unimplemented>";
+
+            case CXType_Complex:
+            case CXType_Pointer:
+            case CXType_BlockPointer:
+            case CXType_LValueReference:
+            case CXType_RValueReference:
+            case CXType_Record:
+            case CXType_Enum:
+            case CXType_Typedef:
+            case CXType_FunctionNoProto:
+            case CXType_FunctionProto:
+            case CXType_Vector:
+            case CXType_IncompleteArray:
+            case CXType_VariableArray:
+            case CXType_DependentSizedArray:
+            case CXType_MemberPointer:
+                return "<unimplemented>";
+
             default: assert(0, "Unhandled type kind " ~ kind.toString);
         }
 }
