@@ -12,6 +12,10 @@
 * Selectors are translated to `@selector("foo")`
 * `id` is translated to `ObjcObject`
 
+### Bugs Fixed
+
+* Issue #26: dstep dumps core on a simple header
+
 ## Version 0.1.1
 ### New/Changed Features
 
