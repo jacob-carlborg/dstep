@@ -233,7 +233,7 @@ private:
             ];
     }
 
-    else version (Linux)
+    else version (linux)
     {
         version (D_LP64)
         {
