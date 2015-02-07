@@ -16,3 +16,6 @@ foo.d
 *.swp
 .dub
 clangs
+*.gch
+bin/test
+.DS_Store
