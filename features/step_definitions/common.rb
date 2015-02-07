@@ -50,9 +50,11 @@ Then /^I test the file "([^"]*)" in "([^"]*)"$/ do |file, path|
   step %{the files "#{file}.d" and "test_files/#{path}/#{file}.d" should be equal}
 end
 
-Then /^I test the Objective\-C file "([^"]*)" in "([^"]*)"$/ do |file, path|
-  step %{a test file named "#{file}" in "#{path}"}
-  step %{an expected file named "#{file}" in "#{path}"}
-  step %{I successfully convert the test file "#{file}" in "#{path}" with the flags "-ObjC #{EXTRA_OBJC_FLAGS}"}
-  step %{the files "#{file}.d" and "test_files/#{path}/#{file}.d" should be equal}
+if OSX
+  Then /^I test the Objective\-C file "([^"]*)" in "([^"]*)"$/ do |file, path|
+    step %{a test file named "#{file}" in "#{path}"}
+    step %{an expected file named "#{file}" in "#{path}"}
+    step %{I successfully convert the test file "#{file}" in "#{path}" with the flags "-ObjC #{EXTRA_OBJC_FLAGS}"}
+    step %{the files "#{file}.d" and "test_files/#{path}/#{file}.d" should be equal}
+  end
 end

@@ -19,9 +19,9 @@ struct TestRunner
     int run ()
     {
         int result = 0;
-        setup();
+        auto matrix = setup();
 
-        foreach (clang ; ClangMatrix.clangs)
+        foreach (const clang ; matrix.clangs)
         {
             activate(clang);
             println("Testing with libclang version ", clang.version_);
@@ -41,11 +41,13 @@ struct TestRunner
         return wd = Environment.cwd.assumeUnique;
     }
 
-    void setup ()
+    auto setup ()
     {
         auto matrix = ClangMatrix(workingDirectory, clangBasePath);
         matrix.downloadAll;
         matrix.extractAll;
+
+        return matrix;
     }
 
     string clangBasePath ()
@@ -122,11 +124,13 @@ struct ClangMatrix
         string basePath;
         string workingDirectory;
         string clangPath_;
+        immutable Clang[] clangs;
     }
 
 
     this (string workingDirectory, string basePath)
     {
+        clangs = getClangs();
         this.workingDirectory = workingDirectory;
         this.basePath = basePath;
     }
@@ -213,103 +217,136 @@ private:
         rmdirRecurse(clangPath);
     }
 
-    version (FreeBSD)
+    immutable(Clang[]) getClangs ()
     {
-        version (D_LP64)
-            enum clangs = [
-                Clang("3.5.0", "http://llvm.org/releases/3.5.0/", "clang+llvm-3.5.0-amd64-unknown-freebsd10.tar.xz"),
-                Clang("3.4", "http://llvm.org/releases/3.4/", "clang+llvm-3.4-amd64-unknown-freebsd9.2.tar.xz"),
-                Clang("3.3", "http://llvm.org/releases/3.3/", "clang+llvm-3.3-amd64-freebsd9.tar.xz"),
-                Clang("3.2", "http://llvm.org/releases/3.2/", "clang+llvm-3.2-amd64-freebsd9.tar.gz"),
-                Clang("3.1", "http://llvm.org/releases/3.1/", "clang+llvm-3.1-amd64-freebsd9.tar.bz2")
-            ];
-
-        else
-            enum clangs = [
-                Clang("3.5.0", "http://llvm.org/releases/3.5.0/", "clang+llvm-3.5.0-i386-unknown-freebsd10.tar.xz"),
-                Clang("3.4", "http://llvm.org/releases/3.4/", "clang+llvm-3.4-i386-unknown-freebsd9.2.tar.xz"),
-                Clang("3.3", "http://llvm.org/releases/3.3/", "clang+llvm-3.3-i386-freebsd9.tar.xz"),
-                Clang("3.1", "http://llvm.org/releases/3.1/", "clang+llvm-3.1-i386-freebsd9.tar.bz2")
-            ];
-    }
-
-    else version (linux)
-    {
-        version (D_LP64)
+        version (FreeBSD)
         {
-            version (Ubuntu)
-                enum clangs = [
-                    Clang("3.5.1", "http://llvm.org/releases/3.5.1/", "clang+llvm-3.5.1-x86_64-linux-gnu.tar.xz"),
-                    Clang("3.5.0", "http://llvm.org/releases/3.5.0/", "clang+llvm-3.5.0-x86_64-linux-gnu-ubuntu-14.04.tar.xz"),
-                    Clang("3.4.2", "http://llvm.org/releases/3.4.2/", "clang+llvm-3.4.2-x86_64-unknown-ubuntu12.04.xz"),
-                    Clang("3.4.1", "http://llvm.org/releases/3.4.1/", "clang+llvm-3.4.1-x86_64-unknown-ubuntu12.04.tar.xz"),
-                    Clang("3.4", "http://llvm.org/releases/3.4/", "clang+llvm-3.4-x86_64-unknown-ubuntu12.04.tar.xz"),
-                    Clang("3.3", "http://llvm.org/releases/3.3/", "clang+llvm-3.3-amd64-Ubuntu-12.04.2.tar.gz"),
-                    Clang("3.2", "http://llvm.org/releases/3.2/", "clang+llvm-3.2-x86_64-linux-ubuntu-12.04.tar.gz"),
-                    Clang("3.1", "http://llvm.org/releases/3.1/", "clang+llvm-3.1-x86_64-linux-ubuntu_12.04.tar.gz")
+            version (D_LP64)
+                return [
+                    Clang("3.5.0", "http://llvm.org/releases/3.5.0/", "clang+llvm-3.5.0-amd64-unknown-freebsd10.tar.xz"),
+                    Clang("3.4", "http://llvm.org/releases/3.4/", "clang+llvm-3.4-amd64-unknown-freebsd9.2.tar.xz"),
+                    Clang("3.3", "http://llvm.org/releases/3.3/", "clang+llvm-3.3-amd64-freebsd9.tar.xz"),
+                    Clang("3.2", "http://llvm.org/releases/3.2/", "clang+llvm-3.2-amd64-freebsd9.tar.gz"),
+                    Clang("3.1", "http://llvm.org/releases/3.1/", "clang+llvm-3.1-amd64-freebsd9.tar.bz2")
                 ];
 
-            else version (Fedora)
-                enum clangs = [
-                    Clang("3.5.1", "http://llvm.org/releases/3.5.1/", "clang+llvm-3.5.1-x86_64-fedora20.tar.xz"),
-                    Clang("3.5.0", "http://llvm.org/releases/3.5.0/", "clang+llvm-3.5.0-x86_64-fedora20.tar.xz"),
-                    Clang("3.4", "http://llvm.org/releases/3.4/", "clang+llvm-3.4-x86_64-fedora19.tar.gz"),
-                    Clang("3.3", "http://llvm.org/releases/3.3/", "clang+llvm-3.3-x86_64-fedora18.tar.bz2")
-                ];
             else
-                static assert (false, "Current Linux distribution is not supported");
+                return [
+                    Clang("3.5.0", "http://llvm.org/releases/3.5.0/", "clang+llvm-3.5.0-i386-unknown-freebsd10.tar.xz"),
+                    Clang("3.4", "http://llvm.org/releases/3.4/", "clang+llvm-3.4-i386-unknown-freebsd9.2.tar.xz"),
+                    Clang("3.3", "http://llvm.org/releases/3.3/", "clang+llvm-3.3-i386-freebsd9.tar.xz"),
+                    Clang("3.1", "http://llvm.org/releases/3.1/", "clang+llvm-3.1-i386-freebsd9.tar.bz2")
+                ];
+        }
+
+        else version (linux)
+        {
+            if (System.isUbuntu)
+            {
+                version (D_LP64)
+                    return [
+                        Clang("3.5.1", "http://llvm.org/releases/3.5.1/", "clang+llvm-3.5.1-x86_64-linux-gnu.tar.xz"),
+                        Clang("3.5.0", "http://llvm.org/releases/3.5.0/", "clang+llvm-3.5.0-x86_64-linux-gnu-ubuntu-14.04.tar.xz"),
+                        Clang("3.4.2", "http://llvm.org/releases/3.4.2/", "clang+llvm-3.4.2-x86_64-unknown-ubuntu12.04.xz"),
+                        Clang("3.4.1", "http://llvm.org/releases/3.4.1/", "clang+llvm-3.4.1-x86_64-unknown-ubuntu12.04.tar.xz"),
+                        Clang("3.4", "http://llvm.org/releases/3.4/", "clang+llvm-3.4-x86_64-unknown-ubuntu12.04.tar.xz"),
+                        Clang("3.3", "http://llvm.org/releases/3.3/", "clang+llvm-3.3-amd64-Ubuntu-12.04.2.tar.gz"),
+                        Clang("3.2", "http://llvm.org/releases/3.2/", "clang+llvm-3.2-x86_64-linux-ubuntu-12.04.tar.gz"),
+                        Clang("3.1", "http://llvm.org/releases/3.1/", "clang+llvm-3.1-x86_64-linux-ubuntu_12.04.tar.gz")
+                    ];
+                else
+                    return [
+                        Clang("3.2", "http://llvm.org/releases/3.2/", "clang+llvm-3.2-x86-linux-ubuntu-12.04.tar.gz"),
+                        Clang("3.1", "http://llvm.org/releases/3.1/", "clang+llvm-3.1-x86-linux-ubuntu_12.04.tar.gz")
+                    ];
+            }
+
+            else if (System.isFedora)
+            {
+                version (D_LP64)
+                    return [
+                        Clang("3.5.1", "http://llvm.org/releases/3.5.1/", "clang+llvm-3.5.1-x86_64-fedora20.tar.xz"),
+                        Clang("3.5.0", "http://llvm.org/releases/3.5.0/", "clang+llvm-3.5.0-x86_64-fedora20.tar.xz"),
+                        Clang("3.4", "http://llvm.org/releases/3.4/", "clang+llvm-3.4-x86_64-fedora19.tar.gz"),
+                        Clang("3.3", "http://llvm.org/releases/3.3/", "clang+llvm-3.3-x86_64-fedora18.tar.bz2")
+                    ];
+                else
+                    return [
+                        Clang("3.5.1", "http://llvm.org/releases/3.5.1/", "clang+llvm-3.5.1-i686-fedora20.tar.xz"),
+                        Clang("3.5.0", "http://llvm.org/releases/3.5.0/", "clang+llvm-3.5.0-i686-fedora20.tar.xz"),
+                        Clang("3.4.2", "http://llvm.org/releases/3.4.2/", "clang+llvm-3.4.2-i686-fedora20.xz"),
+                        Clang("3.4.1", "http://llvm.org/releases/3.4.1/", "clang+llvm-3.4.1-i686-fedora20.tar.xz"),
+                        Clang("3.4", "http://llvm.org/releases/3.4/", "clang+llvm-3.4-i686-fedora19.tar.gz"),
+                        Clang("3.3", "http://llvm.org/releases/3.3/", "clang+llvm-3.3-i686-fedora18.tar.bz2")
+                    ];
+            }
+
+            else
+                throw new Error("Current Linux distribution '" ~ System.update ~ "' is not supported");
+        }
+
+        else version (OSX)
+        {
+            version (D_LP64)
+                return [
+                    Clang("3.5.0", "http://llvm.org/releases/3.5.0/", "clang+llvm-3.5.0-macosx-apple-darwin.tar.xz"),
+                    Clang("3.4.2", "http://llvm.org/releases/3.4.2/", "clang+llvm-3.4.2-x86_64-apple-darwin10.9.xz"),
+                    // Clang("3.4.1", "http://llvm.org/releases/3.4.1/", "clang+llvm-3.4.1-x86_64-apple-darwin10.9.tar.xz"),
+                    // Clang("3.4", "http://llvm.org/releases/3.4/", "clang+llvm-3.4-x86_64-apple-darwin10.9.tar.gz"),
+                    Clang("3.3", "http://llvm.org/releases/3.3/", "clang+llvm-3.3-x86_64-apple-darwin12.tar.gz"),
+                    Clang("3.2", "http://llvm.org/releases/3.2/", "clang+llvm-3.2-x86_64-apple-darwin11.tar.gz"),
+                    Clang("3.1", "http://llvm.org/releases/3.1/", "clang+llvm-3.1-x86_64-apple-darwin11.tar.gz")
+                ];
+
+            else
+                static assert(false, "Only 64bit versions of OS X are supported");
+        }
+
+        else version (Windows)
+        {
+            return [
+                Clang("3.5.0", "http://llvm.org/releases/3.5.0/", "LLVM-3.5.0-win32.exe"),
+                Clang("3.4.1", "http://llvm.org/releases/3.4.1/", "LLVM-3.4.1-win32.exe"),
+                Clang("3.4", "http://llvm.org/releases/3.4/", "LLVM-3.4-win32.exe")
+            ];
         }
 
         else
-        {
-            version (Ubuntu)
-                enum clangs = [
-                    Clang("3.2", "http://llvm.org/releases/3.2/", "clang+llvm-3.2-x86-linux-ubuntu-12.04.tar.gz"),
-                    Clang("3.1", "http://llvm.org/releases/3.1/", "clang+llvm-3.1-x86-linux-ubuntu_12.04.tar.gz")
-                ];
-
-            else version (Fedora)
-                enum clangs = [
-                    Clang("3.5.1", "http://llvm.org/releases/3.5.1/", "clang+llvm-3.5.1-i686-fedora20.tar.xz"),
-                    Clang("3.5.0", "http://llvm.org/releases/3.5.0/", "clang+llvm-3.5.0-i686-fedora20.tar.xz"),
-                    Clang("3.4.2", "http://llvm.org/releases/3.4.2/", "clang+llvm-3.4.2-i686-fedora20.xz"),
-                    Clang("3.4.1", "http://llvm.org/releases/3.4.1/", "clang+llvm-3.4.1-i686-fedora20.tar.xz"),
-                    Clang("3.4", "http://llvm.org/releases/3.4/", "clang+llvm-3.4-i686-fedora19.tar.gz"),
-                    Clang("3.3", "http://llvm.org/releases/3.3/", "clang+llvm-3.3-i686-fedora18.tar.bz2")
-                ];
-            else
-                static assert (false, "Current Linux distribution is not supported");
-        }
+            static assert(false, "Unsupported platform");
     }
+}
 
-    else version (OSX)
+struct System
+{
+static:
+
+version (linux):
+
+    private string update_;
+
+    bool isFedora ()
     {
-        version (D_LP64)
-            enum clangs = [
-                Clang("3.5.0", "http://llvm.org/releases/3.5.0/", "clang+llvm-3.5.0-macosx-apple-darwin.tar.xz"),
-                Clang("3.4.2", "http://llvm.org/releases/3.4.2/", "clang+llvm-3.4.2-x86_64-apple-darwin10.9.xz"),
-                // Clang("3.4.1", "http://llvm.org/releases/3.4.1/", "clang+llvm-3.4.1-x86_64-apple-darwin10.9.tar.xz"),
-                // Clang("3.4", "http://llvm.org/releases/3.4/", "clang+llvm-3.4-x86_64-apple-darwin10.9.tar.gz"),
-                Clang("3.3", "http://llvm.org/releases/3.3/", "clang+llvm-3.3-x86_64-apple-darwin12.tar.gz"),
-                Clang("3.2", "http://llvm.org/releases/3.2/", "clang+llvm-3.2-x86_64-apple-darwin11.tar.gz"),
-                Clang("3.1", "http://llvm.org/releases/3.1/", "clang+llvm-3.1-x86_64-apple-darwin11.tar.gz")
-            ];
-
-        else
-            static assert(false, "Only 64bit versions of OS X are supported");
+        return update.contains("fedora");
     }
 
-    else version (Windows)
+    bool isUbuntu ()
     {
-        enum clangs = [
-            Clang("3.5.0", "http://llvm.org/releases/3.5.0/", "LLVM-3.5.0-win32.exe"),
-            Clang("3.4.1", "http://llvm.org/releases/3.4.1/", "LLVM-3.4.1-win32.exe"),
-            Clang("3.4", "http://llvm.org/releases/3.4/", "LLVM-3.4-win32.exe")
-        ];
+        return update.contains("ubuntu");
     }
 
-    else
-        static assert(false, "Unsupported platform");
+    string update ()
+    {
+        import core.sys.posix.sys.utsname;
+        import std.exception;
+
+        if (update_.any)
+            return update_;
+
+        utsname data;
+        errnoEnforce(!uname(&data));
+
+        return update_ = data.update.ptr.toString.toLower;
+    }
 }
 
 struct Http
