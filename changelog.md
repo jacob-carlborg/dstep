@@ -6,6 +6,7 @@
 * Clang internal header files are now included in the executable
 * A script for testing multiple versions of libclang has been added
 * DStep outputs spaces instead of tabs for indentation
+* Update Clang bindings to 3.5.0
 
 #### Objective-C
 
