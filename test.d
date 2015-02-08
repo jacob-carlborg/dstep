@@ -1,6 +1,6 @@
 module test;
 
-import std.process : execute, ProcessException;
+import std.process;
 import std.file : rmdirRecurse;
 
 import Path = tango.io.Path;
@@ -241,7 +241,21 @@ private:
 
         else version (linux)
         {
-            if (System.isUbuntu)
+            if (System.isTravis)
+            {
+                return [
+                    // Clang("3.5.1", "http://llvm.org/releases/3.5.1/", "clang+llvm-3.5.1-x86_64-linux-gnu.tar.xz"),
+                    // Clang("3.5.0", "http://llvm.org/releases/3.5.0/", "clang+llvm-3.5.0-x86_64-linux-gnu-ubuntu-14.04.tar.xz"),
+                    Clang("3.4.2", "http://llvm.org/releases/3.4.2/", "clang+llvm-3.4.2-x86_64-unknown-ubuntu12.04.xz"),
+                    Clang("3.4.1", "http://llvm.org/releases/3.4.1/", "clang+llvm-3.4.1-x86_64-unknown-ubuntu12.04.tar.xz"),
+                    Clang("3.4", "http://llvm.org/releases/3.4/", "clang+llvm-3.4-x86_64-unknown-ubuntu12.04.tar.xz"),
+                    Clang("3.3", "http://llvm.org/releases/3.3/", "clang+llvm-3.3-amd64-Ubuntu-12.04.2.tar.gz"),
+                    Clang("3.2", "http://llvm.org/releases/3.2/", "clang+llvm-3.2-x86_64-linux-ubuntu-12.04.tar.gz"),
+                    Clang("3.1", "http://llvm.org/releases/3.1/", "clang+llvm-3.1-x86_64-linux-ubuntu_12.04.tar.gz")
+                ];
+            }
+
+            else if (System.isUbuntu)
             {
                 version (D_LP64)
                     return [
@@ -282,21 +296,35 @@ private:
             }
 
             else
-                throw new Error("Current Linux distribution '" ~ System.update ~ "' is not supported");
+                throw new Exception("Current Linux distribution '" ~ System.update ~ "' is not supported");
         }
 
         else version (OSX)
         {
             version (D_LP64)
-                return [
-                    Clang("3.5.0", "http://llvm.org/releases/3.5.0/", "clang+llvm-3.5.0-macosx-apple-darwin.tar.xz"),
-                    Clang("3.4.2", "http://llvm.org/releases/3.4.2/", "clang+llvm-3.4.2-x86_64-apple-darwin10.9.xz"),
-                    // Clang("3.4.1", "http://llvm.org/releases/3.4.1/", "clang+llvm-3.4.1-x86_64-apple-darwin10.9.tar.xz"),
-                    // Clang("3.4", "http://llvm.org/releases/3.4/", "clang+llvm-3.4-x86_64-apple-darwin10.9.tar.gz"),
-                    Clang("3.3", "http://llvm.org/releases/3.3/", "clang+llvm-3.3-x86_64-apple-darwin12.tar.gz"),
-                    Clang("3.2", "http://llvm.org/releases/3.2/", "clang+llvm-3.2-x86_64-apple-darwin11.tar.gz"),
-                    Clang("3.1", "http://llvm.org/releases/3.1/", "clang+llvm-3.1-x86_64-apple-darwin11.tar.gz")
-                ];
+            {
+                if (System.isTravis)
+                    return [
+                        Clang("3.5.0", "http://llvm.org/releases/3.5.0/", "clang+llvm-3.5.0-macosx-apple-darwin.tar.xz"),
+                        // Clang("3.4.2", "http://llvm.org/releases/3.4.2/", "clang+llvm-3.4.2-x86_64-apple-darwin10.9.xz"),
+                        // Clang("3.4.1", "http://llvm.org/releases/3.4.1/", "clang+llvm-3.4.1-x86_64-apple-darwin10.9.tar.xz"),
+                        // Clang("3.4", "http://llvm.org/releases/3.4/", "clang+llvm-3.4-x86_64-apple-darwin10.9.tar.gz"),
+                        Clang("3.3", "http://llvm.org/releases/3.3/", "clang+llvm-3.3-x86_64-apple-darwin12.tar.gz"),
+                        Clang("3.2", "http://llvm.org/releases/3.2/", "clang+llvm-3.2-x86_64-apple-darwin11.tar.gz"),
+                        Clang("3.1", "http://llvm.org/releases/3.1/", "clang+llvm-3.1-x86_64-apple-darwin11.tar.gz")
+                    ];
+
+                else
+                    return [
+                        Clang("3.5.0", "http://llvm.org/releases/3.5.0/", "clang+llvm-3.5.0-macosx-apple-darwin.tar.xz"),
+                        Clang("3.4.2", "http://llvm.org/releases/3.4.2/", "clang+llvm-3.4.2-x86_64-apple-darwin10.9.xz"),
+                        // Clang("3.4.1", "http://llvm.org/releases/3.4.1/", "clang+llvm-3.4.1-x86_64-apple-darwin10.9.tar.xz"),
+                        // Clang("3.4", "http://llvm.org/releases/3.4/", "clang+llvm-3.4-x86_64-apple-darwin10.9.tar.gz"),
+                        Clang("3.3", "http://llvm.org/releases/3.3/", "clang+llvm-3.3-x86_64-apple-darwin12.tar.gz"),
+                        Clang("3.2", "http://llvm.org/releases/3.2/", "clang+llvm-3.2-x86_64-apple-darwin11.tar.gz"),
+                        Clang("3.1", "http://llvm.org/releases/3.1/", "clang+llvm-3.1-x86_64-apple-darwin11.tar.gz")
+                    ];
+            }
 
             else
                 static assert(false, "Only 64bit versions of OS X are supported");
@@ -319,6 +347,11 @@ private:
 struct System
 {
 static:
+
+    version (D_LP64) bool isTravis ()
+    {
+        return environment.get("TRAVIS", "false") == "true";
+    }
 
 version (linux):
 
