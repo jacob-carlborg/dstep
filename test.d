@@ -20,6 +20,8 @@ struct TestRunner
     {
         int result = 0;
         auto matrix = setup();
+        activate(matrix.clangs.first);
+        build();
 
         foreach (const clang ; matrix.clangs)
         {
@@ -55,7 +57,7 @@ struct TestRunner
         return Path.join(workingDirectory, "clangs").assumeUnique;
     }
 
-    void activate (const ref Clang clang)
+    void activate (const Clang clang)
     {
         auto src = Path.join(workingDirectory, clang.versionedLibclang);
         auto dest = Path.join(workingDirectory, clang.libclang);
@@ -74,6 +76,17 @@ struct TestRunner
             println(result.output);
 
         return result.status;
+    }
+
+    void build ()
+    {
+        auto result = executeShell("dub build");
+
+        if (result.status != 0)
+        {
+            println(result.output);
+            throw new Exception("Failed to build DStep");
+        }
     }
 }
 
