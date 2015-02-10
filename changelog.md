@@ -7,6 +7,7 @@
 * A script for testing multiple versions of libclang has been added
 * DStep outputs spaces instead of tabs for indentation
 * Update Clang bindings to 3.5.0
+* Run tests on Travis-CI
 
 #### Objective-C
 
