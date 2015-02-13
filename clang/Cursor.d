@@ -104,6 +104,11 @@ struct Cursor
     {
         return clang_isCursorDefinition(cast(CXCursor) cx) != 0;
     }
+
+    @property Cursor definition () const
+    {
+        return Cursor(clang_getCursorDefinition(cast(CXCursor) cx));
+    }
 }
 
 struct ObjcCursor

@@ -40,3 +40,8 @@ struct E
 };
 
 struct F;
+
+struct Nested
+{
+    struct C field;
+};
