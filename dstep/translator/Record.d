@@ -20,6 +20,8 @@ import dstep.translator.Type;
 
 class Record (Data) : Declaration
 {
+    static bool[Cursor] recordDefinitions;
+
     this (Cursor cursor, Cursor parent, Translator translator)
     {
         super(cursor, parent, translator);
@@ -36,10 +38,16 @@ class Record (Data) : Declaration
                         case CXCursor_FieldDecl:
                             if (!cursor.type.isExposed && cursor.type.declaration.isValid)
                             {
-                                output.newContext();
-                                output.currentContext.indent in {
-                                    context.instanceVariables ~= translator.translate(cursor.type.declaration);
-                                };
+                                auto def = cursor.type.declaration.definition;
+                                auto known = def in this.recordDefinitions;
+
+                                if (!known)
+                                {
+                                    output.newContext();
+                                    output.currentContext.indent in {
+                                        context.instanceVariables ~= translator.translate(cursor.type.declaration);
+                                    };
+                                }
 
                                 if (cursor.type.declaration.type.isEnum || !cursor.type.isAnonymous)
                                     translateVariable(cursor, context);
@@ -60,8 +68,12 @@ private:
     string writeRecord (string name, void delegate (Data context) dg)
     {
         auto context = new Data;
-        static if (is(typeof(context.isFwdDeclaration) == bool))
-            context.isFwdDeclaration = !cursor.isDefinition;
+        
+        if (cursor.isDefinition)
+            this.recordDefinitions[cursor] = true;
+        else
+            context.isFwdDeclaration = true;
+
         context.name = translateIdentifier(name);
 
         dg(context);
