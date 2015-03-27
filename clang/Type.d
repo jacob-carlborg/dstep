@@ -51,11 +51,7 @@ struct Type
 
     @property bool isFunctionType ()
     {
-        with (CXTypeKind)
-            return kind == CXType_FunctionNoProto ||
-                kind == CXType_FunctionProto ||
-                // FIXME: This "hack" shouldn't be needed.
-                func.resultType.isValid;
+        return canonicalType.kind == CXTypeKind.CXType_FunctionProto;
     }
 
     @property bool isFunctionPointerType ()
