@@ -32,6 +32,6 @@
     ],
 
     "dependencies": {
-        "dstack": "0.0.2"
+        "dstack": "0.0.3"
     }
 }
