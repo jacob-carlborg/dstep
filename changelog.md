@@ -16,6 +16,8 @@
 
 ### Bugs Fixed
 
+# Issue #42: Compile failure with DMD v2.0.68
+# Issue #37: Regression: clang 3.5 causes struct members to be defined again
 * Issue #26: dstep dumps core on a simple header
 
 ## Version 0.1.1
