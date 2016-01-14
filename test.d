@@ -288,6 +288,19 @@ private:
                     ];
             }
 
+            else if (System.isDebian)
+            {
+                version (D_LP64)
+                    return [
+                        Clang("3.3", "http://llvm.org/releases/3.3/", "clang+llvm-3.3-amd64-debian6.tar.bz2")
+                    ];
+                else
+                    return [
+                        Clang("3.3", "http://llvm.org/releases/3.3/", "clang+llvm-3.3-i386-debian6.tar.bz2"),
+                    ];
+
+            }
+
             else if (System.isFedora)
             {
                 version (D_LP64)
@@ -386,6 +399,11 @@ version (linux):
     bool isUbuntu ()
     {
         return update.contains("ubuntu");
+    }
+
+    bool isDebian ()
+    {
+        return update.contains("debian");
     }
 
     string update ()
