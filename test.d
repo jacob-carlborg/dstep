@@ -114,6 +114,12 @@ struct Clang
         enum prefix = "";
     }
 
+    else version (FreeBSD)
+    {
+        enum extension = ".so";
+        enum prefix = "lib";
+    }
+
     else
         static assert(false, "Unsupported platform");
 
