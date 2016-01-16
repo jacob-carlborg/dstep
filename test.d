@@ -399,10 +399,17 @@ struct System
 {
 static:
 
-    version (D_LP64) bool isTravis ()
-    {
-        return environment.get("TRAVIS", "false") == "true";
-    }
+    version (D_LP64)
+        bool isTravis ()
+        {
+            return environment.get("TRAVIS", "false") == "true";
+        }
+
+    else
+        bool isTravis ()
+        {
+            return false;
+        }
 
 version (linux):
 
