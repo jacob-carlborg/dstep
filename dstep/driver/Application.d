@@ -49,8 +49,15 @@ class Application : DStack.Application
     protected override void run ()
     {
         handleArguments;
-        inputFiles ~= arguments.argument.input;
-        startConversion(inputFiles.first);
+
+        if (arguments.argument.input.hasValue)
+        {
+            inputFiles ~= arguments.argument.input;
+            startConversion(inputFiles.first);
+        }
+
+        else
+            startConversion("");
     }
 
     protected override void setupArguments ()
@@ -88,15 +95,16 @@ private:
         translationUnit = TranslationUnit.parse(index, file, compilerArgs,
             compiler.extraHeaders);
 
-        if (!translationUnit.isValid)
-            throw new DStepException("An unknown error occurred");
+        // hope that the diagnostics below handle everything
+        // if (!translationUnit.isValid)
+        //     throw new DStepException("An unknown error occurred");
 
         diagnostics = translationUnit.diagnostics;
 
         scope (exit)
             clean;
 
-        if (handleDiagnostics)
+        if (handleDiagnostics && file.any)
         {
             Translator.Options options;
             options.outputFile = arguments.output;

@@ -2,7 +2,7 @@
 
 if [ -s "$HOME/.dvm/scripts/dvm" ] ; then
     . "$HOME/.dvm/scripts/dvm" ;
-    dvm use 2.066.1
+    dvm use 2.069.2
 fi
 
 dub build
