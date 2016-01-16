@@ -413,35 +413,55 @@ static:
 
 version (linux):
 
-    private string update_;
+    import core.sys.posix.sys.utsname;
+
+    private
+    {
+        utsname data_;
+        string update_;
+        string nodename_;
+    }
 
     bool isFedora ()
     {
-        return update.contains("fedora");
+        return nodename.contains("fedora");
     }
 
     bool isUbuntu ()
     {
-        return update.contains("ubuntu");
+        return nodename.contains("ubuntu");
     }
 
     bool isDebian ()
     {
-        return update.contains("debian");
+        return nodename.contains("debian");
+    }
+
+    private utsname data()
+    {
+        import std.exception;
+
+        if (data_ != data_.init)
+            return data_;
+
+        errnoEnforce(!uname(&data_));
+        return data_;
     }
 
     string update ()
     {
-        import core.sys.posix.sys.utsname;
-        import std.exception;
-
         if (update_.any)
             return update_;
 
-        utsname data;
-        errnoEnforce(!uname(&data));
-
         return update_ = data.update.ptr.toString.toLower;
+    }
+
+    string nodename ()
+    {
+        if (nodename_.any)
+            return nodename_;
+
+        return nodename_ = data.nodename.ptr.toString.toLower;
     }
 }
 
