@@ -4,13 +4,14 @@
     "authors": ["Jacob Carlborg"],
     "homepage": "https://github.com/jacob-carlborg/dstep",
     "license": "BSL-1.0",
-    "copyright": "Copyright (c) 2011-2013 Jacob Carlborg. All rights reserved.",
+    "copyright": "Copyright (c) 2011-2016 Jacob Carlborg. All rights reserved.",
 
     "targetType": "executable",
     "targetPath": "bin",
 
     "buildRequirements": ["silenceWarnings"],
     "stringImportPaths": ["resources"],
+    "lflags-osx": ["-macosx_version_min", "10.6", "-lcrt1.10.6.o"],
 
     "configurations": [
         {
