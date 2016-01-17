@@ -30,7 +30,7 @@ class Application : DStack.Application
 {
     mixin Singleton;
 
-    enum Version = "0.2.1";
+    enum Version = "0.2.2";
 
     private
     {
