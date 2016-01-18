@@ -50,6 +50,13 @@ Then /^I test the file "([^"]*)" in "([^"]*)"$/ do |file, path|
   step %{the files "#{file}.d" and "test_files/#{path}/#{file}.d" should be equal}
 end
 
+Then /^I test the file "([^"]*)" with filter "([^"]*)" and prefix "([^"]*)"$/ do |file, filter, prefix|
+    step %{a test file named "#{file}"}
+    step %{an expected file named "#{file}"}
+    step %{I successfully convert the test file "#{file}" in "" with the flags "--import-filter #{filter} --import-prefix #{prefix}"}
+    step %{the files "#{file}.d" and "test_files/#{file}.d" should be equal}
+end
+
 if OSX
   Then /^I test the Objective\-C file "([^"]*)" in "([^"]*)"$/ do |file, path|
     step %{a test file named "#{file}" in "#{path}"}
