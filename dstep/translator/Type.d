@@ -16,6 +16,8 @@ import dstep.translator.IncludeHandler;
 import dstep.translator.Translator;
 import dstep.translator.Output;
 
+import std.conv;
+
 string translateType (Type type, bool rewriteIdToObjcObject = true, bool applyConst = true)
 in
 {
@@ -56,7 +58,9 @@ body
                     handleInclude(type);
                 break;
 
-                case CXType_ConstantArray: result = translateConstantArray(type, rewriteIdToObjcObject); break;
+                case CXType_ConstantArray:
+                case CXType_IncompleteArray:
+                    result = translateArray(type, rewriteIdToObjcObject); break;
                 case CXType_Unexposed: result = translateUnexposed(type, rewriteIdToObjcObject); break;
 
                 default: result = translateType(type.kind, rewriteIdToObjcObject);
@@ -156,17 +160,26 @@ body
         return translateType(type.kind, rewriteIdToObjcObject);
 }
 
-string translateConstantArray (Type type, bool rewriteIdToObjcObject)
+string translateArray (Type type, bool rewriteIdToObjcObject)
 in
 {
-    assert(type.kind == CXTypeKind.CXType_ConstantArray);
+    assert(type.kind == CXTypeKind.CXType_ConstantArray
+        || type.kind == CXTypeKind.CXType_IncompleteArray);
 }
 body
 {
     auto array = type.array;
     auto elementType = translateType(array.elementType, rewriteIdToObjcObject);
 
-    return elementType ~ '[' ~ array.size.toString ~ ']';
+    if (array.size >= 0)        
+        return elementType ~ '[' ~ array.size.toString ~ ']';
+    else
+        // extern static arrays (which are normally present in bindings)
+        // have same ABI as extern dynamic arrays, size is only checked
+        // against declaration in header. As it is not possible in D
+        // to define static array with ABI of dynamic one, only way is to
+        // abandon the size information
+        return elementType ~ "[]";
 }
 
 string translatePointer (Type type, bool rewriteIdToObjcObject, bool applyConst)

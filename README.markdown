@@ -23,7 +23,7 @@ The source code is available under the [Boost Software License 1.0](http://www.b
 
 ### Requirements
 
-* libclang - [http://clang.llvm.org](http://clang.llvm.org) - 3.1 or later that is binary compatible with 3.1
+* libclang - [http://clang.llvm.org](http://clang.llvm.org) - 3.4 or later that is binary compatible with 3.4
 * DMD - [http://dlang.org/download.html](http://dlang.org/download.html) - 2.069.2
 * Dub [http://code.dlang.org/download](http://code.dlang.org/download)
 
