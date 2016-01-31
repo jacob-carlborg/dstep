@@ -13,8 +13,13 @@ struct File
 {
     mixin CX;
 
-    @property string name ()
+    string name()
     {
         return toD(clang_getFileName(cx));
+    }
+
+    string toString()
+    {
+        return name;
     }
 }

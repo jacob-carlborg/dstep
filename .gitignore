@@ -18,4 +18,5 @@ foo.d
 clangs
 *.gch
 bin/test
+bin/unittest
 .DS_Store

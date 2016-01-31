@@ -57,9 +57,21 @@ class Translator
         inputFile = translationUnit.file(inputFilename);
     }
 
+    this (TranslationUnit translationUnit, const Options options = Options.init)
+    {
+        this.translationUnit = translationUnit;
+        outputFile = options.outputFile;
+        language = options.language;
+    }
+
     void translate ()
     {
-        foreach (cursor, parent ; translationUnit.declarations)
+        write(outputFile, translateToString());
+    }
+
+    string translateToString()
+    {
+        foreach (cursor, parent; translationUnit.cursor.all)
         {
             if (skipDeclaration(cursor))
                 continue;
@@ -68,6 +80,7 @@ class Translator
             auto code = translate(cursor, parent);
 
             with (CXCursorKind)
+            {
                 switch (cursor.kind)
                 {
                     case CXCursor_ObjCInterfaceDecl:
@@ -85,33 +98,37 @@ class Translator
                     case CXCursor_VarDecl: output.variables ~= code; break;
                     case CXCursor_FunctionDecl: output.functions ~= code; break;
                     case CXCursor_TypedefDecl: output.typedefs ~= code; break;
-
+                    case CXCursor_MacroDefinition:
+                        if (code != "") 
+                            output.defines ~= code;
+                        break;
                     default: continue;
                 }
+            }
         }
 
         output.structs ~= deferredDeclarations.values;
         output.externDeclaration = externDeclaration();
 
-        auto data = output.toString;
-        write(outputFile, data);
+        return output.toString;
     }
 
     string translate (Cursor cursor, Cursor parent = Cursor.empty)
     {
         with (CXCursorKind)
+        {
             switch (cursor.kind)
             {
                 case CXCursor_ObjCInterfaceDecl:
-                    return (new ObjcInterface!(ClassData)(cursor, parent, this)).translate;
+                    return (new ObjcInterface!(ClassData)(cursor, parent, this)).translate();
                 break;
 
                 case CXCursor_ObjCProtocolDecl:
-                    return (new ObjcInterface!(InterfaceData)(cursor, parent, this)).translate;
+                    return (new ObjcInterface!(InterfaceData)(cursor, parent, this)).translate();
                 break;
 
                 case CXCursor_ObjCCategoryDecl:
-                    return (new Category(cursor, parent, this)).translate;
+                    return (new Category(cursor, parent, this)).translate();
                 break;
 
                 case CXCursor_VarDecl:
@@ -150,13 +167,19 @@ class Translator
                         return "";
                     }
                     break;
-                case CXCursor_EnumDecl: return (new Enum(cursor, parent, this)).translate; break;
-                case CXCursor_UnionDecl: return (new Record!(UnionData)(cursor, parent, this)).translate; break;
+                case CXCursor_EnumDecl: 
+                    return (new Enum(cursor, parent, this)).translate(); break;
+
+                case CXCursor_UnionDecl: 
+                    return (new Record!(UnionData)(cursor, parent, this)).translate(); break;
+
+                case CXCursor_MacroDefinition:
+                    return translateDefine(cursor);
 
                 default:
                     return "";
-                    //assert(0, `Translator.translate: missing implementation for "` ~ cursor.kind.toString ~ `".`);
             }
+        }
     }
 
     string variable (Cursor cursor, String context = null)
@@ -184,8 +207,9 @@ class Translator
 private:
 
     bool skipDeclaration (Cursor cursor)
-    {
-        return inputFile != cursor.location.spelling.file;
+    {   
+        return (inputFilename != "" && inputFile != cursor.location.spelling.file) 
+            || cursor.isPredefined;  
     }
 
     string externDeclaration ()
@@ -197,6 +221,17 @@ private:
             // case Language.cpp: return "extern (C++):";
         }
     }
+}
+
+string translateDefine(Cursor cursor) 
+{
+    import std.format: format;
+    auto tokens = cursor.tokens();
+
+    if (tokens.length == 2) 
+        return format("enum %s = %s;", tokens[0].spelling, tokens[1].spelling);
+    else 
+        return "";
 }
 
 string translateFunction (FunctionCursor func, string name, String context, bool isStatic = false)

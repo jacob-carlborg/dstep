@@ -24,7 +24,7 @@ struct TranslationUnit
 
     static TranslationUnit parse (Index index, string sourceFilename, string[] commandLineArgs,
         CXUnsavedFile[] unsavedFiles = null,
-        uint options = CXTranslationUnit_Flags.CXTranslationUnit_None)
+        uint options = CXTranslationUnit_Flags.CXTranslationUnit_DetailedPreprocessingRecord)
     {
         return TranslationUnit(
             clang_parseTranslationUnit(
@@ -35,6 +35,33 @@ struct TranslationUnit
                 toCArray!(CXUnsavedFile)(unsavedFiles),
                 cast(uint) unsavedFiles.length,
                 options));
+    }
+
+    static TranslationUnit parseString (
+        Index index,
+        string source,
+        string[] commandLineArgs,
+        CXUnsavedFile[] unsavedFiles = null,
+        uint options = CXTranslationUnit_Flags.CXTranslationUnit_DetailedPreprocessingRecord)
+    {
+        import std.file;
+
+        auto file = namedTempFile("dstep", ".h");
+        auto name = file.name();
+        file.write(source);
+        file.flush();
+        file.detach();
+
+        auto translationUnit = TranslationUnit.parse(
+            index,
+            name,
+            commandLineArgs,
+            unsavedFiles,
+            options);
+
+        remove(name);
+
+        return translationUnit;
     }
 
     private this (CXTranslationUnit cx)

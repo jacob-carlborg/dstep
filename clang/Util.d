@@ -6,11 +6,12 @@
  */
 module clang.Util;
 
+import std.conv;
+import std.stdio;
+
 import mambo.core._;
 
 import clang.c.Index;
-
-import std.conv;
 
 immutable(char*)* strToCArray (string[] arr)
 {
@@ -76,4 +77,42 @@ mixin template CX ()
     {
         return cx !is CType.init;
     }
+}
+
+extern (C) int mkstemps(char*, int);
+extern (C) int close(int);
+
+class NamedTempFileException : object.Exception
+{
+    this (string message, string file = __FILE__, size_t line = __LINE__)
+    {
+        super(message, file, line);
+    }
+}
+
+File namedTempFile(string prefix, string suffix) 
+{
+    import std.random;
+    import std.file;
+    import std.path;
+    import std.format;
+
+    void randstr (char[] slice)
+    {
+        for (uint i = 0; i < slice.length; ++i)
+            slice[i] = uniform!("[]")('A', 'Z');
+    }
+
+    string name = format("%sXXXXXXXXXXXXXXXX%s\0", prefix, suffix);
+    char[] path = buildPath(tempDir(), name).dup;
+    const size_t termAnd6XSize = 7;
+    randstr(path[$ - name.length + prefix.length .. $ - suffix.length - termAnd6XSize]);
+
+    int fd = mkstemps(path.ptr, cast(int) suffix.length);
+    scope (exit) close(fd);
+
+    if (fd == -1)
+        throw new NamedTempFileException("Cannot create \"%s\" temporary file.".format(path));
+
+    return File(path[0..$-1], "wb+");
 }

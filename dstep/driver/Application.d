@@ -92,7 +92,10 @@ private:
             argsToRestore ~= "-ObjC";
 
         index = Index(false, false);
-        translationUnit = TranslationUnit.parse(index, file, compilerArgs,
+        translationUnit = TranslationUnit.parse(
+            index, 
+            file, 
+            compilerArgs,
             compiler.extraHeaders);
 
         // hope that the diagnostics below handle everything

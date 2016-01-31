@@ -22,12 +22,29 @@ struct SourceLocation
         uint offset;
     }
 
-    @property Spelling spelling ()
+    @property Spelling spelling() const
     {
         Spelling spell;
 
         clang_getSpellingLocation(cx, &spell.file.cx, &spell.line, &spell.column, &spell.offset);
 
         return spell;
+    }
+
+    @property size_t offset() const
+    {
+        return spelling.offset;
+    }
+
+    @property string path() const
+    {
+        return spelling.file.name;
+    }
+
+    @property string toString() const
+    {
+        import std.format: format;
+        auto s = spelling;
+        return format("SourceLocation(file = %s, line = %d, column = %d, offset = %d)", s.file, s.line, s.column, s.offset);
     }
 }

@@ -23,6 +23,11 @@ static this ()
     output = new Output;
 }
 
+void resetOutput()
+{
+    output = new Output;
+}
+
 class Output
 {
     String currentContext;
@@ -43,6 +48,7 @@ class Output
     string[] enums;
     string[] unions;
     string[] functions;
+    string[] defines;
 
     ClassData currentClass;
     ClassData currentInterface;
@@ -75,6 +81,7 @@ class Output
             currentContext.put(nl, nl);
         }
 
+        addDeclarations(defines, false);
         addDeclarations(typedefs, false);
         addDeclarations(variables, false);
         addDeclarations(enums);
