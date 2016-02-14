@@ -30,7 +30,10 @@ body
     with (CXTypeKind)
     {
         if (type.kind == CXType_BlockPointer || type.isFunctionPointerType)
-            result = translateFunctionPointerType(type);
+            result = translateFunctionPointerType(type.pointeeType.func);
+
+        else if (type.isFunctionType)
+            result = translateFunctionPointerType(type.canonicalType.func);
 
         else if (type.kind == CXType_ObjCObjectPointer && !type.isObjCBuiltinType)
             result = translateObjCObjectPointerType(type);
@@ -171,7 +174,7 @@ body
     auto array = type.array;
     auto elementType = translateType(array.elementType, rewriteIdToObjcObject);
 
-    if (array.size >= 0)        
+    if (array.size >= 0)
         return elementType ~ '[' ~ array.size.toString ~ ']';
     else
         // extern static arrays (which are normally present in bindings)
@@ -222,15 +225,8 @@ body
     return result;
 }
 
-string translateFunctionPointerType (Type type)
-in
+string translateFunctionPointerType (FuncType func)
 {
-    assert(type.kind == CXTypeKind.CXType_BlockPointer || type.isFunctionPointerType);
-}
-body
-{
-    auto func = type.pointeeType.func;
-
     Parameter[] params;
     params.reserve(func.arguments.length);
 
