@@ -1,5 +1,5 @@
 language: d
-d: dmd-2.069.0-rc2
+d: dmd-2.070.0
 
 script: "bundle && dub --config=test"
 
