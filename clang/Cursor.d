@@ -9,7 +9,11 @@ module clang.Cursor;
 import mambo.core._;
 
 import clang.c.Index;
+import clang.Index;
 import clang.SourceLocation;
+import clang.SourceRange;
+import clang.Token;
+import clang.TranslationUnit;
 import clang.Type;
 import clang.Util;
 import clang.Visitor;
@@ -18,28 +22,54 @@ struct Cursor
 {
     mixin CX;
 
+    private static const CXCursorKind[string] predefined;
+
+    static this()
+    {
+        predefined = queryPredefined();
+    }
+
     @property static Cursor empty ()
     {
         auto r = clang_getNullCursor();
         return Cursor(r);
     }
 
-    @property string spelling ()
+    @property string spelling () const
     {
         return toD(clang_getCursorSpelling(cx));
     }
 
-    @property CXCursorKind kind ()
+    @property CXCursorKind kind () const
     {
         return clang_getCursorKind(cx);
     }
 
-    @property SourceLocation location ()
+    @property SourceLocation location () const
     {
         return SourceLocation(clang_getCursorLocation(cx));
     }
 
-    @property Type type ()
+    @property TokenRange tokens() const
+    {
+        import std.algorithm.mutation : stripRight;
+
+        CXTranslationUnit unit = clang_Cursor_getTranslationUnit(cx);
+        CXToken* tokens = null;
+        uint numTokens = 0;
+        clang_tokenize(unit, extent.cx, &tokens, &numTokens);
+        auto result = TokenRange(unit, tokens, numTokens);
+
+        // For some reason libclang returns some tokens out of cursors extent.cursor
+        return result.stripRight!(token => !intersects(extent, token.extent));
+    }
+
+    @property SourceRange extent() const
+    {
+        return SourceRange(clang_getCursorExtent(cx));
+    }
+
+    @property Type type () const
     {
         auto r = clang_getCursorType(cx);
         return Type(r);
@@ -80,9 +110,34 @@ struct Cursor
         return clang_Cursor_isNull(cx) != 0;
     }
 
-    @property Visitor all ()
+    @property Visitor all () const
     {
         return Visitor(this);
+    }
+
+    @property Cursor[] children(bool ignorePredefined = false) const
+    {
+        import std.array : appender;
+        import std.stdio;
+
+        Cursor[] result = [];
+        auto app = appender(result);
+
+        if (ignorePredefined && isTranslationUnit)
+        {
+            foreach (cursor, _; all)
+            {
+                if (!cursor.isPredefined)
+                    app.put(cursor);
+            }
+        }
+        else
+        {
+            foreach (cursor, _; all)
+                app.put(cursor);
+        }
+
+        return app.data;
     }
 
     @property CXLanguageKind language ()
@@ -105,7 +160,34 @@ struct Cursor
         return clang_isCursorDefinition(cast(CXCursor) cx) != 0;
     }
 
-    @property Cursor definition () const
+    bool isTranslationUnit() const
+    {
+        return clang_isTranslationUnit(kind) != 0;
+    }
+
+    private static CXCursorKind[string] queryPredefined()
+    {
+        CXCursorKind[string] result;
+
+        Index index = Index(false, false);
+        TranslationUnit unit = TranslationUnit.parseString(
+            index,
+            "",
+            []);
+
+        foreach (cursor; unit.cursor.children)
+            result[cursor.spelling] = cursor.kind;
+
+        return result;
+    }
+
+    bool isPredefined() const
+    {
+        auto xkind = spelling in predefined;
+        return xkind !is null && *xkind == kind;
+    }
+
+    @property Cursor definition() const
     {
         return Cursor(clang_getCursorDefinition(cast(CXCursor) cx));
     }

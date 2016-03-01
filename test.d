@@ -27,6 +27,7 @@ struct TestRunner
         {
             activate(clang);
             println("Testing with libclang version ", clang.version_);
+            result += unitTest();
             result += test();
         }
 
@@ -70,7 +71,21 @@ struct TestRunner
 
     int test ()
     {
+        println("Running cucumber tests ");
+
         auto result = execute("cucumber");
+
+        if (result.status != 0)
+            println(result.output);
+
+        return result.status;
+    }
+
+    int unitTest ()
+    {
+        println("Running unit tests ");
+
+        auto result = executeShell("dub test");
 
         if (result.status != 0)
             println(result.output);
@@ -405,7 +420,7 @@ version (linux):
 
     bool isUbuntu ()
     {
-        return nodename.contains("ubuntu");
+        return nodename.contains("ubuntu") || update.contains("ubuntu");
     }
 
     bool isDebian ()

@@ -13,6 +13,13 @@
     "stringImportPaths": ["resources"],
     "lflags-osx": ["-macosx_version_min", "10.6", "-lcrt1.10.6.o"],
 
+    "buildTypes": {
+        "unittest": {
+            "buildRequirements" : [ "allowWarnings" ],
+            "buildOptions" : ["unittests", "debugMode", "debugInfo"]
+        },
+    },
+
     "configurations": [
         {
             "name": "default",
@@ -29,6 +36,17 @@
             "mainSourceFile": "test.d",
             "targetName": "test",
             "excludedSourceFiles": ["dstep/*", "clang/*"]
+        },
+
+        {
+            "name": "unittest",
+            "mainSourceFile": "unittest.d",
+            "targetName": "unittest",
+            "sourcePaths": ["dstep", "clang", "unit_tests"],
+            "importPaths": ["dstep", "clang"],
+            "lflags-posix": ["-lclang", "-rpath", ".", "-L.", "-L/usr/lib64/llvm", "-L/usr/lib/llvm-3.7/lib"],
+            "lflags-windows": ["+\\", "+clang"],
+            "excludedSourceFiles": ["dstep/driver/*"]
         }
     ],
 

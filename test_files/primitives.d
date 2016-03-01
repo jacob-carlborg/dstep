@@ -1,3 +1,5 @@
+import core.stdc.config;
+
 extern (C):
 
 extern __gshared c_long x3;
