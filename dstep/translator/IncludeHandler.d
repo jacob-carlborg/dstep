@@ -7,8 +7,10 @@
 module dstep.translator.IncludeHandler;
 
 import Path = std.path;
+import std.regex;
+import std.conv;
 
-import mambo.core._;
+import mambo.core.Array;
 
 private IncludeHandler includeHandler_;
 
@@ -26,6 +28,16 @@ class IncludeHandler
 {
     private string[] rawIncludes;
     private string[] imports;
+
+    // True if includes should be converted to imports.
+    private bool convertIncludes = false;
+
+    // Includes matching this will be converted to imports.
+    private Regex!char convertableIncludePattern = regex(".*");
+
+    // Prefix for auto generated imports.
+    private string importPrefix = "";
+
     static string[string] knownIncludes;
 
     static this ()
@@ -109,12 +121,33 @@ class IncludeHandler
         imports ~= "core.stdc.config";
     }
 
+
+    /// Makes includes that match regex filter be converted to import with prefix.
+    @property void autoImportPrefix (string prefix)
+    {
+        convertIncludes = true;
+        importPrefix = prefix;
+    }
+
+    @property string autoImportPrefix ()
+    {
+        return this.importPrefix;
+    }
+
+    /// Makes includes that match regex filter be converted to import with prefix.
+    @property void autoImportFilter (string filter)
+    {
+        convertIncludes = true;
+        convertableIncludePattern = regex(filter);
+    }
+
     string[] toImports ()
     {
-        auto r =  rawIncludes.map!((e) {
+        auto r = rawIncludes.map!((e) {
             if (auto i = isKnownInclude(e))
                 return toImport(i);
-
+            else if (convertIncludes && isConvertableInclude(e) )
+                return toImport(autoConvertInclude(e));
             else
                 return "";
         });
@@ -122,6 +155,12 @@ class IncludeHandler
         auto imps = imports.map!(e => toImport(e));
 
         return r.append(imps).filter!(e => e.any).unique.toArray;
+    }
+
+    /// Returns the base name (last component without extension) of a file path.
+    static string bareName (string path)
+    {
+        return Path.stripExtension(Path.baseName(path));
     }
 
 private:
@@ -139,5 +178,27 @@ private:
             return r.value;
 
         return null;
+    }
+
+    /// Checks if the given include file name should be converted to an import declaration.
+    bool isConvertableInclude (string include)
+    {
+        // Do not try to convert empty strings, no matter what the pattern says.
+        return include != "" && matchFirst(include, convertableIncludePattern);
+    }
+
+
+    /// Generates an importable module name from an include file name.
+    string autoConvertInclude (string include)
+    {
+        string prefix = importPrefix;
+
+        // If we have a prefix, append a dot to it if it doesn't already have one at the end.
+        if (prefix != "" && !prefix.endsWith("."))
+        {
+            prefix ~= ".";
+        }
+
+        return prefix ~ bareName(include);
     }
 }

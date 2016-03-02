@@ -25,6 +25,7 @@ import clang.Util;
 
 import dstep.core.Exceptions;
 import dstep.translator.Translator;
+import dstep.translator.IncludeHandler;
 
 class Application : DStack.Application
 {
@@ -77,6 +78,14 @@ class Application : DStack.Application
             .on(&handleLanguage);
 
         arguments("objective-c", "Treat source input file as Objective-C input.");
+
+        arguments('f',"import-filter", "A regex to filter includes that will be auto converted.")
+            .params(1)
+            .defaults(".*");
+
+        arguments('p',"import-prefix", "A prefix to add to any custom generated import")
+            .params(1)
+            .defaults("");
     }
 
 private:
@@ -134,6 +143,12 @@ private:
         // FIXME: Cannot use type inference here, probably a bug. Results in segfault.
         if (arguments.rawArgs.any!((string e) => e == "-ObjC"))
             handleObjectiveC();
+
+        if (arguments["import-prefix"].hasValue)
+            handleAutoImportPrefix(arguments["import-prefix"].value);
+
+        if (arguments["import-filter"].hasValue)
+            handleAutoImportFilter(arguments["import-filter"].value);
     }
 
     void handleObjectiveC ()
@@ -169,6 +184,16 @@ private:
 
         argsToRestore ~= "-x";
         argsToRestore ~= language;
+    }
+
+    void handleAutoImportPrefix (string prefix)
+    {
+        includeHandler.autoImportPrefix = prefix;
+    }
+
+    void handleAutoImportFilter (string filter)
+    {
+        includeHandler.autoImportFilter = filter;
     }
 
     @property string[] remainingArgs ()
@@ -216,6 +241,8 @@ private:
         println("    -ObjC, --objective-c         Treat source input file as Objective-C input.");
         println("    -x, --language <language>    Treat subsequent input files as having type <language>.");
         println("    -h, --help                   Show this message and exit.");
+        println("    -f, --import-filter          A regex to filter includes that will be auto converted to imports.");
+        println("    -p, --import-prefix          A prefix to add to any import generated from an include.");
         println();
         println("All options that Clang accepts can be used as well.");
         println();
