@@ -7,24 +7,72 @@
 
 import std.stdio;
 import Common;
+import dstep.translator.CodeBlock;
+import dstep.translator.Translator;
 
 unittest
 {
     assertTranslates(
-        "#define SOME_INTEGER 0", 
+        "#define SOME_INTEGER 0",
         "extern (C):\n\nenum SOME_INTEGER = 0;");
 }
 
 unittest
 {
     assertTranslates(
-        "#define FOO 0\n#define BAR 1\n", 
+        "#define FOO 0\n#define BAR 1\n",
         "extern (C):\n\nenum FOO = 0;\nenum BAR = 1;");
 }
 
 unittest
 {
-	assertTranslates(
-        "#define SOME_STRING \"foobar\"", 
-        "extern (C):\n\nenum SOME_STRING = \"foobar\";");	
+    assertTranslates(
+        "#define SOME_STRING \"foobar\"",
+        "extern (C):\n\nenum SOME_STRING = \"foobar\";");
+}
+
+unittest
+{
+    assertTranslates(
+q"C
+struct A
+{
+    struct B
+    {
+        int x;
+    } b;
+};
+C",
+q"D
+extern (C):
+
+struct A
+{
+    struct B
+    {
+        int x;
+    }
+
+    B b;
+}
+D");
+}
+
+unittest
+{
+    assertTranslates(
+q"C
+float foo(int x);
+float bar(int x);
+
+int a;
+C",
+q"D
+extern (C):
+
+float foo (int x);
+float bar (int x);
+extern __gshared int a;
+D");
+
 }

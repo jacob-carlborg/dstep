@@ -90,7 +90,7 @@ class NamedTempFileException : object.Exception
     }
 }
 
-File namedTempFile(string prefix, string suffix) 
+File namedTempFile(string prefix, string suffix)
 {
     import std.random;
     import std.file;

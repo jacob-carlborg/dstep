@@ -1,10 +1,5 @@
 extern (C):
 
-alias _Anonymous_1 D;
-
-extern __gshared Bar e;
-extern __gshared Foo f;
-
 enum Foo
 {
     a = 1
@@ -17,11 +12,8 @@ enum Bar
     d = 3
 }
 
-enum _Anonymous_1
-{
-    k = 1,
-    l = 2
-}
+extern __gshared Bar e;
+extern __gshared Foo f;
 
 struct A
 {
@@ -29,6 +21,7 @@ struct A
     {
         g = 1
     }
+
     B h;
 }
 
@@ -39,5 +32,14 @@ struct C
         i = 1,
         j = 2
     }
+
     _Anonymous_0 point;
 }
+
+enum _Anonymous_1
+{
+    k = 1,
+    l = 2
+}
+
+alias _Anonymous_1 D;

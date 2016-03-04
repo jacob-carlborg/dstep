@@ -14,6 +14,7 @@ import clang.Type;
 import clang.Util;
 import clang.Visitor;
 
+import dstep.translator.CodeBlock;
 import dstep.translator.Translator;
 import dstep.translator.Declaration;
 import dstep.translator.Output;
@@ -26,7 +27,7 @@ class ObjcInterface (Data) : Declaration
         super(cursor, parent, translator);
     }
 
-    override string translate ()
+    override CodeBlock translate ()
     {
         auto cursor = cursor.objc;
 
@@ -58,7 +59,7 @@ class ObjcInterface (Data) : Declaration
 
 private:
 
-    string writeClass (string name, string superClassName, string[] interfaces, void delegate () dg)
+    CodeBlock writeClass (string name, string superClassName, string[] interfaces, void delegate () dg)
     {
         output.currentClass = new Data;
         output.currentClass.name = translateIdentifier(name);
@@ -101,11 +102,7 @@ private:
             writeSelector(method, func.spelling);
             method ~= ';';
 
-            if (classMethod)
-                cls.staticMethods ~= method.data;
-
-            else
-                cls.instanceMethods ~= method.data;
+            cls.members ~= CodeBlock(method.data);
         }
     }
 
@@ -122,9 +119,7 @@ private:
 
     void translateInstanceVariable (Cursor cursor)
     {
-        auto var = output.newContext();
-        translator.variable(cursor, var);
-        output.currentClass.instanceVariables ~= var.data;
+        output.currentClass.instanceVariables ~= translator.variable(cursor);
     }
 
     void translateGetter (Type type, String context, string name, ClassData cls, bool classMethod)
@@ -143,14 +138,7 @@ private:
         writeSelector(context, name);
         context ~= ';';
 
-        auto data = context.data;
-
-        if (classMethod)
-            cls.staticProperties ~= data;
-
-        else
-            cls.properties ~= data;
-
+        cls.members ~= CodeBlock(context.data);
         cls.propertyList.add(name);
     }
 
@@ -180,12 +168,7 @@ private:
 
         auto data = context.data;
 
-        if (classMethod)
-            cls.staticProperties ~= data;
-
-        else
-            cls.properties ~= data;
-
+        cls.members ~= CodeBlock(data);
         cls.propertyList.add(selector);
     }
 

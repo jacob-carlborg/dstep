@@ -22,7 +22,10 @@ struct TranslationUnit
 {
     mixin CX;
 
-    static TranslationUnit parse (Index index, string sourceFilename, string[] commandLineArgs,
+    static TranslationUnit parse (
+        Index index,
+        string sourceFilename,
+        string[] commandLineArgs,
         CXUnsavedFile[] unsavedFiles = null,
         uint options = CXTranslationUnit_Flags.CXTranslationUnit_DetailedPreprocessingRecord)
     {
@@ -74,6 +77,16 @@ struct TranslationUnit
         return DiagnosticVisitor(cx);
     }
 
+    @property DiagnosticSet diagnosticSet ()
+    {
+        return DiagnosticSet(clang_getDiagnosticSetFromTU(cx));
+    }
+
+    @property size_t numDiagnostics ()
+    {
+        return clang_getNumDiagnostics(cx);
+    }
+
     @property DeclarationVisitor declarations ()
     {
         return DeclarationVisitor(clang_getTranslationUnitCursor(cx));
@@ -84,10 +97,39 @@ struct TranslationUnit
         return File(clang_getFile(cx, filename.toStringz));
     }
 
+    @property string spelling ()
+    {
+        return toD(clang_getTranslationUnitSpelling(cx));
+    }
+
+    File file ()
+    {
+        return file(spelling);
+    }
+
     @property Cursor cursor ()
     {
         auto r = clang_getTranslationUnitCursor(cx);
         return Cursor(r);
+    }
+
+    string dumpAST (bool skipIncluded = false)
+    {
+        import std.array : appender;
+
+        auto result = appender!string();
+
+        if (skipIncluded)
+        {
+            File file = this.file;
+            cursor.dumpAST(result, 0, &file);
+        }
+        else
+        {
+            cursor.dumpAST(result, 0);
+        }
+
+        return result.data;
     }
 }
 

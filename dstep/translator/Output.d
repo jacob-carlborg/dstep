@@ -13,6 +13,8 @@ import tango.util.container.HashSet;
 import mambo.core._;
 
 import clang.Cursor;
+
+import dstep.translator.CodeBlock;
 import dstep.translator.IncludeHandler;
 import dstep.translator.Type;
 
@@ -34,46 +36,24 @@ class Output
 
     alias currentContext this;
 
-    String before;
-    String after;
-    String imports;
     string externDeclaration;
-
-    string[] typedefs;
-    string[] variables;
-
-    string[] classes;
-    string[] interfaces;
-    string[] structs;
-    string[] enums;
-    string[] unions;
-    string[] functions;
-    string[] defines;
 
     ClassData currentClass;
     ClassData currentInterface;
 
     this ()
     {
-        before = new String;
-        after = new String;
-        imports = new String;
         currentContext = new String;
 
         currentClass = new ClassData;
         currentInterface = new ClassData;
     }
 
-    @property string data ()
+    @property string data (string extraDeclarations = "")
     {
         newContext();
 
-        this ~= before.data;
         addDeclarations(includeHandler.toImports(), false);
-        this ~= imports.data;
-
-        if (imports.any)
-            this ~= nl;
 
         if (externDeclaration.isPresent)
         {
@@ -81,17 +61,7 @@ class Output
             currentContext.put(nl, nl);
         }
 
-        addDeclarations(defines, false);
-        addDeclarations(typedefs, false);
-        addDeclarations(variables, false);
-        addDeclarations(enums);
-        addDeclarations(structs);
-        addDeclarations(unions);
-        addDeclarations(classes);
-        addDeclarations(interfaces);
-        addDeclarations(functions, false);
-
-        this ~= after.data;
+        this ~= extraDeclarations;
 
         return currentContext.data;
     }
@@ -109,7 +79,12 @@ class Output
 
     override string toString ()
     {
-        return data.strip('\n');
+        return toString("");
+    }
+
+    string toString (string extraDeclarations)
+    {
+        return data(extraDeclarations).strip('\n');
     }
 
 private:
@@ -132,37 +107,32 @@ class StructData
 {
     string name;
 
-    string[] instanceVariables;
+    CodeBlock[] instanceVariables;
 
     bool isFwdDeclaration;
 
-    @property string data ()
+    @property CodeBlock data ()
     {
-        auto context = output.newContext();
+        import std.format : format;
 
         if (name.isPresent)
             name = ' ' ~ name;
 
         if (isFwdDeclaration)
         {
-            context.put(type, name, ";", nl);
             isFwdDeclaration = true;
+            return CodeBlock("%s%s;".format(type, name));
         }
         else
         {
-            context.put(type, name, nl, '{', nl);
+            CodeBlock result = CodeBlock(
+                "%s%s".format(type, name),
+                EndlHint.subscopeStrong);
 
-            context.indent in {
-                addDeclarations(context, instanceVariables);
-            };
+            addDeclarations(result, instanceVariables);
 
-            auto str = context.data.strip('\n');
-            context = output.newContext();
-            context ~= str;
-            context.put(nl, '}');
+            return result;
         }
-
-        return context.data;
     }
 
 protected:
@@ -172,21 +142,10 @@ protected:
         return "struct";
     }
 
-    void addDeclarations (String context, string[] declarations)
+    void addDeclarations (ref CodeBlock result, CodeBlock[] declarations)
     {
         foreach (i, e ; declarations)
-        {
-            if (i != 0)
-                context ~= nl;
-
-            context ~= e;
-        }
-
-        if (declarations.any)
-        {
-            context ~= nl;
-            context ~= nl;
-        }
+            result.children ~= e;
     }
 }
 
@@ -195,28 +154,6 @@ class EnumData : StructData
     @property override string type ()
     {
         return "enum";
-    }
-
-protected:
-
-    override void addDeclarations (String context, string[] declarations)
-    {
-        foreach (i, e ; declarations)
-        {
-            if (i != 0)
-            {
-                context ~= ",";
-                context ~= nl;
-            }
-
-            context ~= e;
-        }
-
-        if (declarations.any)
-        {
-            context ~= nl;
-            context ~= nl;
-        }
     }
 }
 
@@ -230,11 +167,7 @@ class UnionData : StructData
 
 class ClassData : StructData
 {
-    string[] instanceMethods;
-    string[] staticMethods;
-    string[] properties;
-    string[] staticProperties;
-    string[] staticVariables;
+    CodeBlock[] members;
 
     string name;
     string superclass;
@@ -276,24 +209,26 @@ class ClassData : StructData
         return mangledName;
     }
 
-    @property override string data ()
+    @property override CodeBlock data ()
     {
-        auto cls = output.newContext();
+        import std.format;
+        import std.array;
 
-        cls.put(type, ' ', name);
+        auto header = appender!string("%s %s".format(type, name));
 
         if (superclass.any)
-            cls.put(" : ", superclass);
+        {
+            header.put(" : ");
+            header.put(superclass);
+        }
 
-        writeInterfaces(cls);
-        cls.put(nl, '{', nl);
-        writeMembers(cls);
+        writeInterfaces(header);
 
-        auto context = output.newContext();
-        context ~= cls.data.strip('\n');
-        context.put(nl, '}');
+        auto result = CodeBlock(header.data, EndlHint.subscopeStrong);
 
-        return context.data;
+        writeMembers(result);
+
+        return result;
     }
 
     override protected @property string type ()
@@ -303,33 +238,26 @@ class ClassData : StructData
 
 private:
 
-    void writeInterfaces (String cls)
+    void writeInterfaces (ref Appender!string header)
     {
         if (interfaces.any)
         {
             if (superclass.isEmpty)
-                cls ~= " : ";
+                header.put(" : ");
 
             foreach (i, s ; interfaces)
             {
                 if (i != 0)
-                    cls ~= ", ";
+                    header.put(", ");
 
-                cls ~= s;
+                header.put(s);
             }
         }
     }
 
-    void writeMembers (String cls)
+    void writeMembers (ref CodeBlock cls)
     {
-        cls.indent in {
-            addDeclarations(cls, staticVariables);
-            addDeclarations(cls, instanceVariables);
-            addDeclarations(cls, staticProperties);
-            addDeclarations(cls, properties);
-            addDeclarations(cls, staticMethods);
-            addDeclarations(cls, instanceMethods);
-        };
+        addDeclarations(cls, members);
     }
 }
 

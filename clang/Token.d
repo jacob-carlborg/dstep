@@ -4,7 +4,7 @@
  * Version: Initial created: Feb 14, 2016
  * License: $(LINK2 http://www.boost.org/LICENSE_1_0.txt, Boost Software License 1.0)
  */
- 
+
 module clang.Token;
 
 import std.typecons;
@@ -97,7 +97,18 @@ struct TokenRange
         return result;
     }
 
-    this(CXTranslationUnit translationUnit,
+    private this(
+        const RefCounted!(Token.Container) container,
+        size_t begin,
+        size_t end)
+    {
+        this.container = container;
+        this.begin = begin;
+        this.end = end;
+    }
+
+    this(
+        CXTranslationUnit translationUnit,
         CXToken* tokens,
         ulong numTokens)
     {
@@ -144,5 +155,15 @@ struct TokenRange
     Token opIndex(size_t index) const
     {
         return Token(container, begin + index);
+    }
+
+    TokenRange opSlice(size_t begin, size_t end) const
+    {
+        return TokenRange(container, this.begin + begin, this.begin + end);
+    }
+
+    size_t opDollar() const
+    {
+        return length;
     }
 }

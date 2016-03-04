@@ -6,10 +6,13 @@
  */
 module clang.Cursor;
 
+import std.array : appender, Appender;
+
 import mambo.core._;
 
 import clang.c.Index;
 import clang.Index;
+import clang.File;
 import clang.SourceLocation;
 import clang.SourceRange;
 import clang.Token;
@@ -48,6 +51,11 @@ struct Cursor
     @property SourceLocation location () const
     {
         return SourceLocation(clang_getCursorLocation(cx));
+    }
+
+    @property File file () const
+    {
+        return location.spelling.file;
     }
 
     @property TokenRange tokens() const
@@ -140,6 +148,16 @@ struct Cursor
         return app.data;
     }
 
+    Cursor semanticParent() const
+    {
+        return Cursor(clang_getCursorSemanticParent(cast(CXCursor) cx));
+    }
+
+    Cursor lexicalParent() const
+    {
+        return Cursor(clang_getCursorLexicalParent(cast(CXCursor) cx));
+    }
+
     @property CXLanguageKind language ()
     {
         return clang_getCursorLanguage(cx);
@@ -190,6 +208,87 @@ struct Cursor
     @property Cursor definition() const
     {
         return Cursor(clang_getCursorDefinition(cast(CXCursor) cx));
+    }
+
+    void dumpAST(ref Appender!string result, size_t indent, File* file)
+    {
+        import std.format;
+        import std.array : replicate;
+        import std.algorithm.comparison : min;
+
+        string stripPrefix(string x)
+        {
+            immutable string prefix = "CXCursor_";
+            immutable size_t prefixSize = prefix.length;
+            return x.startsWith(prefix) ? x[prefixSize..$] : x;
+        }
+
+        string prettyTokens(TokenRange tokens, size_t limit = 5)
+        {
+            string prettyToken(Token token)
+            {
+                immutable string prefix = "CXToken_";
+                immutable size_t prefixSize = prefix.length;
+                auto x = to!string(token.kind);
+                return "%s \"%s\"".format(
+                    x.startsWith(prefix) ? x[prefixSize..$] : x,
+                    token.spelling);
+            }
+
+            auto result = appender!string("[");
+
+            if (tokens.length != 0)
+            {
+                result.put(prettyToken(tokens[0]));
+
+                foreach (Token token; tokens[1..min($, limit)])
+                {
+                    result.put(", ");
+                    result.put(prettyToken(token));
+                }
+            }
+
+            if (tokens.length > limit)
+                result.put(", ..]");
+            else
+                result.put("]");
+
+            return result.data;
+        }
+
+        immutable size_t step = 4;
+
+        auto text = "%s \"%s\" [%d..%d] %s\n".format(
+            stripPrefix(to!string(kind)),
+            spelling,
+            extent.start.offset,
+            extent.end.offset,
+            prettyTokens(tokens));
+
+        result.put(" ".replicate(indent));
+        result.put(text);
+
+        if (file)
+        {
+            foreach (cursor, _; all)
+            {
+                if (!cursor.isPredefined() && cursor.file == *file)
+                    cursor.dumpAST(result, indent + step);
+            }
+        }
+        else
+        {
+            foreach (cursor, _; all)
+            {
+                if (!cursor.isPredefined())
+                    cursor.dumpAST(result, indent + step);
+            }
+        }
+    }
+
+    void dumpAST(ref Appender!string result, size_t indent)
+    {
+        dumpAST(result, indent, null);
     }
 }
 

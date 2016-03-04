@@ -22,6 +22,11 @@ static this ()
     includeHandler_ = new IncludeHandler;
 }
 
+void resetIncludeHandler()
+{
+    includeHandler_ = new IncludeHandler;
+}
+
 class IncludeHandler
 {
     private string[] rawIncludes;
