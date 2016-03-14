@@ -10,6 +10,7 @@ import mambo.core._;
 
 import clang.Cursor;
 
+import dstep.translator.CodeBlock;
 import dstep.translator.Translator;
 import dstep.translator.Output;
 
@@ -43,7 +44,7 @@ abstract class Declaration
         this.translator = translator;
     }
 
-    abstract string translate ();
+    abstract CodeBlock translate ();
 
     @property string spelling ()
     {

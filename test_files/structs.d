@@ -1,10 +1,5 @@
 extern (C):
 
-alias _Anonymous_0 D;
-
-extern __gshared Bar b;
-extern __gshared Foo c;
-
 struct Foo
 {
     int a;
@@ -15,12 +10,16 @@ struct Bar
     int x;
 }
 
+extern __gshared Bar b;
+extern __gshared Foo c;
+
 struct A
 {
     struct B
     {
         int x;
     }
+
     B b;
 }
 
@@ -38,6 +37,8 @@ struct _Anonymous_0
     int x;
     int y;
 }
+
+alias _Anonymous_0 D;
 
 struct E
 {

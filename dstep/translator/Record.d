@@ -6,16 +6,17 @@
  */
 module dstep.translator.Record;
 
-import mambo.core._;
+import std.algorithm.mutation;
 
 import clang.c.Index;
 import clang.Cursor;
 import clang.Visitor;
 import clang.Util;
 
-import dstep.translator.Translator;
+import dstep.translator.CodeBlock;
 import dstep.translator.Declaration;
 import dstep.translator.Output;
+import dstep.translator.Translator;
 import dstep.translator.Type;
 
 class Record (Data) : Declaration
@@ -27,7 +28,7 @@ class Record (Data) : Declaration
         super(cursor, parent, translator);
     }
 
-    override string translate ()
+    override CodeBlock translate ()
     {
         return writeRecord(spelling, (context) {
             foreach (cursor, parent ; cursor.declarations)
@@ -45,7 +46,8 @@ class Record (Data) : Declaration
                                 {
                                     output.newContext();
                                     output.currentContext.indent in {
-                                        context.instanceVariables ~= translator.translate(cursor.type.declaration);
+                                        auto code = translator.translate(cursor.type.declaration);
+                                        context.instanceVariables ~= code;
                                     };
                                 }
 
@@ -65,10 +67,10 @@ class Record (Data) : Declaration
 
 private:
 
-    string writeRecord (string name, void delegate (Data context) dg)
+    CodeBlock writeRecord (string name, void delegate (Data context) dg)
     {
         auto context = new Data;
-        
+
         if (cursor.isDefinition)
             this.recordDefinitions[cursor] = true;
         else

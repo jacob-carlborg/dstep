@@ -7,6 +7,7 @@
 module dstep.translator.Translator;
 
 import std.file;
+import std.array;
 
 import mambo.core._;
 
@@ -17,6 +18,7 @@ import clang.TranslationUnit;
 import clang.Type;
 import clang.Util;
 
+import dstep.translator.CodeBlock;
 import dstep.translator.Declaration;
 import dstep.translator.Enum;
 import dstep.translator.IncludeHandler;
@@ -26,7 +28,7 @@ import dstep.translator.Output;
 import dstep.translator.Record;
 import dstep.translator.Type;
 
-private static string[Cursor] anonymousNames;
+static string[Cursor] anonymousNames;
 
 class Translator
 {
@@ -44,7 +46,7 @@ class Translator
         string inputFilename;
         File inputFile;
         Language language;
-        string[string] deferredDeclarations;
+        CodeBlock[string] deferredDeclarations;
     }
 
     this (string inputFilename, TranslationUnit translationUnit, const Options options = Options.init)
@@ -59,9 +61,12 @@ class Translator
 
     this (TranslationUnit translationUnit, const Options options = Options.init)
     {
+        this.inputFilename = translationUnit.spelling;
         this.translationUnit = translationUnit;
         outputFile = options.outputFile;
         language = options.language;
+
+        inputFile = translationUnit.file(inputFilename);
     }
 
     void translate ()
@@ -71,127 +76,150 @@ class Translator
 
     string translateToString()
     {
+        import std.algorithm.mutation : strip;
+
+        auto result = CodeBlock(EndlHint.group);
+
         foreach (cursor, parent; translationUnit.cursor.all)
         {
             if (skipDeclaration(cursor))
                 continue;
 
-            output.newContext();
-            auto code = translate(cursor, parent);
+            auto block = translate(cursor, parent);
 
-            with (CXCursorKind)
-            {
-                switch (cursor.kind)
-                {
-                    case CXCursor_ObjCInterfaceDecl:
-                    case CXCursor_ObjCProtocolDecl:
-                    case CXCursor_ObjCCategoryDecl:
-                        output.classes ~= code;
-                    break;
-
-                    case CXCursor_StructDecl:
-                        if (cursor.isDefinition)
-                            output.structs ~= code;
-                        break;
-                    case CXCursor_EnumDecl: output.enums ~= code; break;
-                    case CXCursor_UnionDecl: output.unions ~= code; break;
-                    case CXCursor_VarDecl: output.variables ~= code; break;
-                    case CXCursor_FunctionDecl: output.functions ~= code; break;
-                    case CXCursor_TypedefDecl: output.typedefs ~= code; break;
-                    case CXCursor_MacroDefinition:
-                        if (code != "") 
-                            output.defines ~= code;
-                        break;
-                    default: continue;
-                }
-            }
+            if (block.endlHint != EndlHint.empty)
+                result.children ~= block;
         }
 
-        output.structs ~= deferredDeclarations.values;
+        foreach (value; deferredDeclarations.values)
+            result.children ~= value;
+
         output.externDeclaration = externDeclaration();
 
-        return output.toString;
+        return output.toString(compose(result));
     }
 
-    string translate (Cursor cursor, Cursor parent = Cursor.empty)
+    CodeBlock translate (Cursor cursor, Cursor parent = Cursor.empty)
     {
         with (CXCursorKind)
         {
             switch (cursor.kind)
             {
                 case CXCursor_ObjCInterfaceDecl:
-                    return (new ObjcInterface!(ClassData)(cursor, parent, this)).translate();
-                break;
+                    return translateObjCInterfaceDecl(cursor, parent);
 
                 case CXCursor_ObjCProtocolDecl:
-                    return (new ObjcInterface!(InterfaceData)(cursor, parent, this)).translate();
-                break;
+                    return translateObjCProtocolDecl(cursor, parent);
 
                 case CXCursor_ObjCCategoryDecl:
-                    return (new Category(cursor, parent, this)).translate();
-                break;
+                    return translateObjCCategoryDecl(cursor, parent);
 
                 case CXCursor_VarDecl:
-                {
-                    auto context = output.newContext();
-                    version (D1)
-                        context ~= "extern ";
-                    else
-                        context ~= "extern __gshared ";
-                    return variable(cursor, context);
-                }
-                break;
+                    return translateVarDecl(cursor, parent);
 
                 case CXCursor_FunctionDecl:
-                {
-                    auto name = translateIdentifier(cursor.spelling);
-                    return translateFunction(cursor.func, name, output) ~ ";";
-                }
-                break;
+                    return CodeBlock(translateFunctionDecl(cursor, parent));
 
                 case CXCursor_TypedefDecl:
-                    return typedef_(cursor, output.newContext);
-                break;
+                    return CodeBlock(translateTypedefDecl(cursor, parent));
 
                 case CXCursor_StructDecl:
-                    auto code = (new Record!(StructData)(cursor, parent, this)).translate;
-                    if (cursor.isDefinition)
-                    {
-                        if (cursor.spelling in deferredDeclarations)
-                            deferredDeclarations.remove(cursor.spelling);
-                        return code;
-                    }
-                    else
-                    {
-                        deferredDeclarations[cursor.spelling] = code;
-                        return "";
-                    }
-                    break;
-                case CXCursor_EnumDecl: 
-                    return (new Enum(cursor, parent, this)).translate(); break;
+                    return translateStructDecl(cursor, parent);
 
-                case CXCursor_UnionDecl: 
-                    return (new Record!(UnionData)(cursor, parent, this)).translate(); break;
+                case CXCursor_EnumDecl:
+                    return translateEnumDecl(cursor, parent);
+
+                case CXCursor_UnionDecl:
+                    return translateUnionDecl(cursor, parent);
 
                 case CXCursor_MacroDefinition:
-                    return translateDefine(cursor);
+                    return translateMacroDefinition(cursor, parent);
 
                 default:
-                    return "";
+                    return CodeBlock(EndlHint.empty);
             }
         }
     }
 
-    string variable (Cursor cursor, String context = null)
+    CodeBlock translateObjCInterfaceDecl(Cursor cursor, Cursor parent)
     {
-        if (!context)
-            context = output;
+        return (new ObjcInterface!(ClassData)(cursor, parent, this)).translate();
+    }
 
-        context ~= translateType(cursor.type);
-        context ~= " " ~ translateIdentifier(cursor.spelling);
-        context ~= ";";
+    CodeBlock translateObjCProtocolDecl(Cursor cursor, Cursor parent)
+    {
+        return (new ObjcInterface!(InterfaceData)(cursor, parent, this)).translate();
+    }
 
-        return context.data;
+    CodeBlock translateObjCCategoryDecl(Cursor cursor, Cursor parent)
+    {
+        return (new Category(cursor, parent, this)).translate();
+    }
+
+    CodeBlock translateVarDecl(Cursor cursor, Cursor parent)
+    {
+        return variable(cursor, "extern __gshared ");
+    }
+
+    string translateFunctionDecl(Cursor cursor, Cursor parent)
+    {
+        auto name = translateIdentifier(cursor.spelling);
+        return translateFunction(cursor.func, name, new String()) ~ ";";
+    }
+
+    string translateTypedefDecl(Cursor cursor, Cursor parent)
+    {
+        return typedef_(cursor, output.newContext);
+    }
+
+    CodeBlock translateStructDecl(Cursor cursor, Cursor parent)
+    {
+        auto code = (new Record!(StructData)(cursor, parent, this)).translate;
+
+        if (cursor.isDefinition)
+        {
+            if (cursor.spelling in deferredDeclarations)
+                deferredDeclarations.remove(cursor.spelling);
+
+            return code;
+        }
+        else
+        {
+            deferredDeclarations[cursor.spelling] = code;
+            return CodeBlock(EndlHint.empty);
+        }
+    }
+
+    CodeBlock translateEnumDecl(Cursor cursor, Cursor parent)
+    {
+        return new Enum(cursor, parent, this).translate();
+    }
+
+    CodeBlock translateUnionDecl(Cursor cursor, Cursor parent)
+    {
+        return new Record!(UnionData)(cursor, parent, this).translate();
+    }
+
+    CodeBlock translateMacroDefinition(Cursor cursor, Cursor parent)
+    {
+        import std.format: format;
+        auto tokens = cursor.tokens();
+
+        if (tokens.length == 2)
+            return CodeBlock(format("enum %s = %s;", tokens[0].spelling, tokens[1].spelling));
+        else
+            return CodeBlock(EndlHint.empty);
+    }
+
+    CodeBlock variable (Cursor cursor, string prefix = "")
+    {
+        import std.format : format;
+
+        return CodeBlock(
+            "%s%s %s;".format(
+                prefix,
+                translateType(cursor.type),
+                translateIdentifier(cursor.spelling)));
     }
 
     string typedef_ (Cursor cursor, String context = output)
@@ -207,9 +235,9 @@ class Translator
 private:
 
     bool skipDeclaration (Cursor cursor)
-    {   
-        return (inputFilename != "" && inputFile != cursor.location.spelling.file) 
-            || cursor.isPredefined;  
+    {
+        return (inputFilename != "" && inputFile != cursor.location.spelling.file)
+            || cursor.isPredefined;
     }
 
     string externDeclaration ()
@@ -221,17 +249,6 @@ private:
             // case Language.cpp: return "extern (C++):";
         }
     }
-}
-
-string translateDefine(Cursor cursor) 
-{
-    import std.format: format;
-    auto tokens = cursor.tokens();
-
-    if (tokens.length == 2) 
-        return format("enum %s = %s;", tokens[0].spelling, tokens[1].spelling);
-    else 
-        return "";
 }
 
 string translateFunction (FunctionCursor func, string name, String context, bool isStatic = false)
