@@ -5,6 +5,8 @@
 
 * Support for simple defines (like `#define FOO 1`)
 * Basic unit tests were added
+* Most of cucumber tests was replaced with D-based tests.
+* Statements are translated in original 'C' order now.
 
 ## Version 0.2.1
 ### New/Changed Features
