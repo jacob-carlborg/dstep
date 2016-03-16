@@ -113,7 +113,7 @@ private:
             options.outputFile = arguments.output;
             options.language = language;
 
-            auto translator = new Translator(file, translationUnit, options);
+            auto translator = new Translator(translationUnit, options);
             translator.translate;
         }
     }

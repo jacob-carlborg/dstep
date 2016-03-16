@@ -7,7 +7,6 @@
 
 import std.stdio;
 import Common;
-import dstep.translator.CodeBlock;
 import dstep.translator.Translator;
 
 unittest

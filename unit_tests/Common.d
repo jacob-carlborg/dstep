@@ -84,9 +84,6 @@ TranslationUnit makeTranslationUnit(string c)
 
 string translate(TranslationUnit translationUnit, Language language)
 {
-    anonymousNames = string[Cursor].init;
-    resetIncludeHandler();
-    resetOutput();
     Translator.Options options;
     options.language = language;
     auto translator = new Translator(translationUnit, options);
@@ -196,7 +193,7 @@ string findGNUStepIncludePath()
     string path = "/usr/include/GNUstep";
 
     if (exists(path) && isDir(path))
-        return "-I%s".format(path);
+        return format("-I%s", path);
     else
         return null;
 }

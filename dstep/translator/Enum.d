@@ -13,7 +13,6 @@ import clang.Cursor;
 import clang.Visitor;
 import clang.Util;
 
-import dstep.translator.CodeBlock;
 import dstep.translator.Translator;
 import dstep.translator.Declaration;
 import dstep.translator.Output;
@@ -26,46 +25,50 @@ class Enum : Declaration
         super(cursor, parent, translator);
     }
 
-    override CodeBlock translate ()
+    override void translate (Output output)
     {
         import std.format : format;
 
-        CodeBlock result = CodeBlock(
-            "enum %s".format(translateIdentifier(spelling)),
-            EndlHint.subscopeStrong);
-
-
-        foreach (cursor, parent; cursor.declarations)
+        output.subscopeStrong("enum %s", translateIdentifier(spelling)) in
         {
-            with (CXCursorKind)
-            {
-                switch (cursor.kind)
-                {
-                    case CXCursor_EnumConstantDecl:
-                        result.children ~= translateEnumConstantDecl(cursor);
-                        break;
+            auto children = cursor.children;
 
-                    default:
-                        break;
+            foreach (i; 0..children.length)
+            {
+                with (CXCursorKind)
+                {
+                    switch (children[i].kind)
+                    {
+                        case CXCursor_EnumConstantDecl:
+                            translateEnumConstantDecl(
+                                output,
+                                children[i],
+                                children.length == i + 1);
+                            break;
+
+                        default:
+                            break;
+                    }
                 }
             }
-        }
-
-        if (result.children.length != 0)
-            result.children[$-1].spelling = result.children[$-1].spelling[0..$-1];
-
-        return result;
+        };
     }
 
-    CodeBlock translateEnumConstantDecl(Cursor cursor)
+    void translateEnumConstantDecl(Output output, Cursor cursor, bool last)
     {
         import std.format : format;
-        return CodeBlock("%s = %s,".format(cursor.spelling, cursor.enum_.value));
+
+        output.singleLine(
+            "%s = %s%s",
+            cursor.spelling,
+            cursor.enum_.value,
+            last ? "" : ",");
     }
 
     @property override string spelling ()
     {
         auto name = cursor.spelling;
-        return name.isPresent ? name : generateAnonymousName(cursor);
+        return name.isPresent ?
+            name : translator.context.generateAnonymousName(cursor);
     }
 }
