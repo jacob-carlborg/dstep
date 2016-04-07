@@ -275,7 +275,7 @@ void assertRunsDStep(
 
     scope(exit) rmdirRecurse(outputDir);
 
-    auto command = ["dstep", actualPath] ~ arguments ~ ["-o", outputPath];
+    auto command = ["./bin/dstep", actualPath] ~ arguments ~ ["-o", outputPath];
     auto result = execute(command);
 
     auto sep = "----------------";
