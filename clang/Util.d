@@ -80,39 +80,88 @@ mixin template CX ()
 }
 
 extern (C) int mkstemps(char*, int);
+extern (C) char* mkdtemp(char*);
 extern (C) int close(int);
 
 class NamedTempFileException : object.Exception
 {
-    this (string message, string file = __FILE__, size_t line = __LINE__)
+    immutable string path;
+
+    this (string path, string file = __FILE__, size_t line = __LINE__)
     {
-        super(message, file, line);
+        this.path = path;
+        super(format("Cannot create temporary file \"%s\".", path), file, line);
     }
+}
+
+class NamedTempDirException : object.Exception
+{
+    immutable string path;
+
+    this (string path, string file = __FILE__, size_t line = __LINE__)
+    {
+        this.path = path;
+        super(
+            format("Cannot create temporary directory \"%s\".", path),
+            file,
+            line);
+    }
+}
+
+private void randstr (char[] slice)
+{
+    import std.random;
+
+    foreach (i; 0 .. slice.length)
+        slice[i] = uniform!("[]")('A', 'Z');
 }
 
 File namedTempFile(string prefix, string suffix)
 {
-    import std.random;
     import std.file;
     import std.path;
     import std.format;
 
-    void randstr (char[] slice)
-    {
-        for (uint i = 0; i < slice.length; ++i)
-            slice[i] = uniform!("[]")('A', 'Z');
-    }
-
     string name = format("%sXXXXXXXXXXXXXXXX%s\0", prefix, suffix);
     char[] path = buildPath(tempDir(), name).dup;
     const size_t termAnd6XSize = 7;
-    randstr(path[$ - name.length + prefix.length .. $ - suffix.length - termAnd6XSize]);
+
+    immutable size_t begin = path.length - name.length + prefix.length;
+    immutable size_t end = path.length - suffix.length - termAnd6XSize;
+
+    randstr(path[begin .. end]);
 
     int fd = mkstemps(path.ptr, cast(int) suffix.length);
     scope (exit) close(fd);
 
-    if (fd == -1)
-        throw new NamedTempFileException("Cannot create \"%s\" temporary file.".format(path));
+    path = path[0..$-1];
 
-    return File(path[0..$-1], "wb+");
+    if (fd == -1)
+        throw new NamedTempFileException(path.idup);
+
+    return File(path, "wb+");
+}
+
+string namedTempDir(string prefix)
+{
+    import std.file;
+    import std.path;
+    import std.format;
+
+    string name = format("%sXXXXXXXXXXXXXXXX\0", prefix);
+    char[] path = buildPath(tempDir(), name).dup;
+    const size_t termAnd6XSize = 7;
+
+    immutable size_t begin = path.length - name.length + prefix.length;
+
+    randstr(path[begin .. $ - termAnd6XSize]);
+
+    char* result = mkdtemp(path.ptr);
+
+    path = path[0..$-1];
+
+    if (result == null)
+        throw new NamedTempDirException(path.idup);
+
+    return path.idup;
 }
