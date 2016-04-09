@@ -34,7 +34,11 @@ static this()
     index = Index(false, false);
 }
 
-void assertEq(string expected, string actual, string file = __FILE__, size_t line = __LINE__)
+void assertEq(
+    string expected,
+    string actual,
+    string file = __FILE__,
+    size_t line = __LINE__)
 {
     import std.format : format;
 
@@ -53,9 +57,29 @@ void assertEq(string expected, string actual, string file = __FILE__, size_t lin
     }
 }
 
+void assertFileExists(
+    string expected,
+    string file = __FILE__,
+    size_t line = __LINE__)
+{
+    import std.file : exists, isFile;
+    import std.format : format;
+
+    if (!exists(expected) || !isFile(expected))
+    {
+        auto message = format("File %s doesn't exist.", expected);
+        throw new AssertError(message, file, line);
+    }
+}
+
 TranslationUnit makeTranslationUnit(string c)
 {
-    return TranslationUnit.parseString(index, c, [], null, CXTranslationUnit_Flags.CXTranslationUnit_DetailedPreprocessingRecord);
+    return TranslationUnit.parseString(
+        index,
+        c,
+        [],
+        null,
+        CXTranslationUnit_Flags.CXTranslationUnit_DetailedPreprocessingRecord);
 }
 
 string translate(TranslationUnit translationUnit, Language language)
@@ -77,6 +101,16 @@ class TranslateAssertError : AssertError
     }
 }
 
+bool compareString(string a, string b, bool strict)
+{
+    import std.string : strip;
+
+    if (strict)
+        return a == b;
+    else
+        return a.strip() == b.strip();
+}
+
 void assertTranslates(
     string expected,
     TranslationUnit unit,
@@ -87,7 +121,6 @@ void assertTranslates(
 {
     import std.format : format;
     import std.algorithm : map;
-    import std.string : strip;
 
     auto sep = "----------------";
 
@@ -100,7 +133,10 @@ void assertTranslates(
     }
 
     auto translated = translate(unit, language);
-    auto fmt = q"/
+
+    if (!compareString(expected, translated, strict))
+    {
+        auto fmt = q"/
 C code translated to:
 %1$s
 %2$s
@@ -112,13 +148,6 @@ Expected D code:
 AST dump:
 %4$s/";
 
-    bool failed = translated != expected;
-
-    if (failed && !strict)
-        failed = translated.strip() != expected.strip();
-
-    if (failed)
-    {
         size_t maxSubmessageLength = 10_000;
         string astDump = unit.dumpAST(true);
 
@@ -133,7 +162,11 @@ AST dump:
     }
 }
 
-void assertTranslates(string c, string d, bool strict = false, string file = __FILE__, size_t line = __LINE__)
+void assertTranslates(string c,
+    string d,
+    bool strict = false,
+    string file = __FILE__,
+    size_t line = __LINE__)
 {
     auto unit = makeTranslationUnit(c);
     assertTranslates(d, unit, strict, Language.c, file, line);
@@ -141,23 +174,17 @@ void assertTranslates(string c, string d, bool strict = false, string file = __F
 
 void assertTranslatesFile(
     string expectedPath,
-    string objCPath,
+    string actualPath,
     bool strict,
     Language language,
     string[] arguments,
     string file = __FILE__,
     size_t line = __LINE__)
 {
-    string readFile(string path)
-    {
-        import std.stdio : File;
-        auto file = File(path, "r");
-        char[] buffer = new char[file.size];
-        return file.rawRead(buffer).idup;
-    }
+    import std.file : readText;
 
-    auto expected = readFile(expectedPath);
-    auto unit = TranslationUnit.parse(index, objCPath, arguments);
+    auto expected = readText(expectedPath);
+    auto unit = TranslationUnit.parse(index, actualPath, arguments);
     assertTranslates(expected, unit, strict, language, file, line);
 }
 
@@ -184,8 +211,11 @@ string[] findCcIncludePaths()
 
         string start = "#include <...> search starts here:";
         string stop = "End of search list.";
-        auto paths = output.findSplitAfter(start)[1].findSplitBefore(stop)[0].strip();
-        return paths.empty ? null : map!(a => "-I%s".format(a))(paths.splitLines()).array;
+
+        auto paths = output.findSplitAfter(start)[1]
+            .findSplitBefore(stop)[0].strip();
+        auto args = map!(a => format("-I%s", a.strip()))(paths.splitLines());
+        return paths.empty ? null : args.array;
     }
 
     import std.process : executeShell;
@@ -195,6 +225,124 @@ string[] findCcIncludePaths()
         return extract(result.output);
     else
         return null;
+}
+
+string[] findExtraGNUStepPaths(string file, size_t line)
+{
+    import std.stdio : stderr;
+    import std.format : format;
+
+    auto gnuStepPath = findGNUStepIncludePath();
+
+    if (gnuStepPath == null)
+    {
+        auto message = "Unable to check the assertion. GNUstep couldn't be found.";
+        stderr.writeln(format("Warning@%s(%d): %s", file, line, message));
+        return [];
+    }
+
+    auto ccIncludePaths = findCcIncludePaths();
+
+    if (ccIncludePaths == null)
+    {
+        auto message = "Unable to check the assertion. cc include paths couldn't be found.";
+        stderr.writeln(format("Warning@%s(%d): %s", file, line, message));
+        return [];
+    }
+
+    return ccIncludePaths ~ gnuStepPath;
+}
+
+void assertRunsDStep(
+    string expectedPath,
+    string actualPath,
+    bool strict,
+    string[] arguments,
+    string file = __FILE__,
+    size_t line = __LINE__)
+{
+    import std.process : execute;
+    import std.path : baseName;
+    import std.format : format;
+    import clang.Util : namedTempDir;
+    import std.file : readText;
+
+    assertFileExists(expectedPath, file, line);
+    assertFileExists(actualPath, file, line);
+
+    string outputDir = namedTempDir("dstepUnitTest");
+    string outputPath = buildPath(outputDir, baseName(expectedPath));
+
+    scope(exit) rmdirRecurse(outputDir);
+
+    auto command = ["./bin/dstep", actualPath] ~ arguments ~ ["-o", outputPath];
+    auto result = execute(command);
+
+    auto sep = "----------------";
+
+    if (result.status != 0)
+    {
+        auto templ = q"/
+DStep failed with status %4$d.
+%1$s
+DStep command:
+%2$s
+%1$s
+DStep output:
+%3$s/";
+
+        auto message = format(
+            templ,
+            sep,
+            join(command, " "),
+            result.output,
+            result.status);
+
+        throw new AssertError(message, file, line);
+    }
+
+    if (!exists(outputPath) || !isFile(outputPath))
+    {
+        auto templ = q"/
+Output file `%4$s` doesn't exist.
+%1$s
+DStep command:
+%2$s
+%1$s
+DStep output:
+%3$s/";
+
+        auto message = format(
+            templ,
+            sep,
+            join(command, " "),
+            result.output,
+            outputPath);
+
+        throw new AssertError(message, file, line);
+    }
+
+    string expected = readText(expectedPath);
+    string actual = readText(outputPath);
+
+    if (!compareString(expected, actual, strict))
+    {
+        auto fmt = q"/
+Source code translated to:
+%1$s
+%2$s
+%1$s
+Expected D code:
+%1$s
+%3$s
+%1$s
+DStep command:
+%4$s/";
+
+        string commandString = join(command, " ");
+        string message = format(fmt, sep, actual, expected, commandString);
+        throw new TranslateAssertError(message, file, line);
+    }
 }
 
 void assertTranslatesCFile(
@@ -227,29 +375,12 @@ void assertTranslatesObjCFile(
 
     version (linux)
     {
-        import std.stdio : stderr;
-        import std.format : format;
+        auto extra = findExtraGNUStepPaths(file, line);
 
-        auto gnuStepPath = findGNUStepIncludePath();
-
-        if (gnuStepPath == null)
-        {
-            auto message = "Unable to check the assertion. GNUstep couldn't be found.";
-            stderr.writeln("Warning@%s(%d): %s".format(file, line, message));
+        if (extra.empty)
             return;
-        }
-
-        auto ccIncludePaths = findCcIncludePaths();
-
-        if (ccIncludePaths == null)
-        {
-            auto message = "Unable to check the assertion. cc include paths couldn't be found.";
-            stderr.writeln("Warning@%s(%d): %s".format(file, line, message));
-            return;
-        }
-
-        arguments ~= ccIncludePaths;
-        arguments ~= gnuStepPath;
+        else
+            arguments ~= extra;
     }
 
     assertTranslatesFile(
@@ -257,6 +388,52 @@ void assertTranslatesObjCFile(
         objCPath,
         strict,
         Language.objC,
+        arguments,
+        file,
+        line);
+}
+
+void assertRunsDStepCFile(
+    string expectedPath,
+    string cPath,
+    bool strict = false,
+    string file = __FILE__,
+    size_t line = __LINE__)
+{
+    string[] arguments = ["-Iresources"];
+
+    assertRunsDStep(
+        expectedPath,
+        cPath,
+        strict,
+        arguments,
+        file,
+        line);
+}
+
+void assertRunsDStepObjCFile(
+    string expectedPath,
+    string objCPath,
+    bool strict = false,
+    string file = __FILE__,
+    size_t line = __LINE__)
+{
+    string[] arguments = ["-ObjC", "-Iresources"];
+
+    version (linux)
+    {
+        auto extra = findExtraGNUStepPaths(file, line);
+
+        if (extra.empty)
+            return;
+        else
+            arguments ~= extra;
+    }
+
+    assertRunsDStep(
+        expectedPath,
+        objCPath,
+        strict,
         arguments,
         file,
         line);

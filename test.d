@@ -28,7 +28,6 @@ struct TestRunner
             activate(clang);
             println("Testing with libclang version ", clang.version_);
             result += unitTest();
-            result += test();
         }
 
         return result;
@@ -67,18 +66,6 @@ struct TestRunner
             Path.remove(dest);
 
         Path.copy(src, dest);
-    }
-
-    int test ()
-    {
-        println("Running cucumber tests ");
-
-        auto result = execute("cucumber");
-
-        if (result.status != 0)
-            println(result.output);
-
-        return result.status;
     }
 
     int unitTest ()

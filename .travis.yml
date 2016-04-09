@@ -1,7 +1,7 @@
 language: d
 d: dmd-2.070.0
 
-script: "bundle && dub --config=test"
+script: "dub --config=test"
 
 os:
   - linux
