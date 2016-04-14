@@ -10,22 +10,7 @@ import Path = std.path;
 
 import mambo.core._;
 
-private IncludeHandler includeHandler_;
-
-@property IncludeHandler includeHandler ()
-{
-    return includeHandler_;
-}
-
-static this ()
-{
-    includeHandler_ = new IncludeHandler;
-}
-
-void resetIncludeHandler()
-{
-    includeHandler_ = new IncludeHandler;
-}
+import dstep.translator.Output;
 
 class IncludeHandler
 {
@@ -114,8 +99,12 @@ class IncludeHandler
         imports ~= "core.stdc.config";
     }
 
-    string[] toImports ()
+    Output toImports ()
     {
+        import std.array : array;
+
+        Output output = new Output();
+
         auto r =  rawIncludes.map!((e) {
             if (auto i = isKnownInclude(e))
                 return toImport(i);
@@ -126,7 +115,10 @@ class IncludeHandler
 
         auto imps = imports.map!(e => toImport(e));
 
-        return r.append(imps).filter!(e => e.any).unique.toArray;
+        foreach (entry; r.append(imps).filter!(e => e.any).unique)
+            output.singleLine(entry);
+
+        return output;
     }
 
 private:

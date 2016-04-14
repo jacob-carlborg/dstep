@@ -18,7 +18,7 @@ import clang.TranslationUnit;
 import clang.Type;
 import clang.Util;
 
-import dstep.translator.CodeBlock;
+import dstep.translator.Context;
 import dstep.translator.Declaration;
 import dstep.translator.Enum;
 import dstep.translator.IncludeHandler;
@@ -27,8 +27,6 @@ import dstep.translator.objc.ObjcInterface;
 import dstep.translator.Output;
 import dstep.translator.Record;
 import dstep.translator.Type;
-
-static string[Cursor] anonymousNames;
 
 class Translator
 {
@@ -46,17 +44,7 @@ class Translator
         string inputFilename;
         File inputFile;
         Language language;
-        CodeBlock[string] deferredDeclarations;
-    }
-
-    this (string inputFilename, TranslationUnit translationUnit, const Options options = Options.init)
-    {
-        this.inputFilename = inputFilename;
-        this.translationUnit = translationUnit;
-        outputFile = options.outputFile;
-        language = options.language;
-
-        inputFile = translationUnit.file(inputFilename);
+        string[string] deferredDeclarations;
     }
 
     this (TranslationUnit translationUnit, const Options options = Options.init)
@@ -67,6 +55,7 @@ class Translator
         language = options.language;
 
         inputFile = translationUnit.file(inputFilename);
+        context = new Context();
     }
 
     void translate ()
@@ -78,160 +67,174 @@ class Translator
     {
         import std.algorithm.mutation : strip;
 
-        auto result = CodeBlock(EndlHint.group);
+        Output main = new Output();
 
         foreach (cursor, parent; translationUnit.cursor.all)
         {
             if (skipDeclaration(cursor))
                 continue;
 
-            auto block = translate(cursor, parent);
-
-            if (block.endlHint != EndlHint.empty)
-                result.children ~= block;
+            translate(main, cursor, parent);
         }
 
+        Output result = new Output();
+
+        auto imports = context.includeHandler.toImports();
+
+        if (!imports.empty())
+        {
+            result.output(imports);
+            result.separator();
+        }
+
+        externDeclaration(result);
+
+        result.output(main);
+
         foreach (value; deferredDeclarations.values)
-            result.children ~= value;
+            result.singleLine(value);
 
-        output.externDeclaration = externDeclaration();
-
-        return output.toString(compose(result));
+        return result.data();
     }
 
-    CodeBlock translate (Cursor cursor, Cursor parent = Cursor.empty)
+    void translate (Output output, Cursor cursor, Cursor parent = Cursor.empty)
     {
         with (CXCursorKind)
         {
             switch (cursor.kind)
             {
                 case CXCursor_ObjCInterfaceDecl:
-                    return translateObjCInterfaceDecl(cursor, parent);
+                    translateObjCInterfaceDecl(output, cursor, parent);
+                    break;
 
                 case CXCursor_ObjCProtocolDecl:
-                    return translateObjCProtocolDecl(cursor, parent);
+                    translateObjCProtocolDecl(output, cursor, parent);
+                    break;
 
                 case CXCursor_ObjCCategoryDecl:
-                    return translateObjCCategoryDecl(cursor, parent);
+                    translateObjCCategoryDecl(output, cursor, parent);
+                    break;
 
                 case CXCursor_VarDecl:
-                    return translateVarDecl(cursor, parent);
+                    translateVarDecl(output, cursor, parent);
+                    break;
 
                 case CXCursor_FunctionDecl:
-                    return CodeBlock(translateFunctionDecl(cursor, parent));
+                    translateFunctionDecl(output, cursor, parent);
+                    break;
 
                 case CXCursor_TypedefDecl:
-                    return CodeBlock(translateTypedefDecl(cursor, parent));
+                    translateTypedefDecl(output, cursor, parent);
+                    break;
 
                 case CXCursor_StructDecl:
-                    return translateStructDecl(cursor, parent);
+                    translateStructDecl(output, cursor, parent);
+                    break;
 
                 case CXCursor_EnumDecl:
-                    return translateEnumDecl(cursor, parent);
+                    translateEnumDecl(output, cursor, parent);
+                    break;
 
                 case CXCursor_UnionDecl:
-                    return translateUnionDecl(cursor, parent);
+                    translateUnionDecl(output, cursor, parent);
+                    break;
 
                 case CXCursor_MacroDefinition:
-                    return translateMacroDefinition(cursor, parent);
+                    translateMacroDefinition(output, cursor, parent);
+                    break;
 
                 default:
-                    return CodeBlock(EndlHint.empty);
+                    break;
             }
         }
     }
 
-    CodeBlock translateObjCInterfaceDecl(Cursor cursor, Cursor parent)
+    void translateObjCInterfaceDecl(Output output, Cursor cursor, Cursor parent)
     {
-        return (new ObjcInterface!(ClassData)(cursor, parent, this)).translate();
+        (new ObjcInterface!(ClassData)(cursor, parent, this)).translate(output);
     }
 
-    CodeBlock translateObjCProtocolDecl(Cursor cursor, Cursor parent)
+    void translateObjCProtocolDecl(Output output, Cursor cursor, Cursor parent)
     {
-        return (new ObjcInterface!(InterfaceData)(cursor, parent, this)).translate();
+        (new ObjcInterface!(InterfaceData)(cursor, parent, this)).translate(output);
     }
 
-    CodeBlock translateObjCCategoryDecl(Cursor cursor, Cursor parent)
+    void translateObjCCategoryDecl(Output output, Cursor cursor, Cursor parent)
     {
-        return (new Category(cursor, parent, this)).translate();
+        (new Category(cursor, parent, this)).translate(output);
     }
 
-    CodeBlock translateVarDecl(Cursor cursor, Cursor parent)
+    void translateVarDecl(Output output, Cursor cursor, Cursor parent)
     {
-        return variable(cursor, "extern __gshared ");
+        variable(output, cursor, "extern __gshared ");
     }
 
-    string translateFunctionDecl(Cursor cursor, Cursor parent)
+    void translateFunctionDecl(Output output, Cursor cursor, Cursor parent)
     {
-        auto name = translateIdentifier(cursor.spelling);
-        return translateFunction(cursor.func, name, new String()) ~ ";";
+        immutable auto name = translateIdentifier(cursor.spelling);
+        translateFunction(output, context, cursor.func, name);
+        output.append(";");
     }
 
-    string translateTypedefDecl(Cursor cursor, Cursor parent)
+    void translateTypedefDecl(Output output, Cursor cursor, Cursor parent)
     {
-        return typedef_(cursor, output.newContext);
+        typedef_(output, cursor);
     }
 
-    CodeBlock translateStructDecl(Cursor cursor, Cursor parent)
+    void translateStructDecl(Output output, Cursor cursor, Cursor parent)
     {
-        auto code = (new Record!(StructData)(cursor, parent, this)).translate;
+        Output nested = new Output();
+        (new Record!(StructData)(cursor, parent, this)).translate(nested);
 
         if (cursor.isDefinition)
         {
             if (cursor.spelling in deferredDeclarations)
                 deferredDeclarations.remove(cursor.spelling);
 
-            return code;
+            output.output(nested);
         }
         else
         {
-            deferredDeclarations[cursor.spelling] = code;
-            return CodeBlock(EndlHint.empty);
+            deferredDeclarations[cursor.spelling] = nested.data();
         }
     }
 
-    CodeBlock translateEnumDecl(Cursor cursor, Cursor parent)
+    void translateEnumDecl(Output output, Cursor cursor, Cursor parent)
     {
-        return new Enum(cursor, parent, this).translate();
+        new Enum(cursor, parent, this).translate(output);
     }
 
-    CodeBlock translateUnionDecl(Cursor cursor, Cursor parent)
+    void translateUnionDecl(Output output, Cursor cursor, Cursor parent)
     {
-        return new Record!(UnionData)(cursor, parent, this).translate();
+        new Record!(UnionData)(cursor, parent, this).translate(output);
     }
 
-    CodeBlock translateMacroDefinition(Cursor cursor, Cursor parent)
+    void translateMacroDefinition(Output output, Cursor cursor, Cursor parent)
     {
-        import std.format: format;
         auto tokens = cursor.tokens();
 
         if (tokens.length == 2)
-            return CodeBlock(format("enum %s = %s;", tokens[0].spelling, tokens[1].spelling));
-        else
-            return CodeBlock(EndlHint.empty);
+            output.singleLine("enum %s = %s;", tokens[0].spelling, tokens[1].spelling);
     }
 
-    CodeBlock variable (Cursor cursor, string prefix = "")
+    void variable (Output output, Cursor cursor, string prefix = "")
     {
-        import std.format : format;
-
-        return CodeBlock(
-            "%s%s %s;".format(
+        output.singleLine(
+                "%s%s %s;",
                 prefix,
-                translateType(cursor.type),
-                translateIdentifier(cursor.spelling)));
+                translateType(context, cursor.type),
+                translateIdentifier(cursor.spelling));
     }
 
-    string typedef_ (Cursor cursor, String context = output)
+    void typedef_ (Output output, Cursor cursor)
     {
-        context ~= "alias ";
-        context ~= translateType(cursor.type.canonicalType);
-        context ~= " " ~ cursor.spelling;
-        context ~= ";";
-
-        return context.data;
+        output.singleLine(
+            "alias %s %s;",
+            translateType(context, cursor.type.canonicalType),
+            cursor.spelling);
     }
 
+    Context context;
 private:
 
     bool skipDeclaration (Cursor cursor)
@@ -240,22 +243,25 @@ private:
             || cursor.isPredefined;
     }
 
-    string externDeclaration ()
+    void externDeclaration (Output output)
     {
         final switch (language)
         {
-            case Language.c: return "extern (C):";
-            case Language.objC: return "extern (Objective-C):";
-            // case Language.cpp: return "extern (C++):";
+            case Language.c:
+                output.singleLine("extern (C):");
+                break;
+
+            case Language.objC:
+                output.singleLine("extern (Objective-C):");
+                break;
         }
+
+        output.separator();
     }
 }
 
-string translateFunction (FunctionCursor func, string name, String context, bool isStatic = false)
+void translateFunction (Output output, Context context, FunctionCursor func, string name, bool isStatic = false)
 {
-    if (isStatic)
-        context ~= "static ";
-
     Parameter[] params;
 
     if (func.type.isValid) // This will be invalid of Objective-C methods
@@ -263,34 +269,13 @@ string translateFunction (FunctionCursor func, string name, String context, bool
 
     foreach (param ; func.parameters)
     {
-        auto type = translateType(param.type);
+        auto type = translateType(context, param.type);
         params ~= Parameter(type, param.spelling);
     }
 
-    auto resultType = translateType(func.resultType);
+    auto resultType = translateType(context, func.resultType);
 
-    return translateFunction(resultType, name, params, func.isVariadic, context);
-}
-
-string getAnonymousName (Cursor cursor)
-{
-    if (auto name = cursor in anonymousNames)
-        return *name;
-
-    return "";
-}
-
-string generateAnonymousName (Cursor cursor)
-{
-    auto name = getAnonymousName(cursor);
-
-    if (name.isBlank)
-    {
-        name = "_Anonymous_" ~ anonymousNames.length.toString;
-        anonymousNames[cursor] = name;
-    }
-
-    return name;
+    translateFunction(output, resultType, name, params, func.isVariadic, isStatic ? "static " : "");
 }
 
 package struct Parameter
@@ -300,11 +285,9 @@ package struct Parameter
     bool isConst;
 }
 
-package string translateFunction (string result, string name, Parameter[] parameters, bool variadic, String context)
+package void translateFunction (Output output, string result, string name, Parameter[] parameters, bool variadic, string prefix = "")
 {
-    context ~= result;
-    context ~= ' ';
-    context ~= name ~ " (";
+    import std.format : format;
 
     string[] params;
     params.reserve(parameters.length);
@@ -337,10 +320,7 @@ package string translateFunction (string result, string name, Parameter[] parame
     if (variadic)
         params ~= "...";
 
-    context ~= params.join(", ");
-    context ~= ')';
-
-    return context.data;
+    output.singleLine("%s%s %s (%s)", prefix, result, name, params.join(", "));
 }
 
 string translateIdentifier (string str)
@@ -348,19 +328,9 @@ string translateIdentifier (string str)
     return isDKeyword(str) ? str ~ '_' : str;
 }
 
-string getInclude (Type type)
-in
+void handleInclude (Context context, Type type)
 {
-    assert(type.isValid);
-}
-body
-{
-    return type.declaration.location.spelling.file.name;
-}
-
-void handleInclude (Type type)
-{
-    includeHandler.addInclude(getInclude(type));
+    context.includeHandler.addInclude(type.declaration.path);
 }
 
 bool isDKeyword (string str)

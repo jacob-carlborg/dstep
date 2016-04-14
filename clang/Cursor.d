@@ -58,6 +58,11 @@ struct Cursor
         return location.spelling.file;
     }
 
+    @property string path () const 
+    {
+        return file.name;
+    }
+
     @property TokenRange tokens() const
     {
         import std.algorithm.mutation : stripRight;
@@ -230,7 +235,8 @@ struct Cursor
                 immutable string prefix = "CXToken_";
                 immutable size_t prefixSize = prefix.length;
                 auto x = to!string(token.kind);
-                return "%s \"%s\"".format(
+                return format(
+                    "%s \"%s\"",
                     x.startsWith(prefix) ? x[prefixSize..$] : x,
                     token.spelling);
             }
@@ -258,15 +264,15 @@ struct Cursor
 
         immutable size_t step = 4;
 
-        auto text = "%s \"%s\" [%d..%d] %s\n".format(
+        result.put(" ".replicate(indent));
+        formattedWrite(
+            result,
+            "%s \"%s\" [%d..%d] %s\n",
             stripPrefix(to!string(kind)),
             spelling,
             extent.start.offset,
             extent.end.offset,
             prettyTokens(tokens));
-
-        result.put(" ".replicate(indent));
-        result.put(text);
 
         if (file)
         {

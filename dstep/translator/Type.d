@@ -12,13 +12,14 @@ import mambo.core.io;
 import clang.c.Index;
 import clang.Type;
 
+import dstep.translator.Context;
 import dstep.translator.IncludeHandler;
 import dstep.translator.Translator;
 import dstep.translator.Output;
 
 import std.conv;
 
-string translateType (Type type, bool rewriteIdToObjcObject = true, bool applyConst = true)
+string translateType (Context context, Type type, bool rewriteIdToObjcObject = true, bool applyConst = true)
 in
 {
     assert(type.isValid);
@@ -30,13 +31,13 @@ body
     with (CXTypeKind)
     {
         if (type.kind == CXType_BlockPointer || type.isFunctionPointerType)
-            result = translateFunctionPointerType(type.pointeeType.func);
+            result = translateFunctionPointerType(context, type.pointeeType.func);
 
         else if (type.isFunctionType)
-            result = translateFunctionPointerType(type.canonicalType.func);
+            result = translateFunctionPointerType(context, type.canonicalType.func);
 
         else if (type.kind == CXType_ObjCObjectPointer && !type.isObjCBuiltinType)
-            result = translateObjCObjectPointerType(type);
+            result = translateObjCObjectPointerType(context, type);
 
         else if (type.isWideCharType)
             result = "wchar";
@@ -47,8 +48,8 @@ body
         else
             switch (type.kind)
             {
-                case CXType_Pointer: return translatePointer(type, rewriteIdToObjcObject, applyConst);
-                case CXType_Typedef: result = translateTypedef(type); break;
+                case CXType_Pointer: return translatePointer(context, type, rewriteIdToObjcObject, applyConst);
+                case CXType_Typedef: result = translateTypedef(context, type); break;
 
                 case CXType_Record:
                 case CXType_Enum:
@@ -56,17 +57,17 @@ body
                     result = type.spelling;
 
                     if (result.isEmpty)
-                        result = getAnonymousName(type.declaration);
+                        result = context.getAnonymousName(type.declaration);
 
-                    handleInclude(type);
+                    handleInclude(context, type);
                 break;
 
                 case CXType_ConstantArray:
                 case CXType_IncompleteArray:
-                    result = translateArray(type, rewriteIdToObjcObject); break;
-                case CXType_Unexposed: result = translateUnexposed(type, rewriteIdToObjcObject); break;
+                    result = translateArray(context, type, rewriteIdToObjcObject); break;
+                case CXType_Unexposed: result = translateUnexposed(context, type, rewriteIdToObjcObject); break;
 
-                default: result = translateType(type.kind, rewriteIdToObjcObject);
+                default: result = translateType(context, type.kind, rewriteIdToObjcObject);
             }
     }
 
@@ -101,7 +102,7 @@ string translateSelector (string str, bool fullName = false, bool translateIdent
 
 private:
 
-string translateTypedef (Type type)
+string translateTypedef (Context context, Type type)
 in
 {
     assert(type.kind == CXTypeKind.CXType_Typedef);
@@ -113,17 +114,17 @@ body
     with (CXTypeKind)
         switch (spelling)
         {
-            case "BOOL": return translateType(CXType_Bool);
+            case "BOOL": return translateType(context, CXType_Bool);
 
-            case "int64_t": return translateType(CXType_LongLong);
-            case "int32_t": return translateType(CXType_Int);
-            case "int16_t": return translateType(CXType_Short);
+            case "int64_t": return translateType(context, CXType_LongLong);
+            case "int32_t": return translateType(context, CXType_Int);
+            case "int16_t": return translateType(context, CXType_Short);
             case "int8_t": return "byte";
 
-            case "uint64_t": return translateType(CXType_ULongLong);
-            case "uint32_t": return translateType(CXType_UInt);
-            case "uint16_t": return translateType(CXType_UShort);
-            case "uint8_t": return translateType(CXType_UChar);
+            case "uint64_t": return translateType(context, CXType_ULongLong);
+            case "uint32_t": return translateType(context, CXType_UInt);
+            case "uint16_t": return translateType(context, CXType_UShort);
+            case "uint8_t": return translateType(context, CXType_UChar);
 
             case "size_t":
             case "ptrdiff_t":
@@ -142,12 +143,12 @@ body
             default: break;
         }
 
-    handleInclude(type);
+    handleInclude(context, type);
 
     return spelling;
 }
 
-string translateUnexposed (Type type, bool rewriteIdToObjcObject)
+string translateUnexposed (Context context, Type type, bool rewriteIdToObjcObject)
 in
 {
     assert(type.kind == CXTypeKind.CXType_Unexposed);
@@ -157,13 +158,12 @@ body
     auto declaration = type.declaration;
 
     if (declaration.isValid)
-        return translateType(declaration.type, rewriteIdToObjcObject);
-
+        return translateType(context, declaration.type, rewriteIdToObjcObject);
     else
-        return translateType(type.kind, rewriteIdToObjcObject);
+        return translateType(context, type.kind, rewriteIdToObjcObject);
 }
 
-string translateArray (Type type, bool rewriteIdToObjcObject)
+string translateArray (Context context, Type type, bool rewriteIdToObjcObject)
 in
 {
     assert(type.kind == CXTypeKind.CXType_ConstantArray
@@ -172,7 +172,7 @@ in
 body
 {
     auto array = type.array;
-    auto elementType = translateType(array.elementType, rewriteIdToObjcObject);
+    auto elementType = translateType(context, array.elementType, rewriteIdToObjcObject);
 
     if (array.size >= 0)
         return elementType ~ '[' ~ array.size.toString ~ ']';
@@ -185,7 +185,7 @@ body
         return elementType ~ "[]";
 }
 
-string translatePointer (Type type, bool rewriteIdToObjcObject, bool applyConst)
+string translatePointer (Context context, Type type, bool rewriteIdToObjcObject, bool applyConst)
 in
 {
     assert(type.kind == CXTypeKind.CXType_Pointer);
@@ -202,7 +202,7 @@ body
         return pointee.isConst;
     }
 
-    auto result = translateType(type.pointeeType, rewriteIdToObjcObject, false);
+    auto result = translateType(context, type.pointeeType, rewriteIdToObjcObject, false);
 
     version (D1)
     {
@@ -225,20 +225,22 @@ body
     return result;
 }
 
-string translateFunctionPointerType (FuncType func)
+string translateFunctionPointerType (Context context, FuncType func)
 {
     Parameter[] params;
     params.reserve(func.arguments.length);
 
     foreach (type ; func.arguments)
-        params ~= Parameter(translateType(type));
+        params ~= Parameter(translateType(context, type));
 
-    auto resultType = translateType(func.resultType);
+    auto resultType = translateType(context, func.resultType);
 
-    return translateFunction(resultType, "function", params, func.isVariadic, new String);
+    Output output = new Output();
+    translateFunction(output, resultType, "function", params, func.isVariadic);
+    return output.data();
 }
 
-string translateObjCObjectPointerType (Type type)
+string translateObjCObjectPointerType (Context context, Type type)
 in
 {
     assert(type.kind == CXTypeKind.CXType_ObjCObjectPointer && !type.isObjCBuiltinType);
@@ -251,10 +253,10 @@ body
         return "Protocol*";
 
     else
-        return translateType(pointee);
+        return translateType(context, pointee);
 }
 
-string translateType (CXTypeKind kind, bool rewriteIdToObjcObject = true)
+string translateType (Context context, CXTypeKind kind, bool rewriteIdToObjcObject = true)
 {
     with (CXTypeKind)
         switch (kind)
@@ -271,7 +273,7 @@ string translateType (CXTypeKind kind, bool rewriteIdToObjcObject = true)
             case CXType_UInt: return "uint";
 
             case CXType_ULong:
-                includeHandler.addCompatible();
+                context.includeHandler.addCompatible();
                 return "c_ulong";
 
             case CXType_ULongLong: return "ulong";
@@ -283,7 +285,7 @@ string translateType (CXTypeKind kind, bool rewriteIdToObjcObject = true)
             case CXType_Int: return "int";
 
             case CXType_Long:
-                includeHandler.addCompatible();
+                context.includeHandler.addCompatible();
                 return "c_long";
 
             case CXType_LongLong: return "long";

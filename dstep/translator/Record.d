@@ -13,7 +13,6 @@ import clang.Cursor;
 import clang.Visitor;
 import clang.Util;
 
-import dstep.translator.CodeBlock;
 import dstep.translator.Declaration;
 import dstep.translator.Output;
 import dstep.translator.Translator;
@@ -28,9 +27,9 @@ class Record (Data) : Declaration
         super(cursor, parent, translator);
     }
 
-    override CodeBlock translate ()
+    override void translate (Output output)
     {
-        return writeRecord(spelling, (context) {
+        writeRecord(output, spelling, (context) {
             foreach (cursor, parent ; cursor.declarations)
             {
                 with (CXCursorKind)
@@ -44,11 +43,9 @@ class Record (Data) : Declaration
 
                                 if (!known)
                                 {
-                                    output.newContext();
-                                    output.currentContext.indent in {
-                                        auto code = translator.translate(cursor.type.declaration);
-                                        context.instanceVariables ~= code;
-                                    };
+                                    Output output = new Output();
+                                    translator.translate(output, cursor.type.declaration);
+                                    context.instanceVariables ~= output;
                                 }
 
                                 if (cursor.type.declaration.type.isEnum || !cursor.type.isAnonymous)
@@ -67,9 +64,9 @@ class Record (Data) : Declaration
 
 private:
 
-    CodeBlock writeRecord (string name, void delegate (Data context) dg)
+    void writeRecord (Output output, string name, void delegate (Data context) dg)
     {
-        auto context = new Data;
+        auto context = new Data(translator.context);
 
         if (cursor.isDefinition)
             this.recordDefinitions[cursor] = true;
@@ -80,12 +77,13 @@ private:
 
         dg(context);
 
-        return context.data;
+        output.output(context.data);
     }
 
     void translateVariable (Cursor cursor, Data context)
     {
-        output.newContext();
-        context.instanceVariables ~= translator.variable(cursor);
+        Output output = new Output();
+        translator.variable(output, cursor);
+        context.instanceVariables ~= output;
     }
 }

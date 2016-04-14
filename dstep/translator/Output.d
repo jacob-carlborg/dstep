@@ -6,7 +6,7 @@
  */
 module dstep.translator.Output;
 
-static import std.array;
+import std.array;
 
 import tango.util.container.HashSet;
 
@@ -14,106 +14,296 @@ import mambo.core._;
 
 import clang.Cursor;
 
-import dstep.translator.CodeBlock;
+import dstep.translator.Context;
 import dstep.translator.IncludeHandler;
 import dstep.translator.Type;
 
-Output output;
-
-static this ()
-{
-    output = new Output;
-}
-
-void resetOutput()
-{
-    output = new Output;
-}
-
 class Output
 {
-    String currentContext;
+    private Appender!string buffer;
+    private Entity[] stack;
+    private Entity first = Entity.bottom;
+    private Appender!(char[]) weak;
 
-    alias currentContext this;
-
-    string externDeclaration;
-
-    ClassData currentClass;
-    ClassData currentInterface;
-
-    this ()
+    this()
     {
-        currentContext = new String;
+        stack ~= Entity.bottom;
 
-        currentClass = new ClassData;
-        currentInterface = new ClassData;
+        // There is bug in Phobos, formattedWrite will not write anything
+        // to the output range if put was not invoked before.
+        buffer.put("");
+        weak.put("");
     }
 
-    @property string data (string extraDeclarations = "")
+    public bool empty()
     {
-        newContext();
+        return stack.length == 1 && stack.back == Entity.bottom;
+    }
 
-        addDeclarations(includeHandler.toImports(), false);
+    public void separator()
+    {
+        if (stack.back == Entity.singleLine)
+            stack.back = Entity.separator;
+    }
 
-        if (externDeclaration.isPresent)
+    public void output(Output output)
+    {
+        if (output.stack.length == 1 && output.stack.back == Entity.singleLine)
+            singleLine(output.data());
+        else
         {
-            this ~= externDeclaration;
-            currentContext.put(nl, nl);
+            import std.string : splitLines, KeepTerminator;
+
+            if (output.stack.back != Entity.bottom)
+                flush();
+
+            if (stack.back != Entity.bottom &&
+                output.stack.back != Entity.bottom)
+                buffer.put("\n");
+
+            if (stack.back != Entity.bottom &&
+                output.first != Entity.bottom &&
+                (stack.back != Entity.singleLine ||
+                output.first != Entity.singleLine))
+                buffer.put("\n");
+
+            foreach (line; output.data().splitLines(KeepTerminator.yes))
+            {
+                indent();
+                buffer.put(line);
+            }
+
+            stack.popBack();
+            stack ~= output.stack;
+
+            if (first == Entity.bottom)
+                first = output.first;
+        }
+    }
+
+    public void append(Char, Args...)(in Char[] fmt, Args args)
+    {
+        import std.format;
+
+        if (stack.back != Entity.singleLine)
+            singleLine(fmt, args);
+        else if (weak.data.empty)
+            formattedWrite(buffer, fmt, args);
+        else
+            formattedWrite(weak, fmt, args);
+    }
+
+    private void singleLineImpl(Char, Args...)(in Char[] fmt, Args args)
+    {
+        import std.format;
+
+        indent();
+        formattedWrite(buffer, fmt, args);
+        stack.back = Entity.singleLine;
+
+        if (first == Entity.bottom)
+            first = Entity.singleLine;
+    }
+
+    public void singleLine(Char, Args...)(in Char[] fmt, Args args)
+    {
+        import std.format;
+
+        if (stack.length > 1 &&
+            stack.back == Entity.bottom &&
+            stack[$ - 2] == Entity.subscopeWeak)
+        {
+            formattedWrite(weak, fmt, args);
+            stack.back = Entity.singleLine;
+        }
+        else
+        {
+            flush();
+
+            if (stack.back != Entity.singleLine && stack.back != Entity.bottom)
+                buffer.put("\n");
+
+            if (stack.back != Entity.bottom)
+                buffer.put("\n");
+
+            singleLineImpl(fmt, args);
+        }
+    }
+
+    public Indent multiLine(Char, Args...)(in Char[] fmt, Args args)
+    {
+        import std.format;
+
+        flush();
+
+        if (stack.back != Entity.bottom)
+            buffer.put("\n\n");
+
+        indent();
+        formattedWrite(buffer, fmt, args);
+        buffer.put("\n");
+        stack.back = Entity.multiLine;
+        stack ~= Entity.bottom;
+
+        if (first == Entity.bottom)
+            first = Entity.multiLine;
+
+        return Indent(this);
+    }
+
+    public Indent subscopeStrong(Char, Args...)(in Char[] fmt, Args args)
+    {
+        import std.format;
+
+        flush();
+
+        if (stack.back != Entity.bottom)
+            buffer.put("\n\n");
+
+        indent();
+        formattedWrite(buffer, fmt, args);
+        buffer.put("\n");
+        indent();
+        buffer.put("{\n");
+        stack.back = Entity.subscopeStrong;
+        stack ~= Entity.bottom;
+
+        if (first == Entity.bottom)
+            first = Entity.subscopeStrong;
+
+        return Indent(this, "}");
+    }
+
+    public Indent subscopeWeak(Char, Args...)(in Char[] fmt, Args args)
+    {
+        import std.format;
+
+        flush();
+
+        if (stack.back != Entity.bottom)
+            buffer.put("\n\n");
+
+        indent();
+        formattedWrite(buffer, fmt, args);
+        buffer.put("\n");
+        stack.back = Entity.subscopeWeak;
+        stack ~= Entity.bottom;
+
+        if (first == Entity.bottom)
+            first = Entity.subscopeWeak;
+
+        return Indent(this, "}");
+    }
+
+    public string data(string suffix = "")
+    {
+        if (!suffix.empty)
+            return buffer.data() ~ suffix;
+        else
+            return buffer.data();
+    }
+
+    struct Indent
+    {
+        private Output output;
+        private string sentinel;
+
+        ~this()
+        {
+            bool flushed = output.flush(false);
+
+            auto back = output.stack.back;
+            output.stack.popBack();
+
+            if (!sentinel.empty && !flushed)
+            {
+                if (back != Entity.bottom)
+                    output.buffer.put("\n");
+
+                output.indent();
+                output.buffer.put(sentinel);
+            }
         }
 
-        this ~= extraDeclarations;
-
-        return currentContext.data;
+        void opIn (void delegate () nested)
+        {
+            nested();
+        }
     }
 
-    /**
-     * Creates a new context and sets it as the current context. Returns the newly created
-     * context.
-     */
-    String newContext ()
+    private enum Entity
     {
-        auto context = new String;
-        context.indentationLevel = currentContext.indentationLevel;
-        return currentContext = context;
+        bottom,
+        separator,
+        singleLine,
+        multiLine,
+        subscopeWeak,
+        subscopeStrong,
     }
 
-    override string toString ()
+    private bool flush(bool brace = true)
     {
-        return toString("");
+        if (!weak.data.empty)
+        {
+            string weak = this.weak.data.idup;
+            this.weak.clear();
+
+            if (brace)
+            {
+                indent(-1);
+                buffer.put("{\n");
+            }
+
+            stack.back = Entity.singleLine;
+            singleLineImpl(weak);
+            weak = null;
+
+            return true;
+        }
+        else if (stack.length > 1 &&
+            stack[$ - 2] == Entity.subscopeWeak &&
+            stack.back == Entity.bottom &&
+            brace)
+        {
+            indent(-1);
+            buffer.put("{\n");
+        }
+
+        return false;
     }
 
-    string toString (string extraDeclarations)
+    private void indent()
     {
-        return data(extraDeclarations).strip('\n');
+        foreach (x; 0..stack.length - 1)
+            buffer.put("    ");
     }
 
-private:
-
-    void addDeclarations (string[] declarations, bool extraNewline = true)
+    private void indent(int shift)
     {
-        auto newline = "\n";
-
-        if (extraNewline)
-            newline ~= "\n";
-
-        this ~= declarations.join(newline);
-
-        if (declarations.any)
-            this ~= "\n\n";
+        foreach (x; 0..stack.length - 1 + shift)
+            buffer.put("    ");
     }
 }
 
 class StructData
 {
     string name;
+    protected Context context;
 
-    CodeBlock[] instanceVariables;
+    Output[] instanceVariables;
 
     bool isFwdDeclaration;
 
-    @property CodeBlock data ()
+    this(Context context)
+    {
+        this.context = context;
+    }
+
+    @property Output data ()
     {
         import std.format : format;
+
+        Output output = new Output();
 
         if (name.isPresent)
             name = ' ' ~ name;
@@ -121,17 +311,16 @@ class StructData
         if (isFwdDeclaration)
         {
             isFwdDeclaration = true;
-            return CodeBlock("%s%s;".format(type, name));
+            output.singleLine("%s%s;", type, name);
+            return output;
         }
         else
         {
-            CodeBlock result = CodeBlock(
-                "%s%s".format(type, name),
-                EndlHint.subscopeStrong);
+            output.subscopeStrong("%s%s", type, name) in {
+                addDeclarations(output, instanceVariables);
+            };
 
-            addDeclarations(result, instanceVariables);
-
-            return result;
+            return output;
         }
     }
 
@@ -142,23 +331,20 @@ protected:
         return "struct";
     }
 
-    void addDeclarations (ref CodeBlock result, CodeBlock[] declarations)
+    void addDeclarations (Output output, Output[] declarations)
     {
         foreach (i, e ; declarations)
-            result.children ~= e;
-    }
-}
-
-class EnumData : StructData
-{
-    @property override string type ()
-    {
-        return "enum";
+            output.output(e);
     }
 }
 
 class UnionData : StructData
 {
+    this(Context context)
+    {
+        super(context);
+    }
+
     @property override string type ()
     {
         return "union";
@@ -167,7 +353,7 @@ class UnionData : StructData
 
 class ClassData : StructData
 {
-    CodeBlock[] members;
+    Output[] members;
 
     string name;
     string superclass;
@@ -177,8 +363,9 @@ class ClassData : StructData
 
     private bool[string] mangledMethods;
 
-    this ()
+    this (Context context)
     {
+        super(context);
         propertyList = new HashSet!(string);
     }
 
@@ -204,17 +391,23 @@ class ClassData : StructData
         auto mangledName = name;
 
         foreach (param ; func.parameters)
-            mangledName ~= "_" ~ translateType(param.type);
+            mangledName ~= "_" ~ translateType(context, param.type);
 
         return mangledName;
     }
 
-    @property override CodeBlock data ()
+    @property override Output data ()
     {
         import std.format;
         import std.array;
 
-        auto header = appender!string("%s %s".format(type, name));
+        auto header = appender!string();
+
+        formattedWrite(
+            header,
+            "%s %s", 
+            type, 
+            name);
 
         if (superclass.any)
         {
@@ -224,11 +417,13 @@ class ClassData : StructData
 
         writeInterfaces(header);
 
-        auto result = CodeBlock(header.data, EndlHint.subscopeStrong);
+        Output output = new Output();
 
-        writeMembers(result);
+        output.subscopeStrong(header.data) in {
+            writeMembers(output);
+        };
 
-        return result;
+        return output;
     }
 
     override protected @property string type ()
@@ -255,14 +450,19 @@ private:
         }
     }
 
-    void writeMembers (ref CodeBlock cls)
+    void writeMembers (Output output)
     {
-        addDeclarations(cls, members);
+        addDeclarations(output, members);
     }
 }
 
 class InterfaceData : ClassData
 {
+    this(Context context)
+    {
+        super(context);
+    }
+
     protected @property override string type ()
     {
         return "interface";
@@ -271,114 +471,13 @@ class InterfaceData : ClassData
 
 class ClassExtensionData : ClassData
 {
+    this(Context context)
+    {
+        super(context);
+    }
+
     protected @property override string type ()
     {
         return "__classext";
     }
 }
-
-class String
-{
-    int indentationLevel;
-
-    private
-    {
-        std.array.Appender!(string) appender;
-        int prevIndendationLevel;
-        bool shouldIndent;
-    }
-
-    String opOpAssign (string op, T) (T t) if (op == "~" && !is(T == NewLine))
-    {
-        return put(t);
-    }
-
-    String opOpAssign (string op) (NewLine) if (op == "~")
-    {
-        return put(nl);
-    }
-
-    String put (Args...) (Args args)// if (!is(T == NewLine))
-    {
-        foreach (arg ; args)
-        {
-            static if (is(typeof(arg) == NewLine))
-                put(nl);
-
-            else
-            {
-                if (shouldIndent)
-                {
-                    _indent();
-                    shouldIndent = false;
-                }
-
-                appender.put(arg);
-            }
-        }
-
-        return this;
-    }
-
-    String put () (NewLine)
-    {
-        appender.put('\n');
-        shouldIndent = indentationLevel > 0;
-
-        return this;
-    }
-
-    alias put append;
-
-    String appendnl (T) (T t)
-    {
-        put(t);
-        return put(nl);
-    }
-
-    @property string data ()
-    {
-        return appender.data;
-    }
-
-    @property bool isEmpty ()
-    {
-        return appender.data.isEmpty;
-    }
-
-    Indendation indent ()
-    {
-        return indent(indentationLevel + 1);
-    }
-
-    Indendation indent (int indentationLevel)
-    {
-        prevIndendationLevel = this.indentationLevel;
-        this.indentationLevel = indentationLevel;
-        return Indendation(this);
-    }
-
-    static struct Indendation
-    {
-        private String str;
-
-        void opIn (void delegate () dg)
-        {
-            str.shouldIndent = str.indentationLevel > 0;
-            dg();
-            output.currentContext = str;
-            str.indentationLevel = str.prevIndendationLevel;
-        }
-    }
-
-private:
-
-    void _indent ()
-    {
-        foreach (i ; 0 .. indentationLevel)
-            appender.put("    ");
-    }
-}
-
-struct NewLine {}
-NewLine nl;

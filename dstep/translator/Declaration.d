@@ -10,11 +10,8 @@ import mambo.core._;
 
 import clang.Cursor;
 
-import dstep.translator.CodeBlock;
 import dstep.translator.Translator;
 import dstep.translator.Output;
-
-alias dstep.translator.Output.output output;
 
 abstract class Declaration
 {
@@ -44,11 +41,11 @@ abstract class Declaration
         this.translator = translator;
     }
 
-    abstract CodeBlock translate ();
+    abstract void translate (Output output);
 
     @property string spelling ()
     {
         auto name = cursor.spelling;
-        return name.isPresent || parent.isEmpty ? name : generateAnonymousName(cursor);
+        return name.isPresent || parent.isEmpty ? name : translator.context.generateAnonymousName(cursor);
     }
 }
