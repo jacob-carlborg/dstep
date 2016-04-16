@@ -7,6 +7,7 @@
 * Basic unit tests were added
 * Most of cucumber tests was replaced with D-based tests.
 * Statements are translated in original 'C' order now.
+* Multiple input files can be processed in different threads.
 
 ## Version 0.2.1
 ### New/Changed Features

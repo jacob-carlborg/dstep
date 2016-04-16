@@ -44,6 +44,12 @@ For translating Objective-C headers add the `-ObjC` flag.
 
     $ dstep Foo.h -o Foo.d -ObjC
 
+For translating multiple files at once, simply pass all the files to dstep.
+In this case though, `-o` (if given) would point to output directory name.
+The directory will be created if it doesn't exist.
+
+    $ dstep Foo1.h Foo2.h Foo3.h .... FooN.h -o ./outputDirectory/
+
 Use `-h` for usage information. Any flags recognized by Clang can be used.
 
 ## Limitations/Known issues
