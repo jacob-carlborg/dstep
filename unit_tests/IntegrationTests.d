@@ -6,6 +6,7 @@
  */
 
 import Common;
+import std.typecons;
 
 unittest
 {
@@ -16,4 +17,8 @@ unittest
     assertRunsDStepObjCFile(
         "test_files/objc/methods.d",
         "test_files/objc/methods.h");
+
+    assertRunsDStepCFiles(
+        [tuple("test_files/multiThreadTest1.d", "test_files/multiThreadTest1.h"),
+         tuple("test_files/multiThreadTest2.d", "test_files/multiThreadTest2.h")]);
 }

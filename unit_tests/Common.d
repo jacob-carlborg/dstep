@@ -14,6 +14,7 @@ import std.path;
 import std.conv;
 import std.algorithm;
 import std.array;
+import std.typecons;
 
 import clang.c.Index;
 
@@ -251,8 +252,7 @@ string[] findExtraGNUStepPaths(string file, size_t line)
 }
 
 void assertRunsDStep(
-    string expectedPath,
-    string actualPath,
+    Tuple!(string, string)[] filesPaths,
     bool strict,
     string[] arguments,
     string file = __FILE__,
@@ -262,17 +262,37 @@ void assertRunsDStep(
     import std.path : baseName;
     import std.format : format;
     import clang.Util : namedTempDir;
-    import std.file : readText;
+    import std.file : readText, mkdirRecurse;
 
-    assertFileExists(expectedPath, file, line);
-    assertFileExists(actualPath, file, line);
+    string[] actualPaths;
+
+    foreach (Tuple!(string, string) filesPath; filesPaths)
+    {
+        assertFileExists(filesPath[0], file, line);    //Expected Paths
+        assertFileExists(filesPath[1], file, line);    //Actual Paths
+        actualPaths ~= filesPath[1];
+    }
 
     string outputDir = namedTempDir("dstepUnitTest");
-    string outputPath = buildPath(outputDir, baseName(expectedPath));
+
+    string[] outputPaths;
+    if (filesPaths.length == 1)
+        outputPaths ~= buildPath(outputDir, baseName(filesPaths[0][0]));
+    else
+    {
+        foreach (Tuple!(string, string) filesPath; filesPaths)
+        {
+            outputPaths ~= buildPath(outputDir, baseName(filesPath[0]));
+        }
+    }
 
     scope(exit) rmdirRecurse(outputDir);
 
-    auto command = ["./bin/dstep", actualPath] ~ arguments ~ ["-o", outputPath];
+    auto command = ["./bin/dstep"] ~ actualPaths ~ arguments;
+    if (outputPaths.length == 1)
+        command ~= ["-o", outputPaths[0]];
+    else
+        command ~= ["-o", outputDir];
     auto result = execute(command);
 
     auto sep = "----------------";
@@ -298,47 +318,50 @@ DStep output:
         throw new AssertError(message, file, line);
     }
 
-    if (!exists(outputPath) || !isFile(outputPath))
+    foreach (i, outputPath; outputPaths)
     {
-        auto templ = q"/
-Output file `%4$s` doesn't exist.
-%1$s
-DStep command:
-%2$s
-%1$s
-DStep output:
-%3$s/";
+        if (!exists(outputPath) || !isFile(outputPath))
+        {
+            auto templ = q"/
+    Output file `%4$s` doesn't exist.
+    %1$s
+    DStep command:
+    %2$s
+    %1$s
+    DStep output:
+    %3$s/";
 
-        auto message = format(
-            templ,
-            sep,
-            join(command, " "),
-            result.output,
-            outputPath);
+            auto message = format(
+                templ,
+                sep,
+                join(command, " "),
+                result.output,
+                outputPath);
 
-        throw new AssertError(message, file, line);
-    }
+            throw new AssertError(message, file, line);
+        }
 
-    string expected = readText(expectedPath);
-    string actual = readText(outputPath);
+        string expected = readText(filesPaths[i][0]);
+        string actual = readText(outputPath);
 
-    if (!compareString(expected, actual, strict))
-    {
-        auto fmt = q"/
-Source code translated to:
-%1$s
-%2$s
-%1$s
-Expected D code:
-%1$s
-%3$s
-%1$s
-DStep command:
-%4$s/";
+        if (!compareString(expected, actual, strict))
+        {
+            auto fmt = q"/
+    Source code translated to:
+    %1$s
+    %2$s
+    %1$s
+    Expected D code:
+    %1$s
+    %3$s
+    %1$s
+    DStep command:
+    %4$s/";
 
-        string commandString = join(command, " ");
-        string message = format(fmt, sep, actual, expected, commandString);
-        throw new TranslateAssertError(message, file, line);
+            string commandString = join(command, " ");
+            string message = format(fmt, sep, actual, expected, commandString);
+            throw new TranslateAssertError(message, file, line);
+        }
     }
 }
 
@@ -400,8 +423,7 @@ void assertRunsDStepCFile(
     string[] arguments = ["-Iresources"];
 
     assertRunsDStep(
-        expectedPath,
-        cPath,
+        [tuple(expectedPath, cPath)],
         strict,
         arguments,
         file,
@@ -428,8 +450,23 @@ void assertRunsDStepObjCFile(
     }
 
     assertRunsDStep(
-        expectedPath,
-        objCPath,
+        [tuple(expectedPath, objCPath)],
+        strict,
+        arguments,
+        file,
+        line);
+}
+
+void assertRunsDStepCFiles(
+    Tuple!(string, string)[] filesPaths,
+    bool strict = false,
+    string file = __FILE__,
+    size_t line = __LINE__)
+{
+    string[] arguments = ["-Iresources"];
+
+    assertRunsDStep(
+        filesPaths,
         strict,
         arguments,
         file,
