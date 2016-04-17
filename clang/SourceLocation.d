@@ -31,6 +31,15 @@ struct SourceLocation
         return spell;
     }
 
+    @property Spelling expansion() const
+    {
+        Spelling spell;
+
+        clang_getExpansionLocation(cx, &spell.file.cx, &spell.line, &spell.column, &spell.offset);
+
+        return spell;
+    }
+
     @property size_t offset() const
     {
         return spelling.offset;
@@ -46,5 +55,16 @@ struct SourceLocation
         import std.format: format;
         auto s = spelling;
         return format("SourceLocation(file = %s, line = %d, column = %d, offset = %d)", s.file, s.line, s.column, s.offset);
+    }
+
+    static bool lexicalLess(in SourceLocation a, in SourceLocation b)
+    {
+        File fileA, fileB;
+        uint offsetA, offsetB;
+
+        clang_getSpellingLocation(a.cx, &fileA.cx, null, null, &offsetA);
+        clang_getSpellingLocation(b.cx, &fileB.cx, null, null, &offsetB);
+
+        return fileA != fileB ? fileA < fileB : offsetA < offsetB;
     }
 }
