@@ -391,7 +391,7 @@ class ClassData : StructData
         auto mangledName = name;
 
         foreach (param ; func.parameters)
-            mangledName ~= "_" ~ translateType(context, param.type);
+            mangledName ~= "_" ~ translateType(context, param);
 
         return mangledName;
     }
@@ -405,8 +405,8 @@ class ClassData : StructData
 
         formattedWrite(
             header,
-            "%s %s", 
-            type, 
+            "%s %s",
+            type,
             name);
 
         if (superclass.any)

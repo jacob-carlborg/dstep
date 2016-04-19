@@ -24,11 +24,6 @@ class Context
     private string[Cursor] anonymousNames;
     private IncludeHandler includeHandler_;
 
-    public this()
-    {
-        includeHandler_ = new IncludeHandler();
-    }
-
     this(TranslationUnit unit)
     {
         this.unit = unit;

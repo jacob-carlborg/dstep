@@ -129,6 +129,15 @@ struct Type
     {
         return ArrayType(this);
     }
+
+    @property bool isArray ()
+    {
+        return
+            kind == CXTypeKind.CXType_ConstantArray ||
+            kind == CXTypeKind.CXType_IncompleteArray ||
+            kind == CXTypeKind.CXType_VariableArray ||
+            kind == CXTypeKind.CXType_DependentSizedArray;
+    }
 }
 
 struct FuncType
@@ -158,6 +167,12 @@ struct ArrayType
     Type type;
     alias type this;
 
+    this (Type type)
+    {
+        assert(type.isArray);
+        this.type = type;
+    }
+
     @property Type elementType ()
     {
         auto r = clang_getArrayElementType(cx);
@@ -167,6 +182,20 @@ struct ArrayType
     @property long size ()
     {
         return clang_getArraySize(cx);
+    }
+
+    @property size_t numDimensions ()
+    {
+        size_t result = 1;
+        auto subtype = elementType();
+
+        while (subtype.isArray)
+        {
+            ++result;
+            subtype = subtype.array.elementType();
+        }
+
+        return result;
     }
 }
 

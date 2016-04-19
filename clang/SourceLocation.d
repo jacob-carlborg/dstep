@@ -57,13 +57,13 @@ struct SourceLocation
         return format("SourceLocation(file = %s, line = %d, column = %d, offset = %d)", s.file, s.line, s.column, s.offset);
     }
 
-    static bool lexicalLess(in SourceLocation a, in SourceLocation b)
+    bool lexicalLess(in SourceLocation that)
     {
         File fileA, fileB;
         uint offsetA, offsetB;
 
-        clang_getSpellingLocation(a.cx, &fileA.cx, null, null, &offsetA);
-        clang_getSpellingLocation(b.cx, &fileB.cx, null, null, &offsetB);
+        clang_getSpellingLocation(cx, &fileA.cx, null, null, &offsetA);
+        clang_getSpellingLocation(that.cx, &fileB.cx, null, null, &offsetB);
 
         return fileA != fileB ? fileA < fileB : offsetA < offsetB;
     }

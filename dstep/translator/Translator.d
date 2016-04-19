@@ -55,7 +55,7 @@ class Translator
         language = options.language;
 
         inputFile = translationUnit.file(inputFilename);
-        context = new Context();
+        context = new Context(translationUnit);
     }
 
     void translate ()
@@ -222,7 +222,7 @@ class Translator
         output.singleLine(
                 "%s%s %s;",
                 prefix,
-                translateType(context, cursor.type),
+                translateType(context, cursor),
                 translateIdentifier(cursor.spelling));
     }
 
@@ -230,7 +230,7 @@ class Translator
     {
         output.singleLine(
             "alias %s %s;",
-            translateType(context, cursor.type.canonicalType),
+            translateType(context, cursor, cursor.type.canonicalType),
             cursor.spelling);
     }
 
@@ -269,11 +269,11 @@ void translateFunction (Output output, Context context, FunctionCursor func, str
 
     foreach (param ; func.parameters)
     {
-        auto type = translateType(context, param.type);
+        auto type = translateType(context, param);
         params ~= Parameter(type, param.spelling);
     }
 
-    auto resultType = translateType(context, func.resultType);
+    auto resultType = translateType(context, func, func.resultType);
 
     translateFunction(output, resultType, name, params, func.isVariadic, isStatic ? "static " : "");
 }

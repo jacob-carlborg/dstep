@@ -15,36 +15,31 @@ import clang.SourceLocation;
 import clang.SourceRange;
 import clang.TranslationUnit;
 
-class InvalidArgumentError : object.Error
-{
-    this (string message, string file = __FILE__, ulong line = __LINE__)
-    {
-        super(message, file, line);
-    }
-}
-
 class MacroIndex
 {
     private static bool pred(in Cursor a, in Cursor b)
     {
-        return SourceLocation.lexicalLess(a.location, b.location);
+        return a.location.lexicalLess(b.location);
     }
 
     private TranslationUnit unit;
-    private alias CursorRedBlackTree = RedBlackTree!(Cursor, (in Cursor a, in Cursor b) => pred(a, b));
+    private alias CursorRedBlackTree =
+        RedBlackTree!(Cursor, (a, b) => pred(a, b));
     private CursorRedBlackTree expansions;
     private Cursor[string] definitions;
 
     private static string uniqueID(in Cursor cursor)
     {
         import std.format : format;
-        return "%s@%s:%d".format(cursor.spelling, cursor.location.path, cursor.location.offset);
+        return format(
+            "%s@%s:%d",
+            cursor.spelling,
+            cursor.location.path,
+            cursor.location.offset);
     }
 
     this(TranslationUnit unit)
     {
-        import std.stdio;
-
         this.unit = unit;
 
         expansions = new CursorRedBlackTree();
@@ -69,35 +64,26 @@ class MacroIndex
         }
     }
 
-    Cursor queryDefinition(in Cursor expansion) const
-    {
-        if (expansion.kind != CXCursorKind.CXCursor_MacroExpansion)
-            throw new InvalidArgumentError("`expansion` is required to be MacroExpansion.");
-
-        return definitions[uniqueID(expansion)];
-    }
-
     Cursor[] queryExpansion(Cursor cursor) const
     {
-        import std.array : array;
+        import std.array;
+        import std.algorithm.searching;
 
         SourceRange extent = cursor.extent;
-        Cursor[] result;
 
         auto equal = expansions.equalRange(cursor);
         auto greater = expansions.upperBound(cursor);
 
+        auto result = appender!(Cursor[])();
+
         if (!equal.empty)
             result ~= equal.array;
 
-        foreach (itr; greater)
-        {
-            if (itr.file == cursor.file && itr.location.offset < extent.end.offset)
-                result ~= itr;
-            else
-                break;
-        }
+        result ~= until
+            !(itr => itr.file != cursor.file ||
+            itr.location.offset >= extent.end.offset)
+            (greater, OpenRight.yes);
 
-        return result;
+        return result.data;
     }
 }
