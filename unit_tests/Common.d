@@ -282,7 +282,7 @@ void assertRunsDStep(
     {
         foreach (Tuple!(string, string) filesPath; filesPaths)
         {
-            outputPaths ~= buildPath(outputDir, baseName(filesPath[0]));
+            outputPaths ~= buildPath(outputDir, filesPath[0]);
         }
     }
 

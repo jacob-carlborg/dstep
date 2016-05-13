@@ -51,10 +51,10 @@ class Application : DStack.Application
         {
             auto inputFiles = arguments.argument.input.values[1 .. $];
             string outputDir = null;
-            if (arguments.output != "" && inputFiles.length > 0)
+            if (inputFiles.length > 0)
             {
                 outputDir = arguments.output;
-                if (!exists(outputDir) || !outputDir.isDir)
+                if (arguments.output.any() && !exists(outputDir))
                     mkdirRecurse(outputDir);
             }
             foreach(string fileName; inputFiles)
@@ -188,11 +188,15 @@ private:
             inputFile = fileName;
 
             if (outputDir != null)
-                outputFile = Path.buildPath(outputDir, defaultOutputFilename());
+                outputFile = Path.buildPath(outputDir, defaultOutputFilename(false));
             else if (!createOutputFileName && arguments.output != "")
                 outputFile = arguments.output;
             else
                 outputFile = defaultOutputFilename();
+
+            outputDir = Path.dirName(outputFile);
+            if (!exists(outputDir))
+                mkdirRecurse(outputDir);
         }
 
         void startConversion ()
@@ -230,9 +234,11 @@ private:
 
     private:
 
-        string defaultOutputFilename ()
+        string defaultOutputFilename (bool useBaseName = true)
         {
-            return Path.setExtension(Path.baseName(inputFile), "d");
+            if (useBaseName)
+                return Path.setExtension(Path.baseName(inputFile), "d");
+            return Path.setExtension(inputFile, "d");
         }
 
         void clean ()
