@@ -270,3 +270,19 @@ struct Foo
 
 D");
 }
+
+// Long function declarations should be broken to multiple lines.
+unittest
+{
+    assertTranslates(q"C
+void very_long_function_declaration(double way_too_long_argument, double another_long_argument);
+C",
+q"D
+extern (C):
+
+void very_long_function_declaration (
+    double way_too_long_argument,
+    double another_long_argument);
+D");
+
+}

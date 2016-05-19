@@ -817,3 +817,133 @@ struct A
 }
 D"[0..$-1], output.content);
 }
+
+unittest
+{
+    auto output = new Output(null, 20, 4);
+
+    output.adaptiveLine("");
+
+    assertEq(q"D
+D", output.data);
+
+    output.adaptiveLine("int func();");
+
+    assertEq(q"D
+
+int func();
+D"[0..$-1], output.data);
+
+}
+
+// Test empty adaptiveLine.
+unittest
+{
+    auto output = new Output();
+    output.adaptiveLine("");
+    assertEq("", output.data);
+    output.adaptiveLine("");
+    output.adaptiveLine("");
+    assertEq("\n\n", output.data);
+}
+
+// Test adding separators in one line.
+unittest
+{
+    auto output = new Output();
+
+    output.adaptiveLine("void func(%@,%@)") in {
+        output.adaptiveLine("int foo");
+        output.adaptiveLine("int bar");
+    };
+
+    assertEq("void func(int foo, int bar)", output.data);
+}
+
+// Test adding separators in multiple lines.
+unittest
+{
+    auto output = new Output(null, 32);
+
+    output.adaptiveLine("void func(%@,%@)") in {
+        output.adaptiveLine("int a");
+        output.adaptiveLine("int b");
+        output.adaptiveLine("int c");
+        output.adaptiveLine("int d");
+        output.adaptiveLine("int e");
+    };
+
+    assertEq(q"D
+void func(
+    int a,
+    int b,
+    int c,
+    int d,
+    int e)
+D"[0..$-1], output.data);
+
+}
+
+// Test adding separators with one level of nesting,
+// the nested content is one-liner.
+unittest
+{
+    auto output = new Output(null, 32);
+
+    output.adaptiveLine("void func(%@,%@)") in {
+        output.adaptiveLine("int a");
+        output.adaptiveLine("int b");
+        output.adaptiveLine("T!(%@;%@)") in {
+            output.adaptiveLine("fooooooo");
+            output.adaptiveLine("baaaaaar");
+        };
+        output.adaptiveLine("int d");
+        output.adaptiveLine("int e");
+    };
+
+    assertEq(q"D
+void func(
+    int a,
+    int b,
+    T!(fooooooo; baaaaaar),
+    int d,
+    int e)
+D"[0..$-1], output.data);
+
+}
+
+
+// Test adding separators with one level of nesting,
+// the nested content is multi-line.
+unittest
+{
+    auto output = new Output(null, 32);
+
+    output.adaptiveLine("void func(%@,%@)") in {
+        output.adaptiveLine("int a");
+        output.adaptiveLine("int b");
+        output.adaptiveLine("T!(%@;%@)") in {
+            output.adaptiveLine("fooooooo");
+            output.adaptiveLine("baaaaaar");
+            output.adaptiveLine("baaaaaaz");
+        };
+        output.adaptiveLine("int d");
+        output.adaptiveLine("int e");
+    };
+
+    assertEq(q"D
+void func(
+    int a,
+    int b,
+    T!(
+        fooooooo;
+        baaaaaar;
+        baaaaaaz),
+    int d,
+    int e)
+D"[0..$-1], output.data);
+
+}
+
+
+

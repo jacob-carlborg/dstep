@@ -137,7 +137,6 @@ class Translator
                     break;
 
                 case CXCursor_FunctionDecl:
-                    output.flushLocation(cursor.extent);
                     translateFunctionDecl(output, cursor, parent);
                     break;
 
@@ -191,6 +190,8 @@ class Translator
 
     void translateFunctionDecl(Output output, Cursor cursor, Cursor parent)
     {
+        output.flushLocation(cursor.extent);
+
         immutable auto name = translateIdentifier(cursor.spelling);
         translateFunction(output, context, cursor.func, name);
         output.append(";");
@@ -218,7 +219,7 @@ class Translator
         {
             output.singleLine(
                 "alias %s %s;",
-                translateType(context, cursor.type.canonicalType),
+                translateType(context, cursor, cursor.type.canonicalType),
                 cursor.spelling);
         }
     }
@@ -329,7 +330,10 @@ package void translateFunction (Output output, string result, string name, Param
     if (variadic)
         params ~= "...";
 
-    output.singleLine("%s%s %s (%s)", prefix, result, name, params.join(", "));
+    output.adaptiveLine("%s%s %s (%@,%@)", prefix, result, name) in {
+        foreach (param; params)
+            output.adaptiveLine(param);
+    };
 }
 
 void translateVariable (Output output, Context context, Cursor cursor, string prefix = "")
@@ -337,7 +341,7 @@ void translateVariable (Output output, Context context, Cursor cursor, string pr
     output.singleLine(
         "%s%s %s;",
         prefix,
-        translateType(context, cursor.type),
+        translateType(context, cursor, cursor.type),
         translateIdentifier(cursor.spelling));
 }
 

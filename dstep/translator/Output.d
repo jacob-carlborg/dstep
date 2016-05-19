@@ -7,6 +7,7 @@
 module dstep.translator.Output;
 
 import std.array;
+import std.typecons;
 
 import tango.util.container.HashSet;
 
@@ -29,16 +30,35 @@ class Output
         separator,
         comment,
         singleLine,
+        adaptiveLine,
         multiLine,
         subscopeWeak,
         subscopeStrong,
     }
 
+    private enum ChunkType
+    {
+        opening,
+        closing,
+        item,
+    }
+
+    private struct Chunk
+    {
+        ChunkType type;
+        string content;
+        string separator;
+    }
+
+    const size_t marginSize = 80;
+    const size_t indentSize = 4;
     private Appender!string buffer;
+    private Appender!(char[]) weak;
     private Entity[] stack;
     private Entity first = Entity.bottom;
-    private Appender!(char[]) weak;
+    private Appender!(Chunk[]) chunks;
     private CommentIndex commentIndex = null;
+
     private uint lastestOffset = 0;
     private uint lastestLine = 0;
     private uint headerEndOffset = 0;
@@ -56,14 +76,21 @@ class Output
         lastestLine = parent.lastestLine;
     }
 
-    this(CommentIndex commentIndex = null)
+    this(
+        CommentIndex commentIndex = null,
+        size_t marginSize = 80,
+        size_t indentSize = 4)
     {
+        this.marginSize = marginSize;
+        this.indentSize = indentSize;
+
         stack ~= Entity.bottom;
 
         // There is bug in Phobos, formattedWrite will not write anything
         // to the output range if put was not invoked before.
         buffer.put("");
         weak.put("");
+
         this.commentIndex = commentIndex;
     }
 
@@ -75,6 +102,7 @@ class Output
     public void separator()
     {
         if (stack.back == Entity.singleLine ||
+            stack.back == Entity.adaptiveLine ||
             stack.back == Entity.comment)
             stack.back = Entity.separator;
     }
@@ -97,7 +125,11 @@ class Output
             if (stack.back != Entity.bottom &&
                 output.first != Entity.bottom &&
                 (stack.back != Entity.singleLine ||
-                output.first != Entity.singleLine))
+                output.first != Entity.singleLine) &&
+                (stack.back != Entity.singleLine ||
+                output.first != Entity.adaptiveLine) &&
+                (stack.back != Entity.adaptiveLine ||
+                output.first != Entity.adaptiveLine))
                 buffer.put("\n");
 
             foreach (line; output.data().splitLines(KeepTerminator.yes))
@@ -123,7 +155,8 @@ class Output
     {
         import std.format;
 
-        if (stack.back != Entity.singleLine)
+        if (stack.back != Entity.singleLine &&
+            stack.back != Entity.adaptiveLine)
             singleLine(fmt, args);
         else if (weak.data.empty)
             formattedWrite(buffer, fmt, args);
@@ -161,6 +194,7 @@ class Output
             flush();
 
             if (stack.back != Entity.singleLine &&
+                stack.back != Entity.adaptiveLine &&
                 stack.back != Entity.bottom &&
                 stack.back != Entity.comment)
                 buffer.put("\n");
@@ -179,6 +213,112 @@ class Output
     {
         flushLocation(extent);
         singleLine(fmt, args);
+    }
+
+    private Tuple!(string, string, string) adaptiveLineParts(Char, Args...)(
+        in Char[] fmt,
+        Args args)
+    {
+        import std.algorithm.searching;
+        import std.format : format;
+
+        size_t findPlaceholder(in Char[] fmt)
+        {
+            foreach (i; 0..fmt.length)
+            {
+                if (fmt[i] == '@' && i != 0)
+                {
+                    size_t j = i;
+
+                    while (i != 0 && fmt[i - 1] == '%')
+                        --i;
+
+                    if ((i - j) % 2 == 1)
+                        return i;
+                }
+            }
+
+            return fmt.length;
+        }
+
+        size_t begin = findPlaceholder(fmt);
+
+        if (begin != fmt.length)
+        {
+            string separator, opening, closing;
+            size_t end = findPlaceholder(fmt[begin + 2..$]) + begin + 2;
+
+            if (end != fmt.length)
+                separator = fmt[begin + 2..end].idup;
+            else
+                end = begin;
+
+            size_t minUnique = count(fmt, '@') + 1;
+            auto sentinel = replicate("@", minUnique);
+
+            auto split = format(
+                fmt[0..begin] ~
+                sentinel ~
+                fmt[end + 2..$],
+                args).findSplit(sentinel);
+
+            return tuple(split[0], separator, split[2]);
+        }
+        else
+        {
+            return tuple(format(fmt, args), "", "");
+        }
+    }
+
+    private string adaptiveLineImpl(Char, Args...)(in Char[] fmt, Args args)
+    {
+        if (stack.length != 1 &&
+            stack[$ - 2] != Entity.adaptiveLine ||
+            stack.length == 1)
+        {
+            if (stack.back != Entity.singleLine &&
+                stack.back != Entity.adaptiveLine &&
+                stack.back != Entity.bottom &&
+                stack.back != Entity.comment)
+                buffer.put("\n");
+
+            if (stack.back != Entity.bottom)
+                buffer.put("\n");
+        }
+
+        stack.back = Entity.adaptiveLine;
+        stack ~= Entity.bottom;
+
+        if (first == Entity.bottom)
+            first = Entity.adaptiveLine;
+
+        auto parts = adaptiveLineParts(fmt, args);
+
+        chunks.put(Chunk(ChunkType.opening, parts[0], parts[1]));
+        return parts[2];
+    }
+
+    public Indent adaptiveLine(Char, Args...)(in Char[] fmt, Args args)
+    {
+        return Indent(this, adaptiveLineImpl(fmt, args));
+    }
+
+    public Indent adaptiveLine(Char, Args...)(
+        in SourceRange extent,
+        in Char[] fmt,
+        Args args)
+    {
+        SourceLocation start = extent.start;
+        SourceLocation end = extent.end;
+
+        flushLocationBegin(start.line, start.column, start.offset);
+
+        return Indent(
+            this,
+            adaptiveLine(fmt, args),
+            end.line,
+            end.column,
+            end.offset);
     }
 
     public Indent multiLine(Char, Args...)(in Char[] fmt, Args args)
@@ -466,21 +606,48 @@ class Output
 
         ~this()
         {
-            bool flushed = output.flush(false);
-
-            if (offset != 0)
-                output.flushLocationEnd(line, column, offset);
-
-            auto back = output.stack.back;
-            output.stack.popBack();
-
-            if (!sentinel.empty && !flushed)
+            if (output.stack.length > 1 &&
+                output.stack[$ - 2] == Entity.adaptiveLine)
             {
-                if (back != Entity.bottom)
-                    output.buffer.put("\n");
+                if (offset != 0)
+                    output.flushLocationEnd(line, column, offset);
 
-                output.indent();
-                output.buffer.put(sentinel);
+                output.stack.popBack();
+
+                auto data = output.chunks.data;
+
+                if (data.back.type == ChunkType.opening)
+                {
+                    data.back.type = ChunkType.item;
+                    data.back.content ~= sentinel;
+                }
+                else
+                {
+                    output.chunks.put(Chunk(ChunkType.closing, sentinel));
+                }
+
+                if (output.stack.length == 1 ||
+                    output.stack[$ - 2] != Entity.adaptiveLine)
+                    output.resolveAdaptive();
+            }
+            else
+            {
+                bool flushed = output.flush(false);
+
+                if (offset != 0)
+                    output.flushLocationEnd(line, column, offset);
+
+                auto back = output.stack.back;
+                output.stack.popBack();
+
+                if (!sentinel.empty && !flushed)
+                {
+                    if (back != Entity.bottom)
+                        output.buffer.put("\n");
+
+                    output.indent();
+                    output.buffer.put(sentinel);
+                }
             }
         }
 
@@ -524,6 +691,178 @@ class Output
         return false;
     }
 
+    private Tuple!(size_t, size_t) resolveAdaptiveWidth(size_t itr)
+    {
+        auto data = chunks.data;
+        string[] separators = [ data[itr].separator ];
+        size_t jtr = itr + 1;
+        size_t width = data[itr].content.length;
+
+        size_t separator(size_t jtr, size_t width) {
+            if (jtr + 1 < data.length &&
+                separators.length != 0 &&
+                data[jtr + 1].type != ChunkType.closing &&
+                width != 0)
+                return separators.back.length + 1;
+            else
+                return 0;
+        }
+
+        while (separators.length != 0)
+        {
+            final switch (data[jtr].type)
+            {
+                case ChunkType.opening:
+                    width += data[jtr].content.length;
+                    separators ~= data[jtr].separator;
+                    break;
+
+                case ChunkType.closing:
+                    separators = separators[0..$-1];
+                    width +=
+                        data[jtr].content.length +
+                        separator(jtr, width);
+                    break;
+
+                case ChunkType.item:
+                    width +=
+                        data[jtr].content.length +
+                        separator(jtr, width);
+                    break;
+            }
+
+            ++jtr;
+        }
+
+        return tuple(width, jtr);
+    }
+
+    private void resolveAdaptiveAppend(size_t itr)
+    {
+        auto data = chunks.data;
+        string[] separators = [ data[itr].separator ];
+        size_t jtr = itr + 1;
+
+        buffer.put(data[itr].content);
+
+        while (separators.length != 0)
+        {
+            final switch (data[jtr].type)
+            {
+                case ChunkType.opening:
+                    buffer.put(data[jtr].content);
+                    separators ~= data[jtr].separator;
+                    break;
+
+                case ChunkType.closing:
+                    separators = separators[0..$-1];
+                    buffer.put(data[jtr].content);
+
+                    if (jtr + 1 < data.length && separators.length != 0 &&
+                        data[jtr + 1].type != ChunkType.closing)
+                    {
+                        buffer.put(separators.back);
+                        buffer.put(" ");
+                    }
+
+                    break;
+
+                case ChunkType.item:
+                    buffer.put(data[jtr].content);
+
+                    if (jtr + 1 < data.length && separators.length != 0 &&
+                        data[jtr + 1].type != ChunkType.closing)
+                    {
+                        buffer.put(separators.back);
+                        buffer.put(" ");
+                    }
+
+                    break;
+            }
+
+            ++jtr;
+        }
+    }
+
+    private void resolveAdaptive()
+    {
+        string[] separators;
+        size_t amount = (stack.length - 1) * indentSize;
+        size_t itr = 0;
+
+        auto data = chunks.data;
+        auto feed = "";
+
+        while (itr < data.length)
+        {
+            if (data[itr].type == ChunkType.opening)
+            {
+                auto tuple = resolveAdaptiveWidth(itr);
+
+                size_t width =
+                    amount + separators.length * indentSize + tuple[0];
+
+                if (width < marginSize)
+                {
+                    buffer.put(feed);
+                    indent(separators.length);
+                    resolveAdaptiveAppend(itr);
+
+                    if (tuple[1] < data.length &&
+                        data[tuple[1]].type != ChunkType.closing)
+                        buffer.put(separators.back);
+
+                    itr = tuple[1];
+                }
+                else
+                {
+                    buffer.put(feed);
+                    indent(separators.length);
+                    buffer.put(data[itr].content);
+                    separators ~= data[itr].separator;
+
+                    ++itr;
+                }
+
+                feed = "\n";
+            }
+            else if (data[itr].type == ChunkType.closing)
+            {
+                separators = separators[0..$-1];
+                buffer.put(data[itr].content);
+
+                if (itr + 1 < data.length &&
+                    data[itr + 1].type != ChunkType.closing &&
+                    separators.length != 0)
+                    buffer.put(separators.back);
+
+                ++itr;
+
+                feed = "\n";
+            }
+            else
+            {
+                buffer.put(feed);
+                indent(separators.length);
+
+                if (!data[itr].content.empty)
+                {
+                    buffer.put(data[itr].content);
+
+                    if (itr + 1 < data.length &&
+                        data[itr + 1].type != ChunkType.closing)
+                        buffer.put(separators.back);
+
+                    feed = "\n";
+                }
+
+                ++itr;
+            }
+        }
+
+        chunks = appender!(Chunk[])();
+    }
+
     private void indent()
     {
         foreach (x; 0..stack.length - 1)
@@ -533,6 +872,12 @@ class Output
     private void indent(int shift)
     {
         foreach (x; 0 .. stack.length - 1 + shift)
+            buffer.put("    ");
+    }
+
+    private void indent(size_t shift)
+    {
+        foreach (x; 0..stack.length - 1 + shift)
             buffer.put("    ");
     }
 }
