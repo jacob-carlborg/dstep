@@ -7,6 +7,8 @@
 
 import std.stdio;
 import Common;
+
+import dstep.translator.CommentIndex;
 import dstep.translator.Output;
 
 // Test empty output.
@@ -510,4 +512,255 @@ unittest
     output.append(";");
 
     assertEq(output.data, "int x;");
+}
+
+// Flushing comments tests.
+unittest
+{
+    CommentIndex index = makeCommentIndex(
+q"C
+
+/* 1, 1, 1 */
+
+/* 4, 1, 16 */
+/* 5, 1, 31 */
+
+
+/* 8, 1, 48 */ /* 8, 16, 63 */
+
+/* 10, 1, 80 */
+C");
+
+    Output output = new Output(index);
+
+    output.flushLocation(31);
+
+    assertEq(q"D
+
+/* 1, 1, 1 */
+
+/* 4, 1, 16 */
+D", output.data, false);
+
+    output.flushLocation(45);
+
+    assertEq(q"D
+
+/* 1, 1, 1 */
+
+/* 4, 1, 16 */
+/* 5, 1, 31 */
+D", output.data, false);
+
+    output.flushLocation(62);
+
+    assertEq(q"D
+
+/* 1, 1, 1 */
+
+/* 4, 1, 16 */
+/* 5, 1, 31 */
+
+/* 8, 1, 48 */
+D", output.data, false);
+
+    output.flushLocation(95);
+
+    assertEq(q"D
+
+/* 1, 1, 1 */
+
+/* 4, 1, 16 */
+/* 5, 1, 31 */
+
+/* 8, 1, 48 */ /* 8, 16, 63 */
+
+/* 10, 1, 80 */
+D", output.data, false);
+
+}
+
+// There should be no linefeed before first comment,
+// if there is no linefeed in the source.
+unittest
+{
+    CommentIndex index = makeCommentIndex(
+q"C
+/* 1, 1, 1 */
+
+/* 4, 1, 16 */
+/* 5, 1, 31 */
+C");
+
+    Output output = new Output(index);
+
+    output.flushLocation(29);
+
+    assertEq(q"D
+/* 1, 1, 1 */
+
+/* 4, 1, 16 */
+D"[0..$-1], output.data);
+
+}
+
+// Keep spaces between comments and non-comments,
+// if they were present in original code.
+unittest
+{
+    CommentIndex index = makeCommentIndex(
+q"C
+/* 1, 1, 0 */
+
+#define FOO_3_1_15 1
+/* 4, 1, 34 */
+#define BAR_5_1_49 2
+
+/* 7, 1, 69 */ /* 7, 16, 84 */
+struct BAZ_8_1_100 { };
+
+C");
+
+    Output output = new Output(index);
+
+    output.flushLocation(3, 1, 15, 3, 21, 35);
+    output.singleLine("enum FOO_3_1_15 = 1;");
+
+    assertEq(q"D
+/* 1, 1, 0 */
+
+enum FOO_3_1_15 = 1;
+D", output.data, false);
+
+    output.flushLocation(5, 1, 51, 5, 21, 71);
+    output.singleLine("enum BAR_5_1_49 = 2;");
+
+    assertEq(q"D
+/* 1, 1, 0 */
+
+enum FOO_3_1_15 = 1;
+/* 4, 1, 34 */
+enum BAR_5_1_49 = 2;
+D", output.data, false);
+
+    output.flushLocation(8, 1, 104, 8, 23, 126);
+    output.subscopeStrong("struct BAZ_8_1_100");
+
+    assertEq(q"D
+/* 1, 1, 0 */
+
+enum FOO_3_1_15 = 1;
+/* 4, 1, 34 */
+enum BAR_5_1_49 = 2;
+
+/* 7, 1, 69 */ /* 7, 16, 84 */
+struct BAZ_8_1_100
+{
+}
+D", output.data, false);
+
+}
+
+// Keep space between single-line statements, it they are present in the source.
+unittest {
+    CommentIndex index = makeCommentIndex(
+q"C
+
+#define FOO 1
+
+#define BAR 2
+
+C");
+
+    Output output = new Output(index);
+
+    output.flushLocation(2, 1, 1, 2, 14, 14);
+    output.singleLine("enum FOO = 1;");
+
+    assertEq(q"D
+
+enum FOO = 1;
+D", output.data, false);
+
+    output.flushLocation(4, 1, 16, 4, 14, 29);
+    output.singleLine("enum BAR = 2;");
+
+    assertEq(q"D
+
+enum FOO = 1;
+
+enum BAR = 2;
+D", output.data, false);
+
+}
+
+unittest {
+    CommentIndex index = makeCommentIndex(
+q"C
+
+#define FOO 1
+#define BAR 2
+
+C");
+
+    Output output = new Output(index);
+
+    output.flushLocation(2, 1, 1, 2, 14, 14);
+    output.singleLine("enum FOO = 1;");
+
+    assertEq(q"D
+
+enum FOO = 1;
+D", output.data, false);
+
+    output.flushLocation(3, 1, 15, 3, 14, 28);
+    output.singleLine("enum BAR = 2;");
+
+    assertEq(q"D
+
+enum FOO = 1;
+enum BAR = 2;
+D", output.data, false);
+
+}
+
+// Do not insert additional space between single-line statement and
+// block-statement, even if there is extra space in the original.
+unittest {
+    CommentIndex index = makeCommentIndex(
+q"C
+
+int func(int x);
+
+
+class A {
+    void method();
+};
+C");
+
+    Output output = new Output(index);
+
+    output.flushLocation(2, 1, 1, 2, 16, 16);
+    output.singleLine("int func(int x);");
+
+    assertEq(q"D
+
+int func(int x);
+D", output.data, false);
+
+    output.flushLocation(5, 1, 20, 7, 2, 50, false);
+    output.subscopeStrong("class A") in {
+        output.singleLine("void method();");
+    };
+
+    assertEq(q"D
+
+int func(int x);
+
+class A
+{
+    void method();
+}
+D", output.data, false);
+
 }

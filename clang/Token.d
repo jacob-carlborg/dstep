@@ -64,6 +64,14 @@ struct Token
         return clang_getTokenKind(containerPtr.tokens[index]);
     }
 
+    @property SourceLocation location() const
+    {
+        return SourceLocation(
+            clang_getTokenLocation(
+                containerPtr.translationUnit,
+                containerPtr.tokens[index]));
+    }
+
     @property SourceRange extent() const
     {
         return SourceRange(

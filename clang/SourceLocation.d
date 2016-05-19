@@ -42,12 +42,44 @@ struct SourceLocation
 
     @property size_t offset() const
     {
-        return spelling.offset;
+        Spelling spell;
+
+        clang_getExpansionLocation(cx, &spell.file.cx, &spell.line, &spell.column, &spell.offset);
+
+        return spell;
     }
 
     @property string path() const
     {
-        return spelling.file.name;
+        File file;
+        clang_getExpansionLocation(cx, &file.cx, null, null, null);
+        return file.name;
+    }
+
+    @property uint line() const
+    {
+        uint result;
+        clang_getExpansionLocation(cx, null, &result, null, null);
+        return result;
+    }
+
+    @property uint column() const
+    {
+        uint result;
+        clang_getExpansionLocation(cx, null, null, &result, null);
+        return result;
+    }
+
+    @property uint offset() const
+    {
+        uint result;
+        clang_getExpansionLocation(cx, null, null, null, &result);
+        return result;
+    }
+
+    @property bool isFromMainFile() const
+    {
+        return clang_Location_isFromMainFile(cx) != 0;
     }
 
     @property string toString() const

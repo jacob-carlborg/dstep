@@ -13,19 +13,36 @@ import tango.util.container.HashSet;
 import mambo.core._;
 
 import clang.Cursor;
+import clang.SourceLocation;
+import clang.SourceRange;
 
+import dstep.translator.CommentIndex;
 import dstep.translator.Context;
 import dstep.translator.IncludeHandler;
 import dstep.translator.Type;
 
 class Output
 {
+    private enum Entity
+    {
+        bottom,
+        separator,
+        comment,
+        singleLine,
+        multiLine,
+        subscopeWeak,
+        subscopeStrong,
+    }
+
     private Appender!string buffer;
     private Entity[] stack;
     private Entity first = Entity.bottom;
     private Appender!(char[]) weak;
+    private CommentIndex commentIndex = null;
+    private uint lastestOffset = 0;
+    private uint lastestLine = 0;
 
-    this()
+    this(CommentIndex commentIndex = null)
     {
         stack ~= Entity.bottom;
 
@@ -33,6 +50,7 @@ class Output
         // to the output range if put was not invoked before.
         buffer.put("");
         weak.put("");
+        this.commentIndex  = commentIndex;
     }
 
     public bool empty()
@@ -42,7 +60,8 @@ class Output
 
     public void separator()
     {
-        if (stack.back == Entity.singleLine)
+        if (stack.back == Entity.singleLine ||
+            stack.back == Entity.comment)
             stack.back = Entity.separator;
     }
 
@@ -78,6 +97,11 @@ class Output
 
             if (first == Entity.bottom)
                 first = output.first;
+
+            import std.algorithm.comparison;
+
+            lastestOffset = max(lastestOffset, output.lastestOffset);
+            lastestLine = max(lastestLine, output.lastestLine);
         }
     }
 
@@ -113,6 +137,8 @@ class Output
             stack.back == Entity.bottom &&
             stack[$ - 2] == Entity.subscopeWeak)
         {
+            // We are on the first line of weak sub-scope.
+            // Save the line for later handling.
             formattedWrite(weak, fmt, args);
             stack.back = Entity.singleLine;
         }
@@ -120,7 +146,9 @@ class Output
         {
             flush();
 
-            if (stack.back != Entity.singleLine && stack.back != Entity.bottom)
+            if (stack.back != Entity.singleLine &&
+                stack.back != Entity.bottom &&
+                stack.back != Entity.comment)
                 buffer.put("\n");
 
             if (stack.back != Entity.bottom)
@@ -157,7 +185,9 @@ class Output
 
         flush();
 
-        if (stack.back != Entity.bottom)
+        if (stack.back == Entity.comment)
+            buffer.put("\n");
+        else if (stack.back != Entity.bottom)
             buffer.put("\n\n");
 
         indent();
@@ -195,6 +225,138 @@ class Output
         return Indent(this, "}");
     }
 
+    private void comment(CommentIndex.Comment comment)
+    {
+        import std.format;
+
+        if (lastestLine == comment.line)
+        {
+            buffer.put(" ");
+        }
+        else if (stack.back != Entity.bottom)
+        {
+            if (lastestLine + 1 < comment.line ||
+                (stack.back != Entity.singleLine &&
+                stack.back != Entity.comment))
+                buffer.put('\n');
+
+            buffer.put('\n');
+        }
+
+        formattedWrite(buffer, comment.content);
+        stack.back = Entity.comment;
+
+        if (first == Entity.bottom)
+            first = Entity.comment;
+
+        lastestLine = comment.extent.end.line;
+        lastestOffset = comment.extent.end.offset;
+    }
+
+    public void flushLocation(uint offset)
+    {
+        flushComments(offset);
+    }
+
+    private void flushComments(uint offset)
+    {
+        if (commentIndex)
+        {
+            auto comments = commentIndex.queryComments(lastestOffset, offset);
+
+            foreach (c; comments)
+                comment(c);
+
+            lastestOffset = offset;
+        }
+    }
+
+    public void finalize()
+    {
+        if (!buffer.data.empty)
+            buffer.put("\n");
+    }
+
+    private void flushLocationBegin(
+        uint beginLine,
+        uint beginColumn,
+        uint beginOffset,
+        bool separate = true)
+    {
+        flushComments(beginOffset);
+
+        if (separate && lastestLine + 1 < beginLine)
+            buffer.put("\n");
+    }
+
+    private void flushLocationEnd(
+        uint endLine,
+        uint endColumn,
+        uint endOffset)
+    {
+        lastestLine = endLine;
+        lastestOffset = endOffset;
+    }
+
+    public void flushLocation(
+        uint beginLine,
+        uint beginColumn,
+        uint beginOffset,
+        uint endLine,
+        uint endColumn,
+        uint endOffset,
+        bool separate = true)
+    {
+        flushLocationBegin(beginLine, beginColumn, beginOffset, separate);
+        flushLocationEnd(endLine, endColumn, endOffset);
+    }
+
+    public void flushLocation(
+        uint line,
+        uint column,
+        uint offset,
+        bool separate = true)
+    {
+        flushLocation(line, column, offset, line, column, offset, separate);
+    }
+
+    public void flushLocation(SourceLocation location, bool separate = true)
+    {
+        flushLocation(
+            location.line,
+            location.column,
+            location.offset,
+            separate);
+    }
+
+    public void flushLocation(SourceRange range, bool separate = true)
+    {
+        SourceLocation begin = range.start;
+        SourceLocation end = range.end;
+
+        flushLocation(
+            begin.line,
+            begin.column,
+            begin.offset,
+            end.line,
+            end.column,
+            end.offset,
+            separate);
+    }
+
+    public bool flushHeaderComment()
+    {
+        if (commentIndex && commentIndex.isHeaderCommentPresent)
+        {
+            flushLocation(commentIndex.queryHeaderCommentExtent.end, false);
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
     public string data(string suffix = "")
     {
         if (!suffix.empty)
@@ -207,10 +369,16 @@ class Output
     {
         private Output output;
         private string sentinel;
+        private uint line = 0;
+        private uint column = 0;
+        private uint offset = 0;
 
         ~this()
         {
             bool flushed = output.flush(false);
+
+            if (offset != 0)
+                output.flushLocationEnd(line, column, offset);
 
             auto back = output.stack.back;
             output.stack.popBack();
@@ -231,18 +399,11 @@ class Output
         }
     }
 
-    private enum Entity
-    {
-        bottom,
-        separator,
-        singleLine,
-        multiLine,
-        subscopeWeak,
-        subscopeStrong,
-    }
-
     private bool flush(bool brace = true)
     {
+        // Handle a case when there is only line in sub-scope.
+        // When there is only single line, no braces should be put.
+
         if (!weak.data.empty)
         {
             string weak = this.weak.data.idup;

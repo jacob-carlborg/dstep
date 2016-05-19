@@ -66,9 +66,13 @@ unittest
 
 unittest
 {
+    Options options;
+    options.enableComments = false;
+
     assertTranslatesCFile(
         "test_files/const.d",
-        "test_files/const.h");
+        "test_files/const.h",
+        options);
 }
 
 unittest
@@ -108,9 +112,13 @@ unittest
 
 unittest
 {
+    Options options;
+    options.enableComments = false;
+
     assertTranslatesCFile(
         "test_files/primitives.d",
-        "test_files/primitives.h");
+        "test_files/primitives.h",
+        options);
 }
 
 unittest

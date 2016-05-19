@@ -28,14 +28,10 @@ import dstep.translator.Output;
 import dstep.translator.Record;
 import dstep.translator.Type;
 
+public import dstep.translator.Options;
+
 class Translator
 {
-    static struct Options
-    {
-        string outputFile;
-        Language language = Language.c;
-    }
-
     private
     {
         TranslationUnit translationUnit;
@@ -47,7 +43,9 @@ class Translator
         string[string] deferredDeclarations;
     }
 
-    this (TranslationUnit translationUnit, const Options options = Options.init)
+    Context context;
+
+    this (TranslationUnit translationUnit, Options options = Options.init)
     {
         this.inputFilename = translationUnit.spelling;
         this.translationUnit = translationUnit;
@@ -55,7 +53,7 @@ class Translator
         language = options.language;
 
         inputFile = translationUnit.file(inputFilename);
-        context = new Context(translationUnit);
+        context = new Context(translationUnit, options);
     }
 
     void translate ()
@@ -63,19 +61,43 @@ class Translator
         write(outputFile, translateToString());
     }
 
+    Output translateCursors()
+    {
+        Output result = new Output(context.commentIndex);
+
+        bool first = true;
+
+        foreach (cursor, parent; translationUnit.cursor.all)
+        {
+            if (!skipDeclaration(cursor))
+            {
+                if (first)
+                {
+                    if (result.flushHeaderComment())
+                    {
+                        result.separator();
+                    }
+
+                    externDeclaration(result);
+                    first = false;
+                }
+
+                result.flushLocation(cursor.extent, false);
+                translate(result, cursor, parent);
+            }
+        }
+
+        if (context.commentIndex)
+            result.flushLocation(context.commentIndex.queryLastLocation());
+
+        return result;
+    }
+
     string translateToString()
     {
         import std.algorithm.mutation : strip;
 
-        Output main = new Output();
-
-        foreach (cursor, parent; translationUnit.cursor.all)
-        {
-            if (skipDeclaration(cursor))
-                continue;
-
-            translate(main, cursor, parent);
-        }
+        Output main = translateCursors();
 
         Output result = new Output();
 
@@ -87,12 +109,12 @@ class Translator
             result.separator();
         }
 
-        externDeclaration(result);
-
         result.output(main);
 
         foreach (value; deferredDeclarations.values)
             result.singleLine(value);
+
+        result.finalize();
 
         return result.data();
     }
@@ -234,7 +256,6 @@ class Translator
             cursor.spelling);
     }
 
-    Context context;
 private:
 
     bool skipDeclaration (Cursor cursor)
@@ -490,12 +511,4 @@ bool isDKeyword (string str)
     }
 
     return false;
-}
-
-enum Language
-{
-    c,
-    objC
-// Can't handle C++ yet
-//    cpp
 }

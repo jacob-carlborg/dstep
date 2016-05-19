@@ -15,6 +15,8 @@ import clang.Cursor;
 import clang.Diagnostic;
 import clang.File;
 import clang.Index;
+import clang.SourceLocation;
+import clang.SourceRange;
 import clang.Util;
 import clang.Visitor;
 
@@ -97,20 +99,34 @@ struct TranslationUnit
         return File(clang_getFile(cx, filename.toStringz));
     }
 
-    @property string spelling ()
-    {
-        return toD(clang_getTranslationUnitSpelling(cx));
-    }
-
     File file ()
     {
         return file(spelling);
+    }
+
+    @property string spelling ()
+    {
+        return toD(clang_getTranslationUnitSpelling(cx));
     }
 
     @property Cursor cursor ()
     {
         auto r = clang_getTranslationUnitCursor(cx);
         return Cursor(r);
+    }
+
+    SourceLocation location (uint offset)
+    {
+        CXFile file = clang_getFile(cx, spelling.toStringz);
+        return SourceLocation(clang_getLocationForOffset(cx, file, offset));
+    }
+
+    SourceRange extent (uint startOffset, uint endOffset)
+    {
+        CXFile file = clang_getFile(cx, spelling.toStringz);
+        auto start = clang_getLocationForOffset(cx, file, startOffset);
+        auto end = clang_getLocationForOffset(cx, file, endOffset);
+        return SourceRange(clang_getRange(start, end));
     }
 
     string dumpAST (bool skipIncluded = false)

@@ -184,7 +184,7 @@ private:
             this.arguments = arguments;
             this.compiler = compiler;
             this.compilerArgs = compilerArgs.dup;
-            
+
             inputFile = fileName;
 
             if (outputDir != null)
@@ -205,8 +205,8 @@ private:
                 argsToRestore ~= "-ObjC";
             index = Index(false, false);
             translationUnit = TranslationUnit.parse(
-                index, 
-                inputFile, 
+                index,
+                inputFile,
                 compilerArgs,
                 compiler.extraHeaders);
 
@@ -218,7 +218,7 @@ private:
 
             if (handleDiagnostics && exists(inputFile))
             {
-                Translator.Options options;
+                Options options;
                 options.outputFile = outputFile;
                 options.language = language;
 
@@ -255,7 +255,7 @@ private:
         bool handleDiagnostics ()
         {
             bool translate = true;
-        
+
             foreach (diag ; diagnostics)
             {
                 auto severity = diag.severity;

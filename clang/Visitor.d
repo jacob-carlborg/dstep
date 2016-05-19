@@ -36,7 +36,10 @@ struct Visitor
 
 private:
 
-    extern (C) static CXChildVisitResult visitorFunction (CXCursor cursor, CXCursor parent, CXClientData data)
+    extern (C) static CXChildVisitResult visitorFunction (
+        CXCursor cursor,
+        CXCursor parent,
+        CXClientData data)
     {
         auto tmp = cast(OpApplyData*) data;
 
