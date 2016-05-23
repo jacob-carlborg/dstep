@@ -69,7 +69,7 @@ struct TranslationUnit
         return translationUnit;
     }
 
-    private this (CXTranslationUnit cx)
+    package this (CXTranslationUnit cx)
     {
         this.cx = cx;
     }
@@ -121,12 +121,131 @@ struct TranslationUnit
         return SourceLocation(clang_getLocationForOffset(cx, file, offset));
     }
 
+    SourceLocation location (string path, uint offset)
+    {
+        CXFile file = clang_getFile(cx, path.toStringz);
+        return SourceLocation(clang_getLocationForOffset(cx, file, offset));
+    }
+
     SourceRange extent (uint startOffset, uint endOffset)
     {
         CXFile file = clang_getFile(cx, spelling.toStringz);
         auto start = clang_getLocationForOffset(cx, file, startOffset);
         auto end = clang_getLocationForOffset(cx, file, endOffset);
         return SourceRange(clang_getRange(start, end));
+    }
+
+    package SourceLocation[] includeLocationsImpl(Range)(Range cursors)
+    {
+        // `cursors` range should at least contain all global
+        // preprocessor cursors, although it can contain more.
+
+        bool[string] stacked;
+        bool[string] included;
+        SourceLocation[] locationStack;
+        SourceLocation[] locations = [ location("", 0), location(file.name, 0) ];
+
+        foreach (cursor; cursors)
+        {
+            if (cursor.kind == CXCursorKind.CXCursor_InclusionDirective)
+            {
+                auto ptr = cursor.path in stacked;
+
+                if (ptr !is null && *ptr)
+                {
+                    while (locationStack[$-1].path != cursor.path)
+                    {
+                        stacked[locationStack[$-1].path] = false;
+                        locations ~= locationStack[$-1];
+                        locationStack = locationStack[0..$-1];
+                    }
+
+                    stacked[cursor.path] = false;
+                    locations ~= locationStack[$-1];
+                    locationStack = locationStack[0..$-1];
+                }
+
+                if ((cursor.includedPath in included) is null)
+                {
+                    locationStack ~= cursor.extent.end;
+                    stacked[cursor.path] = true;
+                    locations ~= location(cursor.includedPath, 0);
+                    included[cursor.includedPath] = true;
+                }
+            }
+        }
+
+        while (locationStack.length != 0)
+        {
+            locations ~= locationStack[$-1];
+            locationStack = locationStack[0..$-1];
+        }
+
+        return locations;
+    }
+
+    SourceLocation[] includeLocations()
+    {
+        return includeLocationsImpl(cursor.all);
+    }
+
+    package ulong delegate (SourceLocation)
+        relativeLocationAccessorImpl(Range)(Range cursors)
+    {
+        // `cursors` range should at least contain all global
+        // preprocessor cursors, although it can contain more.
+
+        SourceLocation[] locations = includeLocationsImpl(cursors);
+
+        struct Entry
+        {
+            uint index;
+            SourceLocation location;
+
+            int opCmp(ref const Entry s) const
+            {
+                return location.offset < s.location.offset ? -1 : 1;
+            }
+
+            int opCmp(ref const SourceLocation s) const
+            {
+                return location.offset < s.offset + 1 ? -1 : 1;
+            }
+        }
+
+        Entry[][string] map;
+
+        uint index = 0;
+        foreach (location; locations)
+        {
+            map[location.path] ~= Entry(index, location);
+            ++index;
+        }
+
+        uint findIndex(SourceLocation a)
+        {
+            auto entries = map[a.path];
+
+            import std.range;
+
+            auto lower = assumeSorted(entries).lowerBound(a);
+
+            return lower.empty ? 0 : lower.back.index;
+        }
+
+        ulong accessor(SourceLocation location)
+        {
+            return ((cast (ulong) findIndex(location)) << 32) |
+                (cast (ulong) location.offset);
+        }
+
+        return &accessor;
+    }
+
+    size_t delegate (SourceLocation)
+        relativeLocationAccessor()
+    {
+        return relativeLocationAccessorImpl(cursor.all);
     }
 
     string dumpAST (bool skipIncluded = false)

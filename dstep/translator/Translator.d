@@ -67,7 +67,7 @@ class Translator
 
         bool first = true;
 
-        foreach (cursor, parent; translationUnit.cursor.all)
+        foreach (cursor, parent; translationUnit.cursor.allInOrder)
         {
             if (!skipDeclaration(cursor))
             {

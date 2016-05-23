@@ -8,6 +8,9 @@ module clang.Visitor;
 
 import clang.c.Index;
 import clang.Cursor;
+import clang.SourceLocation;
+import clang.SourceRange;
+import clang.TranslationUnit;
 
 struct Visitor
 {
@@ -29,6 +32,19 @@ struct Visitor
     int opApply (Delegate dg)
     {
         auto data = OpApplyData(dg);
+        clang_visitChildren(cursor, &visitorFunction, cast(CXClientData) &data);
+
+        return data.returnCode;
+    }
+
+    int opApply(int delegate (ref Cursor) dg)
+    {
+        int wrapper (ref Cursor cursor, ref Cursor)
+        {
+            return dg(cursor);
+        }
+
+        auto data = OpApplyData(&wrapper);
         clang_visitChildren(cursor, &visitorFunction, cast(CXClientData) &data);
 
         return data.returnCode;
@@ -83,6 +99,96 @@ private:
             visitor = Visitor(cursor);
         }
     }
+}
+
+struct InOrderVisitor
+{
+    alias int delegate (ref Cursor, ref Cursor) Delegate;
+
+    private Cursor cursor;
+
+    this (CXCursor cursor)
+    {
+        this.cursor = Cursor(cursor);
+    }
+
+    this (Cursor cursor)
+    {
+        this.cursor = cursor;
+    }
+
+    int opApply (Delegate dg)
+    {
+        import std.array;
+
+        auto visitor = Visitor(cursor);
+        int result = 0;
+
+        auto macrosAppender = appender!(Cursor[])();
+        size_t itr = 0;
+
+        foreach (cursor, _; visitor)
+        {
+            if (cursor.isPreprocessor)
+                macrosAppender.put(cursor);
+        }
+
+        auto macros = macrosAppender.data;
+        auto query = cursor.translationUnit
+            .relativeLocationAccessorImpl(macros);
+
+        ulong macroIndex = macros.length != 0
+            ? query(macros[0].location)
+            : ulong.max;
+
+        size_t jtr = 0;
+
+        foreach (cursor, parent; visitor)
+        {
+            if (!cursor.isPreprocessor)
+            {
+                ulong cursorIndex = query(cursor.location);
+
+                while (macroIndex < cursorIndex)
+                {
+                    Cursor macroParent = macros[jtr].semanticParent;
+
+                    result = dg(macros[jtr], macroParent);
+
+                    if (result)
+                        return result;
+
+                    ++jtr;
+
+                    macroIndex = jtr < macros.length
+                        ? query(macros[jtr].location)
+                        : ulong.max;
+                }
+
+                result = dg(cursor, parent);
+
+                if (result)
+                    return result;
+            }
+        }
+
+        while (jtr < macros.length)
+        {
+            Cursor macroParent = macros[jtr].semanticParent;
+
+            result = dg(macros[jtr], macroParent);
+
+            if (result)
+                return result;
+
+            ++jtr;
+        }
+
+        return result;
+    }
+
+private:
+
 }
 
 struct DeclarationVisitor

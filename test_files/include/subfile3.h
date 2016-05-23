@@ -1,0 +1,2 @@
+
+void core(int);

@@ -49,6 +49,13 @@ struct Cursor
         return clang_getCursorKind(cx);
     }
 
+    @property bool isPreprocessor () const
+    {
+        CXCursorKind kind = clang_getCursorKind(cx);
+        return CXCursorKind.CXCursor_FirstPreprocessing <= kind &&
+            kind <= CXCursorKind.CXCursor_LastPreprocessing;
+    }
+
     @property SourceLocation location () const
     {
         return SourceLocation(clang_getCursorLocation(cx));
@@ -129,17 +136,21 @@ struct Cursor
         return Visitor(this);
     }
 
-    @property Cursor[] children(bool ignorePredefined = false) const
+    @property InOrderVisitor allInOrder () const
+    {
+        return InOrderVisitor(this);
+    }
+
+    private Cursor[] childrenImpl(T)(bool ignorePredefined) const
     {
         import std.array : appender;
-        import std.stdio;
 
-        Cursor[] result = [];
+        Cursor[] result;
         auto app = appender(result);
 
         if (ignorePredefined && isTranslationUnit)
         {
-            foreach (cursor, _; all)
+            foreach (cursor, _; T(this))
             {
                 if (!cursor.isPredefined)
                     app.put(cursor);
@@ -147,11 +158,21 @@ struct Cursor
         }
         else
         {
-            foreach (cursor, _; all)
+            foreach (cursor, _; T(this))
                 app.put(cursor);
         }
 
         return app.data;
+    }
+
+    Cursor[] children(bool ignorePredefined = false) const
+    {
+        return childrenImpl!Visitor(ignorePredefined);
+    }
+
+    Cursor[] childrenInOrder(bool ignorePredefined = false) const
+    {
+        return childrenImpl!InOrderVisitor(ignorePredefined);
     }
 
     Cursor semanticParent() const
@@ -189,6 +210,12 @@ struct Cursor
         return clang_isTranslationUnit(kind) != 0;
     }
 
+    string includedPath ()
+    {
+        auto file = clang_getIncludedFile(cx);
+        return toD(clang_getFileName(file));
+    }
+
     private static CXCursorKind[string] queryPredefined()
     {
         CXCursorKind[string] result;
@@ -211,7 +238,12 @@ struct Cursor
         return xkind !is null && *xkind == kind;
     }
 
-    @property Cursor definition() const
+    TranslationUnit translationUnit ()
+    {
+        return TranslationUnit(clang_Cursor_getTranslationUnit(cx));
+    }
+
+    @property Cursor definition () const
     {
         return Cursor(clang_getCursorDefinition(cast(CXCursor) cx));
     }
