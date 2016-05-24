@@ -36,6 +36,7 @@ class Record (Data) : Declaration
                     switch (cursor.kind)
                     {
                         case CXCursor_FieldDecl:
+                            output.flushLocation(cursor);
                             if (!cursor.type.isExposed && cursor.type.declaration.isValid)
                             {
                                 auto def = cursor.type.declaration.definition;

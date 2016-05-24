@@ -103,3 +103,60 @@ extern __gshared int variable;
 D", true);
 
 }
+
+// Test translation of comments inside an enum.
+unittest
+{
+    assertTranslates(
+q"C
+
+enum Foo {
+    foo, /* Inline comment. */
+};
+C",
+q"D
+extern (C):
+
+enum Foo
+{
+    foo = 0 /* Inline comment. */
+}
+D");
+
+    assertTranslates(
+q"C
+
+/* This is an enumeration. */
+
+enum Foo {
+    /* An enum constant. */
+    FOO,
+
+    /* Another one. */
+    BAR = 0,
+
+    /* And one more. */
+
+    BAZ,
+};
+C",
+q"D
+extern (C):
+
+/* This is an enumeration. */
+
+enum Foo
+{
+    /* An enum constant. */
+    FOO = 0,
+
+    /* Another one. */
+    BAR = 0,
+
+    /* And one more. */
+
+    BAZ = 1
+}
+D");
+
+}

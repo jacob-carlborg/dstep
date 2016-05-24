@@ -29,7 +29,10 @@ class Enum : Declaration
     {
         import std.format : format;
 
-        output.subscopeStrong("enum %s", translateIdentifier(spelling)) in
+        output.subscopeStrong(
+            cursor.extent,
+            "enum %s",
+            translateIdentifier(spelling)) in
         {
             auto children = cursor.children;
 
@@ -59,6 +62,7 @@ class Enum : Declaration
         import std.format : format;
 
         output.singleLine(
+            cursor.extent,
             "%s = %s%s",
             cursor.spelling,
             cursor.enum_.value,

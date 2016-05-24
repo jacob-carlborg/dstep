@@ -43,6 +43,19 @@ class Output
     private uint lastestLine = 0;
     private uint headerEndOffset = 0;
 
+    this(Output parent)
+    {
+        stack ~= Entity.bottom;
+
+        // There is bug in Phobos, formattedWrite will not write anything
+        // to the output range if put was not invoked before.
+        buffer.put("");
+        weak.put("");
+        commentIndex = parent.commentIndex;
+        lastestOffset = parent.lastestOffset;
+        lastestLine = parent.lastestLine;
+    }
+
     this(CommentIndex commentIndex = null)
     {
         stack ~= Entity.bottom;
@@ -51,7 +64,7 @@ class Output
         // to the output range if put was not invoked before.
         buffer.put("");
         weak.put("");
-        this.commentIndex  = commentIndex;
+        this.commentIndex = commentIndex;
     }
 
     public bool empty()
@@ -159,6 +172,15 @@ class Output
         }
     }
 
+    public void singleLine(Char, Args...)(
+        in SourceRange extent,
+        in Char[] fmt,
+        Args args)
+    {
+        flushLocation(extent);
+        singleLine(fmt, args);
+    }
+
     public Indent multiLine(Char, Args...)(in Char[] fmt, Args args)
     {
         import std.format;
@@ -180,7 +202,9 @@ class Output
         return Indent(this);
     }
 
-    public Indent subscopeStrong(Char, Args...)(in Char[] fmt, Args args)
+    private void subscopeStrongImpl(Char, Args...)(
+        in Char[] fmt,
+        Args args)
     {
         import std.format;
 
@@ -201,8 +225,27 @@ class Output
 
         if (first == Entity.bottom)
             first = Entity.subscopeStrong;
+    }
 
+    public Indent subscopeStrong(Char, Args...)(
+        in Char[] fmt,
+        Args args)
+    {
+        subscopeStrongImpl!(Char, Args)(fmt, args);
         return Indent(this, "}");
+    }
+
+    public Indent subscopeStrong(Char, Args...)(
+        in SourceRange extent,
+        in Char[] fmt,
+        Args args)
+    {
+        SourceLocation start = extent.start;
+        SourceLocation end = extent.end;
+
+        flushLocationBegin(start.line, start.column, start.offset);
+        subscopeStrongImpl(fmt, args);
+        return Indent(this, "}", end.line, end.column, end.offset);
     }
 
     public Indent subscopeWeak(Char, Args...)(in Char[] fmt, Args args)
@@ -244,7 +287,25 @@ class Output
             buffer.put('\n');
         }
 
-        formattedWrite(buffer, comment.content);
+        import std.string;
+
+        auto lines = lineSplitter!(KeepTerminator.yes)(comment.content);
+
+        if (!lines.empty)
+        {
+            if (lastestLine != comment.line)
+                indent();
+
+            formattedWrite(buffer, lines.front);
+            lines.popFront;
+
+            foreach (line; lines)
+            {
+                indent();
+                formattedWrite(buffer, line);
+            }
+        }
+
         stack.back = Entity.comment;
 
         if (first == Entity.bottom)
@@ -301,6 +362,8 @@ class Output
         uint endColumn,
         uint endOffset)
     {
+        flushComments(endOffset);
+
         lastestLine = endLine;
         lastestOffset = endOffset;
     }
@@ -327,7 +390,7 @@ class Output
         flushLocation(line, column, offset, line, column, offset, separate);
     }
 
-    public void flushLocation(SourceLocation location, bool separate = true)
+    public void flushLocation(in SourceLocation location, bool separate = true)
     {
         flushLocation(
             location.line,
@@ -336,7 +399,7 @@ class Output
             separate);
     }
 
-    public void flushLocation(SourceRange range, bool separate = true)
+    public void flushLocation(in SourceRange range, bool separate = true)
     {
         SourceLocation begin = range.start;
         SourceLocation end = range.end;
@@ -349,6 +412,11 @@ class Output
             end.column,
             end.offset,
             separate);
+    }
+
+    public void flushLocation(in Cursor cursor, bool separate = true)
+    {
+        flushLocation(cursor.extent, separate);
     }
 
     public bool flushHeaderComment()

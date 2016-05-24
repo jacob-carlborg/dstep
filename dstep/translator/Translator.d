@@ -149,7 +149,6 @@ class Translator
                     break;
 
                 case CXCursor_EnumDecl:
-                    output.flushLocation(cursor.extent, false);
                     translateEnumDecl(output, cursor, parent);
                     break;
 
