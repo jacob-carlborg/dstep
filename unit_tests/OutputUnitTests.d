@@ -764,3 +764,56 @@ class A
 D", output.data, false);
 
 }
+
+// Test saving header position.
+unittest
+{
+    CommentIndex index = makeCommentIndex(
+q"C
+/* This is header comment.
+ * Aaaaaaaaaaaaaaaaaaaaaaa.
+ * Aaaaaaaaaaaaaa. Aaaaaa.
+ */
+
+int func(int x);
+
+class A { };
+C");
+
+    Output output = new Output(index);
+
+    output.flushHeaderComment();
+    output.flushLocation(6, 1, 87, 6, 17, 103);
+    output.singleLine("int func(int x);");
+    output.flushLocation(8, 1, 105, 10, 3, 136, false);
+    output.subscopeStrong("class A");
+
+    assertEq(q"D
+/* This is header comment.
+ * Aaaaaaaaaaaaaaaaaaaaaaa.
+ * Aaaaaaaaaaaaaa. Aaaaaa.
+ */
+
+int func(int x);
+
+class A
+{
+}
+D", output.data, false);
+
+    assertEq(q"D
+/* This is header comment.
+ * Aaaaaaaaaaaaaaaaaaaaaaa.
+ * Aaaaaaaaaaaaaa. Aaaaaa.
+ */
+
+D", output.header);
+
+    assertEq(q"D
+int func(int x);
+
+class A
+{
+}
+D"[0..$-1], output.content);
+}

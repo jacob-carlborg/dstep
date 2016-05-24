@@ -82,13 +82,17 @@ class Translator
                     first = false;
                 }
 
-                result.flushLocation(cursor.extent, false);
                 translate(result, cursor, parent);
             }
         }
 
         if (context.commentIndex)
             result.flushLocation(context.commentIndex.queryLastLocation());
+
+        foreach (value; deferredDeclarations.values)
+            result.singleLine(value);
+
+        result.finalize();
 
         return result;
     }
@@ -97,26 +101,10 @@ class Translator
     {
         import std.algorithm.mutation : strip;
 
-        Output main = translateCursors();
-
-        Output result = new Output();
-
+        auto main = translateCursors();
         auto imports = context.includeHandler.toImports();
 
-        if (!imports.empty())
-        {
-            result.output(imports);
-            result.separator();
-        }
-
-        result.output(main);
-
-        foreach (value; deferredDeclarations.values)
-            result.singleLine(value);
-
-        result.finalize();
-
-        return result.data();
+        return main.header ~ imports.data ~ main.content;
     }
 
     void translate (Output output, Cursor cursor, Cursor parent = Cursor.empty)
@@ -126,46 +114,57 @@ class Translator
             switch (cursor.kind)
             {
                 case CXCursor_ObjCInterfaceDecl:
+                    output.flushLocation(cursor.extent, false);
                     translateObjCInterfaceDecl(output, cursor, parent);
                     break;
 
                 case CXCursor_ObjCProtocolDecl:
+                    output.flushLocation(cursor.extent, false);
                     translateObjCProtocolDecl(output, cursor, parent);
                     break;
 
                 case CXCursor_ObjCCategoryDecl:
+                    output.flushLocation(cursor.extent, false);
                     translateObjCCategoryDecl(output, cursor, parent);
                     break;
 
                 case CXCursor_VarDecl:
+                    output.flushLocation(cursor.extent);
                     translateVarDecl(output, cursor, parent);
                     break;
 
                 case CXCursor_FunctionDecl:
+                    output.flushLocation(cursor.extent);
                     translateFunctionDecl(output, cursor, parent);
                     break;
 
                 case CXCursor_TypedefDecl:
+                    output.flushLocation(cursor.extent);
                     translateTypedefDecl(output, cursor, parent);
                     break;
 
                 case CXCursor_StructDecl:
+                    output.flushLocation(cursor.extent, false);
                     translateStructDecl(output, cursor, parent);
                     break;
 
                 case CXCursor_EnumDecl:
+                    output.flushLocation(cursor.extent, false);
                     translateEnumDecl(output, cursor, parent);
                     break;
 
                 case CXCursor_UnionDecl:
+                    output.flushLocation(cursor.extent, false);
                     translateUnionDecl(output, cursor, parent);
                     break;
 
                 case CXCursor_MacroDefinition:
+                    output.flushLocation(cursor.extent, false);
                     translateMacroDefinition(output, cursor, parent);
                     break;
 
                 default:
+                    output.flushLocation(cursor.extent, false);
                     break;
             }
         }

@@ -14,6 +14,15 @@ unittest
         "test_files/aggregate.d",
         "test_files/aggregate.h");
 
+    assertRunsDStepCFile(
+        "test_files/comments_enabled.d",
+        "test_files/comments_enabled.h");
+
+    assertRunsDStepCFile(
+        "test_files/comments_disabled.d",
+        "test_files/comments_disabled.h",
+        ["--no-comments"]);
+
     assertRunsDStepObjCFile(
         "test_files/objc/methods.d",
         "test_files/objc/methods.h");

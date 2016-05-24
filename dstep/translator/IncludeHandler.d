@@ -118,6 +118,11 @@ class IncludeHandler
         foreach (entry; r.append(imps).filter!(e => e.any).unique)
             output.singleLine(entry);
 
+        if (!output.empty)
+            output.separator();
+
+        output.finalize();
+
         return output;
     }
 

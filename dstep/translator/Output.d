@@ -41,6 +41,7 @@ class Output
     private CommentIndex commentIndex = null;
     private uint lastestOffset = 0;
     private uint lastestLine = 0;
+    private uint headerEndOffset = 0;
 
     this(CommentIndex commentIndex = null)
     {
@@ -274,7 +275,13 @@ class Output
     public void finalize()
     {
         if (!buffer.data.empty)
+        {
             buffer.put("\n");
+
+            if (stack.back != Entity.singleLine &&
+                stack.back != Entity.comment)
+                buffer.put("\n");
+        }
     }
 
     private void flushLocationBegin(
@@ -286,7 +293,7 @@ class Output
         flushComments(beginOffset);
 
         if (separate && lastestLine + 1 < beginLine)
-            buffer.put("\n");
+            separator();
     }
 
     private void flushLocationEnd(
@@ -348,7 +355,9 @@ class Output
     {
         if (commentIndex && commentIndex.isHeaderCommentPresent)
         {
-            flushLocation(commentIndex.queryHeaderCommentExtent.end, false);
+            auto location = commentIndex.queryHeaderCommentExtent.end;
+            headerEndOffset = location.offset + 2;
+            flushLocation(location, false);
             return true;
         }
         else
@@ -363,6 +372,20 @@ class Output
             return buffer.data() ~ suffix;
         else
             return buffer.data();
+    }
+
+    public string header()
+    {
+        import std.algorithm.comparison;
+
+        return buffer.data[0..min(headerEndOffset, $)];
+    }
+
+    public string content()
+    {
+        import std.algorithm.comparison;
+
+        return buffer.data[min(headerEndOffset, $)..$];
     }
 
     struct Indent

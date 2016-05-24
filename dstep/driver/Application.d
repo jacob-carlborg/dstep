@@ -88,6 +88,8 @@ class Application : DStack.Application
             .restrict("c", "c-header", "objective-c", "objective-c-header")
             .on(&handleLanguage);
 
+        arguments("no-comments", "Disable translation of comments.");
+
         arguments("objective-c", "Treat source input file as Objective-C input.");
     }
 
@@ -176,8 +178,15 @@ private:
             Arguments arguments;
         }
 
-        this(Language language, string[] argsToRestore, string fileName, bool createOutputFileName, Arguments arguments,
-             Compiler compiler, string[] compilerArgs, string outputDir)
+        this(
+            Language language,
+            string[] argsToRestore,
+            string fileName,
+            bool createOutputFileName,
+            Arguments arguments,
+            Compiler compiler,
+            string[] compilerArgs,
+            string outputDir)
         {
             this.language = language;
             this.argsToRestore = argsToRestore.dup;
@@ -221,6 +230,7 @@ private:
                 Options options;
                 options.outputFile = outputFile;
                 options.language = language;
+                options.enableComments = !arguments["no-comments"];
 
                 auto translator = new Translator(translationUnit, options);
                 translator.translate;
@@ -284,6 +294,7 @@ private:
         println("    -ObjC, --objective-c         Treat source input file as Objective-C input.");
         println("    -x, --language <language>    Treat subsequent input files as having type <language>.");
         println("    -h, --help                   Show this message and exit.");
+        println("    --no-comments                Disable translation of comments.");
         println();
         println("All options that Clang accepts can be used as well.");
         println();

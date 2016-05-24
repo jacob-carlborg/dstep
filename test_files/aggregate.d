@@ -9,6 +9,7 @@ struct Foo
 
 float foo (Foo x);
 float bar (Foo x);
+
 extern __gshared int a;
 
 struct Bar
@@ -18,4 +19,5 @@ struct Bar
 }
 
 extern __gshared const(char)* q;
+
 extern __gshared int function (int, int) e;

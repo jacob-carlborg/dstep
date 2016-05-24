@@ -66,6 +66,13 @@ unittest
 
 unittest
 {
+    assertTranslatesCFile(
+        "test_files/comments.d",
+        "test_files/comments.h");
+}
+
+unittest
+{
     Options options;
     options.enableComments = false;
 

@@ -274,8 +274,8 @@ string[] findExtraGNUStepPaths(string file, size_t line)
 
 void assertRunsDStep(
     Tuple!(string, string)[] filesPaths,
-    bool strict,
     string[] arguments,
+    bool strict,
     string file = __FILE__,
     size_t line = __LINE__)
 {
@@ -443,16 +443,17 @@ void assertTranslatesObjCFile(
 void assertRunsDStepCFile(
     string expectedPath,
     string cPath,
+    string[] arguments = [],
     bool strict = false,
     string file = __FILE__,
     size_t line = __LINE__)
 {
-    string[] arguments = ["-Iresources"];
+    string[] extended = arguments ~ ["-Iresources"];
 
     assertRunsDStep(
         [tuple(expectedPath, cPath)],
+        extended,
         strict,
-        arguments,
         file,
         line);
 }
@@ -460,11 +461,12 @@ void assertRunsDStepCFile(
 void assertRunsDStepObjCFile(
     string expectedPath,
     string objCPath,
+    string[] arguments = [],
     bool strict = false,
     string file = __FILE__,
     size_t line = __LINE__)
 {
-    string[] arguments = ["-ObjC", "-Iresources"];
+    string[] extended = arguments ~ ["-ObjC", "-Iresources"];
 
     version (linux)
     {
@@ -473,13 +475,13 @@ void assertRunsDStepObjCFile(
         if (extra.empty)
             return;
         else
-            arguments ~= extra;
+            extended ~= extra;
     }
 
     assertRunsDStep(
         [tuple(expectedPath, objCPath)],
+        extended,
         strict,
-        arguments,
         file,
         line);
 }
@@ -494,8 +496,8 @@ void assertRunsDStepCFiles(
 
     assertRunsDStep(
         filesPaths,
-        strict,
         arguments,
+        strict,
         file,
         line);
 }

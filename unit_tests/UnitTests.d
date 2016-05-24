@@ -71,6 +71,7 @@ extern (C):
 
 float foo (int x);
 float bar (int x);
+
 extern __gshared int a;
 D");
 
