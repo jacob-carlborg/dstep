@@ -153,16 +153,16 @@ struct TranslationUnit
 
                 if (ptr !is null && *ptr)
                 {
-                    while (locationStack[$-1].path != cursor.path)
+                    while (locationStack[$ - 1].path != cursor.path)
                     {
-                        stacked[locationStack[$-1].path] = false;
-                        locations ~= locationStack[$-1];
-                        locationStack = locationStack[0..$-1];
+                        stacked[locationStack[$ - 1].path] = false;
+                        locations ~= locationStack[$ - 1];
+                        locationStack = locationStack[0 .. $ - 1];
                     }
 
                     stacked[cursor.path] = false;
-                    locations ~= locationStack[$-1];
-                    locationStack = locationStack[0..$-1];
+                    locations ~= locationStack[$ - 1];
+                    locationStack = locationStack[0 .. $ - 1];
                 }
 
                 if ((cursor.includedPath in included) is null)
@@ -177,8 +177,8 @@ struct TranslationUnit
 
         while (locationStack.length != 0)
         {
-            locations ~= locationStack[$-1];
-            locationStack = locationStack[0..$-1];
+            locations ~= locationStack[$ - 1];
+            locationStack = locationStack[0 .. $ - 1];
         }
 
         return locations;
@@ -215,12 +215,8 @@ struct TranslationUnit
 
         Entry[][string] map;
 
-        uint index = 0;
-        foreach (location; locations)
-        {
+        foreach (uint index, location; locations)
             map[location.path] ~= Entry(index, location);
-            ++index;
-        }
 
         uint findIndex(SourceLocation a)
         {
@@ -235,8 +231,8 @@ struct TranslationUnit
 
         ulong accessor(SourceLocation location)
         {
-            return ((cast (ulong) findIndex(location)) << 32) |
-                (cast (ulong) location.offset);
+            return ((cast(ulong) findIndex(location)) << 32) |
+                (cast(ulong) location.offset);
         }
 
         return &accessor;

@@ -36,7 +36,7 @@ class Enum : Declaration
         {
             auto children = cursor.children;
 
-            foreach (i; 0..children.length)
+            foreach (i; 0 .. children.length)
             {
                 with (CXCursorKind)
                 {

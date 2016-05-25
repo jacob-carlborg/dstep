@@ -270,7 +270,7 @@ struct Cursor
                 auto x = to!string(token.kind);
                 return format(
                     "%s \"%s\"",
-                    x.startsWith(prefix) ? x[prefixSize..$] : x,
+                    x.startsWith(prefix) ? x[prefixSize .. $] : x,
                     token.spelling);
             }
 

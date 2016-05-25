@@ -269,10 +269,33 @@ class Output
         return Indent(this, "}");
     }
 
-    private void comment(CommentIndex.Comment comment)
+    private void writeComment(in CommentIndex.Comment comment)
     {
+        import std.string;
         import std.format;
 
+        auto lines = lineSplitter!(KeepTerminator.yes)(comment.content);
+
+        if (!lines.empty)
+        {
+            size_t indentAmount = comment.indentAmount;
+
+            if (lastestLine != comment.line)
+                indent();
+
+            formattedWrite(buffer, lines.front);
+            lines.popFront;
+
+            foreach (line; lines)
+            {
+                indent();
+                formattedWrite(buffer, line[indentAmount..$]);
+            }
+        }
+    }
+
+    private void comment(in CommentIndex.Comment comment)
+    {
         if (lastestLine == comment.line)
         {
             buffer.put(" ");
@@ -287,24 +310,7 @@ class Output
             buffer.put('\n');
         }
 
-        import std.string;
-
-        auto lines = lineSplitter!(KeepTerminator.yes)(comment.content);
-
-        if (!lines.empty)
-        {
-            if (lastestLine != comment.line)
-                indent();
-
-            formattedWrite(buffer, lines.front);
-            lines.popFront;
-
-            foreach (line; lines)
-            {
-                indent();
-                formattedWrite(buffer, line);
-            }
-        }
+        writeComment(comment);
 
         stack.back = Entity.comment;
 
@@ -315,14 +321,9 @@ class Output
         lastestOffset = comment.extent.end.offset;
     }
 
-    public void flushLocation(uint offset)
-    {
-        flushComments(offset);
-    }
-
     private void flushComments(uint offset)
     {
-        if (commentIndex)
+        if (lastestOffset < offset && commentIndex)
         {
             auto comments = commentIndex.queryComments(lastestOffset, offset);
 
@@ -339,8 +340,7 @@ class Output
         {
             buffer.put("\n");
 
-            if (stack.back != Entity.singleLine &&
-                stack.back != Entity.comment)
+            if (stack.back == Entity.separator)
                 buffer.put("\n");
         }
     }
@@ -446,14 +446,14 @@ class Output
     {
         import std.algorithm.comparison;
 
-        return buffer.data[0..min(headerEndOffset, $)];
+        return buffer.data[0 .. min(headerEndOffset, $)];
     }
 
     public string content()
     {
         import std.algorithm.comparison;
 
-        return buffer.data[min(headerEndOffset, $)..$];
+        return buffer.data[min(headerEndOffset, $) .. $];
     }
 
     struct Indent
@@ -532,7 +532,7 @@ class Output
 
     private void indent(int shift)
     {
-        foreach (x; 0..stack.length - 1 + shift)
+        foreach (x; 0 .. stack.length - 1 + shift)
             buffer.put("    ");
     }
 }

@@ -40,15 +40,6 @@ struct SourceLocation
         return spell;
     }
 
-    @property size_t offset() const
-    {
-        Spelling spell;
-
-        clang_getExpansionLocation(cx, &spell.file.cx, &spell.line, &spell.column, &spell.offset);
-
-        return spell;
-    }
-
     @property string path() const
     {
         File file;

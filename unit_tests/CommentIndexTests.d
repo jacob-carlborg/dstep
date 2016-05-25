@@ -47,7 +47,7 @@ C";
 
     auto commentIndex = new CommentIndex(translUnit);
 
-    auto full = commentIndex.queryComments(0, cast (uint) test.length);
+    auto full = commentIndex.queryComments(0, cast(uint) test.length);
 
     assert(full.length == 5);
 

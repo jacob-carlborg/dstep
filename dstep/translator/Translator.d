@@ -144,7 +144,6 @@ class Translator
                     break;
 
                 case CXCursor_StructDecl:
-                    output.flushLocation(cursor.extent, false);
                     translateStructDecl(output, cursor, parent);
                     break;
 
@@ -153,7 +152,6 @@ class Translator
                     break;
 
                 case CXCursor_UnionDecl:
-                    output.flushLocation(cursor.extent, false);
                     translateUnionDecl(output, cursor, parent);
                     break;
 
@@ -203,18 +201,17 @@ class Translator
 
     void translateStructDecl(Output output, Cursor cursor, Cursor parent)
     {
-        Output nested = new Output();
-        (new Record(cursor, parent, this)).translate(nested);
-
         if (cursor.isDefinition)
         {
             if (cursor.spelling in deferredDeclarations)
                 deferredDeclarations.remove(cursor.spelling);
 
-            output.output(nested);
+            (new Record(cursor, parent, this)).translate(output);
         }
         else
         {
+            Output nested = new Output();
+            (new Record(cursor, parent, this)).translate(nested);
             deferredDeclarations[cursor.spelling] = nested.data();
         }
     }

@@ -25,6 +25,41 @@ class CommentIndex
         uint column;
         uint offset;
 
+        this(Token token)
+        {
+            auto location = token.location;
+            content = token.spelling;
+            extent = token.extent;
+            line = location.line;
+            column = location.column;
+            offset = location.offset;
+        }
+
+        size_t indentAmount() const
+        {
+            import std.string;
+            import std.format;
+            import std.algorithm.comparison;
+            import std.algorithm.searching;
+
+            size_t amount = this.column - 1;
+            auto lines = lineSplitter(content);
+
+            if (!lines.empty)
+            {
+                lines.popFront();
+
+                foreach (line; lines)
+                {
+                    amount = min(
+                        amount,
+                        cast(size_t) countUntil!(a => a != ' ')(line));
+                }
+            }
+
+            return amount;
+        }
+
         int opCmp(ref const Comment s) const
         {
             return offset < s.offset ? -1 : (offset == s.offset ? 0 : 1);
@@ -42,31 +77,21 @@ class CommentIndex
 
     this(TranslationUnit translUnit)
     {
-        this.translUnit = translUnit;
+        import std.algorithm.iteration : filter, map;
 
+        this.translUnit = translUnit;
         lastTokenRange = translUnit.cursor.extent;
 
-        foreach (token; translUnit.cursor.tokens)
-        {
-            lastTokenRange = token.extent;
+        auto tokens = translUnit.cursor.tokens;
 
-            if (token.kind == CXTokenKind.CXToken_Comment)
-            {
-                auto location = token.location;
+        if (!tokens.empty)
+            lastTokenRange = tokens.back.extent;
 
-                if (location.isFromMainFile)
-                {
-                    Comment comment = {
-                        token.spelling,
-                        token.extent,
-                        location.line,
-                        location.column,
-                        location.offset };
-
-                    comments ~= comment;
-                }
-            }
-        }
+        comments = tokens
+            .filter!(token =>
+                token.kind == CXTokenKind.CXToken_Comment &&
+                token.location.isFromMainFile)
+            .map!(token => Comment(token)).array;
     }
 
     auto queryComments(uint begin, uint end)
@@ -85,6 +110,12 @@ class CommentIndex
         return lastTokenRange.end;
     }
 
+    /**
+     * Returns true if a header comment is present.
+     *
+     * The header comment is a comment placed at the very beginning of the
+     * file, specifically it cannot have any white-spaces before it.
+     */
     bool isHeaderCommentPresent()
     {
         return !comments.empty && comments.front.offset == 0;
@@ -94,6 +125,6 @@ class CommentIndex
     {
         return translUnit.extent(
             comments.front.offset,
-            comments.front.offset + cast (uint) comments.front.content.length);
+            comments.front.offset + cast(uint) comments.front.content.length);
     }
 }

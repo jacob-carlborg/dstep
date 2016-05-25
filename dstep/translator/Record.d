@@ -43,7 +43,7 @@ class Record : Declaration
 
         auto name = spelling == "" ? spelling : " " ~ spelling;
 
-        output.subscopeStrong(format("%s%s", type, name)) in {
+        output.subscopeStrong(cursor.extent, format("%s%s", typeKeyword, name)) in {
             foreach (cursor, parent; cursor.declarations)
             {
                 with (CXCursorKind)
@@ -77,7 +77,7 @@ class Record : Declaration
 
     private void translateForwardDeclaration(Output output)
     {
-        output.singleLine("struct %s;", spelling);
+        output.singleLine("%s %s;", typeKeyword, spelling);
     }
 
     private void translateVariable (Output output, Cursor cursor)
@@ -85,7 +85,7 @@ class Record : Declaration
         translator.variable(output, cursor);
     }
 
-    private string type ()
+    private string typeKeyword ()
     {
         switch (cursor.kind)
         {

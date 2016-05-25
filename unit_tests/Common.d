@@ -156,10 +156,10 @@ AST dump:
         string astDump = unit.dumpAST(true);
 
         if (maxSubmessageLength < translated.length)
-            translated = translated[0..maxSubmessageLength] ~ "...";
+            translated = translated[0 .. maxSubmessageLength] ~ "...";
 
         if (maxSubmessageLength < astDump.length)
-            astDump = astDump[0..maxSubmessageLength] ~ "...";
+            astDump = astDump[0 .. maxSubmessageLength] ~ "...";
 
         string message = format(fmt, sep, translated, expected, astDump);
         throw new TranslateAssertError(message, file, line);

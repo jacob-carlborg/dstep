@@ -160,3 +160,84 @@ enum Foo
 D");
 
 }
+
+// Test translation of comments inside a struct.
+unittest
+{
+    assertTranslates(
+q"C
+
+/* This is a structure. */
+
+struct Foo {
+    /* A comment inside a struct. */
+};
+C",
+q"D
+extern (C):
+
+/* This is a structure. */
+
+struct Foo
+{
+    /* A comment inside a struct. */
+}
+D");
+
+    assertTranslates(
+q"C
+
+/* This is a structure. */
+
+struct Foo {
+    /* A comment inside a struct. */
+    int Foo;
+
+    /* BAR */
+
+    int Bar; /* INLINE */
+};
+C",
+q"D
+extern (C):
+
+/* This is a structure. */
+
+struct Foo
+{
+    /* A comment inside a struct. */
+    int Foo;
+
+    /* BAR */
+
+    int Bar; /* INLINE */
+}
+D");
+
+}
+
+// Test indented comments.
+unittest
+{
+    assertTranslates(
+q"C
+struct Foo {
+    /* FOO
+     * BAR
+     * BAZ */
+    int Foo;
+};
+C",
+q"D
+extern (C):
+
+struct Foo
+{
+    /* FOO
+     * BAR
+     * BAZ */
+    int Foo;
+}
+D");
+
+}

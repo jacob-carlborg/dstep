@@ -21,20 +21,20 @@ import dstep.translator.Options;
 class Context
 {
     public MacroIndex macroIndex;
-    public TranslationUnit unit;
+    public TranslationUnit translUnit;
 
     private string[Cursor] anonymousNames;
     private IncludeHandler includeHandler_;
     private CommentIndex commentIndex_ = null;
 
-    public this(TranslationUnit translationUnit, Options options)
+    public this(TranslationUnit translUnit, Options options)
     {
-        this.unit = unit;
-        macroIndex = new MacroIndex(unit);
+        this.translUnit = translUnit;
+        macroIndex = new MacroIndex(translUnit);
         includeHandler_ = new IncludeHandler();
 
         if (options.enableComments)
-            commentIndex_ = new CommentIndex(translationUnit);
+            commentIndex_ = new CommentIndex(translUnit);
     }
 
     public string getAnonymousName (Cursor cursor)
