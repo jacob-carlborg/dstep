@@ -18,7 +18,7 @@ import dstep.translator.Output;
 import dstep.translator.Translator;
 import dstep.translator.Type;
 
-class Record (Data) : Declaration
+class Record : Declaration
 {
     static bool[Cursor] recordDefinitions;
 
@@ -29,62 +29,70 @@ class Record (Data) : Declaration
 
     override void translate (Output output)
     {
-        writeRecord(output, spelling, (context) {
-            foreach (cursor, parent ; cursor.declarations)
+        if (cursor.isDefinition)
+            translateDefinition(output);
+        else
+            translateForwardDeclaration(output);
+    }
+
+    private void translateDefinition(Output output)
+    {
+        import std.format;
+
+        this.recordDefinitions[cursor] = true;
+
+        auto name = spelling == "" ? spelling : " " ~ spelling;
+
+        output.subscopeStrong(format("%s%s", type, name)) in {
+            foreach (cursor, parent; cursor.declarations)
             {
                 with (CXCursorKind)
                     switch (cursor.kind)
                     {
                         case CXCursor_FieldDecl:
                             output.flushLocation(cursor);
+
                             if (!cursor.type.isExposed && cursor.type.declaration.isValid)
                             {
                                 auto def = cursor.type.declaration.definition;
                                 auto known = def in this.recordDefinitions;
 
                                 if (!known)
-                                {
-                                    Output output = new Output();
                                     translator.translate(output, cursor.type.declaration);
-                                    context.instanceVariables ~= output;
-                                }
 
-                                if (cursor.type.declaration.type.isEnum || !cursor.type.isAnonymous)
-                                    translateVariable(cursor, context);
+                                if (cursor.type.declaration.type.isEnum ||
+                                    !cursor.type.isAnonymous)
+                                    translateVariable(output, cursor);
                             }
 
                             else
-                                translateVariable(cursor, context);
+                                translateVariable(output, cursor);
                         break;
 
                         default: break;
                     }
             }
-        });
+        };
     }
 
-private:
-
-    void writeRecord (Output output, string name, void delegate (Data context) dg)
+    private void translateForwardDeclaration(Output output)
     {
-        auto context = new Data(translator.context);
-
-        if (cursor.isDefinition)
-            this.recordDefinitions[cursor] = true;
-        else
-            context.isFwdDeclaration = true;
-
-        context.name = translateIdentifier(name);
-
-        dg(context);
-
-        output.output(context.data);
+        output.singleLine("struct %s;", spelling);
     }
 
-    void translateVariable (Cursor cursor, Data context)
+    private void translateVariable (Output output, Cursor cursor)
     {
-        Output output = new Output();
         translator.variable(output, cursor);
-        context.instanceVariables ~= output;
+    }
+
+    private string type ()
+    {
+        switch (cursor.kind)
+        {
+            case CXCursorKind.CXCursor_UnionDecl:
+                return "union";
+            default:
+                return "struct";
+        }
     }
 }

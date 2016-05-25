@@ -204,7 +204,7 @@ class Translator
     void translateStructDecl(Output output, Cursor cursor, Cursor parent)
     {
         Output nested = new Output();
-        (new Record!(StructData)(cursor, parent, this)).translate(nested);
+        (new Record(cursor, parent, this)).translate(nested);
 
         if (cursor.isDefinition)
         {
@@ -226,7 +226,7 @@ class Translator
 
     void translateUnionDecl(Output output, Cursor cursor, Cursor parent)
     {
-        new Record!(UnionData)(cursor, parent, this).translate(output);
+        new Record(cursor, parent, this).translate(output);
     }
 
     void translateMacroDefinition(Output output, Cursor cursor, Cursor parent)

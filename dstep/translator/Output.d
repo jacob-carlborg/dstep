@@ -590,19 +590,6 @@ protected:
     }
 }
 
-class UnionData : StructData
-{
-    this(Context context)
-    {
-        super(context);
-    }
-
-    @property override string type ()
-    {
-        return "union";
-    }
-}
-
 class ClassData : StructData
 {
     Output[] members;
