@@ -6,8 +6,6 @@
  */
 module dstep.translator.Enum;
 
-import mambo.core._;
-
 import clang.c.Index;
 import clang.Cursor;
 import clang.Visitor;
@@ -20,9 +18,12 @@ import dstep.translator.Type;
 
 class Enum : Declaration
 {
-    this (Cursor cursor, Cursor parent, Translator translator)
+    private string aliasName;
+
+    this (Cursor cursor, Cursor parent, Translator translator, string aliasName)
     {
         super(cursor, parent, translator);
+        this.aliasName = aliasName;
     }
 
     override void translate (Output output)
@@ -69,10 +70,18 @@ class Enum : Declaration
             last ? "" : ",");
     }
 
+    string anonymous()
+    {
+        return translator.context.generateAnonymousName(cursor);
+    }
+
     @property override string spelling ()
     {
         auto name = cursor.spelling;
-        return name.isPresent ?
-            name : translator.context.generateAnonymousName(cursor);
+
+        if (name != "")
+            return name;
+        else
+            return aliasName == "" ? anonymous : aliasName;
     }
 }

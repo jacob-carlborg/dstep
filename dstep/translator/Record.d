@@ -20,11 +20,18 @@ import dstep.translator.Type;
 
 class Record : Declaration
 {
+    private string aliasName;
+
     static bool[Cursor] recordDefinitions;
 
-    this (Cursor cursor, Cursor parent, Translator translator)
+    this (
+        Cursor cursor,
+        Cursor parent,
+        Translator translator,
+        string aliasName = "")
     {
         super(cursor, parent, translator);
+        this.aliasName = aliasName;
     }
 
     override void translate (Output output)
@@ -44,6 +51,7 @@ class Record : Declaration
         auto name = spelling == "" ? spelling : " " ~ spelling;
 
         output.subscopeStrong(cursor.extent, format("%s%s", typeKeyword, name)) in {
+
             foreach (cursor, parent; cursor.declarations)
             {
                 with (CXCursorKind)
@@ -94,5 +102,20 @@ class Record : Declaration
             default:
                 return "struct";
         }
+    }
+
+    string anonymous()
+    {
+        return translator.context.generateAnonymousName(cursor);
+    }
+
+    @property override string spelling ()
+    {
+        auto name = cursor.spelling;
+
+        if (name != "")
+            return name;
+        else
+            return aliasName == "" ? anonymous : aliasName;
     }
 }

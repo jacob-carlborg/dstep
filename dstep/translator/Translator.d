@@ -107,7 +107,11 @@ class Translator
         return main.header ~ imports.data ~ main.content;
     }
 
-    void translate (Output output, Cursor cursor, Cursor parent = Cursor.empty)
+    void translate (
+        Output output,
+        Cursor cursor,
+        Cursor parent = Cursor.empty,
+        string aliasName = "")
     {
         with (CXCursorKind)
         {
@@ -139,20 +143,19 @@ class Translator
                     break;
 
                 case CXCursor_TypedefDecl:
-                    output.flushLocation(cursor.extent);
-                    translateTypedefDecl(output, cursor, parent);
+                    translateTypedefDecl(output, cursor);
                     break;
 
                 case CXCursor_StructDecl:
-                    translateStructDecl(output, cursor, parent);
+                    translateRecordDecl(output, cursor, parent, aliasName);
                     break;
 
                 case CXCursor_EnumDecl:
-                    translateEnumDecl(output, cursor, parent);
+                    translateEnumDecl(output, cursor, parent, aliasName);
                     break;
 
                 case CXCursor_UnionDecl:
-                    translateUnionDecl(output, cursor, parent);
+                    translateRecordDecl(output, cursor, parent, aliasName);
                     break;
 
                 case CXCursor_MacroDefinition:
@@ -194,19 +197,46 @@ class Translator
         output.append(";");
     }
 
-    void translateTypedefDecl(Output output, Cursor cursor, Cursor parent)
+    void translateTypedefDecl(Output output, Cursor cursor)
     {
-        typedef_(output, cursor);
+        output.flushLocation(cursor.extent);
+
+        bool ignoreTypedef = false;
+
+        foreach (child; cursor.all)
+        {
+            if (child.spelling == cursor.spelling ||
+                child.spelling == "")
+                ignoreTypedef = true;
+
+            translate(output, child, Cursor.empty, cursor.spelling);
+            break;
+        }
+
+        if (!ignoreTypedef)
+        {
+            output.singleLine(
+                "alias %s %s;",
+                translateType(context, cursor.type.canonicalType),
+                cursor.spelling);
+        }
     }
 
-    void translateStructDecl(Output output, Cursor cursor, Cursor parent)
+    void translateRecordDecl(
+        Output output,
+        Cursor cursor,
+        Cursor parent,
+        string aliasName = "")
     {
+        if (aliasName == "" && context.typedefIndex.hasTypedefParent(cursor))
+            return;
+
         if (cursor.isDefinition)
         {
             if (cursor.spelling in deferredDeclarations)
                 deferredDeclarations.remove(cursor.spelling);
 
-            (new Record(cursor, parent, this)).translate(output);
+            (new Record(cursor, parent, this, aliasName)).translate(output);
         }
         else
         {
@@ -216,12 +246,23 @@ class Translator
         }
     }
 
-    void translateEnumDecl(Output output, Cursor cursor, Cursor parent)
+    void translateEnumDecl(
+        Output output,
+        Cursor cursor,
+        Cursor parent,
+        string aliasName = "")
     {
-        new Enum(cursor, parent, this).translate(output);
+        if (aliasName == "" && context.typedefIndex.hasTypedefParent(cursor))
+            return;
+
+        new Enum(cursor, parent, this, aliasName).translate(output);
     }
 
-    void translateUnionDecl(Output output, Cursor cursor, Cursor parent)
+    void translateUnionDecl(
+        Output output,
+        Cursor cursor,
+        Cursor parent,
+        string aliasName)
     {
         new Record(cursor, parent, this).translate(output);
     }

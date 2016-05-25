@@ -37,10 +37,8 @@ struct C
     _Anonymous_0 point;
 }
 
-enum _Anonymous_1
+enum D
 {
     k = 1,
     l = 2
 }
-
-alias _Anonymous_1 D;

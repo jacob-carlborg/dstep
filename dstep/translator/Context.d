@@ -17,6 +17,7 @@ import dstep.translator.CommentIndex;
 import dstep.translator.IncludeHandler;
 import dstep.translator.MacroIndex;
 import dstep.translator.Options;
+import dstep.translator.TypedefIndex;
 
 class Context
 {
@@ -26,6 +27,7 @@ class Context
     private string[Cursor] anonymousNames;
     private IncludeHandler includeHandler_;
     private CommentIndex commentIndex_ = null;
+    private TypedefIndex typedefIndex_ = null;
 
     public this(TranslationUnit translUnit, Options options)
     {
@@ -35,6 +37,8 @@ class Context
 
         if (options.enableComments)
             commentIndex_ = new CommentIndex(translUnit);
+
+        typedefIndex_ = new TypedefIndex(translUnit);
     }
 
     public string getAnonymousName (Cursor cursor)
@@ -60,13 +64,18 @@ class Context
         return name;
     }
 
-    @property public IncludeHandler includeHandler()
+    public IncludeHandler includeHandler()
     {
         return includeHandler_;
     }
 
-    @property public CommentIndex commentIndex()
+    public CommentIndex commentIndex()
     {
         return commentIndex_;
+    }
+
+    public TypedefIndex typedefIndex()
+    {
+        return typedefIndex_;
     }
 }
