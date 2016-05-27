@@ -43,9 +43,9 @@ struct E
 {
 }
 
+struct F;
+
 struct Nested
 {
     C field;
 }
-
-struct F;

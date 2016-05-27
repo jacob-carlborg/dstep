@@ -53,7 +53,7 @@ class Translator
         language = options.language;
 
         inputFile = translationUnit.file(inputFilename);
-        context = new Context(translationUnit, options);
+        context = new Context(translationUnit, options, this);
     }
 
     void translate ()
@@ -110,8 +110,7 @@ class Translator
     void translate (
         Output output,
         Cursor cursor,
-        Cursor parent = Cursor.empty,
-        string aliasName = "")
+        Cursor parent = Cursor.empty)
     {
         with (CXCursorKind)
         {
@@ -147,15 +146,15 @@ class Translator
                     break;
 
                 case CXCursor_StructDecl:
-                    translateRecordDecl(output, cursor, parent, aliasName);
+                    translateRecord(output, context, cursor);
                     break;
 
                 case CXCursor_EnumDecl:
-                    translateEnumDecl(output, cursor, parent, aliasName);
+                    translateEnum(output, context, cursor);
                     break;
 
                 case CXCursor_UnionDecl:
-                    translateRecordDecl(output, cursor, parent, aliasName);
+                    translateRecord(output, context, cursor);
                     break;
 
                 case CXCursor_MacroDefinition:
@@ -205,11 +204,13 @@ class Translator
 
         foreach (child; cursor.all)
         {
+            if (child.kind == CXCursorKind.CXCursor_TypeRef)
+                child = child.referenced;
+
             if (child.spelling == cursor.spelling ||
                 child.spelling == "")
                 ignoreTypedef = true;
 
-            translate(output, child, Cursor.empty, cursor.spelling);
             break;
         }
 
@@ -222,51 +223,6 @@ class Translator
         }
     }
 
-    void translateRecordDecl(
-        Output output,
-        Cursor cursor,
-        Cursor parent,
-        string aliasName = "")
-    {
-        if (aliasName == "" && context.typedefIndex.hasTypedefParent(cursor))
-            return;
-
-        if (cursor.isDefinition)
-        {
-            if (cursor.spelling in deferredDeclarations)
-                deferredDeclarations.remove(cursor.spelling);
-
-            (new Record(cursor, parent, this, aliasName)).translate(output);
-        }
-        else
-        {
-            Output nested = new Output();
-            (new Record(cursor, parent, this)).translate(nested);
-            deferredDeclarations[cursor.spelling] = nested.data();
-        }
-    }
-
-    void translateEnumDecl(
-        Output output,
-        Cursor cursor,
-        Cursor parent,
-        string aliasName = "")
-    {
-        if (aliasName == "" && context.typedefIndex.hasTypedefParent(cursor))
-            return;
-
-        new Enum(cursor, parent, this, aliasName).translate(output);
-    }
-
-    void translateUnionDecl(
-        Output output,
-        Cursor cursor,
-        Cursor parent,
-        string aliasName)
-    {
-        new Record(cursor, parent, this).translate(output);
-    }
-
     void translateMacroDefinition(Output output, Cursor cursor, Cursor parent)
     {
         auto tokens = cursor.tokens();
@@ -277,11 +233,7 @@ class Translator
 
     void variable (Output output, Cursor cursor, string prefix = "")
     {
-        output.singleLine(
-                "%s%s %s;",
-                prefix,
-                translateType(context, cursor),
-                translateIdentifier(cursor.spelling));
+        translateVariable(output, context, cursor, prefix);
     }
 
     void typedef_ (Output output, Cursor cursor)
@@ -378,6 +330,15 @@ package void translateFunction (Output output, string result, string name, Param
         params ~= "...";
 
     output.singleLine("%s%s %s (%s)", prefix, result, name, params.join(", "));
+}
+
+void translateVariable (Output output, Context context, Cursor cursor, string prefix = "")
+{
+    output.singleLine(
+        "%s%s %s;",
+        prefix,
+        translateType(context, cursor.type),
+        translateIdentifier(cursor.spelling));
 }
 
 string translateIdentifier (string str)

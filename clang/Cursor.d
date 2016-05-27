@@ -248,6 +248,16 @@ struct Cursor
         return Cursor(clang_getCursorDefinition(cast(CXCursor) cx));
     }
 
+    Cursor referenced () const
+    {
+        return Cursor(clang_getCursorReferenced(cast(CXCursor) cx));
+    }
+
+    Cursor canonical () const
+    {
+        return Cursor(clang_getCanonicalCursor(cast(CXCursor) cx));
+    }
+
     void dumpAST(ref Appender!string result, size_t indent, File* file)
     {
         import std.format;
@@ -328,6 +338,13 @@ struct Cursor
     void dumpAST(ref Appender!string result, size_t indent)
     {
         dumpAST(result, indent, null);
+    }
+
+    string dumpAST()
+    {
+        auto result = appender!string();
+        dumpAST(result, 0);
+        return result.data;
     }
 }
 

@@ -240,3 +240,33 @@ struct X
 D");
 
 }
+
+// Do not generate alias for typedef with the same name as structure.
+unittest
+{
+    assertTranslates(q"C
+typedef struct Foo Foo;
+struct Foo;
+struct Foo
+{
+    struct Bar
+    {
+        int x;
+    } bar;
+};
+C",
+q"D
+extern (C):
+
+struct Foo
+{
+    struct Bar
+    {
+        int x;
+    }
+
+    Bar bar;
+}
+
+D");
+}

@@ -13,109 +13,82 @@ import clang.Cursor;
 import clang.Visitor;
 import clang.Util;
 
+import dstep.translator.Context;
 import dstep.translator.Declaration;
 import dstep.translator.Output;
 import dstep.translator.Translator;
 import dstep.translator.Type;
 
-class Record : Declaration
+string translateRecordType(in Cursor cursor)
 {
-    private string aliasName;
+    if (cursor.kind == CXCursorKind.CXCursor_UnionDecl)
+        return "union";
+    else
+        return "struct";
+}
 
-    static bool[Cursor] recordDefinitions;
+void translateRecordDef(Output output, Context context, Cursor cursor)
+{
+    auto canonical = cursor.canonical;
+    auto typedefp = context.typedefParent(canonical);
 
-    this (
-        Cursor cursor,
-        Cursor parent,
-        Translator translator,
-        string aliasName = "")
-    {
-        super(cursor, parent, translator);
-        this.aliasName = aliasName;
-    }
+    import std.format;
 
-    override void translate (Output output)
-    {
-        if (cursor.isDefinition)
-            translateDefinition(output);
-        else
-            translateForwardDeclaration(output);
-    }
+    auto spelling = context.translateSpelling(cursor);
+    spelling = spelling == "" ? spelling : " " ~ spelling;
+    auto type = translateRecordType(cursor);
 
-    private void translateDefinition(Output output)
-    {
-        import std.format;
-
-        this.recordDefinitions[cursor] = true;
-
-        auto name = spelling == "" ? spelling : " " ~ spelling;
-
-        output.subscopeStrong(cursor.extent, format("%s%s", typeKeyword, name)) in {
-
-            foreach (cursor, parent; cursor.declarations)
-            {
-                with (CXCursorKind)
-                    switch (cursor.kind)
-                    {
-                        case CXCursor_FieldDecl:
-                            output.flushLocation(cursor);
-
-                            if (!cursor.type.isExposed && cursor.type.declaration.isValid)
-                            {
-                                auto def = cursor.type.declaration.definition;
-                                auto known = def in this.recordDefinitions;
-
-                                if (!known)
-                                    translator.translate(output, cursor.type.declaration);
-
-                                if (cursor.type.declaration.type.isEnum ||
-                                    !cursor.type.isAnonymous)
-                                    translateVariable(output, cursor);
-                            }
-
-                            else
-                                translateVariable(output, cursor);
-                        break;
-
-                        default: break;
-                    }
-            }
-        };
-    }
-
-    private void translateForwardDeclaration(Output output)
-    {
-        output.singleLine("%s %s;", typeKeyword, spelling);
-    }
-
-    private void translateVariable (Output output, Cursor cursor)
-    {
-        translator.variable(output, cursor);
-    }
-
-    private string typeKeyword ()
-    {
-        switch (cursor.kind)
+    output.subscopeStrong(cursor.extent, "%s%s", type, spelling) in {
+        foreach (cursor, parent; cursor.declarations)
         {
-            case CXCursorKind.CXCursor_UnionDecl:
-                return "union";
-            default:
-                return "struct";
+            with (CXCursorKind)
+                switch (cursor.kind)
+                {
+                    case CXCursor_FieldDecl:
+                        output.flushLocation(cursor);
+
+                        if (!cursor.type.isExposed && cursor.type.declaration.isValid)
+                        {
+                            context.translator.translate(
+                                output,
+                                cursor.type.declaration);
+
+                            if (cursor.type.declaration.type.isEnum ||
+                                !cursor.type.isAnonymous)
+                                translateVariable(output, context, cursor);
+                        }
+
+                        else
+                            translateVariable(output, context, cursor);
+                    break;
+
+                    default: break;
+                }
         }
-    }
+    };
+}
 
-    string anonymous()
+void translateRecordDecl(Output output, Context context, Cursor cursor)
+{
+    auto spelling = context.translateSpelling(cursor);
+    spelling = spelling == "" ? spelling : " " ~ spelling;
+    auto type = translateRecordType(cursor);
+    output.singleLine(cursor.extent, "%s%s;", type, spelling);
+}
+
+void translateRecord(Output output, Context context, Cursor cursor)
+{
+    auto canonical = cursor.canonical;
+
+    if (!context.alreadyDefined(cursor.canonical))
     {
-        return translator.context.generateAnonymousName(cursor);
-    }
+        auto definition = canonical.definition;
 
-    @property override string spelling ()
-    {
-        auto name = cursor.spelling;
-
-        if (name != "")
-            return name;
+        if (definition.isValid)
+            translateRecordDef(output, context, definition);
         else
-            return aliasName == "" ? anonymous : aliasName;
+            translateRecordDecl(output, context, cursor);
+
+        context.markAsDefined(cursor);
     }
 }

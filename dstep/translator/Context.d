@@ -17,6 +17,7 @@ import dstep.translator.CommentIndex;
 import dstep.translator.IncludeHandler;
 import dstep.translator.MacroIndex;
 import dstep.translator.Options;
+import dstep.translator.Translator;
 import dstep.translator.TypedefIndex;
 
 class Context
@@ -25,11 +26,13 @@ class Context
     public TranslationUnit translUnit;
 
     private string[Cursor] anonymousNames;
+    private bool[Cursor] alreadyDefined_;
     private IncludeHandler includeHandler_;
     private CommentIndex commentIndex_ = null;
     private TypedefIndex typedefIndex_ = null;
+    private Translator translator_ = null;
 
-    public this(TranslationUnit translUnit, Options options)
+    public this(TranslationUnit translUnit, Options options, Translator translator)
     {
         this.translUnit = translUnit;
         macroIndex = new MacroIndex(translUnit);
@@ -39,6 +42,7 @@ class Context
             commentIndex_ = new CommentIndex(translUnit);
 
         typedefIndex_ = new TypedefIndex(translUnit);
+        translator_ = translator;
     }
 
     public string getAnonymousName (Cursor cursor)
@@ -77,5 +81,38 @@ class Context
     public TypedefIndex typedefIndex()
     {
         return typedefIndex_;
+    }
+
+    public bool alreadyDefined(in Cursor cursor)
+    {
+        return (cursor in alreadyDefined_) !is null;
+    }
+
+    public void markAsDefined(in Cursor cursor)
+    {
+        alreadyDefined_[cursor] = true;
+    }
+
+    public Cursor typedefParent(in Cursor cursor)
+    {
+        return typedefIndex_.typedefParent(cursor);
+    }
+
+    public string translateSpelling(in Cursor cursor)
+    {
+        auto typedefp = typedefParent(cursor.canonical);
+
+        if (typedefp.isValid &&
+            (cursor.spelling == typedefp.spelling || cursor.spelling == ""))
+            return typedefp.spelling;
+        else
+            return cursor.spelling == ""
+                ? generateAnonymousName(cursor)
+                : cursor.spelling;
+    }
+
+    public Translator translator()
+    {
+        return translator_;
     }
 }

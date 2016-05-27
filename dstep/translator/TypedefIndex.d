@@ -31,17 +31,18 @@ class TypedefIndex
         }
     }
 
-    private void inspect(in Cursor cursor, bool[Cursor] visited)
+    private void inspect(Cursor cursor, bool[Cursor] visited)
     {
         if (cursor.kind == CXCursorKind.CXCursor_TypedefDecl)
         {
-            size_t count = 0;
-
             foreach (child; cursor.all)
             {
-                assert(count == 0);
-                typedefs[child] = cursor;
-                ++count;
+                if (child.kind == CXCursorKind.CXCursor_TypeRef
+                    || child.isDeclaration)
+                {
+                    typedefs[child.referenced] = cursor;
+                    typedefs[child.referenced.canonical] = cursor;
+                }
             }
         }
         else if ((cursor in visited) is null)
@@ -54,8 +55,13 @@ class TypedefIndex
         }
     }
 
-    bool hasTypedefParent(in Cursor cursor)
+    Cursor typedefParent(in Cursor cursor)
     {
-        return (cursor in typedefs) !is null;
+        auto result = cursor in typedefs;
+
+        if (result is null)
+            return cursor.empty;
+        else
+            return *result;
     }
 }

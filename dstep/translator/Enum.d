@@ -11,77 +11,66 @@ import clang.Cursor;
 import clang.Visitor;
 import clang.Util;
 
-import dstep.translator.Translator;
+import dstep.translator.Context;
 import dstep.translator.Declaration;
 import dstep.translator.Output;
+import dstep.translator.Translator;
 import dstep.translator.Type;
 
-class Enum : Declaration
+void translateEnumConstantDecl(Output output, Context context, Cursor cursor, bool last)
 {
-    private string aliasName;
+    import std.format : format;
 
-    this (Cursor cursor, Cursor parent, Translator translator, string aliasName)
+    output.singleLine(
+        cursor.extent,
+        "%s = %s%s",
+        cursor.spelling,
+        cursor.enum_.value,
+        last ? "" : ",");
+}
+
+void translateEnumDef(Output output, Context context, Cursor cursor)
+{
+    import std.format : format;
+
+    auto spelling = context.translateSpelling(cursor);
+
+    output.subscopeStrong(
+        cursor.extent,
+        "enum %s",
+        translateIdentifier(spelling)) in
     {
-        super(cursor, parent, translator);
-        this.aliasName = aliasName;
-    }
+        auto children = cursor.children;
 
-    override void translate (Output output)
-    {
-        import std.format : format;
-
-        output.subscopeStrong(
-            cursor.extent,
-            "enum %s",
-            translateIdentifier(spelling)) in
+        foreach (i; 0..children.length)
         {
-            auto children = cursor.children;
-
-            foreach (i; 0 .. children.length)
+            with (CXCursorKind)
             {
-                with (CXCursorKind)
+                switch (children[i].kind)
                 {
-                    switch (children[i].kind)
-                    {
-                        case CXCursor_EnumConstantDecl:
-                            translateEnumConstantDecl(
-                                output,
-                                children[i],
-                                children.length == i + 1);
-                            break;
+                    case CXCursor_EnumConstantDecl:
+                        translateEnumConstantDecl(
+                            output,
+                            context,
+                            children[i],
+                            children.length == i + 1);
+                        break;
 
-                        default:
-                            break;
-                    }
+                    default:
+                        break;
                 }
             }
-        };
-    }
+        }
+    };
+}
 
-    void translateEnumConstantDecl(Output output, Cursor cursor, bool last)
+void translateEnum(Output output, Context context, Cursor cursor)
+{
+    auto canonical = cursor.canonical;
+
+    if (!context.alreadyDefined(cursor.canonical))
     {
-        import std.format : format;
-
-        output.singleLine(
-            cursor.extent,
-            "%s = %s%s",
-            cursor.spelling,
-            cursor.enum_.value,
-            last ? "" : ",");
-    }
-
-    string anonymous()
-    {
-        return translator.context.generateAnonymousName(cursor);
-    }
-
-    @property override string spelling ()
-    {
-        auto name = cursor.spelling;
-
-        if (name != "")
-            return name;
-        else
-            return aliasName == "" ? anonymous : aliasName;
+        translateEnumDef(output, context, canonical.definition);
+        context.markAsDefined(cursor);
     }
 }
