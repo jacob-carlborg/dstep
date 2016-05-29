@@ -7,6 +7,7 @@
 module clang.Cursor;
 
 import std.array : appender, Appender;
+import std.conv : to;
 
 import mambo.core._;
 
@@ -58,7 +59,7 @@ struct Cursor
         return location.spelling.file;
     }
 
-    @property string path () const 
+    @property string path () const
     {
         return file.name;
     }

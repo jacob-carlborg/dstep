@@ -11,16 +11,23 @@ import mambo.core._;
 
 import clang.c.Index;
 import clang.Cursor;
+import clang.TranslationUnit;
 
 import dstep.translator.IncludeHandler;
+import dstep.translator.MacroIndex;
 
 class Context
 {
+    public MacroIndex macroIndex;
+    public TranslationUnit unit;
+
     private string[Cursor] anonymousNames;
     private IncludeHandler includeHandler_;
 
-    public this()
+    this(TranslationUnit unit)
     {
+        this.unit = unit;
+        macroIndex = new MacroIndex(unit);
         includeHandler_ = new IncludeHandler();
     }
 

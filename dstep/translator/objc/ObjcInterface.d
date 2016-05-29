@@ -107,19 +107,19 @@ private:
         name = cls.getMethodName(func, name, false);
 
         if (isGetter(func, name))
-            translateGetter(func.resultType, name, cls, classMethod);
+            translateGetter(func, func.resultType, name, cls, classMethod);
 
         else if (isSetter(func, name))
         {
             auto param = func.parameters.first;
             name = toDSetterName(name);
-            translateSetter(param.type, name, cls, classMethod, param.spelling);
+            translateSetter(param, param.type, name, cls, classMethod, param.spelling);
         }
 
         else
         {
             Output output = new Output();
-            
+
             translateFunction(output, translator.context, func, name, classMethod),
             output.append(" ");
             writeSelector(output, func.spelling);
@@ -134,8 +134,8 @@ private:
         auto cls = currentClass;
         auto name = cls.getMethodName(cursor.func, "", false);
 
-        translateGetter(cursor.type, name, cls, false);
-        translateSetter(cursor.type, name, cls, false);
+        translateGetter(cursor, cursor.type, name, cls, false);
+        translateSetter(cursor, cursor.type, name, cls, false);
     }
 
     void translateInstanceVariable (Cursor cursor)
@@ -145,7 +145,7 @@ private:
         currentClass.instanceVariables ~= output;
     }
 
-    void translateGetter (Type type, string name, ClassData cls, bool classMethod)
+    void translateGetter (Cursor cursor, Type type, string name, ClassData cls, bool classMethod)
     {
         import std.format : format;
 
@@ -156,7 +156,7 @@ private:
         output.singleLine(
             "@property %s%s %s () ",
             classMethod ? "static " : "",
-            translateType(translator.context, type),
+            translateType(translator.context, cursor, type),
             dName);
 
         writeSelector(output, name);
@@ -166,7 +166,7 @@ private:
         cls.propertyList.add(name);
     }
 
-    void translateSetter (Type type, string name, ClassData cls, bool classMethod, string parameterName = "")
+    void translateSetter (Cursor cursor, Type type, string name, ClassData cls, bool classMethod, string parameterName = "")
     {
         import std.format : format;
 
@@ -178,7 +178,7 @@ private:
             "@property %svoid %s (%s",
             classMethod ? "static " : "",
             translateIdentifier(name),
-            translateType(translator.context, type));
+            translateType(translator.context, cursor, type));
 
         if (parameterName.any)
             output.append(" %s", parameterName);

@@ -10,6 +10,7 @@ import mambo.core.string;
 import mambo.core.io;
 
 import clang.c.Index;
+import clang.Cursor;
 import clang.Type;
 
 import dstep.translator.Context;
@@ -19,7 +20,12 @@ import dstep.translator.Output;
 
 import std.conv;
 
-string translateType (Context context, Type type, bool rewriteIdToObjcObject = true, bool applyConst = true)
+string translateType (Context context, Cursor cursor, bool rewriteIdToObjcObject = true, bool applyConst = true)
+{
+    return translateType(context, cursor, cursor.type, rewriteIdToObjcObject, applyConst);
+}
+
+string translateType (Context context, Cursor cursor, Type type, bool rewriteIdToObjcObject = true, bool applyConst = true)
 in
 {
     assert(type.isValid);
@@ -31,13 +37,13 @@ body
     with (CXTypeKind)
     {
         if (type.kind == CXType_BlockPointer || type.isFunctionPointerType)
-            result = translateFunctionPointerType(context, type.pointeeType.func);
+            result = translateFunctionPointerType(context, cursor, type.pointeeType.func);
 
         else if (type.isFunctionType)
-            result = translateFunctionPointerType(context, type.canonicalType.func);
+            result = translateFunctionPointerType(context, cursor, type.canonicalType.func);
 
         else if (type.kind == CXType_ObjCObjectPointer && !type.isObjCBuiltinType)
-            result = translateObjCObjectPointerType(context, type);
+            result = translateObjCObjectPointerType(context, cursor, type);
 
         else if (type.isWideCharType)
             result = "wchar";
@@ -48,8 +54,11 @@ body
         else
             switch (type.kind)
             {
-                case CXType_Pointer: return translatePointer(context, type, rewriteIdToObjcObject, applyConst);
-                case CXType_Typedef: result = translateTypedef(context, type); break;
+                case CXType_Pointer:
+                    return translatePointer(context, cursor, type, rewriteIdToObjcObject, applyConst);
+
+                case CXType_Typedef:
+                    result = translateTypedef(context, type); break;
 
                 case CXType_Record:
                 case CXType_Enum:
@@ -64,8 +73,20 @@ body
 
                 case CXType_ConstantArray:
                 case CXType_IncompleteArray:
-                    result = translateArray(context, type, rewriteIdToObjcObject); break;
-                case CXType_Unexposed: result = translateUnexposed(context, type, rewriteIdToObjcObject); break;
+                    result = translateArray(
+                        context,
+                        cursor,
+                        type,
+                        rewriteIdToObjcObject,
+                        type.array.numDimensions - 1);
+                    break;
+
+                case CXType_Unexposed:
+                    result = translateUnexposed(
+                        context,
+                        type,
+                        rewriteIdToObjcObject);
+                    break;
 
                 default: result = translateType(context, type.kind, rewriteIdToObjcObject);
             }
@@ -158,12 +179,17 @@ body
     auto declaration = type.declaration;
 
     if (declaration.isValid)
-        return translateType(context, declaration.type, rewriteIdToObjcObject);
+        return translateType(context, declaration, rewriteIdToObjcObject);
     else
         return translateType(context, type.kind, rewriteIdToObjcObject);
 }
 
-string translateArray (Context context, Type type, bool rewriteIdToObjcObject)
+string translateArray (
+    Context context,
+    Cursor cursor,
+    Type type,
+    bool rewriteIdToObjcObject,
+    size_t dimension = 0)
 in
 {
     assert(type.kind == CXTypeKind.CXType_ConstantArray
@@ -172,20 +198,55 @@ in
 body
 {
     auto array = type.array;
-    auto elementType = translateType(context, array.elementType, rewriteIdToObjcObject);
+    string elementType;
+
+    if (array.elementType.kind == CXTypeKind.CXType_ConstantArray)
+    {
+        elementType = translateArray(
+            context,
+            cursor,
+            array.elementType,
+            rewriteIdToObjcObject,
+            dimension == 0 ? 0 : dimension - 1);
+    }
+    else
+    {
+        elementType = translateType(
+            context,
+            cursor,
+            array.elementType,
+            rewriteIdToObjcObject);
+    }
 
     if (array.size >= 0)
+    {
+        auto children = cursor.children;
+
+        if (dimension < children.length &&
+            children[dimension].kind == CXCursorKind.CXCursor_IntegerLiteral)
+        {
+            auto expansions = context.macroIndex.queryExpansion(children[dimension]);
+
+            if (expansions.length == 1)
+            {
+                return elementType ~ '[' ~ expansions[0].spelling ~ ']';
+            }
+        }
+
         return elementType ~ '[' ~ array.size.toString ~ ']';
+    }
     else
+    {
         // extern static arrays (which are normally present in bindings)
         // have same ABI as extern dynamic arrays, size is only checked
         // against declaration in header. As it is not possible in D
         // to define static array with ABI of dynamic one, only way is to
         // abandon the size information
         return elementType ~ "[]";
+    }
 }
 
-string translatePointer (Context context, Type type, bool rewriteIdToObjcObject, bool applyConst)
+string translatePointer (Context context, Cursor cursor, Type type, bool rewriteIdToObjcObject, bool applyConst)
 in
 {
     assert(type.kind == CXTypeKind.CXType_Pointer);
@@ -202,7 +263,7 @@ body
         return pointee.isConst;
     }
 
-    auto result = translateType(context, type.pointeeType, rewriteIdToObjcObject, false);
+    auto result = translateType(context, cursor, type.pointeeType, rewriteIdToObjcObject, false);
 
     version (D1)
     {
@@ -225,22 +286,22 @@ body
     return result;
 }
 
-string translateFunctionPointerType (Context context, FuncType func)
+string translateFunctionPointerType (Context context, Cursor cursor, FuncType func)
 {
     Parameter[] params;
     params.reserve(func.arguments.length);
 
     foreach (type ; func.arguments)
-        params ~= Parameter(translateType(context, type));
+        params ~= Parameter(translateType(context, cursor, type));
 
-    auto resultType = translateType(context, func.resultType);
+    auto resultType = translateType(context, cursor, func.resultType);
 
     Output output = new Output();
     translateFunction(output, resultType, "function", params, func.isVariadic);
     return output.data();
 }
 
-string translateObjCObjectPointerType (Context context, Type type)
+string translateObjCObjectPointerType (Context context, Cursor cursor, Type type)
 in
 {
     assert(type.kind == CXTypeKind.CXType_ObjCObjectPointer && !type.isObjCBuiltinType);
@@ -253,7 +314,7 @@ body
         return "Protocol*";
 
     else
-        return translateType(context, pointee);
+        return translateType(context, cursor, pointee);
 }
 
 string translateType (Context context, CXTypeKind kind, bool rewriteIdToObjcObject = true)

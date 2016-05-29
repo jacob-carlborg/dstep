@@ -75,3 +75,69 @@ extern __gshared int a;
 D");
 
 }
+
+unittest
+{
+    assertTranslates(
+q"C
+
+#define FOO 4
+
+char var[FOO];
+C",
+q"D
+extern (C):
+
+enum FOO = 4;
+extern __gshared char[FOO] var;
+D");
+
+    assertTranslates(
+q"C
+
+#define BAR 128
+
+struct Foo
+{
+    char var[BAR];
+};
+C",
+q"D
+extern (C):
+
+enum BAR = 128;
+
+struct Foo
+{
+    char[BAR] var;
+}
+D");
+
+    assertTranslates(
+q"C
+
+#define FOO 64
+#define BAR 128
+#define BAZ 256
+
+struct Foo
+{
+    char var[BAR][FOO][BAZ];
+    char rav[BAR][BAZ][42];
+};
+C",
+q"D
+extern (C):
+
+enum FOO = 64;
+enum BAR = 128;
+enum BAZ = 256;
+
+struct Foo
+{
+    char[BAZ][FOO][BAR] var;
+    char[42][BAZ][BAR] rav;
+}
+D");
+
+}
