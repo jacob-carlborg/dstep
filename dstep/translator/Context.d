@@ -15,6 +15,7 @@ import clang.TranslationUnit;
 
 import dstep.translator.CommentIndex;
 import dstep.translator.IncludeHandler;
+import dstep.translator.MacroDefinition;
 import dstep.translator.MacroIndex;
 import dstep.translator.Options;
 import dstep.translator.Output;
@@ -33,6 +34,8 @@ class Context
     private TypedefIndex typedefIndex_ = null;
     private Translator translator_ = null;
     private Output globalScope_ = null;
+    public MacroDefinition[string] macroDefinitions;
+    string macroLinkage = "extern (D)";
 
     public this(TranslationUnit translUnit, Options options, Translator translator)
     {
@@ -46,6 +49,11 @@ class Context
         typedefIndex_ = new TypedefIndex(translUnit);
         translator_ = translator;
         globalScope_ = new Output();
+    }
+
+    public string macroLinkagePrefix()
+    {
+        return macroLinkage == "" ? "" : macroLinkage ~ " ";
     }
 
     public string getAnonymousName (Cursor cursor)

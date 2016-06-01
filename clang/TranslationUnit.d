@@ -17,6 +17,7 @@ import clang.File;
 import clang.Index;
 import clang.SourceLocation;
 import clang.SourceRange;
+import clang.Token;
 import clang.Util;
 import clang.Visitor;
 
@@ -242,6 +243,19 @@ struct TranslationUnit
         relativeLocationAccessor()
     {
         return relativeLocationAccessorImpl(cursor.all);
+    }
+
+    TokenRange tokenize(SourceRange extent)
+    {
+        import std.algorithm.mutation : stripRight;
+
+        CXToken* tokens = null;
+        uint numTokens = 0;
+        clang_tokenize(cx, extent.cx, &tokens, &numTokens);
+        auto result = TokenRange(cx, tokens, numTokens);
+
+        // For some reason libclang returns some tokens out of cursors extent.cursor
+        return result.stripRight!(token => !intersects(extent, token.extent));
     }
 
     string dumpAST (bool skipIncluded = false)

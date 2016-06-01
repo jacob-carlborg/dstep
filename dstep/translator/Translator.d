@@ -25,6 +25,7 @@ import dstep.translator.IncludeHandler;
 import dstep.translator.objc.Category;
 import dstep.translator.objc.ObjcInterface;
 import dstep.translator.Output;
+import dstep.translator.MacroDefinition;
 import dstep.translator.Record;
 import dstep.translator.Type;
 
@@ -242,10 +243,10 @@ class Translator
 
     void translateMacroDefinition(Output output, Cursor cursor, Cursor parent)
     {
-        auto tokens = cursor.tokens();
-
-        if (tokens.length == 2)
-            output.singleLine("enum %s = %s;", tokens[0].spelling, tokens[1].spelling);
+        translMacroDefinition(
+            output,
+            context,
+            cursor);
     }
 
     void variable (Output output, Cursor cursor, string prefix = "")

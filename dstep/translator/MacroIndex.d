@@ -8,11 +8,13 @@
 module dstep.translator.MacroIndex;
 
 import std.container.rbtree;
+import std.typecons;
 
 import clang.c.Index;
 import clang.Cursor;
 import clang.SourceLocation;
 import clang.SourceRange;
+import clang.Token;
 import clang.TranslationUnit;
 
 class MacroIndex

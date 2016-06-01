@@ -20,6 +20,7 @@ import clang.c.Index;
 
 import dstep.translator.CommentIndex;
 import dstep.translator.IncludeHandler;
+import dstep.translator.MacroDefinition;
 import dstep.translator.Output;
 import dstep.translator.Translator;
 
@@ -85,11 +86,11 @@ void assertFileExists(
     }
 }
 
-TranslationUnit makeTranslationUnit(string c)
+TranslationUnit makeTranslationUnit(string source)
 {
     return TranslationUnit.parseString(
         index,
-        c,
+        source,
         ["-Wno-missing-declarations"],
         null,
         CXTranslationUnit_Flags.CXTranslationUnit_DetailedPreprocessingRecord);
@@ -99,6 +100,34 @@ CommentIndex makeCommentIndex(string c)
 {
     TranslationUnit translUnit = makeTranslationUnit(c);
     return new CommentIndex(translUnit);
+}
+
+MacroDefinition parseMacroDefinition(string source)
+{
+    import dstep.translator.MacroDefinition : parseMacroDefinition;
+
+    TokenRange tokenize(string source)
+    {
+        auto translUnit = makeTranslationUnit(source);
+        return translUnit.tokenize(translUnit.extent(0, cast (uint) source.length));
+    }
+
+    TokenRange tokens = tokenize(source);
+
+    bool[string] table =
+    [
+        "void" : true,
+        "char" : true,
+        "short" : true,
+        "int" : true,
+        "long" : true,
+        "float" : true,
+        "double" : true,
+        "signed" : true,
+        "unsigned" : true,
+    ];
+
+    return parseMacroDefinition(tokens, table);
 }
 
 string translate(TranslationUnit translationUnit, Options options)
