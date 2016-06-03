@@ -912,7 +912,6 @@ D"[0..$-1], output.data);
 
 }
 
-
 // Test adding separators with one level of nesting,
 // the nested content is multi-line.
 unittest
