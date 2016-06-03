@@ -31,6 +31,8 @@ struct C
         int x;
         int y;
     }
+
+    _Anonymous_0 point;
 }
 
 struct D

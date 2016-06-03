@@ -275,7 +275,8 @@ D");
 unittest
 {
     assertTranslates(q"C
-void very_long_function_declaration(double way_too_long_argument, double another_long_argument);
+void very_long_function_declaration(double way_too_long_argument,
+                           double another_long_argument);
 C",
 q"D
 extern (C):
@@ -283,6 +284,114 @@ extern (C):
 void very_long_function_declaration (
     double way_too_long_argument,
     double another_long_argument);
+D");
+
+}
+
+// Long function declarations shouldn't be broken, if they aren't in original.
+unittest
+{
+    assertTranslates(q"C
+void very_long_function_declaration(double way_too_long_argument, double another_long_argument);
+C",
+q"D
+extern (C):
+
+void very_long_function_declaration (double way_too_long_argument, double another_long_argument);
+D");
+
+}
+
+// Test translation of nested anonymous structures that have associated fields.
+unittest
+{
+    assertTranslates(q"C
+struct C
+{
+    struct
+    {
+        int x;
+        int y;
+
+        struct
+        {
+            int z;
+            int w;
+        } nested;
+    } point;
+};
+C",
+q"D
+extern (C):
+
+struct C
+{
+    struct _Anonymous_0
+    {
+        int x;
+        int y;
+
+        struct _Anonymous_1
+        {
+            int z;
+            int w;
+        }
+
+        _Anonymous_1 nested;
+    }
+
+    _Anonymous_0 point;
+}
+
+D");
+
+}
+
+// Test translation of nested anonymous structures.
+unittest
+{
+    assertTranslates(q"C
+struct C
+{
+    union {
+        int x;
+        int y;
+    };
+
+    struct {
+        int z;
+        int w;
+
+        union {
+            int r, g, b;
+        };
+    };
+};
+C",
+q"D
+extern (C):
+
+struct C
+{
+    union
+    {
+        int x;
+        int y;
+    }
+
+    struct
+    {
+        int z;
+        int w;
+
+        union
+        {
+            int r;
+            int g;
+            int b;
+        }
+    }
+}
 D");
 
 }

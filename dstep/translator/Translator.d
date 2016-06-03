@@ -285,7 +285,14 @@ void translateFunction (Output output, Context context, FunctionCursor func, str
 
     auto resultType = translateType(context, func, func.resultType);
 
-    translateFunction(output, resultType, name, params, func.isVariadic, isStatic ? "static " : "");
+    translateFunction(
+        output,
+        resultType,
+        name,
+        params,
+        func.isVariadic,
+        isStatic ? "static " : "",
+        func.extent.isMultiline);
 }
 
 package struct Parameter
@@ -295,7 +302,14 @@ package struct Parameter
     bool isConst;
 }
 
-package void translateFunction (Output output, string result, string name, Parameter[] parameters, bool variadic, string prefix = "")
+package void translateFunction (
+    Output output,
+    string result,
+    string name,
+    Parameter[] parameters,
+    bool variadic,
+    string prefix = "",
+    bool multiline = false)
 {
     import std.format : format;
 
@@ -330,10 +344,13 @@ package void translateFunction (Output output, string result, string name, Param
     if (variadic)
         params ~= "...";
 
-    output.adaptiveLine("%s%s %s (%@,%@)", prefix, result, name) in {
-        foreach (param; params)
-            output.adaptiveLine(param);
-    };
+    if (multiline)
+        output.adaptiveLine("%s%s %s (%@,%@)", prefix, result, name) in {
+            foreach (param; params)
+                output.adaptiveLine(param);
+        };
+    else
+        output.singleLine("%s%s %s (%s)", prefix, result, name, params.join(", "));
 }
 
 void translateVariable (Output output, Context context, Cursor cursor, string prefix = "")

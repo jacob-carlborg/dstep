@@ -31,6 +31,8 @@ union C
         int x;
         int y;
     }
+
+    _Anonymous_0 point;
 }
 
 union D

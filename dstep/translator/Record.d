@@ -27,14 +27,14 @@ string translateRecordType(in Cursor cursor)
         return "struct";
 }
 
-void translateRecordDef(Output output, Context context, Cursor cursor)
+void translateRecordDef(Output output, Context context, Cursor cursor, bool keepUnnamed = false)
 {
     auto canonical = cursor.canonical;
     auto typedefp = context.typedefParent(canonical);
 
     import std.format;
 
-    auto spelling = context.translateSpelling(cursor);
+    auto spelling = keepUnnamed ? "" : context.translateSpelling(cursor);
     spelling = spelling == "" ? spelling : " " ~ spelling;
     auto type = translateRecordType(cursor);
 
@@ -53,14 +53,19 @@ void translateRecordDef(Output output, Context context, Cursor cursor)
                                 output,
                                 cursor.type.declaration);
 
-                            if (cursor.type.declaration.type.isEnum ||
-                                !cursor.type.isAnonymous)
-                                translateVariable(output, context, cursor);
+                            translateVariable(output, context, cursor);
                         }
-
                         else
                             translateVariable(output, context, cursor);
-                    break;
+
+                        break;
+
+                    case CXCursor_UnionDecl:
+                    case CXCursor_StructDecl:
+                        if (cursor.type.isAnonymous)
+                            translateAnonymousRecord(output, context, cursor, parent);
+
+                        break;
 
                     default: break;
                 }
@@ -74,6 +79,25 @@ void translateRecordDecl(Output output, Context context, Cursor cursor)
     spelling = spelling == "" ? spelling : " " ~ spelling;
     auto type = translateRecordType(cursor);
     output.singleLine(cursor.extent, "%s%s;", type, spelling);
+}
+
+void translateAnonymousRecord(Output output, Context context, Cursor cursor, Cursor parent)
+{
+    import std.algorithm.iteration : filter;
+    import std.stdio;
+
+    auto canonical = cursor.canonical;
+
+    bool predicate(Cursor a)
+    {
+        return a.kind == CXCursorKind.CXCursor_FieldDecl &&
+            a.type.declaration.canonical == canonical;
+    }
+
+    auto fields = filter!(predicate)(parent.children);
+
+    if (fields.empty)
+        translateRecordDef(output, context, cursor, true);
 }
 
 void translateRecord(Output output, Context context, Cursor cursor)

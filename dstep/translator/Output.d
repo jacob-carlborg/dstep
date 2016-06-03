@@ -224,7 +224,7 @@ class Output
 
         size_t findPlaceholder(in Char[] fmt)
         {
-            foreach (i; 0..fmt.length)
+            foreach (i; 0 .. fmt.length)
             {
                 if (fmt[i] == '@' && i != 0)
                 {
@@ -246,10 +246,10 @@ class Output
         if (begin != fmt.length)
         {
             string separator, opening, closing;
-            size_t end = findPlaceholder(fmt[begin + 2..$]) + begin + 2;
+            size_t end = findPlaceholder(fmt[begin + 2 .. $]) + begin + 2;
 
             if (end != fmt.length)
-                separator = fmt[begin + 2..end].idup;
+                separator = fmt[begin + 2 .. end].idup;
             else
                 end = begin;
 
@@ -257,9 +257,9 @@ class Output
             auto sentinel = replicate("@", minUnique);
 
             auto split = format(
-                fmt[0..begin] ~
+                fmt[0 .. begin] ~
                 sentinel ~
-                fmt[end + 2..$],
+                fmt[end + 2 .. $],
                 args).findSplit(sentinel);
 
             return tuple(split[0], separator, split[2]);
@@ -303,6 +303,15 @@ class Output
         return Indent(this, adaptiveLineImpl(fmt, args));
     }
 
+    /**
+     * adaptiveLine adds a line to the output that is automatically broken to
+     * multiple lines, if it's too long (80 characters).
+     *
+     * It takes a special format specifier that is replaced with other nested
+     * adaptive lines. The specifier has form `%@<separator>%@`, where
+     * <separator> is a string that separates the items/lines (the spaces and
+     * end-lines are added automatically).
+     */
     public Indent adaptiveLine(Char, Args...)(
         in SourceRange extent,
         in Char[] fmt,
@@ -319,6 +328,94 @@ class Output
             end.line,
             end.column,
             end.offset);
+    }
+
+    ///
+    unittest
+    {
+        // Simple item.
+        auto example1 = new Output();
+
+        example1.adaptiveLine("foo");
+
+        assert(example1.data() == "foo");
+
+        // Inline function.
+        auto example2 = new Output();
+
+        example2.adaptiveLine("void foo(%@,%@);") in {
+            example2.adaptiveLine("int bar");
+            example2.adaptiveLine("int baz");
+        };
+
+        assert(example2.data() == "void foo(int bar, int baz);");
+
+        // Broken function.
+        auto example3 = new Output();
+
+        example3.adaptiveLine("void foo(%@,%@);") in {
+            example3.adaptiveLine("int bar0");
+            example3.adaptiveLine("int bar1");
+            example3.adaptiveLine("int bar2");
+            example3.adaptiveLine("int bar3");
+            example3.adaptiveLine("int bar4");
+            example3.adaptiveLine("int bar5");
+            example3.adaptiveLine("int bar6");
+            example3.adaptiveLine("int bar7");
+            example3.adaptiveLine("int bar8");
+        };
+
+        assert(example3.data() ==
+q"D
+void foo(
+    int bar0,
+    int bar1,
+    int bar2,
+    int bar3,
+    int bar4,
+    int bar5,
+    int bar6,
+    int bar7,
+    int bar8);
+D"[0 .. $ - 1]);
+
+        // The adaptive lines can be nested multiple times. Breaking algorithm
+        // will try to break only the most outer levels. The %@<sep>%@ can be
+        // mixed with standard format specifiers.
+        auto example4 = new Output();
+
+        example4.adaptiveLine("foo%d%s(%@,%@);", 123, "bar") in {
+            example4.adaptiveLine("bar0");
+            example4.adaptiveLine("bar1");
+            example4.adaptiveLine("bar2");
+            example4.adaptiveLine("baz(%@ +%@)") in {
+                example4.adaptiveLine("0");
+                example4.adaptiveLine("1");
+                example4.adaptiveLine("2");
+                example4.adaptiveLine("3");
+                example4.adaptiveLine("4");
+            };
+            example4.adaptiveLine("bar4");
+            example4.adaptiveLine("bar5");
+            example4.adaptiveLine("bar6");
+            example4.adaptiveLine("bar7");
+            example4.adaptiveLine("bar8");
+        };
+
+        assert(example4.data() ==
+q"D
+foo123bar(
+    bar0,
+    bar1,
+    bar2,
+    baz(0 + 1 + 2 + 3 + 4),
+    bar4,
+    bar5,
+    bar6,
+    bar7,
+    bar8);
+D"[0 .. $ - 1]);
+
     }
 
     public Indent multiLine(Char, Args...)(in Char[] fmt, Args args)
@@ -429,7 +526,7 @@ class Output
             foreach (line; lines)
             {
                 indent();
-                formattedWrite(buffer, line[indentAmount..$]);
+                formattedWrite(buffer, line[indentAmount .. $]);
             }
         }
     }
@@ -698,7 +795,8 @@ class Output
         size_t jtr = itr + 1;
         size_t width = data[itr].content.length;
 
-        size_t separator(size_t jtr, size_t width) {
+        size_t separator(size_t jtr, size_t width)
+        {
             if (jtr + 1 < data.length &&
                 separators.length != 0 &&
                 data[jtr + 1].type != ChunkType.closing &&
@@ -718,7 +816,7 @@ class Output
                     break;
 
                 case ChunkType.closing:
-                    separators = separators[0..$-1];
+                    separators = separators[0 .. $ - 1];
                     width +=
                         data[jtr].content.length +
                         separator(jtr, width);
@@ -755,7 +853,7 @@ class Output
                     break;
 
                 case ChunkType.closing:
-                    separators = separators[0..$-1];
+                    separators = separators[0 .. $ - 1];
                     buffer.put(data[jtr].content);
 
                     if (jtr + 1 < data.length && separators.length != 0 &&
@@ -865,7 +963,7 @@ class Output
 
     private void indent()
     {
-        foreach (x; 0..stack.length - 1)
+        foreach (x; 0 .. stack.length - 1)
             buffer.put("    ");
     }
 
@@ -877,7 +975,7 @@ class Output
 
     private void indent(size_t shift)
     {
-        foreach (x; 0..stack.length - 1 + shift)
+        foreach (x; 0 .. stack.length - 1 + shift)
             buffer.put("    ");
     }
 }
