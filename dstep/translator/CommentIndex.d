@@ -27,7 +27,7 @@ class CommentIndex
         this(Token token)
         {
             auto location = token.location;
-            content = token.spelling;
+            content = normalize(token.spelling);
             extent = token.extent;
             line = location.line;
             column = location.column;
@@ -67,6 +67,73 @@ class CommentIndex
         int opCmp(uint s) const
         {
             return offset < s ? -1 : (offset == s ? 0 : 1);
+        }
+
+        private static bool isNormalized(string content)
+        {
+            import std.ascii : isWhite;
+
+            for (size_t i = 1; i < content.length; ++i)
+            {
+                if (content[i] == '\n' && content[i - 1].isWhite)
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static string normalize(string content)
+        {
+            import std.array : Appender;
+            import std.ascii : isWhite;
+
+            if (isNormalized(content))
+                return content;
+
+            auto result = appender!string;
+
+            size_t lineBegin = 0;
+            size_t firstWhite = 0;
+
+            for (size_t i = 0; i < content.length; ++i)
+            {
+                if (content[i] == '\n')
+                {
+                    if (firstWhite == i)
+                    {
+                        result.put(content[lineBegin .. i + 1]);
+                    }
+                    else
+                    {
+                        result.put(content[lineBegin .. firstWhite]);
+                        result.put('\n');
+                    }
+
+                    lineBegin = i + 1;
+                    firstWhite = i + 1;
+                }
+                else if (!content[i].isWhite)
+                {
+                    firstWhite = i + 1;
+                }
+            }
+
+            if (firstWhite == content.length)
+                result.put(content[lineBegin .. content.length]);
+            else
+                result.put(content[lineBegin .. firstWhite]);
+
+            return result.data;
+        }
+
+        unittest
+        {
+            assert(normalize("") == "");
+            assert(normalize("foo") == "foo");
+            assert(normalize("foo \n") == "foo\n");
+            assert(normalize("foo \n  ") == "foo\n");
+            assert(normalize("foo \n  bar \n  ") == "foo\n  bar\n");
+            assert(normalize("foo \n  bar \n\n  ") == "foo\n  bar\n\n");
         }
     }
 

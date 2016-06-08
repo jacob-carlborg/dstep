@@ -616,3 +616,22 @@ void foo (...);
 D", options);
 
 }
+
+// Test specifying package name.
+unittest
+{
+    Options options;
+    options.outputFile = "qux/Baz.d";
+    options.packageName = "foo.bar";
+
+    assertTranslates(q"C
+int a;
+C", q"D
+module foo.bar.Baz;
+
+extern (C):
+
+extern __gshared int a;
+D", options);
+
+}
