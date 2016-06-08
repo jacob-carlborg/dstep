@@ -27,6 +27,7 @@ import dstep.translator.Enum;
 import dstep.translator.IncludeHandler;
 import dstep.translator.objc.Category;
 import dstep.translator.objc.ObjcInterface;
+import dstep.translator.Options;
 import dstep.translator.Output;
 import dstep.translator.MacroDefinition;
 import dstep.translator.Record;
@@ -105,10 +106,13 @@ class Translator
     {
         import std.algorithm.mutation : strip;
 
-        auto main = translateCursors();
-        auto imports = context.includeHandler.toImports();
+        Output main = translateCursors();
+        Output head = new Output();
 
-        return main.header ~ imports.data ~ main.content;
+        moduleDeclaration(head);
+        context.includeHandler.toImports(head);
+
+        return main.header ~ head.data ~ main.content;
     }
 
     void translateInGlobalScope(
@@ -271,6 +275,17 @@ private:
     {
         return (inputFilename != "" && inputFile != cursor.location.spelling.file)
             || cursor.isPredefined;
+    }
+
+    void moduleDeclaration (Output output)
+    {
+        if (context.options.packageName != "")
+        {
+            import std.path : baseName, stripExtension;
+            string moduleName = stripExtension(baseName(context.options.outputFile));
+            output.singleLine("module %s.%s;", context.options.packageName, moduleName);
+            output.separator();
+        }
     }
 
     void externDeclaration (Output output)

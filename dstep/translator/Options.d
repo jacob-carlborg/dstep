@@ -14,7 +14,10 @@ enum Language
 
 struct Options
 {
+	string[] inputFiles;
+	string inputFile;
     string outputFile;
+	string packageName;
     Language language = Language.c;
     bool enableComments = true;
 }

@@ -29,6 +29,7 @@ import clang.Util;
 import dstep.Configuration;
 import dstep.translator.Options;
 import dstep.core.Exceptions;
+import dstep.translator.Options;
 import dstep.translator.Translator;
 
 class Application

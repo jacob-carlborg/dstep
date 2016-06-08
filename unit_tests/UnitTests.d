@@ -378,4 +378,21 @@ alias BAR = stats_t._Anonymous_0.BAR;
 
 D");
 
+// Test specifying package name.
+unittest
+{
+    Options options;
+    options.outputFile = "qux/Baz.d";
+    options.packageName = "foo.bar";
+
+    assertTranslates(q"C
+int a;
+C", q"D
+module foo.bar.Baz;
+
+extern (C):
+
+extern __gshared int a;
+D", options);
+
 }

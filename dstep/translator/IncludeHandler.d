@@ -99,11 +99,9 @@ class IncludeHandler
         imports ~= "core.stdc.config";
     }
 
-    Output toImports ()
+    void toImports (Output output)
     {
         import std.array : array;
-
-        Output output = new Output();
 
         auto r =  rawIncludes.map!((e) {
             if (auto i = isKnownInclude(e))
@@ -122,8 +120,6 @@ class IncludeHandler
             output.separator();
 
         output.finalize();
-
-        return output;
     }
 
 private:

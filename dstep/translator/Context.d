@@ -37,11 +37,15 @@ class Context
 
     public MacroDefinition[string] macroDefinitions;
 
+    const Options options;
+
     public this(TranslationUnit translUnit, Options options, Translator translator = null)
     {
         this.translUnit = translUnit;
         macroIndex = new MacroIndex(translUnit);
         includeHandler_ = new IncludeHandler();
+
+        this.options = options;
 
         if (options.enableComments)
             commentIndex_ = new CommentIndex(translUnit);
