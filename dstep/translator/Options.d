@@ -14,10 +14,22 @@ enum Language
 
 struct Options
 {
-	string[] inputFiles;
-	string inputFile;
+    string[] inputFiles;
+    string inputFile;
     string outputFile;
-	string packageName;
+    string packageName;
     Language language = Language.c;
     bool enableComments = true;
+    bool publicSubmodules = false;
+    bool keepUntranslatable = false;
 }
+
+string fullModuleName(string packageName, string path)
+{
+    import std.path : baseName, stripExtension;
+    import std.format : format;
+
+    string moduleName = stripExtension(baseName(path));
+    return format("%s.%s", packageName, moduleName);
+}
+

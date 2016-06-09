@@ -1,5 +1,3 @@
-import core.stdc.time;
-
 extern (Objective-C):
 
 class Foo

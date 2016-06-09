@@ -22,6 +22,19 @@ unittest
         "test_files/comments_disabled.h",
         ["--no-comments"]);
 
+    assertRunsDStepCFiles([
+        tuple("test_files/module/main0.d", "test_files/module/main0.h"),
+        tuple("test_files/module/include.d", "test_files/module/include.h"),
+        tuple("test_files/module/unused.d", "test_files/module/unused.h")],
+        ["--package", "modules"]);
+
+    assertRunsDStepCFiles([
+        tuple("test_files/module/main0_public.d", "test_files/module/main0_public.h"),
+        tuple("test_files/module/include.d", "test_files/module/include.h"),
+        tuple("test_files/module/unused.d", "test_files/module/unused.h")],
+        ["--public-submodules", "--package", "modules"]);
+
+
     assertRunsDStepObjCFile(
         "test_files/objc/methods.d",
         "test_files/objc/methods.h");

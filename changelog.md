@@ -5,6 +5,7 @@
 
 * Support for simple defines (like `#define FOO 1`).
 * Translation of defines to functions (like `#define FOO(a, b) a + b`).
+* Support for translation of whole packages (--package CLI option).
 * Support for translation of preprocessor constants in array sizes.
 * Support for global comments and comments inside structs and enums.
 * Support for removing excessive newlines and keeping original spacing.

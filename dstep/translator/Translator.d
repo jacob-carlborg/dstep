@@ -281,9 +281,10 @@ private:
     {
         if (context.options.packageName != "")
         {
-            import std.path : baseName, stripExtension;
-            string moduleName = stripExtension(baseName(context.options.outputFile));
-            output.singleLine("module %s.%s;", context.options.packageName, moduleName);
+            output.singleLine("module %s;", fullModuleName(
+                context.options.packageName,
+                context.options.outputFile));
+
             output.separator();
         }
     }
@@ -309,7 +310,7 @@ void translateFunction (Output output, Context context, FunctionCursor func, str
 {
     Parameter[] params;
 
-    if (func.type.isValid) // This will be invalid of Objective-C methods
+    if (func.type.isValid) // This will be invalid for Objective-C methods
         params.reserve(func.type.func.arguments.length);
 
     foreach (param ; func.parameters)

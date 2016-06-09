@@ -378,6 +378,8 @@ alias BAR = stats_t._Anonymous_0.BAR;
 
 D");
 
+}
+
 // Test specifying package name.
 unittest
 {

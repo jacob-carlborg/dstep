@@ -331,23 +331,26 @@ void assertRunsDStep(
     string outputDir = namedTempDir("dstepUnitTest");
 
     string[] outputPaths;
+
     if (filesPaths.length == 1)
         outputPaths ~= buildPath(outputDir, baseName(filesPaths[0][0]));
     else
     {
         foreach (Tuple!(string, string) filesPath; filesPaths)
         {
-            outputPaths ~= buildPath(outputDir, filesPath[0]);
+            outputPaths ~= buildPath(outputDir, baseName(filesPath[0]));
         }
     }
 
     scope(exit) rmdirRecurse(outputDir);
 
     auto command = ["./bin/dstep"] ~ actualPaths ~ arguments;
+
     if (outputPaths.length == 1)
         command ~= ["-o", outputPaths[0]];
     else
         command ~= ["-o", outputDir];
+
     auto result = execute(command);
 
     auto sep = "----------------";
@@ -522,15 +525,16 @@ void assertRunsDStepObjCFile(
 
 void assertRunsDStepCFiles(
     Tuple!(string, string)[] filesPaths,
+    string[] arguments = [],
     bool strict = false,
     string file = __FILE__,
     size_t line = __LINE__)
 {
-    string[] arguments = ["-Iresources"];
+    string[] extended = arguments ~ ["-Iresources"];
 
     assertRunsDStep(
         filesPaths,
-        arguments,
+        extended,
         strict,
         file,
         line);

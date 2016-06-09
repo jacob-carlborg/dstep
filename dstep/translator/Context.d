@@ -43,7 +43,7 @@ class Context
     {
         this.translUnit = translUnit;
         macroIndex = new MacroIndex(translUnit);
-        includeHandler_ = new IncludeHandler();
+        includeHandler_ = new IncludeHandler(options);
 
         this.options = options;
 
