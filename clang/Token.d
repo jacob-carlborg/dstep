@@ -29,7 +29,7 @@ enum TokenKind
 
 TokenKind toD(CXTokenKind kind)
 {
-    return cast (TokenKind) kind;
+    return cast(TokenKind) kind;
 }
 
 struct Token

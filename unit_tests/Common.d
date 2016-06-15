@@ -19,6 +19,7 @@ import std.typecons;
 import clang.c.Index;
 
 import dstep.translator.CommentIndex;
+import dstep.translator.Context;
 import dstep.translator.IncludeHandler;
 import dstep.translator.MacroDefinition;
 import dstep.translator.Output;
@@ -109,7 +110,7 @@ MacroDefinition parseMacroDefinition(string source)
     TokenRange tokenize(string source)
     {
         auto translUnit = makeTranslationUnit(source);
-        return translUnit.tokenize(translUnit.extent(0, cast (uint) source.length));
+        return translUnit.tokenize(translUnit.extent(0, cast(uint) source.length));
     }
 
     TokenRange tokens = tokenize(source);
@@ -125,9 +126,24 @@ MacroDefinition parseMacroDefinition(string source)
         "double" : true,
         "signed" : true,
         "unsigned" : true,
+        "foo_t" : true,
     ];
 
     return parseMacroDefinition(tokens, table);
+}
+
+void assertCollectsTypeNames(string[] expected, string source, string file = __FILE__, size_t line = __LINE__)
+{
+    import std.format : format;
+
+    auto translUnit = makeTranslationUnit(source);
+    auto names = collectTypeNames(translUnit);
+
+    foreach (name; expected)
+    {
+        if ((name in names) is null)
+            throw new AssertError(format("`%s` was not found.", name), file, line);
+    }
 }
 
 string translate(TranslationUnit translationUnit, Options options)

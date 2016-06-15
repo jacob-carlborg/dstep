@@ -174,7 +174,7 @@ class Translator
                     break;
 
                 case CXCursor_MacroDefinition:
-                    output.flushLocation(cursor.extent, false);
+                    output.flushLocation(cursor.extent);
                     translateMacroDefinition(output, cursor, parent);
                     break;
 
@@ -243,7 +243,7 @@ class Translator
 
     void translateMacroDefinition(Output output, Cursor cursor, Cursor parent)
     {
-        translMacroDefinition(
+        dstep.translator.MacroDefinition.translateMacroDefinition(
             output,
             context,
             cursor);

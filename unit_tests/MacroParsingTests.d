@@ -7,6 +7,8 @@
 
 import std.stdio;
 import Common;
+
+import dstep.translator.Context;
 import dstep.translator.MacroDefinition;
 
 alias parse = parseMacroDefinition;
@@ -38,37 +40,44 @@ unittest
     auto a = parse("#define FOO 1");
     assert(a !is null);
     assert(typeid(a.expr) == typeid(Literal));
-    assert((cast (Literal) a.expr).spelling == "1");
+    assert((cast(Literal) a.expr).spelling == "1");
 
     auto b = parse("#define FOO(p) #p");
     assert(b !is null);
     assert(typeid(b.expr) == typeid(StringifyExpr));
-    assert((cast (StringifyExpr) b.expr).spelling == "p");
+    assert((cast(StringifyExpr) b.expr).spelling == "p");
 
     auto c = parse(`#define STRINGIZE(major, minor) #major"."#minor`);
     assert(c !is null);
     assert(c.expr !is null);
-    assert(cast (StringConcat) c.expr !is null);
-    auto cSubstrings = (cast (StringConcat) c.expr).substrings;
+    assert(cast(StringConcat) c.expr !is null);
+    auto cSubstrings = (cast(StringConcat) c.expr).substrings;
     assert(cSubstrings.length == 3);
-    assert(cast (StringifyExpr) cSubstrings[0] !is null);
-    assert(cast (StringLiteral) cSubstrings[1] !is null);
-    assert(cast (StringifyExpr) cSubstrings[2] !is null);
-    assert((cast (StringifyExpr) cSubstrings[0]).spelling == "major");
-    assert((cast (StringLiteral) cSubstrings[1]).spelling == `"."`);
-    assert((cast (StringifyExpr) cSubstrings[2]).spelling == "minor");
+    assert(cast(StringifyExpr) cSubstrings[0] !is null);
+    assert(cast(StringLiteral) cSubstrings[1] !is null);
+    assert(cast(StringifyExpr) cSubstrings[2] !is null);
+    assert((cast(StringifyExpr) cSubstrings[0]).spelling == "major");
+    assert((cast(StringLiteral) cSubstrings[1]).spelling == `"."`);
+    assert((cast(StringifyExpr) cSubstrings[2]).spelling == "minor");
 
     auto d = parse(`#define VERSION ENCODE(MAJOR, MINOR)`);
-    assert(d !is null && d.expr !is null && cast (CallExpr) d.expr !is null);
-    auto dCallExpr = cast (CallExpr) d.expr;
+    assert(d !is null && d.expr !is null && cast(CallExpr) d.expr !is null);
+    auto dCallExpr = cast(CallExpr) d.expr;
     assert(dCallExpr.args.length == 2);
-    assert((cast (Identifier) dCallExpr.args[0]) !is null);
-    assert((cast (Identifier) dCallExpr.args[0]).spelling == "MAJOR");
-    assert((cast (Identifier) dCallExpr.args[1]) !is null);
-    assert((cast (Identifier) dCallExpr.args[1]).spelling == "MINOR");
+    assert((cast(Identifier) dCallExpr.args[0]) !is null);
+    assert((cast(Identifier) dCallExpr.args[0]).spelling == "MAJOR");
+    assert((cast(Identifier) dCallExpr.args[1]) !is null);
+    assert((cast(Identifier) dCallExpr.args[1]).spelling == "MINOR");
 
     auto e = parse(`#define VERSION ENCODE(MAJOR, MINOR)(PATCH)`);
-    assert(d !is null && d.expr !is null && cast (CallExpr) d.expr !is null);
+    assert(d !is null && d.expr !is null && cast(CallExpr) d.expr !is null);
+}
+
+// Test collection of type names.
+unittest
+{
+    assertCollectsTypeNames(["foo"], "typedef int foo;");
+    assertCollectsTypeNames(["foo"], "struct foo { };");
 }
 
 

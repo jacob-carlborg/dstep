@@ -34,10 +34,12 @@ class Context
     private TypedefIndex typedefIndex_ = null;
     private Translator translator_ = null;
     private Output globalScope_ = null;
+    private bool[string] typeNames_;
+
     public MacroDefinition[string] macroDefinitions;
     string macroLinkage = "extern (D)";
 
-    public this(TranslationUnit translUnit, Options options, Translator translator)
+    public this(TranslationUnit translUnit, Options options, Translator translator = null)
     {
         this.translUnit = translUnit;
         macroIndex = new MacroIndex(translUnit);
@@ -47,8 +49,14 @@ class Context
             commentIndex_ = new CommentIndex(translUnit);
 
         typedefIndex_ = new TypedefIndex(translUnit);
-        translator_ = translator;
+
+        if (translator !is null)
+            translator_ = translator;
+        else
+            translator_ = new Translator(translUnit, options);
+
         globalScope_ = new Output();
+        typeNames_ = collectTypeNames(translUnit);
     }
 
     public string macroLinkagePrefix()
@@ -93,6 +101,11 @@ class Context
     public CommentIndex commentIndex()
     {
         return commentIndex_;
+    }
+
+    @property public bool[string] typeNames()
+    {
+        return typeNames_;
     }
 
     public TypedefIndex typedefIndex()
@@ -175,9 +188,9 @@ string cursorScopeString(Context context, Cursor cursor)
 }
 
 /**
-  * Returns true, if there is a variable, of type represented by cursor, among
-  * children of its parent.
-  */
+ * Returns true, if there is a variable, of type represented by cursor, among
+ * children of its parent.
+ */
 bool variablesInParentScope(Cursor cursor)
 {
     import std.algorithm.iteration : filter;
@@ -206,9 +219,72 @@ bool shouldBeAnonymous(Context context, Cursor cursor)
 }
 
 /**
-  * Returns true, if cursor is in the global scope.
-  */
+ * Returns true, if cursor is in the global scope.
+ */
 bool isGlobal(Cursor cursor)
 {
     return cursor.semanticParent.kind == CXCursorKind.CXCursor_TranslationUnit;
 }
+
+/**
+ * The collectTypeNames function scans the whole AST of the translation unit and produces
+ * a set of the type names in global scope.
+ *
+ * The type names are required for the parsing of C code (e.g. macro definition bodies),
+ * as C grammar isn't context free.
+ */
+
+bool[string] collectTypeNames(TranslationUnit translUnit)
+{
+    void collectBasicTypes(ref bool[string] result)
+    {
+        result["void"] = true;
+        result["char"] = true;
+        result["signed char"] = true;
+        result["unsigned char"] = true;
+        result["short"] = true;
+        result["signed short"] = true;
+        result["unsigned short"] = true;
+        result["signed"] = true;
+        result["unsigned"] = true;
+        result["int"] = true;
+        result["signed int"] = true;
+        result["unsigned int"] = true;
+        result["long"] = true;
+        result["signed long"] = true;
+        result["unsigned long"] = true;
+        result["long long"] = true;
+        result["signed long long"] = true;
+        result["unsigned long long"] = true;
+        result["float"] = true;
+        result["double"] = true;
+    }
+
+    void collectTypeNames(ref bool[string] result, Cursor parent)
+    {
+        foreach (cursor, _; parent.all)
+        {
+            switch (cursor.kind)
+            {
+                case CXCursorKind.CXCursor_TypedefDecl:
+                    result[cursor.spelling] = true;
+                    break;
+
+                case CXCursorKind.CXCursor_StructDecl:
+                    result[cursor.spelling] = true;
+                    break;
+
+                default:
+                    break;
+            }
+        }
+    }
+
+    bool[string] result;
+
+    collectBasicTypes(result);
+    collectTypeNames(result, translUnit.cursor);
+
+    return result;
+}
+

@@ -8,6 +8,8 @@
 module dstep.translator.MacroDefinition;
 
 import std.array : Appender;
+import std.traits;
+import std.meta;
 
 import clang.c.Index;
 import clang.Cursor;
@@ -16,7 +18,22 @@ import clang.Token;
 import dstep.translator.Context;
 import dstep.translator.Output;
 
+enum bool isStringValue(alias T) =
+    is(typeof(T) : const char[]) &&
+    !isAggregateType!(typeof(T)) &&
+    !isStaticArray!(typeof(T));
+
+/**
+ * The accept family of functions parse tokens. In the case of successful parsing,
+ * the function advances the beginning of the tokens to the next token and returns true.
+ *
+ * The parsing is successful, if the first token in tokens is of the specified kind
+ * and its spelling matches one of the strings passed as Args.
+ * It assigns the spelling of the token to the spelling parameter.
+ */
+
 bool accept(Args...)(ref TokenRange tokens, ref string spelling, TokenKind kind)
+    if (Args.length > 0 && allSatisfy!(isStringValue, Args))
 {
     if (!tokens.empty && tokens.front.kind == kind)
     {
@@ -24,25 +41,8 @@ bool accept(Args...)(ref TokenRange tokens, ref string spelling, TokenKind kind)
         {
             if (tokens.front.spelling == arg)
             {
-                tokens = tokens[1..$];
+                tokens = tokens[1 .. $];
                 spelling = arg;
-                return true;
-            }
-        }
-    }
-
-    return false;
-}
-
-bool accept(Args...)(ref TokenRange tokens, TokenKind kind)
-{
-    if (!tokens.empty && tokens.front.kind == kind)
-    {
-        foreach (arg; Args)
-        {
-            if (tokens.front.spelling == arg)
-            {
-                tokens = tokens[1..$];
                 return true;
             }
         }
@@ -56,22 +56,23 @@ bool accept(ref TokenRange tokens, ref string spelling, TokenKind kind)
     if (!tokens.empty && tokens.front.kind == kind)
     {
         spelling = tokens.front.spelling;
-        tokens = tokens[1..$];
+        tokens = tokens[1 .. $];
         return true;
     }
 
     return false;
 }
 
-bool acceptPunctuation(Args...)(ref TokenRange tokens)
+bool accept(Args...)(ref TokenRange tokens, TokenKind kind)
+    if (allSatisfy!(isStringValue, Args))
 {
-    if (!tokens.empty && tokens.front.kind == TokenKind.punctuation)
+    if (!tokens.empty && tokens.front.kind == kind)
     {
         foreach (arg; Args)
         {
             if (tokens.front.spelling == arg)
             {
-                tokens = tokens[1..$];
+                tokens = tokens[1 .. $];
                 return true;
             }
         }
@@ -81,35 +82,20 @@ bool acceptPunctuation(Args...)(ref TokenRange tokens)
 }
 
 bool acceptPunctuation(Args...)(ref TokenRange tokens, ref string spelling)
+    if (allSatisfy!(isStringValue, Args))
 {
-    if (!tokens.empty && tokens.front.kind == TokenKind.punctuation)
-    {
-        foreach (arg; Args)
-        {
-            if (tokens.front.spelling == arg)
-            {
-                spelling = tokens.front.spelling;
-                tokens = tokens[1..$];
-                return true;
-            }
-        }
-    }
+    return accept!(Args)(tokens, spelling, TokenKind.punctuation);
+}
 
-    return false;
+bool acceptPunctuation(Args...)(ref TokenRange tokens)
+    if (allSatisfy!(isStringValue, Args))
+{
+    return accept!(Args)(tokens, TokenKind.punctuation);
 }
 
 bool acceptIdentifier(ref TokenRange tokens, ref string spelling)
 {
-    import std.string : startsWith, endsWith;
-
-    if (!tokens.empty && tokens.front.kind == TokenKind.identifier)
-    {
-        spelling = tokens.front.spelling;
-        tokens = tokens[1..$];
-        return true;
-    }
-
-    return false;
+    return accept(tokens, spelling, TokenKind.identifier);
 }
 
 bool acceptStringLiteral(ref TokenRange tokens, ref string spelling)
@@ -123,7 +109,7 @@ bool acceptStringLiteral(ref TokenRange tokens, ref string spelling)
         if (!spelling.startsWith(`"`) || !spelling.endsWith(`"`))
             return false;
 
-        tokens = tokens[1..$];
+        tokens = tokens[1 .. $];
         return true;
     }
 
@@ -133,6 +119,7 @@ bool acceptStringLiteral(ref TokenRange tokens, ref string spelling)
 Expression parseLeftAssoc(ResultExpr, alias parseChild, Ops...)(
     ref TokenRange tokens,
     bool[string] table)
+    if (allSatisfy!(isStringValue, Ops))
 {
     import std.traits;
     import std.range;
@@ -150,7 +137,7 @@ Expression parseLeftAssoc(ResultExpr, alias parseChild, Ops...)(
     {
         exprs ~= parseChild(local, table);
 
-        if (exprs[$-1] is null)
+        if (exprs[$ - 1] is null)
             return null;
 
         ops ~= op;
@@ -166,7 +153,7 @@ Expression parseLeftAssoc(ResultExpr, alias parseChild, Ops...)(
     result.right = exprs[1];
     result.operator = ops[0];
 
-    foreach (expr, fop; zip(exprs[2..$], ops[1..$]))
+    foreach (expr, fop; zip(exprs[2 .. $], ops[1 .. $]))
     {
         ResultExpr parent = new ResultExpr;
         parent.left = result;
@@ -187,6 +174,7 @@ struct ExprType
         generic,
     }
 
+    bool lvalue = false;
     Kind kind;
     string spelling;
 
@@ -215,40 +203,69 @@ struct ExprType
     {
         return kind == Kind.generic;
     }
+
+    bool isLValue()
+    {
+        return lvalue;
+    }
+
+    ExprType asRValue()
+    {
+        ExprType clone = this;
+        clone.lvalue = false;
+        return clone;
+    }
+
+    ExprType asLValue()
+    {
+        ExprType clone = this;
+        clone.lvalue = true;
+        return clone;
+    }
+
+    ExprType decayed()
+    {
+        ExprType clone = this;
+        clone.lvalue = false;
+        clone.kind = clone.isGeneric ? Kind.unspecified : clone.kind;
+        return clone;
+    }
 }
+
+immutable UnspecifiedExprType = ExprType(ExprType.Kind.unspecified);
 
 string asParamType(ExprType type)
 {
-    final switch (type.kind)
-    {
-        case ExprType.Kind.unspecified: return "in T";
-        case ExprType.Kind.specified: return type.spelling;
-        case ExprType.Kind.generic: return "in T";
-    }
+    if (type.isSpecified)
+        return type.isLValue ? "auto ref " ~ type.spelling : type.spelling;
+    else
+        return "auto ref T" ~ type.spelling;
+}
+
+string asPlainType(ExprType type)
+{
+    if (type.isSpecified)
+        return type.spelling;
+    else
+        return "T" ~ type.spelling;
 }
 
 string asReturnType(ExprType type)
 {
     final switch (type.kind)
     {
-        case ExprType.Kind.unspecified: return "T";
+        case ExprType.Kind.unspecified: return "auto";
         case ExprType.Kind.specified: return type.spelling;
-        case ExprType.Kind.generic: return "T";
+        case ExprType.Kind.generic: return "auto";
     }
 }
 
-ExprType commonType(ExprType a, ExprType b)
+ExprType strictCommonType(ExprType a, ExprType b)
 {
     if (a == b)
         return a;
-
-    if (a.isUnspecified)
-        return b;
-
-    if (b.isUnspecified)
-        return a;
-
-    return ExprType(ExprType.kind.generic);
+    else
+        return ExprType(ExprType.kind.unspecified);
 }
 
 class Identifier : Expression
@@ -260,7 +277,7 @@ class Identifier : Expression
 
     string spelling;
 
-    override string transl(ref bool[string] imports)
+    override string translate(ref bool[string] imports)
     {
         return spelling;
     }
@@ -276,6 +293,11 @@ class Identifier : Expression
 
         if (param !is null && param.isUnspecified)
             *param = type;
+    }
+
+    override Expression braced()
+    {
+        return this;
     }
 
     override string toString()
@@ -295,7 +317,7 @@ class Literal : Expression
 
     string spelling;
 
-    override string transl(ref bool[string] imports)
+    override string translate(ref bool[string] imports)
     {
         return spelling;
     }
@@ -303,6 +325,11 @@ class Literal : Expression
     override ExprType guessExprType()
     {
         return ExprType("int");
+    }
+
+    override Expression braced()
+    {
+        return this;
     }
 
     override string toString()
@@ -330,11 +357,11 @@ class StringifyExpr : Expression
         this.spelling = spelling;
     }
 
-    override string transl(ref bool[string] imports)
+    override string translate(ref bool[string] imports)
     {
         import std.format : format;
 
-        imports["std.conv"] = true;
+        imports["std.conv : to"] = true;
 
         return format("to!string(%s)", spelling);
     }
@@ -361,12 +388,12 @@ class StringConcat : Expression
         this.substrings = substrings;
     }
 
-    override string transl(ref bool[string] imports)
+    override string translate(ref bool[string] imports)
     {
         import std.algorithm.iteration : map;
         import std.array : join;
 
-        return map!(a => a.transl(imports))(substrings).join(" ~ ");
+        return substrings.map!(a => a.translate(imports)).join(" ~ ");
     }
 
     override ExprType guessExprType()
@@ -392,14 +419,14 @@ class IndexExpr : Expression
     Expression subexpr;
     Expression index;
 
-    override string transl(ref bool[string] imports)
+    override string translate(ref bool[string] imports)
     {
         import std.format : format;
 
         return format(
             "%s[%s]",
-            subexpr.transl(imports),
-            index.transl(imports));
+            subexpr.translate(imports),
+            index.translate(imports));
     }
 
     override ExprType guessExprType()
@@ -420,7 +447,7 @@ class CallExpr : Expression
     Expression expr;
     Expression[] args;
 
-    override string transl(ref bool[string] imports)
+    override string translate(ref bool[string] imports)
     {
         import std.algorithm.iteration : map;
         import std.format : format;
@@ -428,8 +455,8 @@ class CallExpr : Expression
 
         return format(
             "%s(%s)",
-            expr.transl(imports),
-            map!(a => a.transl(imports))(args).join(", "));
+            expr.translate(imports),
+            args.map!(a => a.translate(imports)).join(", "));
     }
 
     override ExprType guessExprType()
@@ -450,15 +477,14 @@ class DotExpr : Expression
     Expression subexpr;
     string identifier;
 
-    override string transl(ref bool[string] imports)
+    override string translate(ref bool[string] imports)
     {
-        import std.algorithm.iteration : map;
         import std.format : format;
         import std.string : join;
 
         return format(
             "%s.%s",
-            subexpr.transl(imports),
+            subexpr.translate(imports),
             identifier);
     }
 
@@ -500,14 +526,14 @@ class SubExpr : Expression
         this.subexpr = subexpr;
     }
 
-    override string transl(ref bool[string] imports)
+    override string translate(ref bool[string] imports)
     {
         import std.format : format;
 
         if (surplus)
-            return format("%s", subexpr.transl(imports));
+            return format("%s", subexpr.translate(imports));
         else
-            return format("(%s)", subexpr.transl(imports));
+            return format("(%s)", subexpr.translate(imports));
     }
 
     bool surplus() const
@@ -519,6 +545,11 @@ class SubExpr : Expression
     override Expression debraced()
     {
         return subexpr.debraced;
+    }
+
+    override Expression braced()
+    {
+        return this;
     }
 
     override ExprType guessExprType()
@@ -545,26 +576,34 @@ class UnaryExpr : Expression
     string operator;
     bool postfix = false;
 
-    override string transl(ref bool[string] imports)
+    override string translate(ref bool[string] imports)
     {
         import std.format : format;
 
         if (operator == "sizeof")
-            return format("sizeof(%s)", subexpr.transl(imports));
+            return format("%s.sizeof", subexpr.braced.translate(imports));
         else if (postfix)
-            return format("%s%s", subexpr.transl(imports), operator);
+            return format("%s%s", subexpr.translate(imports), operator);
         else
-            return format("%s%s", operator, subexpr.transl(imports));
+            return format("%s%s", operator, subexpr.translate(imports));
     }
 
     override ExprType guessExprType()
     {
-        return subexpr.guessExprType();
+        if (operator == "sizeof")
+            return ExprType("size_t");
+        else
+            return subexpr.guessExprType();
     }
 
     override void guessParamTypes(ref ExprType[string] params, ExprType type)
     {
-        subexpr.guessParamTypes(params, type);
+        if (operator == "sizeof")
+            subexpr.guessParamTypes(params, UnspecifiedExprType);
+        else if (operator == "++" || operator == "--")
+            subexpr.guessParamTypes(params, type.asLValue);
+        else
+            subexpr.guessParamTypes(params, type);
     }
 
     override string toString()
@@ -583,21 +622,21 @@ class CastExpr : Expression
     string typename;
     Expression subexpr;
 
-    override string transl(ref bool[string] imports)
+    override string translate(ref bool[string] imports)
     {
         import std.format : format;
 
-        return format("cast (%s) %s", typename, subexpr.transl(imports));
+        return format("cast(%s) %s", typename, subexpr.debraced.translate(imports));
     }
 
     override ExprType guessExprType()
     {
-        return subexpr.guessExprType();
+        return ExprType(typename);
     }
 
     override void guessParamTypes(ref ExprType[string] params, ExprType type)
     {
-        subexpr.guessParamTypes(params, type);
+        subexpr.guessParamTypes(params, UnspecifiedExprType);
     }
 
     override string toString()
@@ -617,26 +656,26 @@ class BinaryExpr : Expression
     Expression right;
     string operator;
 
-    override string transl(ref bool[string] imports)
+    override string translate(ref bool[string] imports)
     {
         import std.format : format;
 
         return format(
             "%s %s %s",
-            left.transl(imports),
+            left.translate(imports),
             operator,
-            right.transl(imports));
+            right.translate(imports));
     }
 
     override ExprType guessExprType()
     {
-        return commonType(left.guessExprType(), right.guessExprType());
+        return strictCommonType(left.guessExprType(), right.guessExprType());
     }
 
     override void guessParamTypes(ref ExprType[string] params, ExprType type)
     {
-        left.guessParamTypes(params, type);
-        right.guessParamTypes(params, type);
+        left.guessParamTypes(params, UnspecifiedExprType);
+        right.guessParamTypes(params, UnspecifiedExprType);
     }
 
     override string toString()
@@ -693,20 +732,20 @@ class CondExpr : Expression
     Expression left;
     Expression right;
 
-    override string transl(ref bool[string] imports)
+    override string translate(ref bool[string] imports)
     {
         import std.format : format;
 
         return format(
             "%s ? %s : %s",
-            expr.transl(imports),
-            left.transl(imports),
-            right.transl(imports));
+            expr.translate(imports),
+            left.translate(imports),
+            right.translate(imports));
     }
 
     override ExprType guessExprType()
     {
-        return commonType(left.guessExprType(), right.guessExprType());
+        return strictCommonType(left.guessExprType(), right.guessExprType());
     }
 
     override void guessParamTypes(ref ExprType[string] params, ExprType type)
@@ -735,13 +774,13 @@ class CondExpr : Expression
 
 class Expression
 {
-    string transl()
+    string translate()
     {
         bool[string] imports;
-        return transl(imports);
+        return translate(imports);
     }
 
-    string transl(ref bool[string] imports)
+    string translate(ref bool[string] imports)
     {
         return "<" ~ toString ~ ">";
     }
@@ -749,6 +788,11 @@ class Expression
     Expression debraced()
     {
         return this;
+    }
+
+    Expression braced()
+    {
+        return new SubExpr(this);
     }
 
     ExprType guessExprType()
@@ -759,7 +803,10 @@ class Expression
     void guessParamTypes(ref ExprType[string] params, ExprType type)
     { }
 
-    override string toString() { return ""; }
+    override string toString()
+    {
+        return "";
+    }
 
     void dumpAST(ref Appender!string result, size_t indent)
     {
@@ -783,7 +830,7 @@ class MacroDefinition
         import std.format : format;
 
         return format(
-            "Literal(spelling = %s, params = %s, constant = %s, expr = %s)",
+            "MacroDefinition(spelling = %s, params = %s, constant = %s, expr = %s)",
             spelling,
             params,
             constant,
@@ -1199,7 +1246,11 @@ MacroDefinition parsePartialMacroDefinition(TokenRange tokens, bool[string] tabl
     if (!accept(local, result.spelling, TokenKind.identifier))
         return null;
 
-    if (accept!("(")(local, TokenKind.punctuation))
+    bool space =
+        tokens.length > 2 &&
+        tokens[0].extent.end.offset == tokens[1].extent.start.offset;
+
+    if (space && accept!("(")(local, TokenKind.punctuation))
     {
         if (!accept!(")")(local, TokenKind.punctuation))
         {
@@ -1222,36 +1273,46 @@ MacroDefinition parsePartialMacroDefinition(TokenRange tokens, bool[string] tabl
         return result;
 }
 
-void translConstDirective(Output output, MacroDefinition directive)
+void translateConstDirective(Output output, MacroDefinition directive)
 {
     output.singleLine(
         "enum %s = %s;",
         directive.spelling,
-        directive.expr.transl());
+        directive.expr.debraced.translate());
 }
 
-string translDirectiveParamList(string[] params, ExprType[string] types)
+string translateDirectiveParamList(string[] params, ExprType[string] types)
 {
     import std.algorithm.iteration : map;
     import std.format : format;
     import std.array : join;
 
-    return map!(a => format("%s %s", types[a].asParamType(), a))(params).join(", ");
+    return params.map!(a => format("%s %s", types[a].asParamType(), a)).join(", ");
 }
 
-string translDirectiveTypeList(string[] params, ExprType[string] types)
+string translateDirectiveTypeList(string[] params, ref ExprType[string] types)
 {
-    import std.algorithm.iteration : filter, map;
+    import std.algorithm.iteration : filter;
+    import std.algorithm.searching : count;
     import std.format : format;
-    import std.array : join;
-    import std.array : appender;
+    import std.array : appender, join;
 
     bool canBeGeneric(ExprType type)
     {
         return type.isGeneric || type.isUnspecified;
     }
 
-    auto filtered = filter!(a => canBeGeneric(types[a]))(params);
+    auto filtered = params.filter!(a => canBeGeneric(types[a]));
+
+    if (count(filtered) > 1)
+    {
+        size_t index = 0;
+        foreach (param; filtered)
+        {
+            types[param].spelling = format("%s%d", types[param].spelling, index);
+            ++index;
+        }
+    }
 
     auto result = appender!string;
     bool[ExprType] appended;
@@ -1259,8 +1320,8 @@ string translDirectiveTypeList(string[] params, ExprType[string] types)
     if (!filtered.empty)
     {
         auto type = types[filtered.front];
-        result.put(asReturnType(type));
-        appended[type] = true;
+        result.put(asPlainType(type));
+        appended[type.decayed] = true;
         filtered.popFront();
     }
 
@@ -1268,18 +1329,18 @@ string translDirectiveTypeList(string[] params, ExprType[string] types)
     {
         auto type = types[param];
 
-        if ((type in appended) is null)
+        if ((type.decayed in appended) is null)
         {
             result.put(", ");
-            result.put(asReturnType(type));
-            appended[type] = true;
+            result.put(asPlainType(type));
+            appended[type.decayed] = true;
         }
     }
 
     return result.data;
 }
 
-bool translFunctAlias(
+bool translateFunctAlias(
     Output output,
     Context context,
     MacroDefinition definition)
@@ -1287,14 +1348,14 @@ bool translFunctAlias(
     import std.algorithm.comparison : equal;
     import std.algorithm.iteration : map;
 
-    CallExpr expr = cast (CallExpr) definition.expr;
+    CallExpr expr = cast(CallExpr) definition.expr;
 
     if (expr !is null)
     {
-        Identifier ident = cast (Identifier) expr.expr;
+        Identifier ident = cast(Identifier) expr.expr;
 
         if (ident !is null &&
-            equal(definition.params, map!(a => a.transl)(expr.args)))
+            equal(definition.params, expr.args.map!(a => a.translate)))
         {
             output.singleLine("alias %s = %s;", definition.spelling, ident.spelling);
             return true;
@@ -1304,16 +1365,15 @@ bool translFunctAlias(
     return false;
 }
 
-void translFunctDirective(
+void translateFunctDirective(
     Output output,
     Context context,
     MacroDefinition definition)
 {
-    import std.algorithm.iteration : map;
     import std.format : format;
     import std.array : join;
 
-    if (translFunctAlias(output, context, definition))
+    if (translateFunctAlias(output, context, definition))
         return;
 
     ExprType returnType = definition.expr.guessExprType();
@@ -1328,17 +1388,17 @@ void translFunctDirective(
 
         definition.expr.guessParamTypes(types, returnType);
 
-        auto typeList = translDirectiveTypeList(definition.params, types);
+        auto typeList = translateDirectiveTypeList(definition.params, types);
 
         if (typeList != "")
             typeStrings = format("(%s)", typeList);
 
-        paramStrings = translDirectiveParamList(definition.params, types);
+        paramStrings = translateDirectiveParamList(definition.params, types);
     }
 
     bool[string] imports;
 
-    auto transl = definition.expr.debraced.transl(imports);
+    auto translated = definition.expr.debraced.translate(imports);
 
     output.subscopeStrong(
         "%s%s %s%s(%s)",
@@ -1356,42 +1416,26 @@ void translFunctDirective(
             output.separator;
         }
 
-        output.singleLine("return %s;", transl);
+        output.singleLine("return %s;", translated);
     };
 }
 
-void translMacroDefinition(Output output, Context context, Cursor cursor)
+void translateMacroDefinition(Output output, Context context, Cursor cursor)
 {
-    bool[string] typeTable =
-    [
-        "void" : true,
-        "char" : true,
-        "short" : true,
-        "int" : true,
-        "long" : true,
-        "float" : true,
-        "double" : true,
-        "signed" : true,
-        "unsigned" : true,
-    ];
-
     assert(cursor.kind == CXCursorKind.CXCursor_MacroDefinition);
 
-    auto definition = parsePartialMacroDefinition(cursor.tokens, typeTable);
+    auto definition = parsePartialMacroDefinition(cursor.tokens, context.typeNames);
 
     if (definition !is null)
     {
         if (definition.expr !is null)
         {
             if (definition.constant)
-                translConstDirective(output, definition);
+                translateConstDirective(output, definition);
             else
-                translFunctDirective(output, context, definition);
+                translateFunctDirective(output, context, definition);
         }
 
         context.macroDefinitions[definition.spelling] = definition;
     }
 }
-
-
-
