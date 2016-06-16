@@ -11,6 +11,7 @@ union Bar
 }
 
 extern __gshared Bar b;
+
 extern __gshared Foo c;
 
 union A

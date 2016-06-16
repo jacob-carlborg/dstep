@@ -71,6 +71,7 @@ extern (C):
 
 float foo (int x);
 float bar (int x);
+
 extern __gshared int a;
 D");
 
@@ -89,6 +90,7 @@ q"D
 extern (C):
 
 enum FOO = 4;
+
 extern __gshared char[FOO] var;
 D");
 
@@ -138,6 +140,103 @@ struct Foo
     char[BAZ][FOO][BAR] var;
     char[42][BAZ][BAR] rav;
 }
+D");
+
+}
+
+// Do not put extra end-line after a struct.
+unittest
+{
+    assertTranslates(
+q"C
+struct Foo {
+
+};
+C",
+q"D
+extern (C):
+
+struct Foo
+{
+}
+D", true);
+
+}
+
+// Remove excessive newlines.
+unittest
+{
+    assertTranslates(
+q"C
+int a;
+
+
+int b;
+
+
+/* Comment, comment. */
+
+
+/* Comment, comment. */
+C",
+q"D
+extern (C):
+
+extern __gshared int a;
+
+extern __gshared int b;
+
+/* Comment, comment. */
+
+/* Comment, comment. */
+D");
+
+}
+
+// Handle // comments.
+unittest
+{
+    assertTranslates(
+q"C
+int a; // This is inline comment 1.
+int b; // This is inline comment 2.
+
+struct X {
+    int field; // This is inline comment 3.
+
+    // Inline comment at the end of struct.
+};
+
+// This is inline comment 4.
+// This is inline comment 5.
+
+/* Comment, comment. */
+
+// This is inline comment 6.
+
+/* Comment, comment. */
+C",
+q"D
+extern (C):
+
+extern __gshared int a; // This is inline comment 1.
+extern __gshared int b; // This is inline comment 2.
+
+struct X
+{
+    int field; // This is inline comment 3.
+
+    // Inline comment at the end of struct.
+}
+
+// This is inline comment 4.
+// This is inline comment 5.
+
+/* Comment, comment. */
+
+// This is inline comment 6.
+
+/* Comment, comment. */
 D");
 
 }

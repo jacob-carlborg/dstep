@@ -7,6 +7,8 @@
 
 import std.stdio;
 import Common;
+
+import dstep.translator.CommentIndex;
 import dstep.translator.Output;
 
 // Test empty output.
@@ -74,14 +76,14 @@ unittest
 {
     Output output = new Output();
 
-    output.subscopeStrong("class A") in {
+    output.subscopeStrong("struct A") in {
         output.singleLine("int a;");
         output.singleLine("float b;");
         output.singleLine("void func();");
     };
 
     assertEq(q"D
-class A
+struct A
 {
     int a;
     float b;
@@ -89,19 +91,19 @@ class A
 }
 D", output.data("\n"));
 
-    output.subscopeStrong("class B") in {
+    output.subscopeStrong("struct B") in {
         output.singleLine("string s;");
     };
 
     assertEq(q"D
-class A
+struct A
 {
     int a;
     float b;
     void func();
 }
 
-class B
+struct B
 {
     string s;
 }
@@ -114,13 +116,13 @@ unittest
 {
     Output output = new Output();
 
-    output.subscopeStrong("class B") in {
+    output.subscopeStrong("struct B") in {
         output.singleLine("string s;");
     };
 
-    output.subscopeStrong("class C") in {
+    output.subscopeStrong("struct C") in {
         output.subscopeStrong("void func1()") in {
-            output.subscopeStrong("class B") in {
+            output.subscopeStrong("struct B") in {
                 output.singleLine("string s;");
             };
 
@@ -128,7 +130,7 @@ unittest
         };
 
         output.subscopeStrong("void func2()") in {
-            output.subscopeStrong("class B") in {
+            output.subscopeStrong("struct B") in {
                 output.singleLine("string s;");
             };
         };
@@ -137,16 +139,16 @@ unittest
     };
 
     assertEq(q"D
-class B
+struct B
 {
     string s;
 }
 
-class C
+struct C
 {
     void func1()
     {
-        class B
+        struct B
         {
             string s;
         }
@@ -156,7 +158,7 @@ class C
 
     void func2()
     {
-        class B
+        struct B
         {
             string s;
         }
@@ -192,8 +194,8 @@ D", output.data("\n"));
 unittest
 {
     Output output = new Output();
-    output.subscopeStrong("class A");
-    assertEq("class A\n{\n}", output.data());
+    output.subscopeStrong("struct A");
+    assertEq("struct A\n{\n}", output.data());
 }
 
 // Test subscopeStrong after singleLine.
@@ -203,7 +205,7 @@ unittest
 
     output.singleLine("void foo();");
     output.singleLine("void bar();");
-    output.subscopeStrong("class A") in {
+    output.subscopeStrong("struct A") in {
         output.singleLine("void bar();");
     };
 
@@ -211,7 +213,7 @@ unittest
 void foo();
 void bar();
 
-class A
+struct A
 {
     void bar();
 }
@@ -324,10 +326,10 @@ unittest
     Output outputA = new Output();
     Output outputB = new Output();
 
-    outputA.subscopeStrong("class A");
+    outputA.subscopeStrong("struct A");
     outputA.output(outputB);
 
-    assertEq("class A\n{\n}", outputA.data());
+    assertEq("struct A\n{\n}", outputA.data());
 }
 
 unittest
@@ -336,16 +338,16 @@ unittest
     Output outputB = new Output();
     Output outputC = new Output();
 
-    outputA.subscopeStrong("class A");
-    outputB.subscopeStrong("class B");
+    outputA.subscopeStrong("struct A");
+    outputB.subscopeStrong("struct B");
     outputA.output(outputB);
 
-    assertEq("class A\n{\n}\n\nclass B\n{\n}", outputA.data());
+    assertEq("struct A\n{\n}\n\nstruct B\n{\n}", outputA.data());
 
     outputC.singleLine("int x;");
     outputB.output(outputC);
 
-    assertEq("class B\n{\n}\n\nint x;", outputB.data());
+    assertEq("struct B\n{\n}\n\nint x;", outputB.data());
 }
 
 unittest
@@ -355,15 +357,15 @@ unittest
     Output outputC = new Output();
 
     outputA.singleLine("int x;");
-    outputB.subscopeStrong("class B");
+    outputB.subscopeStrong("struct B");
     outputA.output(outputB);
 
-    assertEq("int x;\n\nclass B\n{\n}", outputA.data());
+    assertEq("int x;\n\nstruct B\n{\n}", outputA.data());
 
     outputC.singleLine("int y;");
     outputC.output(outputA);
 
-    assertEq("int y;\nint x;\n\nclass B\n{\n}", outputC.data());
+    assertEq("int y;\nint x;\n\nstruct B\n{\n}", outputC.data());
 }
 
 unittest
@@ -373,29 +375,29 @@ unittest
     Output outputC = new Output();
     Output outputD = new Output();
 
-    outputA.subscopeStrong("class A") in {
+    outputA.subscopeStrong("struct A") in {
         outputB.singleLine("int x;");
         outputC.singleLine("int y;");
-        outputD.subscopeStrong("class B");
+        outputD.subscopeStrong("struct B");
 
         outputA.output(outputB);
         outputA.output(outputC);
         outputA.output(outputD);
 
-        outputA.subscopeStrong("class C");
+        outputA.subscopeStrong("struct C");
     };
 
     assertEq(q"D
-class A
+struct A
 {
     int x;
     int y;
 
-    class B
+    struct B
     {
     }
 
-    class C
+    struct C
     {
     }
 }
@@ -409,8 +411,8 @@ unittest
     Output outputB = new Output();
     Output outputC = new Output();
 
-    outputA.subscopeStrong("class A") in {
-        outputB.subscopeStrong("class B");
+    outputA.subscopeStrong("struct A") in {
+        outputB.subscopeStrong("struct B");
         outputC.singleLine("int a;");
 
         outputA.output(outputB);
@@ -420,9 +422,9 @@ unittest
     };
 
     assertEq(q"D
-class A
+struct A
 {
-    class B
+    struct B
     {
     }
 
@@ -439,21 +441,21 @@ unittest
     Output outputB = new Output();
     Output outputC = new Output();
 
-    outputB.subscopeStrong("class B") in {
-        outputC.subscopeStrong("class C");
+    outputB.subscopeStrong("struct B") in {
+        outputC.subscopeStrong("struct C");
         outputB.output(outputC);
     };
 
-    outputA.subscopeStrong("class A") in {
+    outputA.subscopeStrong("struct A") in {
         outputA.output(outputB);
     };
 
     assertEq(q"D
-class A
+struct A
 {
-    class B
+    struct B
     {
-        class C
+        struct C
         {
         }
     }
@@ -468,8 +470,8 @@ unittest
     Output outputB = new Output();
     Output outputC = new Output();
 
-    outputA.subscopeStrong("class Foo");
-    outputA.subscopeStrong("class Bar");
+    outputA.subscopeStrong("struct Foo");
+    outputA.subscopeStrong("struct Bar");
     outputC.output(outputA);
 
     outputB.singleLine("extern (Objective-C):");
@@ -480,11 +482,11 @@ unittest
     assertEq(q"D
 extern (Objective-C):
 
-class Foo
+struct Foo
 {
 }
 
-class Bar
+struct Bar
 {
 }
 D", outputB.data("\n"));
@@ -510,4 +512,308 @@ unittest
     output.append(";");
 
     assertEq(output.data, "int x;");
+}
+
+// Flushing comments tests.
+unittest
+{
+    CommentIndex index = makeCommentIndex(
+q"C
+
+/* 1, 1, 1 */
+
+/* 4, 1, 16 */
+/* 5, 1, 31 */
+
+
+/* 8, 1, 48 */ /* 8, 16, 63 */
+
+/* 10, 1, 80 */
+C");
+
+    Output output = new Output(index);
+
+    output.flushLocation(4, 15, 30, 4, 15, 30);
+
+    assertEq(q"D
+
+/* 1, 1, 1 */
+
+/* 4, 1, 16 */
+D", output.data, false);
+
+    output.flushLocation(5, 15, 45, 5, 15, 45);
+
+    assertEq(q"D
+
+/* 1, 1, 1 */
+
+/* 4, 1, 16 */
+/* 5, 1, 31 */
+D", output.data, false);
+
+    output.flushLocation(8, 15, 62, 8, 15, 62);
+
+    assertEq(q"D
+
+/* 1, 1, 1 */
+
+/* 4, 1, 16 */
+/* 5, 1, 31 */
+
+/* 8, 1, 48 */
+D", output.data, false);
+
+    output.flushLocation(10, 16, 95, 10, 16, 95);
+
+    assertEq(q"D
+
+/* 1, 1, 1 */
+
+/* 4, 1, 16 */
+/* 5, 1, 31 */
+
+/* 8, 1, 48 */ /* 8, 16, 63 */
+
+/* 10, 1, 80 */
+D", output.data, false);
+
+}
+
+// There should be no linefeed before first comment,
+// if there is no linefeed in the source.
+unittest
+{
+    CommentIndex index = makeCommentIndex(
+q"C
+/* 1, 1, 1 */
+
+/* 4, 1, 16 */
+/* 5, 1, 31 */
+C");
+
+    Output output = new Output(index);
+
+    output.flushLocation(3, 15, 29, 3, 15, 29);
+
+    assertEq(q"D
+/* 1, 1, 1 */
+
+/* 4, 1, 16 */
+D"[0..$-1], output.data);
+
+}
+
+// Keep spaces between comments and non-comments,
+// if they were present in original code.
+unittest
+{
+    CommentIndex index = makeCommentIndex(
+q"C
+/* 1, 1, 0 */
+
+#define FOO_3_1_15 1
+/* 4, 1, 34 */
+#define BAR_5_1_49 2
+
+/* 7, 1, 69 */ /* 7, 16, 84 */
+struct BAZ_8_1_100 { };
+
+C");
+
+    Output output = new Output(index);
+
+    output.flushLocation(3, 1, 15, 3, 21, 35);
+    output.singleLine("enum FOO_3_1_15 = 1;");
+
+    assertEq(q"D
+/* 1, 1, 0 */
+
+enum FOO_3_1_15 = 1;
+D", output.data, false);
+
+    output.flushLocation(5, 1, 51, 5, 21, 71);
+    output.singleLine("enum BAR_5_1_49 = 2;");
+
+    assertEq(q"D
+/* 1, 1, 0 */
+
+enum FOO_3_1_15 = 1;
+/* 4, 1, 34 */
+enum BAR_5_1_49 = 2;
+D", output.data, false);
+
+    output.flushLocation(8, 1, 104, 8, 23, 126);
+    output.subscopeStrong("struct BAZ_8_1_100");
+
+    assertEq(q"D
+/* 1, 1, 0 */
+
+enum FOO_3_1_15 = 1;
+/* 4, 1, 34 */
+enum BAR_5_1_49 = 2;
+
+/* 7, 1, 69 */ /* 7, 16, 84 */
+struct BAZ_8_1_100
+{
+}
+D", output.data, false);
+
+}
+
+// Keep space between single-line statements, it they are present in the source.
+unittest {
+    CommentIndex index = makeCommentIndex(
+q"C
+
+#define FOO 1
+
+#define BAR 2
+
+C");
+
+    Output output = new Output(index);
+
+    output.flushLocation(2, 1, 1, 2, 14, 14);
+    output.singleLine("enum FOO = 1;");
+
+    assertEq(q"D
+
+enum FOO = 1;
+D", output.data, false);
+
+    output.flushLocation(4, 1, 16, 4, 14, 29);
+    output.singleLine("enum BAR = 2;");
+
+    assertEq(q"D
+
+enum FOO = 1;
+
+enum BAR = 2;
+D", output.data, false);
+
+}
+
+unittest {
+    CommentIndex index = makeCommentIndex(
+q"C
+
+#define FOO 1
+#define BAR 2
+
+C");
+
+    Output output = new Output(index);
+
+    output.flushLocation(2, 1, 1, 2, 14, 14);
+    output.singleLine("enum FOO = 1;");
+
+    assertEq(q"D
+
+enum FOO = 1;
+D", output.data, false);
+
+    output.flushLocation(3, 1, 15, 3, 14, 28);
+    output.singleLine("enum BAR = 2;");
+
+    assertEq(q"D
+
+enum FOO = 1;
+enum BAR = 2;
+D", output.data, false);
+
+}
+
+// Do not insert additional space between single-line statement and
+// block-statement, even if there is extra space in the original.
+unittest {
+    CommentIndex index = makeCommentIndex(
+q"C
+
+int func(int x);
+
+
+struct A {
+    int field;
+};
+C");
+
+    Output output = new Output(index);
+
+    output.flushLocation(2, 1, 1, 2, 16, 16);
+    output.singleLine("int func(int x);");
+
+    assertEq(q"D
+
+int func(int x);
+D", output.data, false);
+
+    output.flushLocation(5, 1, 20, 7, 2, 50, false);
+    output.subscopeStrong("struct A") in {
+        output.singleLine("int field;");
+    };
+
+    assertEq(q"D
+
+int func(int x);
+
+struct A
+{
+    int field;
+}
+D", output.data, false);
+
+}
+
+// Test saving header position.
+unittest
+{
+    CommentIndex index = makeCommentIndex(
+q"C
+/* This is header comment.
+ * Aaaaaaaaaaaaaaaaaaaaaaa.
+ * Aaaaaaaaaaaaaa. Aaaaaa.
+ */
+
+int func(int x);
+
+struct A { };
+C");
+
+    Output output = new Output(index);
+
+    output.flushHeaderComment();
+    output.flushLocation(6, 1, 87, 6, 17, 103);
+    output.singleLine("int func(int x);");
+    output.flushLocation(8, 1, 105, 10, 3, 136, false);
+    output.subscopeStrong("struct A");
+
+    assertEq(q"D
+/* This is header comment.
+ * Aaaaaaaaaaaaaaaaaaaaaaa.
+ * Aaaaaaaaaaaaaa. Aaaaaa.
+ */
+
+int func(int x);
+
+struct A
+{
+}
+D", output.data, false);
+
+    assertEq(q"D
+/* This is header comment.
+ * Aaaaaaaaaaaaaaaaaaaaaaa.
+ * Aaaaaaaaaaaaaa. Aaaaaa.
+ */
+
+D", output.header);
+
+    assertEq(q"D
+int func(int x);
+
+struct A
+{
+}
+D"[0..$-1], output.content);
 }

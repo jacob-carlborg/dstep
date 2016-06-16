@@ -3,9 +3,11 @@
 ## Unreleased
 ### New/Changed Features
 
-* Support for simple defines (like `#define FOO 1`)
+* Support for simple defines (like `#define FOO 1`).
 * Support for translation of preprocessor constants in array sizes.
-* Basic unit tests were added
+* Support for global comments and comments inside structs and enums.
+* Support for removing excessive newlines and keeping original spacing.
+* Basic unit tests were added.
 * Most of cucumber tests was replaced with D-based tests.
 * Statements are translated in original 'C' order now.
 * Multiple input files can be processed in different threads.

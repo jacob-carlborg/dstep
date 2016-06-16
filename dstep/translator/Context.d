@@ -13,22 +13,28 @@ import clang.c.Index;
 import clang.Cursor;
 import clang.TranslationUnit;
 
+import dstep.translator.CommentIndex;
 import dstep.translator.IncludeHandler;
 import dstep.translator.MacroIndex;
+import dstep.translator.Options;
 
 class Context
 {
     public MacroIndex macroIndex;
-    public TranslationUnit unit;
+    public TranslationUnit translUnit;
 
     private string[Cursor] anonymousNames;
     private IncludeHandler includeHandler_;
+    private CommentIndex commentIndex_ = null;
 
-    this(TranslationUnit unit)
+    public this(TranslationUnit translUnit, Options options)
     {
-        this.unit = unit;
-        macroIndex = new MacroIndex(unit);
+        this.translUnit = translUnit;
+        macroIndex = new MacroIndex(translUnit);
         includeHandler_ = new IncludeHandler();
+
+        if (options.enableComments)
+            commentIndex_ = new CommentIndex(translUnit);
     }
 
     public string getAnonymousName (Cursor cursor)
@@ -57,5 +63,10 @@ class Context
     @property public IncludeHandler includeHandler()
     {
         return includeHandler_;
+    }
+
+    @property public CommentIndex commentIndex()
+    {
+        return commentIndex_;
     }
 }

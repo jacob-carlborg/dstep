@@ -18,6 +18,7 @@ import std.typecons;
 
 import clang.c.Index;
 
+import dstep.translator.CommentIndex;
 import dstep.translator.IncludeHandler;
 import dstep.translator.Output;
 import dstep.translator.Translator;
@@ -35,15 +36,26 @@ static this()
     index = Index(false, false);
 }
 
+bool compareString(string a, string b, bool strict)
+{
+    import std.string : strip;
+
+    if (strict)
+        return a == b;
+    else
+        return a.strip() == b.strip();
+}
+
 void assertEq(
     string expected,
     string actual,
+    bool strict = true,
     string file = __FILE__,
     size_t line = __LINE__)
 {
     import std.format : format;
 
-    if (expected != actual)
+    if (!compareString(expected, actual, strict))
     {
         string showWhitespaces(string x)
         {
@@ -83,10 +95,14 @@ TranslationUnit makeTranslationUnit(string c)
         CXTranslationUnit_Flags.CXTranslationUnit_DetailedPreprocessingRecord);
 }
 
-string translate(TranslationUnit translationUnit, Language language)
+CommentIndex makeCommentIndex(string c)
 {
-    Translator.Options options;
-    options.language = language;
+    TranslationUnit translUnit = makeTranslationUnit(c);
+    return new CommentIndex(translUnit);
+}
+
+string translate(TranslationUnit translationUnit, Options options)
+{
     auto translator = new Translator(translationUnit, options);
     return translator.translateToString();
 }
@@ -99,21 +115,11 @@ class TranslateAssertError : AssertError
     }
 }
 
-bool compareString(string a, string b, bool strict)
-{
-    import std.string : strip;
-
-    if (strict)
-        return a == b;
-    else
-        return a.strip() == b.strip();
-}
-
 void assertTranslates(
     string expected,
     TranslationUnit unit,
+    Options options,
     bool strict,
-    Language language,
     string file = __FILE__,
     size_t line = __LINE__)
 {
@@ -130,7 +136,7 @@ void assertTranslates(
         throw new TranslateAssertError(message, file, line);
     }
 
-    auto translated = translate(unit, language);
+    auto translated = translate(unit, options);
 
     if (!compareString(expected, translated, strict))
     {
@@ -150,31 +156,46 @@ AST dump:
         string astDump = unit.dumpAST(true);
 
         if (maxSubmessageLength < translated.length)
-            translated = translated[0..maxSubmessageLength] ~ "...";
+            translated = translated[0 .. maxSubmessageLength] ~ "...";
 
         if (maxSubmessageLength < astDump.length)
-            astDump = astDump[0..maxSubmessageLength] ~ "...";
+            astDump = astDump[0 .. maxSubmessageLength] ~ "...";
 
         string message = format(fmt, sep, translated, expected, astDump);
         throw new TranslateAssertError(message, file, line);
     }
 }
 
-void assertTranslates(string c,
+void assertTranslates(
+    string c,
     string d,
     bool strict = false,
     string file = __FILE__,
     size_t line = __LINE__)
 {
     auto unit = makeTranslationUnit(c);
-    assertTranslates(d, unit, strict, Language.c, file, line);
+    Options options;
+    options.language = Language.c;
+    assertTranslates(d, unit, options, strict, file, line);
+}
+
+void assertTranslates(
+    string c,
+    string d,
+    Options options,
+    bool strict = false,
+    string file = __FILE__,
+    size_t line = __LINE__)
+{
+    auto unit = makeTranslationUnit(c);
+    assertTranslates(d, unit, options, strict, file, line);
 }
 
 void assertTranslatesFile(
     string expectedPath,
     string actualPath,
+    Options options,
     bool strict,
-    Language language,
     string[] arguments,
     string file = __FILE__,
     size_t line = __LINE__)
@@ -183,7 +204,7 @@ void assertTranslatesFile(
 
     auto expected = readText(expectedPath);
     auto unit = TranslationUnit.parse(index, actualPath, arguments);
-    assertTranslates(expected, unit, strict, language, file, line);
+    assertTranslates(expected, unit, options, strict, file, line);
 }
 
 string findGNUStepIncludePath()
@@ -253,8 +274,8 @@ string[] findExtraGNUStepPaths(string file, size_t line)
 
 void assertRunsDStep(
     Tuple!(string, string)[] filesPaths,
-    bool strict,
     string[] arguments,
+    bool strict,
     string file = __FILE__,
     size_t line = __LINE__)
 {
@@ -368,17 +389,20 @@ DStep output:
 void assertTranslatesCFile(
     string expectedPath,
     string cPath,
+    Options options = Options.init,
     bool strict = false,
     string file = __FILE__,
     size_t line = __LINE__)
 {
     string[] arguments = ["-Iresources"];
 
+    options.language = Language.c;
+
     assertTranslatesFile(
         expectedPath,
         cPath,
+        options,
         strict,
-        Language.c,
         arguments,
         file,
         line);
@@ -387,6 +411,7 @@ void assertTranslatesCFile(
 void assertTranslatesObjCFile(
     string expectedPath,
     string objCPath,
+    Options options = Options.init,
     bool strict = false,
     string file = __FILE__,
     size_t line = __LINE__)
@@ -403,11 +428,13 @@ void assertTranslatesObjCFile(
             arguments ~= extra;
     }
 
+    options.language = Language.objC;
+
     assertTranslatesFile(
         expectedPath,
         objCPath,
+        options,
         strict,
-        Language.objC,
         arguments,
         file,
         line);
@@ -416,16 +443,17 @@ void assertTranslatesObjCFile(
 void assertRunsDStepCFile(
     string expectedPath,
     string cPath,
+    string[] arguments = [],
     bool strict = false,
     string file = __FILE__,
     size_t line = __LINE__)
 {
-    string[] arguments = ["-Iresources"];
+    string[] extended = arguments ~ ["-Iresources"];
 
     assertRunsDStep(
         [tuple(expectedPath, cPath)],
+        extended,
         strict,
-        arguments,
         file,
         line);
 }
@@ -433,11 +461,12 @@ void assertRunsDStepCFile(
 void assertRunsDStepObjCFile(
     string expectedPath,
     string objCPath,
+    string[] arguments = [],
     bool strict = false,
     string file = __FILE__,
     size_t line = __LINE__)
 {
-    string[] arguments = ["-ObjC", "-Iresources"];
+    string[] extended = arguments ~ ["-ObjC", "-Iresources"];
 
     version (linux)
     {
@@ -446,13 +475,13 @@ void assertRunsDStepObjCFile(
         if (extra.empty)
             return;
         else
-            arguments ~= extra;
+            extended ~= extra;
     }
 
     assertRunsDStep(
         [tuple(expectedPath, objCPath)],
+        extended,
         strict,
-        arguments,
         file,
         line);
 }
@@ -467,8 +496,8 @@ void assertRunsDStepCFiles(
 
     assertRunsDStep(
         filesPaths,
-        strict,
         arguments,
+        strict,
         file,
         line);
 }

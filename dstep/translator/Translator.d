@@ -28,14 +28,10 @@ import dstep.translator.Output;
 import dstep.translator.Record;
 import dstep.translator.Type;
 
+public import dstep.translator.Options;
+
 class Translator
 {
-    static struct Options
-    {
-        string outputFile;
-        Language language = Language.c;
-    }
-
     private
     {
         TranslationUnit translationUnit;
@@ -47,7 +43,9 @@ class Translator
         string[string] deferredDeclarations;
     }
 
-    this (TranslationUnit translationUnit, const Options options = Options.init)
+    Context context;
+
+    this (TranslationUnit translationUnit, Options options = Options.init)
     {
         this.inputFilename = translationUnit.spelling;
         this.translationUnit = translationUnit;
@@ -55,7 +53,7 @@ class Translator
         language = options.language;
 
         inputFile = translationUnit.file(inputFilename);
-        context = new Context(translationUnit);
+        context = new Context(translationUnit, options);
     }
 
     void translate ()
@@ -63,38 +61,50 @@ class Translator
         write(outputFile, translateToString());
     }
 
-    string translateToString()
+    Output translateCursors()
     {
-        import std.algorithm.mutation : strip;
+        Output result = new Output(context.commentIndex);
 
-        Output main = new Output();
+        bool first = true;
 
-        foreach (cursor, parent; translationUnit.cursor.all)
+        foreach (cursor, parent; translationUnit.cursor.allInOrder)
         {
-            if (skipDeclaration(cursor))
-                continue;
+            if (!skipDeclaration(cursor))
+            {
+                if (first)
+                {
+                    if (result.flushHeaderComment())
+                    {
+                        result.separator();
+                    }
 
-            translate(main, cursor, parent);
+                    externDeclaration(result);
+                    first = false;
+                }
+
+                translate(result, cursor, parent);
+            }
         }
 
-        Output result = new Output();
-
-        auto imports = context.includeHandler.toImports();
-
-        if (!imports.empty())
-        {
-            result.output(imports);
-            result.separator();
-        }
-
-        externDeclaration(result);
-
-        result.output(main);
+        if (context.commentIndex)
+            result.flushLocation(context.commentIndex.queryLastLocation());
 
         foreach (value; deferredDeclarations.values)
             result.singleLine(value);
 
-        return result.data();
+        result.finalize();
+
+        return result;
+    }
+
+    string translateToString()
+    {
+        import std.algorithm.mutation : strip;
+
+        auto main = translateCursors();
+        auto imports = context.includeHandler.toImports();
+
+        return main.header ~ imports.data ~ main.content;
     }
 
     void translate (Output output, Cursor cursor, Cursor parent = Cursor.empty)
@@ -104,26 +114,32 @@ class Translator
             switch (cursor.kind)
             {
                 case CXCursor_ObjCInterfaceDecl:
+                    output.flushLocation(cursor.extent, false);
                     translateObjCInterfaceDecl(output, cursor, parent);
                     break;
 
                 case CXCursor_ObjCProtocolDecl:
+                    output.flushLocation(cursor.extent, false);
                     translateObjCProtocolDecl(output, cursor, parent);
                     break;
 
                 case CXCursor_ObjCCategoryDecl:
+                    output.flushLocation(cursor.extent, false);
                     translateObjCCategoryDecl(output, cursor, parent);
                     break;
 
                 case CXCursor_VarDecl:
+                    output.flushLocation(cursor.extent);
                     translateVarDecl(output, cursor, parent);
                     break;
 
                 case CXCursor_FunctionDecl:
+                    output.flushLocation(cursor.extent);
                     translateFunctionDecl(output, cursor, parent);
                     break;
 
                 case CXCursor_TypedefDecl:
+                    output.flushLocation(cursor.extent);
                     translateTypedefDecl(output, cursor, parent);
                     break;
 
@@ -140,10 +156,12 @@ class Translator
                     break;
 
                 case CXCursor_MacroDefinition:
+                    output.flushLocation(cursor.extent, false);
                     translateMacroDefinition(output, cursor, parent);
                     break;
 
                 default:
+                    output.flushLocation(cursor.extent, false);
                     break;
             }
         }
@@ -183,18 +201,17 @@ class Translator
 
     void translateStructDecl(Output output, Cursor cursor, Cursor parent)
     {
-        Output nested = new Output();
-        (new Record!(StructData)(cursor, parent, this)).translate(nested);
-
         if (cursor.isDefinition)
         {
             if (cursor.spelling in deferredDeclarations)
                 deferredDeclarations.remove(cursor.spelling);
 
-            output.output(nested);
+            (new Record(cursor, parent, this)).translate(output);
         }
         else
         {
+            Output nested = new Output();
+            (new Record(cursor, parent, this)).translate(nested);
             deferredDeclarations[cursor.spelling] = nested.data();
         }
     }
@@ -206,7 +223,7 @@ class Translator
 
     void translateUnionDecl(Output output, Cursor cursor, Cursor parent)
     {
-        new Record!(UnionData)(cursor, parent, this).translate(output);
+        new Record(cursor, parent, this).translate(output);
     }
 
     void translateMacroDefinition(Output output, Cursor cursor, Cursor parent)
@@ -234,7 +251,6 @@ class Translator
             cursor.spelling);
     }
 
-    Context context;
 private:
 
     bool skipDeclaration (Cursor cursor)
@@ -490,12 +506,4 @@ bool isDKeyword (string str)
     }
 
     return false;
-}
-
-enum Language
-{
-    c,
-    objC
-// Can't handle C++ yet
-//    cpp
 }

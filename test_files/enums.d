@@ -13,6 +13,7 @@ enum Bar
 }
 
 extern __gshared Bar e;
+
 extern __gshared Foo f;
 
 struct A
