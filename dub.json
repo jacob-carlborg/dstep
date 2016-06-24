@@ -27,7 +27,7 @@
             "targetName": "dstep",
             "sourcePaths": ["dstep", "clang"],
             "importPaths": ["dstep", "clang"],
-            "lflags-posix": ["-lclang", "-rpath", ".", "-L.", "-L/usr/lib64/llvm", "-L/usr/lib/llvm-3.7/lib"],
+            "lflags-posix": ["-lclang", "-rpath", ".", "-rpath", "/usr/lib/llvm-3.7/lib", "-L.", "-L/usr/lib64/llvm", "-L/usr/lib/llvm-3.7/lib"],
             "lflags-windows": ["+\\", "+clang"]
         },
 

@@ -52,7 +52,7 @@ class Output
 
     const size_t marginSize = 80;
     const size_t indentSize = 4;
-    private Appender!string buffer;
+    private Appender!(char[]) buffer;
     private Appender!(char[]) weak;
     private Entity[] stack;
     private Entity first = Entity.bottom;
@@ -67,7 +67,7 @@ class Output
     {
         stack ~= Entity.bottom;
 
-        // There is bug in Phobos, formattedWrite will not write anything
+        // formattedWrite will not write anything
         // to the output range if put was not invoked before.
         buffer.put("");
         weak.put("");
@@ -86,12 +86,32 @@ class Output
 
         stack ~= Entity.bottom;
 
-        // There is bug in Phobos, formattedWrite will not write anything
+        // formattedWrite will not write anything
         // to the output range if put was not invoked before.
         buffer.put("");
         weak.put("");
 
         this.commentIndex = commentIndex;
+    }
+
+    public void reset()
+    {
+        buffer.clear();
+        weak.clear();
+
+        // formattedWrite will not write anything
+        // to the output range if put was not invoked before.
+        buffer.put("");
+        weak.put("");
+
+        stack = [ Entity.bottom ];
+
+        first = Entity.bottom;
+        chunks.clear();
+
+        lastestOffset = 0;
+        lastestLine = 0;
+        headerEndOffset = 0;
     }
 
     public bool empty()
@@ -520,13 +540,13 @@ D"[0 .. $ - 1]);
             if (lastestLine != comment.line)
                 indent();
 
-            formattedWrite(buffer, lines.front);
+            buffer.put(lines.front);
             lines.popFront;
 
             foreach (line; lines)
             {
                 indent();
-                formattedWrite(buffer, line[indentAmount .. $]);
+                buffer.put(line[indentAmount .. $]);
             }
         }
     }
@@ -674,23 +694,23 @@ D"[0 .. $ - 1]);
     public string data(string suffix = "")
     {
         if (!suffix.empty)
-            return buffer.data() ~ suffix;
+            return (buffer.data() ~ suffix).idup;
         else
-            return buffer.data();
+            return buffer.data().idup;
     }
 
     public string header()
     {
         import std.algorithm.comparison;
 
-        return buffer.data[0 .. min(headerEndOffset, $)];
+        return buffer.data[0 .. min(headerEndOffset, $)].idup;
     }
 
     public string content()
     {
         import std.algorithm.comparison;
 
-        return buffer.data[min(headerEndOffset, $) .. $];
+        return buffer.data[min(headerEndOffset, $) .. $].idup;
     }
 
     struct Indent

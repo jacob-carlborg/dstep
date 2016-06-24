@@ -82,7 +82,7 @@ class Translator
                     first = false;
                 }
 
-                translate(result, cursor, parent);
+                translateInGlobalScope(result, cursor, parent);
             }
         }
 
@@ -105,6 +105,22 @@ class Translator
         auto imports = context.includeHandler.toImports();
 
         return main.header ~ imports.data ~ main.content;
+    }
+
+    void translateInGlobalScope(
+        Output output,
+        Cursor cursor,
+        Cursor parent = Cursor.empty)
+    {
+        translate(output, cursor, parent);
+
+        if (!context.globalScope.empty)
+        {
+            output.separator();
+            output.output(context.globalScope);
+            output.separator();
+            context.globalScope.reset();
+        }
     }
 
     void translate (

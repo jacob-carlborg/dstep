@@ -29,16 +29,40 @@ void translateEnumConstantDecl(Output output, Context context, Cursor cursor, bo
         last ? "" : ",");
 }
 
+void generateEnumAliases(Output output, Context context, Cursor cursor, string spelling)
+{
+    string subscope = cursorScopeString(context, cursor) ~ ".";
+
+    foreach (item; cursor.all)
+    {
+        switch (item.kind)
+        {
+            case CXCursorKind.CXCursor_EnumConstantDecl:
+                output.singleLine(
+                    "alias %s = %s%s;",
+                    item.spelling,
+                    subscope,
+                    item.spelling);
+                break;
+
+            default:
+                break;
+        }
+    }
+}
+
 void translateEnumDef(Output output, Context context, Cursor cursor)
 {
     import std.format : format;
 
-    auto spelling = context.translateSpelling(cursor);
+    auto variables = cursor.variablesInParentScope();
+    auto anonymous = context.shouldBeAnonymous(cursor);
+    auto spelling = "enum";
 
-    output.subscopeStrong(
-        cursor.extent,
-        "enum %s",
-        translateIdentifier(spelling)) in
+    if (!anonymous || variables || !cursor.isGlobal)
+        spelling = "enum " ~ translateIdentifier(context.translateSpelling(cursor));
+
+    output.subscopeStrong(cursor.extent, "%s", spelling) in
     {
         auto children = cursor.children;
 
@@ -62,6 +86,9 @@ void translateEnumDef(Output output, Context context, Cursor cursor)
             }
         }
     };
+
+    if ((anonymous && variables) || !cursor.isGlobal)
+        generateEnumAliases(context.globalScope, context, cursor, spelling);
 }
 
 void translateEnum(Output output, Context context, Cursor cursor)

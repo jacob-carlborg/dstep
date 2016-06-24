@@ -395,3 +395,14 @@ struct C
 D");
 
 }
+
+// Test comments that contains std.format format specifiers.
+unittest
+{
+    assertTranslates(q"C
+/* This is comment containing unescaped %. */
+C",
+q"D
+/* This is comment containing unescaped %. */
+D");
+}

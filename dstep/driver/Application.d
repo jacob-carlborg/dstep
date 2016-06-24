@@ -57,6 +57,7 @@ class Application : DStack.Application
                 if (arguments.output.any() && !exists(outputDir))
                     mkdirRecurse(outputDir);
             }
+
             foreach(string fileName; inputFiles)
             {
                 auto conversionTask = task!startParsingFile(language, argsToRestore, fileName, true,
@@ -233,6 +234,7 @@ private:
                 options.enableComments = !arguments["no-comments"];
 
                 auto translator = new Translator(translationUnit, options);
+
                 translator.translate;
             }
         }

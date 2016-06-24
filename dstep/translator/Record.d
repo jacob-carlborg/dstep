@@ -14,6 +14,7 @@ import clang.Visitor;
 import clang.Util;
 
 import dstep.translator.Context;
+import dstep.translator.Enum;
 import dstep.translator.Declaration;
 import dstep.translator.Output;
 import dstep.translator.Translator;
@@ -67,6 +68,10 @@ void translateRecordDef(Output output, Context context, Cursor cursor, bool keep
 
                         break;
 
+                    case CXCursor_EnumDecl:
+                        translateEnum(output, context, cursor);
+                        break;
+
                     default: break;
                 }
         }
@@ -83,20 +88,7 @@ void translateRecordDecl(Output output, Context context, Cursor cursor)
 
 void translateAnonymousRecord(Output output, Context context, Cursor cursor, Cursor parent)
 {
-    import std.algorithm.iteration : filter;
-    import std.stdio;
-
-    auto canonical = cursor.canonical;
-
-    bool predicate(Cursor a)
-    {
-        return a.kind == CXCursorKind.CXCursor_FieldDecl &&
-            a.type.declaration.canonical == canonical;
-    }
-
-    auto fields = filter!(predicate)(parent.children);
-
-    if (fields.empty)
+    if (!variablesInParentScope(cursor))
         translateRecordDef(output, context, cursor, true);
 }
 
