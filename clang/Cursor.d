@@ -186,6 +186,42 @@ struct Cursor
         return Cursor.empty();
     }
 
+    Cursor[] filterChildren(CXCursorKind kind)
+    {
+        import std.array;
+
+        auto result = Appender!(Cursor[])();
+
+        foreach (child; all)
+        {
+            if (child.kind == kind)
+                result.put(child);
+        }
+
+        return result.data();
+    }
+
+    Cursor[] filterChildren(CXCursorKind[] kinds ...)
+    {
+        import std.array;
+
+        auto result = Appender!(Cursor[])();
+
+        foreach (child; all)
+        {
+            foreach (kind; kinds)
+            {
+                if (child.kind == kind)
+                {
+                    result.put(child);
+                    break;
+                }
+            }
+        }
+
+        return result.data();
+    }
+
     Cursor semanticParent() const
     {
         return Cursor(clang_getCursorSemanticParent(cast(CXCursor) cx));
@@ -340,7 +376,7 @@ struct Cursor
 
         if (file)
         {
-            foreach (cursor, _; all)
+            foreach (cursor, _; allInOrder)
             {
                 if (!cursor.isPredefined() && cursor.file == *file)
                     cursor.dumpAST(result, indent + step);
@@ -348,7 +384,7 @@ struct Cursor
         }
         else
         {
-            foreach (cursor, _; all)
+            foreach (cursor, _; allInOrder)
             {
                 if (!cursor.isPredefined())
                     cursor.dumpAST(result, indent + step);

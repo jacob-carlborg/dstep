@@ -330,3 +330,53 @@ q"D
 /* This is comment containing unescaped %. */
 D");
 }
+
+// Test translation of interleaved enum-based array size consts and macro based array size consts.
+unittest
+{
+    assertTranslates(
+q"C
+
+struct qux {
+    char scale;
+};
+
+#define FOO 4
+#define BAZ 8
+
+struct stats_t {
+    enum
+    {
+        BAR = 55,
+    };
+
+    struct qux stat[FOO][BAR][FOO][BAZ];
+};
+
+C",
+q"D
+extern (C):
+
+struct qux
+{
+    char scale;
+}
+
+enum FOO = 4;
+enum BAZ = 8;
+
+struct stats_t
+{
+    enum _Anonymous_0
+    {
+        BAR = 55
+    }
+
+    qux[BAZ][FOO][BAR][FOO] stat;
+}
+
+alias BAR = stats_t._Anonymous_0.BAR;
+
+D");
+
+}

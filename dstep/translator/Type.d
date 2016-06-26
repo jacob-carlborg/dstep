@@ -220,16 +220,24 @@ body
 
     if (array.size >= 0)
     {
-        auto children = cursor.children;
+        auto children = cursor.filterChildren(
+            CXCursorKind.CXCursor_IntegerLiteral,
+            CXCursorKind.CXCursor_DeclRefExpr);
 
-        if (dimension < children.length &&
-            children[dimension].kind == CXCursorKind.CXCursor_IntegerLiteral)
+        if (dimension < children.length)
         {
-            auto expansions = context.macroIndex.queryExpansion(children[dimension]);
-
-            if (expansions.length == 1)
+            if (children[dimension].kind == CXCursorKind.CXCursor_IntegerLiteral)
             {
-                return elementType ~ '[' ~ expansions[0].spelling ~ ']';
+                auto expansions = context.macroIndex.queryExpansion(children[dimension]);
+
+                if (expansions.length == 1)
+                {
+                    return elementType ~ '[' ~ expansions[0].spelling ~ ']';
+                }
+            }
+            else if (children[dimension].kind == CXCursorKind.CXCursor_DeclRefExpr)
+            {
+                return elementType ~ '[' ~ children[dimension].spelling ~ ']';
             }
         }
 
