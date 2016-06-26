@@ -26,17 +26,17 @@ union A
 
 union C
 {
-    union
+    union _Anonymous_0
     {
         int x;
         int y;
     }
+
+    _Anonymous_0 point;
 }
 
-union _Anonymous_0
+union D
 {
     int x;
     int y;
 }
-
-alias _Anonymous_0 D;

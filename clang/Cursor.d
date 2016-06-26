@@ -175,6 +175,53 @@ struct Cursor
         return childrenImpl!InOrderVisitor(ignorePredefined);
     }
 
+    Cursor findChild(CXCursorKind kind)
+    {
+        foreach (child; all)
+        {
+            if (child.kind == kind)
+                return child;
+        }
+
+        return Cursor.empty();
+    }
+
+    Cursor[] filterChildren(CXCursorKind kind)
+    {
+        import std.array;
+
+        auto result = Appender!(Cursor[])();
+
+        foreach (child; all)
+        {
+            if (child.kind == kind)
+                result.put(child);
+        }
+
+        return result.data();
+    }
+
+    Cursor[] filterChildren(CXCursorKind[] kinds ...)
+    {
+        import std.array;
+
+        auto result = Appender!(Cursor[])();
+
+        foreach (child; all)
+        {
+            foreach (kind; kinds)
+            {
+                if (child.kind == kind)
+                {
+                    result.put(child);
+                    break;
+                }
+            }
+        }
+
+        return result.data();
+    }
+
     Cursor semanticParent() const
     {
         return Cursor(clang_getCursorSemanticParent(cast(CXCursor) cx));
@@ -248,6 +295,26 @@ struct Cursor
         return Cursor(clang_getCursorDefinition(cast(CXCursor) cx));
     }
 
+    Cursor referenced () const
+    {
+        return Cursor(clang_getCursorReferenced(cast(CXCursor) cx));
+    }
+
+    Cursor canonical () const
+    {
+        return Cursor(clang_getCanonicalCursor(cast(CXCursor) cx));
+    }
+
+    Cursor opCast(T)() const if (is(T == Cursor))
+    {
+        return this;
+    }
+
+    bool opCast(T)() if (is(T == bool))
+    {
+        return !isEmpty && isValid;
+    }
+
     void dumpAST(ref Appender!string result, size_t indent, File* file)
     {
         import std.format;
@@ -309,7 +376,7 @@ struct Cursor
 
         if (file)
         {
-            foreach (cursor, _; all)
+            foreach (cursor, _; allInOrder)
             {
                 if (!cursor.isPredefined() && cursor.file == *file)
                     cursor.dumpAST(result, indent + step);
@@ -317,7 +384,7 @@ struct Cursor
         }
         else
         {
-            foreach (cursor, _; all)
+            foreach (cursor, _; allInOrder)
             {
                 if (!cursor.isPredefined())
                     cursor.dumpAST(result, indent + step);
@@ -328,6 +395,13 @@ struct Cursor
     void dumpAST(ref Appender!string result, size_t indent)
     {
         dumpAST(result, indent, null);
+    }
+
+    string dumpAST()
+    {
+        auto result = appender!string();
+        dumpAST(result, 0);
+        return result.data;
     }
 }
 

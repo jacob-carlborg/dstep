@@ -6,73 +6,98 @@
  */
 module dstep.translator.Enum;
 
-import mambo.core._;
-
 import clang.c.Index;
 import clang.Cursor;
 import clang.Visitor;
 import clang.Util;
 
-import dstep.translator.Translator;
+import dstep.translator.Context;
 import dstep.translator.Declaration;
 import dstep.translator.Output;
+import dstep.translator.Translator;
 import dstep.translator.Type;
 
-class Enum : Declaration
+void translateEnumConstantDecl(Output output, Context context, Cursor cursor, bool last)
 {
-    this (Cursor cursor, Cursor parent, Translator translator)
-    {
-        super(cursor, parent, translator);
-    }
+    import std.format : format;
 
-    override void translate (Output output)
-    {
-        import std.format : format;
+    output.singleLine(
+        cursor.extent,
+        "%s = %s%s",
+        cursor.spelling,
+        cursor.enum_.value,
+        last ? "" : ",");
+}
 
-        output.subscopeStrong(
-            cursor.extent,
-            "enum %s",
-            translateIdentifier(spelling)) in
+void generateEnumAliases(Output output, Context context, Cursor cursor, string spelling)
+{
+    string subscope = cursorScopeString(context, cursor) ~ ".";
+
+    foreach (item; cursor.all)
+    {
+        switch (item.kind)
         {
-            auto children = cursor.children;
+            case CXCursorKind.CXCursor_EnumConstantDecl:
+                output.singleLine(
+                    "alias %s = %s%s;",
+                    item.spelling,
+                    subscope,
+                    item.spelling);
+                break;
 
-            foreach (i; 0 .. children.length)
+            default:
+                break;
+        }
+    }
+}
+
+void translateEnumDef(Output output, Context context, Cursor cursor)
+{
+    import std.format : format;
+
+    auto variables = cursor.variablesInParentScope();
+    auto anonymous = context.shouldBeAnonymous(cursor);
+    auto spelling = "enum";
+
+    if (!anonymous || variables || !cursor.isGlobal)
+        spelling = "enum " ~ translateIdentifier(context.translateSpelling(cursor));
+
+    output.subscopeStrong(cursor.extent, "%s", spelling) in
+    {
+        auto children = cursor.children;
+
+        foreach (i; 0..children.length)
+        {
+            with (CXCursorKind)
             {
-                with (CXCursorKind)
+                switch (children[i].kind)
                 {
-                    switch (children[i].kind)
-                    {
-                        case CXCursor_EnumConstantDecl:
-                            translateEnumConstantDecl(
-                                output,
-                                children[i],
-                                children.length == i + 1);
-                            break;
+                    case CXCursor_EnumConstantDecl:
+                        translateEnumConstantDecl(
+                            output,
+                            context,
+                            children[i],
+                            children.length == i + 1);
+                        break;
 
-                        default:
-                            break;
-                    }
+                    default:
+                        break;
                 }
             }
-        };
-    }
+        }
+    };
 
-    void translateEnumConstantDecl(Output output, Cursor cursor, bool last)
+    if ((anonymous && variables) || !cursor.isGlobal)
+        generateEnumAliases(context.globalScope, context, cursor, spelling);
+}
+
+void translateEnum(Output output, Context context, Cursor cursor)
+{
+    auto canonical = cursor.canonical;
+
+    if (!context.alreadyDefined(cursor.canonical))
     {
-        import std.format : format;
-
-        output.singleLine(
-            cursor.extent,
-            "%s = %s%s",
-            cursor.spelling,
-            cursor.enum_.value,
-            last ? "" : ",");
-    }
-
-    @property override string spelling ()
-    {
-        auto name = cursor.spelling;
-        return name.isPresent ?
-            name : translator.context.generateAnonymousName(cursor);
+        translateEnumDef(output, context, canonical.definition);
+        context.markAsDefined(cursor);
     }
 }

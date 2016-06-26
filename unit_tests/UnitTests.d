@@ -34,33 +34,6 @@ unittest
 {
     assertTranslates(
 q"C
-struct A
-{
-    struct B
-    {
-        int x;
-    } b;
-};
-C",
-q"D
-extern (C):
-
-struct A
-{
-    struct B
-    {
-        int x;
-    }
-
-    B b;
-}
-D");
-}
-
-unittest
-{
-    assertTranslates(
-q"C
 float foo(int x);
 float bar(int x);
 
@@ -237,6 +210,173 @@ struct X
 // This is inline comment 6.
 
 /* Comment, comment. */
+D");
+
+}
+
+// Do not generate alias for typedef with the same name as structure.
+unittest
+{
+    assertTranslates(q"C
+typedef struct Foo Foo;
+struct Foo;
+struct Foo
+{
+    struct Bar
+    {
+        int x;
+    } bar;
+};
+C",
+q"D
+extern (C):
+
+struct Foo
+{
+    struct Bar
+    {
+        int x;
+    }
+
+    Bar bar;
+}
+
+D");
+}
+
+// Long function declarations should be broken to multiple lines.
+unittest
+{
+    assertTranslates(q"C
+void very_long_function_declaration(double way_too_long_argument,
+                           double another_long_argument);
+C",
+q"D
+extern (C):
+
+void very_long_function_declaration (
+    double way_too_long_argument,
+    double another_long_argument);
+D");
+
+}
+
+// Long function declarations shouldn't be broken, if they aren't in original.
+unittest
+{
+    assertTranslates(q"C
+void very_long_function_declaration(double way_too_long_argument, double another_long_argument);
+C",
+q"D
+extern (C):
+
+void very_long_function_declaration (double way_too_long_argument, double another_long_argument);
+D");
+
+}
+
+// Test translation of nested anonymous structures that have associated fields.
+unittest
+{
+    assertTranslates(q"C
+struct C
+{
+    struct
+    {
+        int x;
+        int y;
+
+        struct
+        {
+            int z;
+            int w;
+        } nested;
+    } point;
+};
+C",
+q"D
+extern (C):
+
+struct C
+{
+    struct _Anonymous_0
+    {
+        int x;
+        int y;
+
+        struct _Anonymous_1
+        {
+            int z;
+            int w;
+        }
+
+        _Anonymous_1 nested;
+    }
+
+    _Anonymous_0 point;
+}
+
+D");
+
+}
+
+// Test comments that contains std.format format specifiers.
+unittest
+{
+    assertTranslates(q"C
+/* This is comment containing unescaped %. */
+C",
+q"D
+/* This is comment containing unescaped %. */
+D");
+}
+
+// Test translation of interleaved enum-based array size consts and macro based array size consts.
+unittest
+{
+    assertTranslates(
+q"C
+
+struct qux {
+    char scale;
+};
+
+#define FOO 4
+#define BAZ 8
+
+struct stats_t {
+    enum
+    {
+        BAR = 55,
+    };
+
+    struct qux stat[FOO][BAR][FOO][BAZ];
+};
+
+C",
+q"D
+extern (C):
+
+struct qux
+{
+    char scale;
+}
+
+enum FOO = 4;
+enum BAZ = 8;
+
+struct stats_t
+{
+    enum _Anonymous_0
+    {
+        BAR = 55
+    }
+
+    qux[BAZ][FOO][BAR][FOO] stat;
+}
+
+alias BAR = stats_t._Anonymous_0.BAR;
+
 D");
 
 }

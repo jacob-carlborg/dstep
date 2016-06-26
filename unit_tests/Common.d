@@ -90,7 +90,7 @@ TranslationUnit makeTranslationUnit(string c)
     return TranslationUnit.parseString(
         index,
         c,
-        [],
+        ["-Wno-missing-declarations"],
         null,
         CXTranslationUnit_Flags.CXTranslationUnit_DetailedPreprocessingRecord);
 }
@@ -344,13 +344,13 @@ DStep output:
         if (!exists(outputPath) || !isFile(outputPath))
         {
             auto templ = q"/
-    Output file `%4$s` doesn't exist.
-    %1$s
-    DStep command:
-    %2$s
-    %1$s
-    DStep output:
-    %3$s/";
+Output file `%4$s` doesn't exist.
+%1$s
+DStep command:
+%2$s
+%1$s
+DStep output:
+%3$s/";
 
             auto message = format(
                 templ,
@@ -368,16 +368,16 @@ DStep output:
         if (!compareString(expected, actual, strict))
         {
             auto fmt = q"/
-    Source code translated to:
-    %1$s
-    %2$s
-    %1$s
-    Expected D code:
-    %1$s
-    %3$s
-    %1$s
-    DStep command:
-    %4$s/";
+Source code translated to:
+%1$s
+%2$s
+%1$s
+Expected D code:
+%1$s
+%3$s
+%1$s
+DStep command:
+%4$s/";
 
             string commandString = join(command, " ");
             string message = format(fmt, sep, actual, expected, commandString);

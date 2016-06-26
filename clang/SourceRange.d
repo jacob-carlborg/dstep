@@ -26,6 +26,11 @@ struct SourceRange
         return SourceLocation(clang_getRangeEnd(cx));
     }
 
+    @property bool isMultiline() const
+    {
+        return start.line != end.line;
+    }
+
     @property string path() const
     {
         return start.path;

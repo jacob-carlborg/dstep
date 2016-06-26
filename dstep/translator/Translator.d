@@ -53,7 +53,7 @@ class Translator
         language = options.language;
 
         inputFile = translationUnit.file(inputFilename);
-        context = new Context(translationUnit, options);
+        context = new Context(translationUnit, options, this);
     }
 
     void translate ()
@@ -82,7 +82,7 @@ class Translator
                     first = false;
                 }
 
-                translate(result, cursor, parent);
+                translateInGlobalScope(result, cursor, parent);
             }
         }
 
@@ -107,7 +107,26 @@ class Translator
         return main.header ~ imports.data ~ main.content;
     }
 
-    void translate (Output output, Cursor cursor, Cursor parent = Cursor.empty)
+    void translateInGlobalScope(
+        Output output,
+        Cursor cursor,
+        Cursor parent = Cursor.empty)
+    {
+        translate(output, cursor, parent);
+
+        if (!context.globalScope.empty)
+        {
+            output.separator();
+            output.output(context.globalScope);
+            output.separator();
+            context.globalScope.reset();
+        }
+    }
+
+    void translate (
+        Output output,
+        Cursor cursor,
+        Cursor parent = Cursor.empty)
     {
         with (CXCursorKind)
         {
@@ -134,25 +153,23 @@ class Translator
                     break;
 
                 case CXCursor_FunctionDecl:
-                    output.flushLocation(cursor.extent);
                     translateFunctionDecl(output, cursor, parent);
                     break;
 
                 case CXCursor_TypedefDecl:
-                    output.flushLocation(cursor.extent);
-                    translateTypedefDecl(output, cursor, parent);
+                    translateTypedefDecl(output, cursor);
                     break;
 
                 case CXCursor_StructDecl:
-                    translateStructDecl(output, cursor, parent);
+                    translateRecord(output, context, cursor);
                     break;
 
                 case CXCursor_EnumDecl:
-                    translateEnumDecl(output, cursor, parent);
+                    translateEnum(output, context, cursor);
                     break;
 
                 case CXCursor_UnionDecl:
-                    translateUnionDecl(output, cursor, parent);
+                    translateRecord(output, context, cursor);
                     break;
 
                 case CXCursor_MacroDefinition:
@@ -189,41 +206,38 @@ class Translator
 
     void translateFunctionDecl(Output output, Cursor cursor, Cursor parent)
     {
+        output.flushLocation(cursor.extent);
+
         immutable auto name = translateIdentifier(cursor.spelling);
         translateFunction(output, context, cursor.func, name);
         output.append(";");
     }
 
-    void translateTypedefDecl(Output output, Cursor cursor, Cursor parent)
+    void translateTypedefDecl(Output output, Cursor cursor)
     {
-        typedef_(output, cursor);
-    }
+        output.flushLocation(cursor.extent);
 
-    void translateStructDecl(Output output, Cursor cursor, Cursor parent)
-    {
-        if (cursor.isDefinition)
+        bool ignoreTypedef = false;
+
+        foreach (child; cursor.all)
         {
-            if (cursor.spelling in deferredDeclarations)
-                deferredDeclarations.remove(cursor.spelling);
+            if (child.kind == CXCursorKind.CXCursor_TypeRef)
+                child = child.referenced;
 
-            (new Record(cursor, parent, this)).translate(output);
+            if (child.spelling == cursor.spelling ||
+                child.spelling == "")
+                ignoreTypedef = true;
+
+            break;
         }
-        else
+
+        if (!ignoreTypedef)
         {
-            Output nested = new Output();
-            (new Record(cursor, parent, this)).translate(nested);
-            deferredDeclarations[cursor.spelling] = nested.data();
+            output.singleLine(
+                "alias %s %s;",
+                translateType(context, cursor, cursor.type.canonicalType),
+                cursor.spelling);
         }
-    }
-
-    void translateEnumDecl(Output output, Cursor cursor, Cursor parent)
-    {
-        new Enum(cursor, parent, this).translate(output);
-    }
-
-    void translateUnionDecl(Output output, Cursor cursor, Cursor parent)
-    {
-        new Record(cursor, parent, this).translate(output);
     }
 
     void translateMacroDefinition(Output output, Cursor cursor, Cursor parent)
@@ -236,11 +250,7 @@ class Translator
 
     void variable (Output output, Cursor cursor, string prefix = "")
     {
-        output.singleLine(
-                "%s%s %s;",
-                prefix,
-                translateType(context, cursor),
-                translateIdentifier(cursor.spelling));
+        translateVariable(output, context, cursor, prefix);
     }
 
     void typedef_ (Output output, Cursor cursor)
@@ -291,7 +301,14 @@ void translateFunction (Output output, Context context, FunctionCursor func, str
 
     auto resultType = translateType(context, func, func.resultType);
 
-    translateFunction(output, resultType, name, params, func.isVariadic, isStatic ? "static " : "");
+    translateFunction(
+        output,
+        resultType,
+        name,
+        params,
+        func.isVariadic,
+        isStatic ? "static " : "",
+        func.extent.isMultiline);
 }
 
 package struct Parameter
@@ -301,7 +318,14 @@ package struct Parameter
     bool isConst;
 }
 
-package void translateFunction (Output output, string result, string name, Parameter[] parameters, bool variadic, string prefix = "")
+package void translateFunction (
+    Output output,
+    string result,
+    string name,
+    Parameter[] parameters,
+    bool variadic,
+    string prefix = "",
+    bool multiline = false)
 {
     import std.format : format;
 
@@ -336,7 +360,22 @@ package void translateFunction (Output output, string result, string name, Param
     if (variadic)
         params ~= "...";
 
-    output.singleLine("%s%s %s (%s)", prefix, result, name, params.join(", "));
+    if (multiline)
+        output.adaptiveLine("%s%s %s (%@,%@)", prefix, result, name) in {
+            foreach (param; params)
+                output.adaptiveLine(param);
+        };
+    else
+        output.singleLine("%s%s %s (%s)", prefix, result, name, params.join(", "));
+}
+
+void translateVariable (Output output, Context context, Cursor cursor, string prefix = "")
+{
+    output.singleLine(
+        "%s%s %s;",
+        prefix,
+        translateType(context, cursor, cursor.type),
+        translateIdentifier(cursor.spelling));
 }
 
 string translateIdentifier (string str)

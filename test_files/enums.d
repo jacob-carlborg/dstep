@@ -37,10 +37,11 @@ struct C
     _Anonymous_0 point;
 }
 
-enum _Anonymous_1
+alias i = C._Anonymous_0.i;
+alias j = C._Anonymous_0.j;
+
+enum D
 {
     k = 1,
     l = 2
 }
-
-alias _Anonymous_1 D;

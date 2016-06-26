@@ -26,28 +26,28 @@ struct A
 
 struct C
 {
-    struct
+    struct _Anonymous_0
     {
         int x;
         int y;
     }
+
+    _Anonymous_0 point;
 }
 
-struct _Anonymous_0
+struct D
 {
     int x;
     int y;
 }
 
-alias _Anonymous_0 D;
-
 struct E
 {
 }
+
+struct F;
 
 struct Nested
 {
     C field;
 }
-
-struct F;
