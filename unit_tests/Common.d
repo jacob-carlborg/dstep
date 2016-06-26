@@ -90,7 +90,7 @@ TranslationUnit makeTranslationUnit(string c)
     return TranslationUnit.parseString(
         index,
         c,
-        [],
+        ["-Wno-missing-declarations"],
         null,
         CXTranslationUnit_Flags.CXTranslationUnit_DetailedPreprocessingRecord);
 }

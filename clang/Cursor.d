@@ -175,6 +175,17 @@ struct Cursor
         return childrenImpl!InOrderVisitor(ignorePredefined);
     }
 
+    Cursor findChild(CXCursorKind kind)
+    {
+        foreach (child; all)
+        {
+            if (child.kind == kind)
+                return child;
+        }
+
+        return Cursor.empty();
+    }
+
     Cursor semanticParent() const
     {
         return Cursor(clang_getCursorSemanticParent(cast(CXCursor) cx));
@@ -256,6 +267,16 @@ struct Cursor
     Cursor canonical () const
     {
         return Cursor(clang_getCanonicalCursor(cast(CXCursor) cx));
+    }
+
+    Cursor opCast(T)() const if (is(T == Cursor))
+    {
+        return this;
+    }
+
+    bool opCast(T)() if (is(T == bool))
+    {
+        return !isEmpty && isValid;
     }
 
     void dumpAST(ref Appender!string result, size_t indent, File* file)

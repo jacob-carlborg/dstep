@@ -34,33 +34,6 @@ unittest
 {
     assertTranslates(
 q"C
-struct A
-{
-    struct B
-    {
-        int x;
-    } b;
-};
-C",
-q"D
-extern (C):
-
-struct A
-{
-    struct B
-    {
-        int x;
-    }
-
-    B b;
-}
-D");
-}
-
-unittest
-{
-    assertTranslates(
-q"C
 float foo(int x);
 float bar(int x);
 
@@ -343,55 +316,6 @@ struct C
     _Anonymous_0 point;
 }
 
-D");
-
-}
-
-// Test translation of nested anonymous structures.
-unittest
-{
-    assertTranslates(q"C
-struct C
-{
-    union {
-        int x;
-        int y;
-    };
-
-    struct {
-        int z;
-        int w;
-
-        union {
-            int r, g, b;
-        };
-    };
-};
-C",
-q"D
-extern (C):
-
-struct C
-{
-    union
-    {
-        int x;
-        int y;
-    }
-
-    struct
-    {
-        int z;
-        int w;
-
-        union
-        {
-            int r;
-            int g;
-            int b;
-        }
-    }
-}
 D");
 
 }

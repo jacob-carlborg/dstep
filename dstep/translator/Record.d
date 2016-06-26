@@ -20,12 +20,18 @@ import dstep.translator.Output;
 import dstep.translator.Translator;
 import dstep.translator.Type;
 
-string translateRecordType(in Cursor cursor)
+string translateRecordTypeKeyword(in Cursor cursor)
 {
     if (cursor.kind == CXCursorKind.CXCursor_UnionDecl)
         return "union";
     else
         return "struct";
+}
+
+void translatePackedAttribute(Output output, Context context, Cursor cursor)
+{
+    if (auto attribute = cursor.findChild(CXCursorKind.CXCursor_PackedAttr))
+        output.singleLine("align (1):");
 }
 
 void translateRecordDef(Output output, Context context, Cursor cursor, bool keepUnnamed = false)
@@ -37,9 +43,12 @@ void translateRecordDef(Output output, Context context, Cursor cursor, bool keep
 
     auto spelling = keepUnnamed ? "" : context.translateSpelling(cursor);
     spelling = spelling == "" ? spelling : " " ~ spelling;
-    auto type = translateRecordType(cursor);
+    auto type = translateRecordTypeKeyword(cursor);
 
     output.subscopeStrong(cursor.extent, "%s%s", type, spelling) in {
+
+        translatePackedAttribute(output, context, cursor);
+
         foreach (cursor, parent; cursor.declarations)
         {
             with (CXCursorKind)
@@ -82,7 +91,7 @@ void translateRecordDecl(Output output, Context context, Cursor cursor)
 {
     auto spelling = context.translateSpelling(cursor);
     spelling = spelling == "" ? spelling : " " ~ spelling;
-    auto type = translateRecordType(cursor);
+    auto type = translateRecordTypeKeyword(cursor);
     output.singleLine(cursor.extent, "%s%s;", type, spelling);
 }
 
