@@ -34,10 +34,13 @@ void translatePackedAttribute(Output output, Context context, Cursor cursor)
         output.singleLine("align (1):");
 }
 
-void translateRecordDef(Output output, Context context, Cursor cursor, bool keepUnnamed = false)
+void translateRecordDef(
+    Output output,
+    Context context,
+    Cursor cursor,
+    bool keepUnnamed = false)
 {
     auto canonical = cursor.canonical;
-    auto typedefp = context.typedefParent(canonical);
 
     import std.format;
 
@@ -105,6 +108,38 @@ void translateAnonymousRecord(Output output, Context context, Cursor cursor, Cur
         translateRecordDef(output, context, cursor, true);
 }
 
+bool shouldSkipRecord(Context context, Cursor cursor)
+{
+    if (cursor.kind == CXCursorKind.CXCursor_StructDecl ||
+        cursor.kind == CXCursorKind.CXCursor_UnionDecl)
+    {
+        auto typedefp = context.typedefParent(cursor.canonical);
+
+        if (typedefp.isValid && cursor.spelling == "")
+            return context.options.skipSymbols.contains(typedefp.spelling);
+        else
+            return context.options.skipSymbols.contains(cursor.spelling);
+    }
+
+    return false;
+}
+
+bool shouldSkipRecordDefinition(Context context, Cursor cursor)
+{
+    if (cursor.kind == CXCursorKind.CXCursor_StructDecl ||
+        cursor.kind == CXCursorKind.CXCursor_UnionDecl)
+    {
+        auto typedefp = context.typedefParent(cursor.canonical);
+
+        if (typedefp.isValid && cursor.spelling == "")
+            return context.options.skipDefinitions.contains(typedefp.spelling);
+        else
+            return context.options.skipDefinitions.contains(cursor.spelling);
+    }
+
+    return false;
+}
+
 void translateRecord(Output output, Context context, Cursor cursor)
 {
     auto canonical = cursor.canonical;
@@ -113,7 +148,7 @@ void translateRecord(Output output, Context context, Cursor cursor)
     {
         auto definition = canonical.definition;
 
-        if (definition.isValid)
+        if (definition.isValid && !shouldSkipRecordDefinition(context, cursor))
             translateRecordDef(output, context, definition);
         else
             translateRecordDecl(output, context, cursor);

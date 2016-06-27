@@ -232,7 +232,8 @@ class Translator
                 child = child.referenced;
 
             if (child.spelling == cursor.spelling ||
-                child.spelling == "")
+                child.spelling == "" ||
+                shouldSkipRecord(context, child))
                 ignoreTypedef = true;
 
             break;
@@ -267,7 +268,9 @@ private:
 
     bool skipDeclaration (Cursor cursor)
     {
-        return (inputFilename != "" && inputFile != cursor.location.file)
+        return (inputFilename != "" &&
+            inputFile != cursor.location.spelling.file)
+            || context.options.skipSymbols.contains(cursor.spelling)
             || cursor.isPredefined;
     }
 

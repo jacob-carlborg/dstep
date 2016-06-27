@@ -181,6 +181,8 @@ private struct ParseFile
             options.zeroParamIsVararg = config.zeroParamIsVararg;
             options.singleLineFunctionSignatures = config.singleLineFunctionSignatures;
             options.spaceAfterFunctionName = config.spaceAfterFunctionName;
+            options.skipDefinitions = setFromList(config.skipDefinitions);
+            options.skipSymbols = setFromList(config.skipSymbols);
 
             auto translator = new Translator(translationUnit, options);
             translator.translate;

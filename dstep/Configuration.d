@@ -5,6 +5,8 @@
  */
 module dstep.Configuration;
 
+import clang.Util;
+
 import dstep.translator.Options;
 
 /**
@@ -67,6 +69,14 @@ struct Configuration
     /// space after function name
     @("space-after-function-name", "Put a space after a function name [default].")
     bool spaceAfterFunctionName = true;
+
+    /// do not translate bodies of following structs and unions
+    @("skipdef", "Keep only the signature of <symbol>.")
+    string[] skipDefinitions;
+
+    /// do not translate following symbols
+    @("skip", "Skip translation of <symbol>.")
+    string[] skipSymbols;
 }
 
 template makeGetOptArgs(alias config)

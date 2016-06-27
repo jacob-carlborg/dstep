@@ -140,8 +140,7 @@ class Context
     {
         auto typedefp = typedefParent(cursor.canonical);
 
-        if (typedefp.isValid &&
-            (cursor.spelling == typedefp.spelling || cursor.spelling == ""))
+        if (typedefp.isValid && cursor.spelling == "")
             return typedefp.spelling;
         else
             return cursor.spelling == ""

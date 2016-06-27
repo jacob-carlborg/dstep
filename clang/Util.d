@@ -125,9 +125,11 @@ bool contains(T)(inout(void[0][T]) set, T value) {
     return (value in set) !is null;
 }
 
-Set!T SetFromList(T)(T[] list)
+auto setFromList(T)(T[] list)
 {
-    Set!T = result;
+    import std.traits;
+
+    Set!(Unqual!T) result;
 
     foreach (item; list)
         result.add(item);
