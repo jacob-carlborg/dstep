@@ -200,7 +200,7 @@ bool variablesInParentScope(Cursor cursor)
         return (
             a.kind == CXCursorKind.CXCursor_FieldDecl ||
             a.kind == CXCursorKind.CXCursor_VarDecl) &&
-            a.type.declaration.canonical == canonical;
+            a.type.undecorated.declaration.canonical == canonical;
     }
 
     return !filter!(predicate)(parent.children).empty;

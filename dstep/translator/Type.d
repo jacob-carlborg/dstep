@@ -167,11 +167,6 @@ package bool isAliasReducible(Type type)
 private:
 
 string translateTypedef(Context context, Type type)
-in
-{
-    assert(type.kind == CXTypeKind.CXType_Typedef);
-}
-body
 {
     if (context.options.reduceAliases)
     {
@@ -200,6 +195,7 @@ body
 
             default: break;
         }
+
 
     handleInclude(context, type);
     return type.spelling;

@@ -122,3 +122,167 @@ struct Foo
 D");
 
 }
+
+// Translate immediately declared array variable in global scope.
+unittest
+{
+    assertTranslates(
+q"C
+
+struct Bar {
+const char *foo;
+const char *oof;
+} baz[64];
+
+C",
+q"D
+extern (C):
+
+struct Bar
+{
+    const(char)* foo;
+    const(char)* oof;
+}
+
+extern __gshared Bar[64] baz;
+D");
+
+}
+
+// Do not put an extra newline after array declaration.
+unittest
+{
+    assertTranslates(q"C
+typedef int Baz;
+
+struct Foo {
+    Baz data[32];
+    char len;
+};
+C",
+q"D
+extern (C):
+
+struct Foo
+{
+    int[32] data;
+    char len;
+}
+D");
+
+}
+
+// Translate nested structure with immediate array variable.
+unittest
+{
+    assertTranslates(q"C
+struct Foo {
+  struct Bar {
+    const char *qux0;
+    const char *qux1;
+  } baz[64];
+};
+C",
+q"D
+extern (C):
+
+struct Foo
+{
+    struct Bar
+    {
+        const(char)* qux0;
+        const(char)* qux1;
+    }
+
+    Bar[64] baz;
+}
+D");
+
+    // Anonymous variant.
+    assertTranslates(q"C
+struct Foo {
+  struct {
+    const char *qux;
+  } baz[64];
+};
+C",
+q"D
+extern (C):
+
+struct Foo
+{
+    struct _Anonymous_0
+    {
+        const(char)* qux;
+    }
+
+    _Anonymous_0[64] baz;
+}
+D");
+
+}
+
+// Translate nested structure with immediate pointer variable.
+unittest
+{
+     assertTranslates(q"C
+struct Foo {
+  struct Bar {
+  } *baz;
+};
+C",
+q"D
+extern (C):
+
+struct Foo
+{
+    struct Bar
+    {
+    }
+
+    Bar* baz;
+}
+D");
+
+    assertTranslates(q"C
+struct Foo {
+  struct {
+  } *baz;
+};
+C",
+q"D
+extern (C):
+
+struct Foo
+{
+    struct _Anonymous_0
+    {
+    }
+
+    _Anonymous_0* baz;
+}
+
+D");
+
+    // Multiple pointers.
+    assertTranslates(q"C
+struct Foo {
+  struct {
+  } **baz;
+};
+C",
+q"D
+extern (C):
+
+struct Foo
+{
+    struct _Anonymous_0
+    {
+    }
+
+    _Anonymous_0** baz;
+}
+
+D");
+
+}

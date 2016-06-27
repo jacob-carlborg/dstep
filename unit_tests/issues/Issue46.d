@@ -9,7 +9,7 @@ import Common;
 
 import dstep.translator.Options;
 
-// Fix 46: Generating code that will not compile
+// Fix 46: Generating code that will not compile.
 unittest
 {
     Options options;

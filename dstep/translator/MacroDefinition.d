@@ -1340,6 +1340,7 @@ bool parseTypedefName(ref TokenRange tokens, ref Type type, Cursor[string] table
         if (auto ptr = (spelling in table))
         {
             type = Type.makeTypedef(spelling, ptr.type.canonical);
+
             tokens = local;
 
             return true;

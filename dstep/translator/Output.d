@@ -622,8 +622,10 @@ D"[0 .. $ - 1]);
     {
         flushComments(endOffset);
 
-        lastestLine = endLine;
-        lastestOffset = endOffset;
+        import std.algorithm.comparison;
+
+        lastestLine = max(endLine, lastestLine);
+        lastestOffset = max(endOffset, lastestOffset);
     }
 
     public void flushLocation(

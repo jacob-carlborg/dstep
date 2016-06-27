@@ -34,6 +34,8 @@ void translatePackedAttribute(Output output, Context context, Cursor cursor)
         output.singleLine("align (1):");
 }
 
+import std.stdio;
+
 void translateRecordDef(Output output, Context context, Cursor cursor, bool keepUnnamed = false)
 {
     auto canonical = cursor.canonical;
@@ -62,11 +64,15 @@ void translateRecordDef(Output output, Context context, Cursor cursor, bool keep
                             context.translator.translate(
                                 output,
                                 cursor.type.declaration);
-
-                            translateVariable(output, context, cursor);
                         }
-                        else
-                            translateVariable(output, context, cursor);
+                        else if (cursor.type.isDecorated)
+                        {
+                            context.translator.translate(
+                                output,
+                                cursor.type.undecorated.declaration);
+                        }
+
+                        translateVariable(output, context, cursor);
 
                         break;
 
