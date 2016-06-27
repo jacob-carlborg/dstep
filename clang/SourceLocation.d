@@ -75,7 +75,7 @@ struct SourceLocation
 
     @property string toString() const
     {
-        import std.format: format;
+        import std.format : format;
         auto s = spelling;
         return format("SourceLocation(file = %s, line = %d, column = %d, offset = %d)", s.file, s.line, s.column, s.offset);
     }

@@ -239,6 +239,9 @@ class Translator
             break;
         }
 
+        if (context.options.reduceAliases && cursor.type.isAliasReducible)
+            ignoreTypedef = true;
+
         if (!ignoreTypedef)
         {
             output.singleLine(
@@ -259,14 +262,6 @@ class Translator
     void variable (Output output, Cursor cursor, string prefix = "")
     {
         translateVariable(output, context, cursor, prefix);
-    }
-
-    void typedef_ (Output output, Cursor cursor)
-    {
-        output.singleLine(
-            "alias %s %s;",
-            translateType(context, cursor, cursor.type.canonical),
-            cursor.spelling);
     }
 
 private:

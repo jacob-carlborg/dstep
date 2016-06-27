@@ -61,7 +61,7 @@ class Application
         foreach (fileName; config.inputFiles)
         {
             string outputFilename;
-            
+
             if (singleFileInput)
             {
                 if (config.output.length)
@@ -79,7 +79,7 @@ class Application
             if (!exists(outputDir))
                 mkdirRecurse(outputDir);
 
-            auto conversionTask = task!startParsingFile(config, 
+            auto conversionTask = task!startParsingFile(config,
                 fileName, outputFilename);
 
             conversionTask.executeInNewThread();
@@ -117,7 +117,7 @@ private struct ParseFile
     }
 
     this (
-        const Configuration config, 
+        const Configuration config,
         string inputFile,
         string outputFile)
     {
@@ -153,6 +153,7 @@ private struct ParseFile
             options.enableComments = !config.noComments;
             options.packageName = config.packageName;
             options.publicSubmodules = config.publicSubmodules;
+            options.reduceAliases = !config.dontReduceAliases;
 
             auto translator = new Translator(translationUnit, options);
             translator.translate;

@@ -373,6 +373,9 @@ extern (D) auto COLOR_DIST(T0, T1)(auto ref T0 c1, auto ref T1 c2)
 }
 D");
 
+    Options options;
+    options.reduceAliases = false;
+
     assertTranslates(q"C
 typedef unsigned int uint_32;
 
@@ -389,7 +392,7 @@ extern (D) auto ROWBYTES(T0, T1)(auto ref T0 pixel_bits, auto ref T1 width)
 {
     return pixel_bits >= 8 ? (width * ((cast(uint_32) pixel_bits) >> 3)) : (((width * (cast(uint_32) pixel_bits)) + 7) >> 3);
 }
-D");
+D", options);
 
     assertTranslates(q"C
 #define OUT_OF_RANGE(value, ideal, delta) \
@@ -421,7 +424,7 @@ enum UINT_31_MAX = cast(uint_32) 0x7fffffffL;
 enum UINT_32_MAX = cast(uint_32) -1;
 enum FOO_MAX = cast(foo_t) -1;
 enum MAX_UINT = UINT_31_MAX;
-D");
+D", options);
 
 }
 
@@ -441,7 +444,10 @@ unittest
 // Translate casting to complex types.
 unittest
 {
-        assertTranslates(q"C
+    Options options;
+    options.reduceAliases = false;
+
+    assertTranslates(q"C
 typedef int uint_32;
 
 #define Foo() (uint_32)(0)
@@ -454,7 +460,7 @@ extern (D) auto Foo()
 {
     return cast(uint_32) 0;
 }
-D");
+D", options);
 
     assertTranslates(q"C
 enum Bar { BAR = 0 };
@@ -547,21 +553,45 @@ D");
 // Translate type dependent macros.
 unittest
 {
+    Options options;
+    options.reduceAliases = false;
+
     assertTranslates(q"C
 
-typedef int uint_32;
+typedef unsigned int uint_32;
 
 #define ROWBYTES(pixel_bits) (uint_32)(pixel_bits)
 C", q"D
 extern (C):
 
-alias int uint_32;
+alias uint uint_32;
 
 extern (D) auto ROWBYTES(T)(auto ref T pixel_bits)
 {
     return cast(uint_32) pixel_bits;
 }
-D");
+D", options);
+
+}
+
+// Reduce aliases in macro-definitions.
+unittest
+{
+    Options options;
+    options.reduceAliases = true;
+
+    assertTranslates(q"C
+#include <stdint.h>
+
+#define ROWBYTES(pixel_bits) (int32_t)(pixel_bits)
+C", q"D
+extern (C):
+
+extern (D) auto ROWBYTES(T)(auto ref T pixel_bits)
+{
+    return cast(int) pixel_bits;
+}
+D", options);
 
 }
 

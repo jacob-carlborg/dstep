@@ -20,3 +20,4 @@ clangs
 bin/test
 bin/unittest
 .DS_Store
+resources/VERSION

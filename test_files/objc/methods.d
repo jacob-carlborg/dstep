@@ -12,5 +12,6 @@ class Foo
     IMP methodForSelector (SEL aSelector) @selector("methodForSelector:");
     @property static NSInteger version_ () @selector("version");
     @property static void version_ (NSInteger aVersion) @selector("setVersion:");
+    @property static NSUInteger NSUIntegerTest () @selector("NSUIntegerTest");
     ObjcObject performSelector (SEL aSelector, ObjcObject object) @selector("performSelector:withObject:");
 }

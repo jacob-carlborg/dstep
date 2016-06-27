@@ -1339,10 +1339,9 @@ bool parseTypedefName(ref TokenRange tokens, ref Type type, Cursor[string] table
     {
         if (auto ptr = (spelling in table))
         {
-            type.kind = CXTypeKind.CXType_Typedef;
-            type.spelling = spelling;
-
+            type = Type.makeTypedef(spelling, ptr.type.canonical);
             tokens = local;
+
             return true;
         }
     }
@@ -1513,6 +1512,7 @@ bool basicSpecifierListToType(ref Type type, Set!string specifiers)
                 return false;
 
             type = Type(CXTypeKind.CXType_LongDouble, "long double");
+
             return true;
         }
 
@@ -1520,6 +1520,7 @@ bool basicSpecifierListToType(ref Type type, Set!string specifiers)
             return false;
 
         type = Type(CXTypeKind.CXType_Double, "double");
+
         return true;
     }
 

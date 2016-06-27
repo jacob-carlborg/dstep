@@ -96,6 +96,11 @@ struct Cursor
         return Type(r);
     }
 
+    @property Type underlyingType() const
+    {
+        return Type(clang_getTypedefDeclUnderlyingType(cx));
+    }
+
     @property bool isDeclaration ()
     {
         return clang_isDeclaration(cx.kind) != 0;
@@ -402,6 +407,12 @@ struct Cursor
         auto result = appender!string();
         dumpAST(result, 0);
         return result.data;
+    }
+
+    @property string toString()
+    {
+        import std.format : format;
+        return format("Cursor(kind = %s, spelling = %s)", kind, spelling);
     }
 }
 

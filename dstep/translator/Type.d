@@ -121,32 +121,69 @@ string translateSelector (string str, bool fullName = false, bool translateIdent
     return translateIdentifier ? .translateIdentifier(str) : str;
 }
 
+package string reduceAlias(Type type)
+{
+    auto spelling = type.spelling;
+
+    switch (type.spelling)
+    {
+        case "BOOL": return "bool";
+        case "int8_t": return "byte";
+        case "int16_t": return "short";
+        case "int32_t": return "int";
+        case "int64_t": return "long";
+        case "uint8_t": return "ubyte";
+        case "uint16_t": return "ushort";
+        case "uint32_t": return "uint";
+        case "uint64_t": return "ulong";
+
+        case "__s8": return "byte";
+        case "__s16": return "short";
+        case "__s32": return "int";
+        case "__s64": return "long";
+        case "__u8": return "ubyte";
+        case "__u16": return "ushort";
+        case "__u32": return "uint";
+        case "__u64": return "ulong";
+
+        case "s8": return "byte";
+        case "s16": return "short";
+        case "s32": return "int";
+        case "s64": return "long";
+        case "u8": return "ubyte";
+        case "u16": return "ushort";
+        case "u32": return "uint";
+        case "u64": return "ulong";
+
+        default: return null;
+    }
+}
+
+package bool isAliasReducible(Type type)
+{
+    return reduceAlias(type) != null;
+}
+
 private:
 
-string translateTypedef (Context context, Type type)
+string translateTypedef(Context context, Type type)
 in
 {
     assert(type.kind == CXTypeKind.CXType_Typedef);
 }
 body
 {
+    if (context.options.reduceAliases)
+    {
+        if (auto transl = reduceAlias(type))
+            return transl;
+    }
+
     auto spelling = type.spelling;
 
     with (CXTypeKind)
         switch (spelling)
         {
-            case "BOOL": return translateType(context, CXType_Bool);
-
-            case "int64_t": return translateType(context, CXType_LongLong);
-            case "int32_t": return translateType(context, CXType_Int);
-            case "int16_t": return translateType(context, CXType_Short);
-            case "int8_t": return "byte";
-
-            case "uint64_t": return translateType(context, CXType_ULongLong);
-            case "uint32_t": return translateType(context, CXType_UInt);
-            case "uint16_t": return translateType(context, CXType_UShort);
-            case "uint8_t": return translateType(context, CXType_UChar);
-
             case "size_t":
             case "ptrdiff_t":
             case "sizediff_t":
@@ -165,8 +202,7 @@ body
         }
 
     handleInclude(context, type);
-
-    return spelling;
+    return type.spelling;
 }
 
 string translateUnexposed (Context context, Type type, bool rewriteIdToObjcObject)

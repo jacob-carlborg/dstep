@@ -13,11 +13,14 @@
 * Most of cucumber tests was replaced with D-based tests.
 * Statements are translated in original 'C' order now.
 * Multiple input files can be processed in different threads.
+* Extend a functionality that automatically replaces aliases to basic types with their D equivalents.
+* Add a switch `dont-reduce-aliases` which disables the above functionality.
 
 ### Bugs fixed
 Issue #2: Self alias should be removed bug.
 Issue #29: Don't name anonymous enums.
 Issue #39: Recognize and translate __attribute__((__packed__)).
+Issue #46: Generating code that will not compile.
 Issue #47: Treatment of #define enhancement.
 Issue #50: struct typedef generates recursive alias bug.
 

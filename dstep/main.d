@@ -62,8 +62,8 @@ auto parseCLI (string[] args)
         "objective-c", "Treat source input file as Objective-C input.", &forceObjectiveC,
         "no-comments", "Disable translation of comments.", &config.noComments,
         "public-submodules", "Use public imports for submodules.", &config.publicSubmodules,
-        "package", "Specify package name.", &config.packageName
-    );
+        "package", "Specify package name.", &config.packageName,
+        "dont-reduce-aliases", "Disable reduction of primitive type aliases.", &config.dontReduceAliases);
 
     // remove dstep binary name (args[0])
     args = args[1 .. $];
@@ -91,19 +91,19 @@ auto parseCLI (string[] args)
 unittest
 {
     import std.meta : AliasSeq;
-    
+
     Configuration config;
     GetoptResult getopResult;
 
     AliasSeq!(config, getopResult) = parseCLI(
-        [ "dstep", "-Xpreprocessor", "-lsomething", "-x", "c-header", "file.h" ]); 
+        [ "dstep", "-Xpreprocessor", "-lsomething", "-x", "c-header", "file.h" ]);
     assert(config.language == Language.c);
     assert(config.inputFiles == [ "file.h" ]);
     assert(config.clangParams == [ "-x", "c-header", "-Xpreprocessor", "-lsomething" ]);
     assert(config.output == "");
 
     AliasSeq!(config, getopResult) = parseCLI(
-        [ "dstep", "-ObjC", "file2.h", "--output=folder", "file.h" ]); 
+        [ "dstep", "-ObjC", "file2.h", "--output=folder", "file.h" ]);
     assert(config.language == Language.objC);
     assert(config.inputFiles == [ "file2.h", "file.h" ]);
     assert(config.clangParams == [ "-ObjC" ]);

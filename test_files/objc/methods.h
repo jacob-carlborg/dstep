@@ -16,6 +16,7 @@
 
 + (NSInteger)version;
 + (void)setVersion:(NSInteger)aVersion;
++ (NSUInteger) NSUIntegerTest;
 
 - (id)performSelector:(SEL)aSelector withObject:(id)object;
 
