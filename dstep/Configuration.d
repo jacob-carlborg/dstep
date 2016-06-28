@@ -38,4 +38,7 @@ struct Configuration
 
     /// disable reduction of primitive type aliases
     bool dontReduceAliases;
+
+    /// translate wchar_t to wchar or dchar depending on its size
+    bool noPortableWCharT;
 }

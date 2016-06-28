@@ -58,7 +58,6 @@ class Context
 
         globalScope_ = new Output();
         typeNames_ = collectGlobalTypes(translUnit);
-        this.options = options;
     }
 
     public string getAnonymousName (Cursor cursor)

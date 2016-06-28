@@ -153,10 +153,8 @@ D");
 unittest
 {
     assertTranslates(q"C
-typedef int Baz;
-
 struct Foo {
-    Baz data[32];
+    int data[32];
     char len;
 };
 C",

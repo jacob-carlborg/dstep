@@ -154,6 +154,7 @@ private struct ParseFile
             options.packageName = config.packageName;
             options.publicSubmodules = config.publicSubmodules;
             options.reduceAliases = !config.dontReduceAliases;
+            options.portableWCharT = !config.noPortableWCharT;
 
             auto translator = new Translator(translationUnit, options);
             translator.translate;

@@ -78,6 +78,9 @@ struct Type
             kind == CXTypeKind.CXType_DependentSizedArray;
     }
 
+    /**
+     * Removes array and pointer modifiers from the type.
+     */
     @property Type undecorated()
     {
         if (isArray)

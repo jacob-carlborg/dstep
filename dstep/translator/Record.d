@@ -34,8 +34,6 @@ void translatePackedAttribute(Output output, Context context, Cursor cursor)
         output.singleLine("align (1):");
 }
 
-import std.stdio;
-
 void translateRecordDef(Output output, Context context, Cursor cursor, bool keepUnnamed = false)
 {
     auto canonical = cursor.canonical;

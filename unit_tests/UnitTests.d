@@ -418,6 +418,48 @@ D");
 
 }
 
+// Reduce typedefs when underlying type is alias of primitive type.
+unittest
+{
+    Options options;
+    options.reduceAliases = true;
+
+    assertTranslates(
+q"C
+#include <stdint.h>
+
+uint8_t foo;
+uint32_t bar;
+C",
+q"D
+extern (C):
+
+extern __gshared ubyte foo;
+extern __gshared uint bar;
+D", options);
+
+}
+
+// Do not reduce aliases of unknown types.
+unittest
+{
+   Options options;
+   options.reduceAliases = true;
+
+   assertTranslates(
+q"C
+typedef unsigned int Bar;
+Bar foo;
+C",
+q"D
+extern (C):
+
+alias uint Bar;
+extern __gshared Bar foo;
+D", options);
+
+}
+
 // Disable alias reduction.
 unittest
 {
@@ -458,6 +500,7 @@ D", options);
 
 }
 
+// Translate array with immediate struct declaration.
 unittest
 {
     assertTranslates(q"C
@@ -479,5 +522,37 @@ struct Foo
     Bar[64] bar;
 }
 D");
+
+}
+
+// Test portable wchar_t.
+unittest
+{
+    assertTranslates(q"C
+#include <wchar.h>
+
+wchar_t x;
+C",
+q"D
+import core.stdc.stddef;
+
+extern (C):
+
+extern __gshared wchar_t x;
+D");
+
+    Options options;
+    options.portableWCharT = false;
+
+    assertTranslates(q"C
+#include <wchar.h>
+
+wchar_t x;
+C",
+q"D
+extern (C):
+
+extern __gshared dchar x;
+D", options);
 
 }
