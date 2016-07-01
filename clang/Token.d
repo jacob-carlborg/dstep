@@ -4,7 +4,6 @@
  * Version: Initial created: Feb 14, 2016
  * License: $(LINK2 http://www.boost.org/LICENSE_1_0.txt, Boost Software License 1.0)
  */
-
 module clang.Token;
 
 import std.typecons;

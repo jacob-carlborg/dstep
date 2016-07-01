@@ -14,6 +14,7 @@ import mambo.core._;
 import clang.c.Index;
 import clang.Cursor;
 import clang.File;
+import clang.Index;
 import clang.TranslationUnit;
 import clang.Type;
 import clang.Util;
@@ -236,7 +237,7 @@ class Translator
         {
             output.singleLine(
                 "alias %s %s;",
-                translateType(context, cursor, cursor.type.canonicalType),
+                translateType(context, cursor, cursor.type.canonical),
                 cursor.spelling);
         }
     }
@@ -258,7 +259,7 @@ class Translator
     {
         output.singleLine(
             "alias %s %s;",
-            translateType(context, cursor, cursor.type.canonicalType),
+            translateType(context, cursor, cursor.type.canonical),
             cursor.spelling);
     }
 

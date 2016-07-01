@@ -37,10 +37,10 @@ body
     with (CXTypeKind)
     {
         if (type.kind == CXType_BlockPointer || type.isFunctionPointerType)
-            result = translateFunctionPointerType(context, cursor, type.pointeeType.func);
+            result = translateFunctionPointerType(context, cursor, type.pointee.func);
 
         else if (type.isFunctionType)
-            result = translateFunctionPointerType(context, cursor, type.canonicalType.func);
+            result = translateFunctionPointerType(context, cursor, type.canonical.func);
 
         else if (type.kind == CXType_ObjCObjectPointer && !type.isObjCBuiltinType)
             result = translateObjCObjectPointerType(context, cursor, type);
@@ -153,7 +153,7 @@ body
                 return spelling;
 
             case "wchar_t":
-                auto kind = type.canonicalType.kind;
+                auto kind = type.canonical.kind;
 
                 if (kind == CXType_Int)
                     return "dchar";
@@ -263,15 +263,15 @@ body
 {
     static bool valueTypeIsConst (Type type)
     {
-        auto pointee = type.pointeeType;
+        auto pointee = type.pointee;
 
         while (pointee.kind == CXTypeKind.CXType_Pointer)
-            pointee = pointee.pointeeType;
+            pointee = pointee.pointee;
 
         return pointee.isConst;
     }
 
-    auto result = translateType(context, cursor, type.pointeeType, rewriteIdToObjcObject, false);
+    auto result = translateType(context, cursor, type.pointee, rewriteIdToObjcObject, false);
 
     version (D1)
     {
@@ -316,7 +316,7 @@ in
 }
 body
 {
-    auto pointee = type.pointeeType;
+    auto pointee = type.pointee;
 
     if (pointee.spelling == "Protocol")
         return "Protocol*";

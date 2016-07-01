@@ -4,7 +4,6 @@
  * Version: Initial created: Mar 12, 2016
  * License: $(LINK2 http://www.boost.org/LICENSE_1_0.txt, Boost Software License 1.0)
  */
-
 import Common;
 import dstep.translator.Translator;
 

@@ -4,7 +4,6 @@
  * Version: Initial created: Jun 02, 2016
  * License: $(LINK2 http://www.boost.org/LICENSE_1_0.txt, Boost Software License 1.0)
  */
-
 import core.exception;
 
 import Common;
@@ -19,6 +18,7 @@ import dstep.translator.Output;
 
 private alias assertTMD = assertTranslatesMacroDefinition;
 private alias assertTME = assertTranslatesMacroExpression;
+private alias assertDPME = assertDoesntParseMacroExpression;
 
 // Translate basic macro definitions.
 unittest
@@ -43,7 +43,7 @@ D");
     assertTMD(q"C
 #define FOO() 0
 C", q"D
-int FOO()
+extern (D) int FOO()
 {
     return 0;
 }
@@ -52,7 +52,7 @@ D");
     assertTMD(q"C
 #define FOO(a, b) a + b
 C", q"D
-auto FOO(T0, T1)(auto ref T0 a, auto ref T1 b)
+extern (D) auto FOO(T0, T1)(auto ref T0 a, auto ref T1 b)
 {
     return a + b;
 }
@@ -61,7 +61,7 @@ D");
     assertTMD(q"C
 #define FOO() 0 + 1
 C", q"D
-int FOO()
+extern (D) int FOO()
 {
     return 0 + 1;
 }
@@ -73,7 +73,7 @@ D");
   + ((b) * 10) \
   + c)
 C", q"D
-auto FOO(T0, T1, T2)(auto ref T0 a, auto ref T1 b, auto ref T2 c)
+extern (D) auto FOO(T0, T1, T2)(auto ref T0 a, auto ref T1 b, auto ref T2 c)
 {
     return (a * 100) + (b * 10) + c;
 }
@@ -82,7 +82,7 @@ D");
     assertTMD(q"C
 #define STRINGIZE(major, minor) #major"."#minor
 C", q"D
-string STRINGIZE(T0, T1)(auto ref T0 major, auto ref T1 minor)
+extern (D) string STRINGIZE(T0, T1)(auto ref T0 major, auto ref T1 minor)
 {
     import std.conv : to;
 
@@ -106,7 +106,7 @@ unittest
     assertTMD(q"C
 #define FOO(a) a + 1
 C", q"D
-auto FOO(T)(auto ref T a)
+extern (D) auto FOO(T)(auto ref T a)
 {
     return a + 1;
 }
@@ -115,7 +115,7 @@ D");
     assertTMD(q"C
 #define FOO(a) a * 1 / 2 % 3
 C", q"D
-auto FOO(T)(auto ref T a)
+extern (D) auto FOO(T)(auto ref T a)
 {
     return a * 1 / 2 % 3;
 }
@@ -124,7 +124,7 @@ D");
     assertTMD(q"C
 #define FOO(a) a -1 + 2
 C", q"D
-auto FOO(T)(auto ref T a)
+extern (D) auto FOO(T)(auto ref T a)
 {
     return a - 1 + 2;
 }
@@ -133,7 +133,7 @@ D");
     assertTMD(q"C
 #define FOO(a) a << 1 >> 2
 C", q"D
-auto FOO(T)(auto ref T a)
+extern (D) auto FOO(T)(auto ref T a)
 {
     return a << 1 >> 2;
 }
@@ -142,7 +142,7 @@ D");
     assertTMD(q"C
 #define FOO(a) a < 1 && a < 2 && 1 <= 2 && 2 >= 3 || 1 == 1 || a != a
 C", q"D
-auto FOO(T)(auto ref T a)
+extern (D) auto FOO(T)(auto ref T a)
 {
     return a < 1 && a < 2 && 1 <= 2 && 2 >= 3 || 1 == 1 || a != a;
 }
@@ -151,7 +151,7 @@ D");
     assertTMD(q"C
 #define FOO(a) ((a) == 1 ? 0 : 1 ? 2 : 3)
 C", q"D
-int FOO(T)(auto ref T a)
+extern (D) int FOO(T)(auto ref T a)
 {
     return a == 1 ? 0 : 1 ? 2 : 3;
 }
@@ -159,13 +159,13 @@ D");
 
 }
 
-// Translate cast operator (FIXME: type inference)
+// Translate cast operator.
 unittest
 {
     assertTMD(q"C
 #define FOO(a) (float)(a)
 C", q"D
-float FOO(T)(auto ref T a)
+extern (D) auto FOO(T)(auto ref T a)
 {
     return cast(float) a;
 }
@@ -173,21 +173,13 @@ D");
 
 }
 
-unittest
-{
-
-
-
-}
-
-
 // Translate unary operators.
 unittest
 {
     assertTMD(q"C
 #define FOO(a, b, c, d, e, f) ++a + --b + &c + *d + +e - (-f)
 C", q"D
-auto FOO(T0, T1, T2, T3, T4, T5)(auto ref T0 a, auto ref T1 b, auto ref T2 c, auto ref T3 d, auto ref T4 e, auto ref T5 f)
+extern (D) auto FOO(T0, T1, T2, T3, T4, T5)(auto ref T0 a, auto ref T1 b, auto ref T2 c, auto ref T3 d, auto ref T4 e, auto ref T5 f)
 {
     return ++a + --b + &c + *d + +e - (-f);
 }
@@ -196,7 +188,7 @@ D");
     assertTMD(q"C
 #define FOO(a) sizeof a
 C", q"D
-size_t FOO(T)(auto ref T a)
+extern (D) size_t FOO(T)(auto ref T a)
 {
     return a.sizeof;
 }
@@ -205,7 +197,7 @@ D");
     assertTMD(q"C
 #define FOO(a, b) sizeof (a + b)
 C", q"D
-size_t FOO(T0, T1)(auto ref T0 a, auto ref T1 b)
+extern (D) size_t FOO(T0, T1)(auto ref T0 a, auto ref T1 b)
 {
     return (a + b).sizeof;
 }
@@ -219,7 +211,7 @@ unittest
     assertTMD(q"C
 #define STRINGIZE_(major, minor) FOO()
 C", q"D
-auto STRINGIZE_(T0, T1)(auto ref T0 major, auto ref T1 minor)
+extern (D) auto STRINGIZE_(T0, T1)(auto ref T0 major, auto ref T1 minor)
 {
     return FOO();
 }
@@ -343,27 +335,6 @@ D");
 
 }
 
-// Translate type dependent macros.
-unittest
-{
-    assertTranslates(q"C
-
-typedef int uint_32;
-
-#define ROWBYTES(pixel_bits) (uint_32)(pixel_bits)
-C", q"D
-extern (C):
-
-alias int uint_32;
-
-extern (D) uint_32 ROWBYTES(T)(auto ref T pixel_bits)
-{
-    return cast(uint_32) pixel_bits;
-}
-D");
-
-}
-
 // Disambiguate between constant and function versions of macros.
 unittest
 {
@@ -454,3 +425,177 @@ D");
 
 }
 
+// Translate const qualifier,
+unittest
+{
+    assertTME("#define FOO(a) (const int)(a)", "cast(const int) a");
+    assertTME("#define FOO(a) (int const)(a)", "cast(const int) a");
+
+    assertTME("#define FOO(a) (const int*)(a)", "cast(const(int)*) a");
+    assertTME("#define FOO(a) (int const*)(a)", "cast(const(int)*) a");
+
+    assertTME("#define FOO(a) (int const* const*)(a)", "cast(const(int*)*) a");
+    assertTME("#define FOO(a) (int* const*)(a)", "cast(int**) a");
+}
+
+// Translate casting to complex types.
+unittest
+{
+        assertTranslates(q"C
+typedef int uint_32;
+
+#define Foo() (uint_32)(0)
+C", q"D
+extern (C):
+
+alias int uint_32;
+
+extern (D) auto Foo()
+{
+    return cast(uint_32) 0;
+}
+D");
+
+    assertTranslates(q"C
+enum Bar { BAR = 0 };
+
+#define Foo() (Bar)(0)
+C", q"D
+extern (C):
+
+enum Bar
+{
+    BAR = 0
+}
+
+extern (D) auto Foo()
+{
+    return cast(Bar) 0;
+}
+D");
+
+    assertTranslates(q"C
+struct Bar { };
+
+#define Foo() (struct Bar)(0)
+C", q"D
+extern (C):
+
+struct Bar
+{
+}
+
+extern (D) auto Foo()
+{
+    return cast(Bar) 0;
+}
+D");
+
+    assertTranslates(q"C
+union Bar { };
+
+#define Foo() (union Bar)(0)
+C", q"D
+extern (C):
+
+union Bar
+{
+}
+
+extern (D) auto Foo()
+{
+    return cast(Bar) 0;
+}
+D");
+
+    assertTranslates(q"C
+union Bar { };
+
+#define Foo() (union Bar*)(0)
+C", q"D
+extern (C):
+
+union Bar
+{
+}
+
+extern (D) auto Foo()
+{
+    return cast(Bar*) 0;
+}
+D");
+
+    assertTranslates(q"C
+union Bar { };
+
+#define Foo() (const union Bar*)(0)
+C", q"D
+extern (C):
+
+union Bar
+{
+}
+
+extern (D) auto Foo()
+{
+    return cast(const(Bar)*) 0;
+}
+D");
+
+}
+
+// Translate type dependent macros.
+unittest
+{
+    assertTranslates(q"C
+
+typedef int uint_32;
+
+#define ROWBYTES(pixel_bits) (uint_32)(pixel_bits)
+C", q"D
+extern (C):
+
+alias int uint_32;
+
+extern (D) auto ROWBYTES(T)(auto ref T pixel_bits)
+{
+    return cast(uint_32) pixel_bits;
+}
+D");
+
+}
+
+// Translate sizeof type.
+unittest
+{
+    assertTranslates(q"C
+#define FOO sizeof(int)
+#define BAR sizeof(unsigned int)
+#define BAZ sizeof(unsigned long long)
+C",
+q"D
+extern (C):
+
+enum FOO = int.sizeof;
+enum BAR = uint.sizeof;
+enum BAZ = ulong.sizeof;
+D");
+
+    assertTranslates(q"C
+struct Bar
+{
+};
+
+#define FOO sizeof(Bar)
+C",
+q"D
+extern (C):
+
+struct Bar
+{
+}
+
+enum FOO = Bar.sizeof;
+D");
+
+}

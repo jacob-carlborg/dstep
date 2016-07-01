@@ -4,7 +4,6 @@
  * Version: Initial created: Feb 14, 2016
  * License: $(LINK2 http://www.boost.org/LICENSE_1_0.txt, Boost Software License 1.0)
  */
-
 import core.exception;
 
 import std.stdio;
@@ -115,21 +114,9 @@ MacroDefinition parseMacroDefinition(string source)
 
     TokenRange tokens = tokenize(source);
 
-    bool[string] table =
-    [
-        "void" : true,
-        "char" : true,
-        "short" : true,
-        "int" : true,
-        "long" : true,
-        "float" : true,
-        "double" : true,
-        "signed" : true,
-        "unsigned" : true,
-        "foo_t" : true,
-    ];
+    Cursor[string] dummy;
 
-    return parseMacroDefinition(tokens, table);
+    return parseMacroDefinition(tokens, dummy);
 }
 
 void assertCollectsTypeNames(string[] expected, string source, string file = __FILE__, size_t line = __LINE__)
@@ -137,7 +124,7 @@ void assertCollectsTypeNames(string[] expected, string source, string file = __F
     import std.format : format;
 
     auto translUnit = makeTranslationUnit(source);
-    auto names = collectTypeNames(translUnit);
+    auto names = collectGlobalTypes(translUnit);
 
     foreach (name; expected)
     {

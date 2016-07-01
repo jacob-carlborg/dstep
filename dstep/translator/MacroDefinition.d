@@ -4,7 +4,6 @@
  * Version: Initial created: Jun 03, 2016
  * License: $(LINK2 http://www.boost.org/LICENSE_1_0.txt, Boost Software License 1.0)
  */
-
 module dstep.translator.MacroDefinition;
 
 import std.array : Appender;
@@ -13,10 +12,13 @@ import std.meta;
 
 import clang.c.Index;
 import clang.Cursor;
+import clang.Util;
 import clang.Token;
+import clang.Type;
 
 import dstep.translator.Context;
 import dstep.translator.Output;
+import dstep.translator.Type;
 
 enum bool isStringValue(alias T) =
     is(typeof(T) : const char[]) &&
@@ -31,7 +33,6 @@ enum bool isStringValue(alias T) =
  * and its spelling matches one of the strings passed as Args.
  * It assigns the spelling of the token to the spelling parameter.
  */
-
 bool accept(Args...)(ref TokenRange tokens, ref string spelling, TokenKind kind)
     if (Args.length > 0 && allSatisfy!(isStringValue, Args))
 {
@@ -81,6 +82,25 @@ bool accept(Args...)(ref TokenRange tokens, TokenKind kind)
     return false;
 }
 
+bool accept(Args...)(ref TokenRange tokens, ref string spelling)
+    if (Args.length > 0 && allSatisfy!(isStringValue, Args))
+{
+    if (!tokens.empty)
+    {
+        foreach (arg; Args)
+        {
+            if (tokens.front.spelling == arg)
+            {
+                tokens = tokens[1 .. $];
+                spelling = arg;
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 bool acceptPunctuation(Args...)(ref TokenRange tokens, ref string spelling)
     if (allSatisfy!(isStringValue, Args))
 {
@@ -96,6 +116,11 @@ bool acceptPunctuation(Args...)(ref TokenRange tokens)
 bool acceptIdentifier(ref TokenRange tokens, ref string spelling)
 {
     return accept(tokens, spelling, TokenKind.identifier);
+}
+
+bool acceptKeyword(ref TokenRange tokens, ref string spelling)
+{
+    return accept(tokens, spelling, TokenKind.keyword);
 }
 
 bool acceptStringLiteral(ref TokenRange tokens, ref string spelling)
@@ -118,7 +143,7 @@ bool acceptStringLiteral(ref TokenRange tokens, ref string spelling)
 
 Expression parseLeftAssoc(ResultExpr, alias parseChild, Ops...)(
     ref TokenRange tokens,
-    bool[string] table)
+    Cursor[string] table)
     if (allSatisfy!(isStringValue, Ops))
 {
     import std.traits;
@@ -277,7 +302,7 @@ class Identifier : Expression
 
     string spelling;
 
-    override string translate(ref bool[string] imports)
+    override string translate(Context context, ref Set!string imports)
     {
         return spelling;
     }
@@ -317,7 +342,7 @@ class Literal : Expression
 
     string spelling;
 
-    override string translate(ref bool[string] imports)
+    override string translate(Context context, ref Set!string imports)
     {
         return spelling;
     }
@@ -357,11 +382,11 @@ class StringifyExpr : Expression
         this.spelling = spelling;
     }
 
-    override string translate(ref bool[string] imports)
+    override string translate(Context context, ref Set!string imports)
     {
         import std.format : format;
 
-        imports["std.conv : to"] = true;
+        imports.add("std.conv : to");
 
         return format("to!string(%s)", spelling);
     }
@@ -388,12 +413,12 @@ class StringConcat : Expression
         this.substrings = substrings;
     }
 
-    override string translate(ref bool[string] imports)
+    override string translate(Context context, ref Set!string imports)
     {
         import std.algorithm.iteration : map;
         import std.array : join;
 
-        return substrings.map!(a => a.translate(imports)).join(" ~ ");
+        return substrings.map!(a => a.translate(context, imports)).join(" ~ ");
     }
 
     override ExprType guessExprType()
@@ -419,14 +444,14 @@ class IndexExpr : Expression
     Expression subexpr;
     Expression index;
 
-    override string translate(ref bool[string] imports)
+    override string translate(Context context, ref Set!string imports)
     {
         import std.format : format;
 
         return format(
             "%s[%s]",
-            subexpr.translate(imports),
-            index.translate(imports));
+            subexpr.translate(context, imports),
+            index.translate(context, imports));
     }
 
     override ExprType guessExprType()
@@ -447,7 +472,7 @@ class CallExpr : Expression
     Expression expr;
     Expression[] args;
 
-    override string translate(ref bool[string] imports)
+    override string translate(Context context, ref Set!string imports)
     {
         import std.algorithm.iteration : map;
         import std.format : format;
@@ -455,8 +480,8 @@ class CallExpr : Expression
 
         return format(
             "%s(%s)",
-            expr.translate(imports),
-            args.map!(a => a.translate(imports)).join(", "));
+            expr.translate(context, imports),
+            args.map!(a => a.translate(context, imports)).join(", "));
     }
 
     override ExprType guessExprType()
@@ -477,14 +502,14 @@ class DotExpr : Expression
     Expression subexpr;
     string identifier;
 
-    override string translate(ref bool[string] imports)
+    override string translate(Context context, ref Set!string imports)
     {
         import std.format : format;
         import std.string : join;
 
         return format(
             "%s.%s",
-            subexpr.translate(imports),
+            subexpr.translate(context, imports),
             identifier);
     }
 
@@ -526,14 +551,14 @@ class SubExpr : Expression
         this.subexpr = subexpr;
     }
 
-    override string translate(ref bool[string] imports)
+    override string translate(Context context, ref Set!string imports)
     {
         import std.format : format;
 
         if (surplus)
-            return format("%s", subexpr.translate(imports));
+            return format("%s", subexpr.translate(context, imports));
         else
-            return format("(%s)", subexpr.translate(imports));
+            return format("(%s)", subexpr.translate(context, imports));
     }
 
     bool surplus() const
@@ -576,16 +601,16 @@ class UnaryExpr : Expression
     string operator;
     bool postfix = false;
 
-    override string translate(ref bool[string] imports)
+    override string translate(Context context, ref Set!string imports)
     {
         import std.format : format;
 
         if (operator == "sizeof")
-            return format("%s.sizeof", subexpr.braced.translate(imports));
+            return format("%s.sizeof", subexpr.braced.translate(context, imports));
         else if (postfix)
-            return format("%s%s", subexpr.translate(imports), operator);
+            return format("%s%s", subexpr.translate(context, imports), operator);
         else
-            return format("%s%s", operator, subexpr.translate(imports));
+            return format("%s%s", operator, subexpr.translate(context, imports));
     }
 
     override ExprType guessExprType()
@@ -617,21 +642,48 @@ class UnaryExpr : Expression
     }
 }
 
-class CastExpr : Expression
+class SizeofType : Expression
 {
-    string typename;
-    Expression subexpr;
+    Type type;
 
-    override string translate(ref bool[string] imports)
+    override string translate(Context context, ref Set!string imports)
     {
         import std.format : format;
 
-        return format("cast(%s) %s", typename, subexpr.debraced.translate(imports));
+        return format("%s.sizeof", translateType(context, type));
     }
 
     override ExprType guessExprType()
     {
-        return ExprType(typename);
+        return ExprType("size_t");
+    }
+
+    override string toString()
+    {
+        import std.format : format;
+
+        return format("SizeofType(type = %s)", type);
+    }
+}
+
+class CastExpr : Expression
+{
+    Type type;
+    Expression subexpr;
+
+    override string translate(Context context, ref Set!string imports)
+    {
+        import std.format : format;
+
+        return format(
+            "cast(%s) %s",
+            translateType(context, type),
+            subexpr.debraced.translate(context, imports));
+    }
+
+    override ExprType guessExprType()
+    {
+        return UnspecifiedExprType;
     }
 
     override void guessParamTypes(ref ExprType[string] params, ExprType type)
@@ -645,7 +697,7 @@ class CastExpr : Expression
 
         return format(
             "CastExpr(typename = %s, subexpr = %s)",
-            typename,
+            type,
             subexpr);
     }
 }
@@ -656,15 +708,15 @@ class BinaryExpr : Expression
     Expression right;
     string operator;
 
-    override string translate(ref bool[string] imports)
+    override string translate(Context context, ref Set!string imports)
     {
         import std.format : format;
 
         return format(
             "%s %s %s",
-            left.translate(imports),
+            left.translate(context, imports),
             operator,
-            right.translate(imports));
+            right.translate(context, imports));
     }
 
     override ExprType guessExprType()
@@ -732,15 +784,15 @@ class CondExpr : Expression
     Expression left;
     Expression right;
 
-    override string translate(ref bool[string] imports)
+    override string translate(Context context, ref Set!string imports)
     {
         import std.format : format;
 
         return format(
             "%s ? %s : %s",
-            expr.translate(imports),
-            left.translate(imports),
-            right.translate(imports));
+            expr.translate(context, imports),
+            left.translate(context, imports),
+            right.translate(context, imports));
     }
 
     override ExprType guessExprType()
@@ -774,13 +826,18 @@ class CondExpr : Expression
 
 class Expression
 {
-    string translate()
+    protected static string translateType(Context context, Type type)
     {
-        bool[string] imports;
-        return translate(imports);
+        return dstep.translator.Type.translateType(context, Cursor.init, type);
     }
 
-    string translate(ref bool[string] imports)
+    string translate(Context context)
+    {
+        Set!string imports;
+        return translate(context, imports);
+    }
+
+    string translate(Context context, ref Set!string imports)
     {
         return "<" ~ toString ~ ">";
     }
@@ -902,7 +959,7 @@ Expression parseStringConcat(ref TokenRange tokens)
     return new StringConcat(substrings);
 }
 
-Expression parsePrimaryExpr(ref TokenRange tokens, bool[string] table)
+Expression parsePrimaryExpr(ref TokenRange tokens, Cursor[string] table)
 {
     string spelling;
 
@@ -941,7 +998,7 @@ Expression parsePrimaryExpr(ref TokenRange tokens, bool[string] table)
     return new SubExpr(subexpr);
 }
 
-Expression[] parseArgsList(ref TokenRange tokens, bool[string] table)
+Expression[] parseArgsList(ref TokenRange tokens, Cursor[string] table)
 {
     auto local = tokens;
 
@@ -972,7 +1029,7 @@ Expression[] parseArgsList(ref TokenRange tokens, bool[string] table)
     return exprs;
 }
 
-Expression parsePostfixExp(ref TokenRange tokens, bool[string] table)
+Expression parsePostfixExp(ref TokenRange tokens, Cursor[string] table)
 {
     auto local = tokens;
 
@@ -1054,10 +1111,31 @@ Expression parsePostfixExp(ref TokenRange tokens, bool[string] table)
     }
 
     tokens = local;
+
     return expr;
 }
 
-Expression parseUnaryExpr(ref TokenRange tokens, bool[string] table)
+Expression parseSizeofType(ref TokenRange tokens, Cursor[string] table)
+{
+    auto local = tokens;
+
+    if (acceptPunctuation!("(")(local))
+    {
+        Type type = parseTypeName(local, table);
+
+        if (type.isValid && acceptPunctuation!(")")(local))
+        {
+            SizeofType expr = new SizeofType;
+            expr.type = type;
+            tokens = local;
+            return expr;
+        }
+    }
+
+    return null;
+}
+
+Expression parseUnaryExpr(ref TokenRange tokens, Cursor[string] table)
 {
     auto local = tokens;
 
@@ -1093,6 +1171,12 @@ Expression parseUnaryExpr(ref TokenRange tokens, bool[string] table)
 
     if (accept!("sizeof")(local, spelling, TokenKind.keyword))
     {
+        if (auto expr = parseSizeofType(local, table))
+        {
+            tokens = local;
+            return expr;
+        }
+
         Expression subexpr = parseUnaryExpr(local, table);
 
         if (subexpr !is null)
@@ -1103,26 +1187,21 @@ Expression parseUnaryExpr(ref TokenRange tokens, bool[string] table)
             tokens = local;
             return expr;
         }
-
-        // FIXME: unary-expression ::= sizeof ( type-name )
     }
 
     return parsePostfixExp(tokens, table);
 }
 
-Expression parseCastExpr(ref TokenRange tokens, bool[string] table)
+Expression parseCastExpr(ref TokenRange tokens, Cursor[string] table)
 {
     auto local = tokens;
 
     if (!accept!("(")(local, TokenKind.punctuation))
         return parseUnaryExpr(tokens, table);
 
-    string typename;
+    Type type = parseTypeName(local, table);
 
-    if (!accept(local, typename, TokenKind.identifier) &&
-        !accept(local, typename, TokenKind.keyword))
-        return parseUnaryExpr(tokens, table);
-    else if ((typename in table) is null)
+    if (!type.isValid)
         return parseUnaryExpr(tokens, table);
 
     if (!accept!(")")(local, TokenKind.punctuation))
@@ -1136,7 +1215,7 @@ Expression parseCastExpr(ref TokenRange tokens, bool[string] table)
     tokens = local;
 
     CastExpr result = new CastExpr;
-    result.typename = typename;
+    result.type = type;
     result.subexpr = subexpr;
 
     return result;
@@ -1153,7 +1232,7 @@ alias parseOrExpr = parseLeftAssoc!(OrExpr, parseXorExpr, "|");
 alias parseLogicalAndExpr = parseLeftAssoc!(LogicalAndExpr, parseOrExpr, "&&");
 alias parseLogicalOrExpr = parseLeftAssoc!(LogicalOrExpr, parseLogicalAndExpr, "||");
 
-Expression parseCondExpr(ref TokenRange tokens, bool[string] table)
+Expression parseCondExpr(ref TokenRange tokens, Cursor[string] table)
 {
     auto local = tokens;
 
@@ -1188,7 +1267,394 @@ Expression parseCondExpr(ref TokenRange tokens, bool[string] table)
     return expr;
 }
 
-Expression parseExpr(ref TokenRange tokens, bool[string] table)
+bool parseBasicSpecifier(ref TokenRange tokens, ref string spelling, Cursor[string] table)
+{
+    import std.meta : AliasSeq;
+
+    alias specifiers = AliasSeq!(
+        "void",
+        "char",
+        "short",
+        "int",
+        "long",
+        "float",
+        "double",
+        "signed",
+        "unsigned",
+        // "__complex__", TBD
+        // "_Complex", TBD
+        "bool",
+        "_Bool");
+
+    return accept!(specifiers)(tokens, spelling);
+}
+
+bool parseRecordSpecifier(ref TokenRange tokens, ref Type type, Cursor[string] table)
+{
+    auto local = tokens;
+    string spelling;
+    string keywordType;
+
+    if (accept!("struct", "union")(local, keywordType, TokenKind.keyword) &&
+        acceptIdentifier(local, spelling))
+    {
+        if (auto ptr = (keywordType ~ " " ~ spelling in table))
+        {
+            type.kind = CXTypeKind.CXType_Record;
+            type.spelling = spelling;
+            tokens = local;
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool parseEnumSpecifier(ref TokenRange tokens, ref Type type, Cursor[string] table)
+{
+    auto local = tokens;
+    string spelling;
+
+    if (acceptIdentifier(local, spelling))
+    {
+        if (auto ptr = ("enum " ~ spelling in table))
+        {
+            type.kind = CXTypeKind.CXType_Enum;
+            type.spelling = spelling;
+
+            tokens = local;
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool parseTypedefName(ref TokenRange tokens, ref Type type, Cursor[string] table)
+{
+    auto local = tokens;
+    string spelling;
+
+    if (acceptIdentifier(local, spelling))
+    {
+        if (auto ptr = (spelling in table))
+        {
+            type.kind = CXTypeKind.CXType_Typedef;
+            type.spelling = spelling;
+
+            tokens = local;
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool parseComplexSpecifier(ref TokenRange tokens, ref Type type, Cursor[string] table)
+{
+    return parseRecordSpecifier(tokens, type, table) ||
+        parseEnumSpecifier(tokens, type, table) ||
+        parseTypedefName(tokens, type, table);
+}
+
+bool parseTypeQualifier(ref TokenRange tokens, ref string spelling)
+{
+    import std.meta : AliasSeq;
+
+    alias qualifiers = AliasSeq!(
+        "const",
+        "volatile",
+        "_Atomic");
+
+    return accept!(qualifiers)(tokens, spelling);
+}
+
+bool parseSpecifierQualifierList(
+    ref TokenRange tokens,
+    ref Type type,
+    Cursor[string] table)
+{
+    auto local = tokens;
+
+    Set!string specifiers;
+    Set!string qualifiers;
+
+    while (true)
+    {
+        string spelling;
+
+        if (parseBasicSpecifier(local, spelling, table))
+        {
+            if (type.isValid)
+                return false;
+
+            if (specifiers.contains(spelling))
+            {
+                if (spelling == "long")
+                {
+                    if (specifiers.contains("__llong"))
+                        return false;
+                    else
+                        spelling = "__llong";
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            specifiers.add(spelling);
+        }
+        else if (parseComplexSpecifier(local, type, table))
+        {
+            if (specifiers.length != 0)
+                return false;
+        }
+        else if (parseTypeQualifier(local, spelling))
+        {
+            if (qualifiers.contains(spelling))
+                return false;
+
+            qualifiers.add(spelling);
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    if (specifiers.length != 0)
+    {
+        if(!basicSpecifierListToType(type, specifiers))
+            return false;
+    }
+
+    if (qualifiers.contains("const"))
+        type.isConst = true;
+
+    if (qualifiers.contains("volatile"))
+        type.isVolatile = true;
+
+    tokens = local;
+
+    return true;
+}
+
+bool parseQualifierList(
+    ref TokenRange tokens,
+    ref Type type)
+{
+    auto local = tokens;
+
+    Set!string qualifiers;
+
+    while (true)
+    {
+        string spelling;
+
+        if (parseTypeQualifier(local, spelling))
+        {
+            if (qualifiers.contains(spelling))
+                return false;
+
+            qualifiers.add(spelling);
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    if (qualifiers.contains("const"))
+        type.isConst = true;
+
+    if (qualifiers.contains("volatile"))
+        type.isVolatile = true;
+
+    tokens = local;
+
+    return true;
+}
+
+bool basicSpecifierListToType(ref Type type, Set!string specifiers)
+{
+    if (specifiers.contains("void"))
+    {
+        if (specifiers.length != 1)
+            return false;
+
+        type = Type(CXTypeKind.CXType_Void, "void");
+        return true;
+    }
+
+    if (specifiers.contains("bool") || specifiers.contains("_Bool"))
+    {
+        if (specifiers.length != 1)
+            return false;
+
+        type = Type(CXTypeKind.CXType_Bool, "bool");
+        return true;
+    }
+
+    if (specifiers.contains("float"))
+    {
+        if (specifiers.length != 1)
+            return false;
+
+        type = Type(CXTypeKind.CXType_Float, "float");
+        return true;
+    }
+
+    if (specifiers.contains("double"))
+    {
+        if (specifiers.contains("long"))
+        {
+            if (specifiers.length != 2)
+                return false;
+
+            type = Type(CXTypeKind.CXType_LongDouble, "long double");
+            return true;
+        }
+
+        if (specifiers.length != 1)
+            return false;
+
+        type = Type(CXTypeKind.CXType_Double, "double");
+        return true;
+    }
+
+    if ((specifiers.contains("signed") && specifiers.contains("unsigned")) ||
+        (specifiers.contains("char") && specifiers.contains("short")) ||
+        (specifiers.contains("char") && specifiers.contains("long")) ||
+        (specifiers.contains("char") && specifiers.contains("__llong")) ||
+        (specifiers.contains("short") && specifiers.contains("long")) ||
+        (specifiers.contains("short") && specifiers.contains("__llong")))
+        return false;
+
+    if (specifiers.contains("char"))
+    {
+        if (specifiers.contains("signed"))
+        {
+            if (specifiers.length != 2)
+                return false;
+
+            type = Type(CXTypeKind.CXType_SChar, "signed char");
+        }
+        else if (specifiers.contains("unsigned"))
+        {
+            if (specifiers.length != 2)
+                return false;
+
+            type = Type(CXTypeKind.CXType_UChar, "unsigned char");
+        }
+        else
+        {
+            if (specifiers.length != 1)
+                return false;
+
+            type = Type(CXTypeKind.CXType_Char_S, "char");
+        }
+
+        return true;
+    }
+
+    if (specifiers.contains("short"))
+    {
+        if (specifiers.contains("unsigned"))
+            type = Type(CXTypeKind.CXType_UShort, "unsigned short");
+        else
+            type = Type(CXTypeKind.CXType_Short, "short");
+
+        return true;
+    }
+
+    if (specifiers.contains("__llong"))
+    {
+        if (specifiers.contains("unsigned"))
+            type = Type(CXTypeKind.CXType_ULongLong, "unsigned long long");
+        else
+            type = Type(CXTypeKind.CXType_LongLong, "long long");
+
+        return true;
+    }
+
+    if (specifiers.contains("long"))
+    {
+        if (specifiers.contains("unsigned"))
+            type = Type(CXTypeKind.CXType_ULong, "unsigned long");
+        else
+            type = Type(CXTypeKind.CXType_Long, "long");
+
+        return true;
+    }
+
+    if (specifiers.contains("int"))
+    {
+        if (specifiers.contains("unsigned"))
+            type = Type(CXTypeKind.CXType_UInt, "unsigned int");
+        else
+            type = Type(CXTypeKind.CXType_Int, "int");
+
+        return true;
+    }
+
+    if (specifiers.contains("unsigned"))
+    {
+        type = Type(CXTypeKind.CXType_UInt, "unsigned int");
+        return true;
+    }
+
+    if (specifiers.contains("signed"))
+    {
+        type = Type(CXTypeKind.CXType_Int, "int");
+        return true;
+    }
+
+    return false;
+}
+
+bool parsePointer(ref TokenRange tokens, ref Type type)
+{
+    if (acceptPunctuation!("*")(tokens))
+    {
+        type = Type.makePointer(type);
+
+        if (!parsePointer(tokens, type))
+        {
+            if (parseQualifierList(tokens, type))
+                parsePointer(tokens, type);
+        }
+
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+bool parseAbstractDeclarator(ref TokenRange tokens, ref Type type, Cursor[string] table)
+{
+    return parsePointer(tokens, type);
+}
+
+Type parseTypeName(ref TokenRange tokens, Cursor[string] table)
+{
+    auto local = tokens;
+
+    Type type;
+
+    if (!parseSpecifierQualifierList(local, type, table))
+        return type;
+
+    parseAbstractDeclarator(local, type, table);
+
+    tokens = local;
+
+    return type;
+}
+
+Expression parseExpr(ref TokenRange tokens, Cursor[string] table)
 {
     return parseCondExpr(tokens, table);
 }
@@ -1219,7 +1685,7 @@ string[] parseMacroParams(ref TokenRange tokens)
     return params;
 }
 
-MacroDefinition parseMacroDefinition(TokenRange tokens, bool[string] table)
+MacroDefinition parseMacroDefinition(TokenRange tokens, Cursor[string] table)
 {
     auto local = tokens;
 
@@ -1237,7 +1703,7 @@ MacroDefinition parseMacroDefinition(TokenRange tokens, bool[string] table)
     return result;
 }
 
-MacroDefinition parsePartialMacroDefinition(TokenRange tokens, bool[string] table)
+MacroDefinition parsePartialMacroDefinition(TokenRange tokens, Cursor[string] table)
 {
     auto local = tokens;
 
@@ -1273,12 +1739,12 @@ MacroDefinition parsePartialMacroDefinition(TokenRange tokens, bool[string] tabl
         return result;
 }
 
-void translateConstDirective(Output output, MacroDefinition directive)
+void translateConstDirective(Output output, Context context, MacroDefinition directive)
 {
     output.singleLine(
         "enum %s = %s;",
         directive.spelling,
-        directive.expr.debraced.translate());
+        directive.expr.debraced.translate(context));
 }
 
 string translateDirectiveParamList(string[] params, ExprType[string] types)
@@ -1315,13 +1781,13 @@ string translateDirectiveTypeList(string[] params, ref ExprType[string] types)
     }
 
     auto result = appender!string;
-    bool[ExprType] appended;
+    Set!ExprType appended;
 
     if (!filtered.empty)
     {
         auto type = types[filtered.front];
         result.put(asPlainType(type));
-        appended[type.decayed] = true;
+        appended.add(type.decayed);
         filtered.popFront();
     }
 
@@ -1329,11 +1795,11 @@ string translateDirectiveTypeList(string[] params, ref ExprType[string] types)
     {
         auto type = types[param];
 
-        if ((type.decayed in appended) is null)
+        if (!appended.contains(type.decayed))
         {
             result.put(", ");
             result.put(asPlainType(type));
-            appended[type.decayed] = true;
+            appended.add(type.decayed);
         }
     }
 
@@ -1355,7 +1821,7 @@ bool translateFunctAlias(
         Identifier ident = cast(Identifier) expr.expr;
 
         if (ident !is null &&
-            equal(definition.params, expr.args.map!(a => a.translate)))
+            equal(definition.params, expr.args.map!(a => a.translate(context))))
         {
             output.singleLine("alias %s = %s;", definition.spelling, ident.spelling);
             return true;
@@ -1396,13 +1862,13 @@ void translateFunctDirective(
         paramStrings = translateDirectiveParamList(definition.params, types);
     }
 
-    bool[string] imports;
+    Set!string imports;
 
-    auto translated = definition.expr.debraced.translate(imports);
+    auto translated = definition.expr.debraced.translate(context, imports);
 
     output.subscopeStrong(
         "%s%s %s%s(%s)",
-        context.macroLinkagePrefix(),
+        "extern (D) ",
         returnType.asReturnType(),
         definition.spelling,
         typeStrings,
@@ -1431,7 +1897,7 @@ void translateMacroDefinition(Output output, Context context, Cursor cursor)
         if (definition.expr !is null)
         {
             if (definition.constant)
-                translateConstDirective(output, definition);
+                translateConstDirective(output, context, definition);
             else
                 translateFunctDirective(output, context, definition);
         }

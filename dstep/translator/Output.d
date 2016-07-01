@@ -16,6 +16,7 @@ import mambo.core._;
 import clang.Cursor;
 import clang.SourceLocation;
 import clang.SourceRange;
+import clang.Util;
 
 import dstep.translator.CommentIndex;
 import dstep.translator.Context;
@@ -1063,7 +1064,7 @@ class ClassData : StructData
 
     HashSet!(string) propertyList;
 
-    private bool[string] mangledMethods;
+    private Set!string mangledMethods;
 
     this (Context context)
     {
@@ -1078,7 +1079,7 @@ class ClassData : StructData
 
         if (!(mangledName in mangledMethods))
         {
-            mangledMethods[mangledName] = true;
+            mangledMethods.add(mangledName);
             name = name.isBlank ? selector : name;
             return translateSelector(name, false, translateIdentifier);
         }

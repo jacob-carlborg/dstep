@@ -4,7 +4,6 @@
  * Version: Initial created: Mar 21, 2016
  * License: $(LINK2 http://www.boost.org/LICENSE_1_0.txt, Boost Software License 1.0)
  */
-
 module dstep.translator.Context;
 
 import mambo.core._;
@@ -34,10 +33,9 @@ class Context
     private TypedefIndex typedefIndex_ = null;
     private Translator translator_ = null;
     private Output globalScope_ = null;
-    private bool[string] typeNames_;
+    private Cursor[string] typeNames_;
 
     public MacroDefinition[string] macroDefinitions;
-    string macroLinkage = "extern (D)";
 
     public this(TranslationUnit translUnit, Options options, Translator translator = null)
     {
@@ -56,12 +54,7 @@ class Context
             translator_ = new Translator(translUnit, options);
 
         globalScope_ = new Output();
-        typeNames_ = collectTypeNames(translUnit);
-    }
-
-    public string macroLinkagePrefix()
-    {
-        return macroLinkage == "" ? "" : macroLinkage ~ " ";
+        typeNames_ = collectGlobalTypes(translUnit);
     }
 
     public string getAnonymousName (Cursor cursor)
@@ -103,7 +96,7 @@ class Context
         return commentIndex_;
     }
 
-    @property public bool[string] typeNames()
+    @property public Cursor[string] typeNames()
     {
         return typeNames_;
     }
@@ -227,51 +220,36 @@ bool isGlobal(Cursor cursor)
 }
 
 /**
- * The collectTypeNames function scans the whole AST of the translation unit and produces
+ * The collectGlobalTypes function scans the whole AST of the translation unit and produces
  * a set of the type names in global scope.
  *
  * The type names are required for the parsing of C code (e.g. macro definition bodies),
  * as C grammar isn't context free.
  */
 
-bool[string] collectTypeNames(TranslationUnit translUnit)
+Cursor[string] collectGlobalTypes(TranslationUnit translUnit)
 {
-    void collectBasicTypes(ref bool[string] result)
-    {
-        result["void"] = true;
-        result["char"] = true;
-        result["signed char"] = true;
-        result["unsigned char"] = true;
-        result["short"] = true;
-        result["signed short"] = true;
-        result["unsigned short"] = true;
-        result["signed"] = true;
-        result["unsigned"] = true;
-        result["int"] = true;
-        result["signed int"] = true;
-        result["unsigned int"] = true;
-        result["long"] = true;
-        result["signed long"] = true;
-        result["unsigned long"] = true;
-        result["long long"] = true;
-        result["signed long long"] = true;
-        result["unsigned long long"] = true;
-        result["float"] = true;
-        result["double"] = true;
-    }
-
-    void collectTypeNames(ref bool[string] result, Cursor parent)
+    void collectGlobalTypes(ref Cursor[string] result, Cursor parent)
     {
         foreach (cursor, _; parent.all)
         {
             switch (cursor.kind)
             {
                 case CXCursorKind.CXCursor_TypedefDecl:
-                    result[cursor.spelling] = true;
+                    result[cursor.spelling] = cursor;
                     break;
 
                 case CXCursorKind.CXCursor_StructDecl:
-                    result[cursor.spelling] = true;
+                    result["struct " ~ cursor.spelling] = cursor;
+                    break;
+
+                case CXCursorKind.CXCursor_UnionDecl:
+                    result["union " ~ cursor.spelling] = cursor;
+                    break;
+
+
+                case CXCursorKind.CXCursor_EnumDecl:
+                    result["enum " ~ cursor.spelling] = cursor;
                     break;
 
                 default:
@@ -280,10 +258,9 @@ bool[string] collectTypeNames(TranslationUnit translUnit)
         }
     }
 
-    bool[string] result;
+    Cursor[string] result;
 
-    collectBasicTypes(result);
-    collectTypeNames(result, translUnit.cursor);
+    collectGlobalTypes(result, translUnit.cursor);
 
     return result;
 }
