@@ -4,6 +4,7 @@
 ### New/Changed Features
 
 * Support for simple defines (like `#define FOO 1`).
+* Translation of defines to functions (like `#define FOO(a, b) a + b`).
 * Support for translation of preprocessor constants in array sizes.
 * Support for global comments and comments inside structs and enums.
 * Support for removing excessive newlines and keeping original spacing.
@@ -11,6 +12,13 @@
 * Most of cucumber tests was replaced with D-based tests.
 * Statements are translated in original 'C' order now.
 * Multiple input files can be processed in different threads.
+
+### Bugs fixed
+Issue #2: Self alias should be removed bug.
+Issue #29: Don't name anonymous enums.
+Issue #39: Recognize and translate __attribute__((__packed__)).
+Issue #47: Treatment of #define enhancement.
+Issue #50: struct typedef generates recursive alias bug.
 
 ## Version 0.2.1
 ### New/Changed Features
