@@ -79,6 +79,26 @@ mixin template CX ()
     }
 }
 
+alias Set(T) = void[0][T];
+
+void add(T)(ref void[0][T] set, T value) {
+    set[value] = (void[0]).init;
+}
+
+bool contains(T)(inout(void[0][T]) set, T value) {
+    return (value in set) !is null;
+}
+
+Set!T SetFromList(T)(T[] list)
+{
+    Set!T = result;
+
+    foreach (item; list)
+        result.add(item);
+
+    return result;
+}
+
 extern (C) int mkstemps(char*, int);
 extern (C) char* mkdtemp(char*);
 extern (C) int close(int);

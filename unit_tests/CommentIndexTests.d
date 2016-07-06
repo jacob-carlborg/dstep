@@ -4,7 +4,6 @@
  * Version: Initial created: May 20, 2016
  * License: $(LINK2 http://www.boost.org/LICENSE_1_0.txt, Boost Software License 1.0)
  */
-
 import std.stdio;
 import Common;
 import dstep.translator.CommentIndex;

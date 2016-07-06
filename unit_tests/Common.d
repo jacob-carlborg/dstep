@@ -4,7 +4,6 @@
  * Version: Initial created: Feb 14, 2016
  * License: $(LINK2 http://www.boost.org/LICENSE_1_0.txt, Boost Software License 1.0)
  */
-
 import core.exception;
 
 import std.stdio;
@@ -19,7 +18,9 @@ import std.typecons;
 import clang.c.Index;
 
 import dstep.translator.CommentIndex;
+import dstep.translator.Context;
 import dstep.translator.IncludeHandler;
+import dstep.translator.MacroDefinition;
 import dstep.translator.Output;
 import dstep.translator.Translator;
 
@@ -85,11 +86,11 @@ void assertFileExists(
     }
 }
 
-TranslationUnit makeTranslationUnit(string c)
+TranslationUnit makeTranslationUnit(string source)
 {
     return TranslationUnit.parseString(
         index,
-        c,
+        source,
         ["-Wno-missing-declarations"],
         null,
         CXTranslationUnit_Flags.CXTranslationUnit_DetailedPreprocessingRecord);
@@ -99,6 +100,37 @@ CommentIndex makeCommentIndex(string c)
 {
     TranslationUnit translUnit = makeTranslationUnit(c);
     return new CommentIndex(translUnit);
+}
+
+MacroDefinition parseMacroDefinition(string source)
+{
+    import dstep.translator.MacroDefinition : parseMacroDefinition;
+
+    TokenRange tokenize(string source)
+    {
+        auto translUnit = makeTranslationUnit(source);
+        return translUnit.tokenize(translUnit.extent(0, cast(uint) source.length));
+    }
+
+    TokenRange tokens = tokenize(source);
+
+    Cursor[string] dummy;
+
+    return parseMacroDefinition(tokens, dummy);
+}
+
+void assertCollectsTypeNames(string[] expected, string source, string file = __FILE__, size_t line = __LINE__)
+{
+    import std.format : format;
+
+    auto translUnit = makeTranslationUnit(source);
+    auto names = collectGlobalTypes(translUnit);
+
+    foreach (name; expected)
+    {
+        if ((name in names) is null)
+            throw new AssertError(format("`%s` was not found.", name), file, line);
+    }
 }
 
 string translate(TranslationUnit translationUnit, Options options)

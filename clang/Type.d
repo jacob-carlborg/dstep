@@ -6,7 +6,7 @@
  */
 module clang.Type;
 
-import mambo.core._;
+import std.bitmanip;
 
 import clang.c.Index;
 import clang.Cursor;
@@ -14,17 +14,54 @@ import clang.Util;
 
 struct Type
 {
+    static assert(Type.init.kind == CXTypeKind.CXType_Invalid);
+
     mixin CX;
 
-    @property string spelling ()
+    private Type* pointee_;
+
+    mixin(bitfields!(
+        bool, "isConst", 1,
+        bool, "isVolatile", 1,
+        bool, "isClang", 1,
+        uint, "", 5));
+
+    string spelling = "";
+
+    this (CXType cx)
     {
-        auto r = clang_getTypeDeclaration(cx);
-        return Cursor(r).spelling;
+        this.cx = cx;
+        spelling = Cursor(clang_getTypeDeclaration(cx)).spelling;
+        isConst = clang_isConstQualifiedType(cx) == 1;
+        isClang = true;
     }
 
-    @property bool isTypedef ()
+    this (CXTypeKind kind, string spelling)
     {
-        return kind == CXTypeKind.CXType_Typedef;
+        cx.kind = kind;
+        this.spelling = spelling;
+    }
+
+    static Type makePointer(Type pointee)
+    {
+        Type result = Type(CXTypeKind.CXType_Pointer, "");
+        result.pointee_ = new Type();
+        *result.pointee_ = pointee;
+        return result;
+    }
+
+    @property bool isAnonymous ()
+    {
+        return spelling == "";
+    }
+
+    @property bool isArray ()
+    {
+        return
+            kind == CXTypeKind.CXType_ConstantArray ||
+            kind == CXTypeKind.CXType_IncompleteArray ||
+            kind == CXTypeKind.CXType_VariableArray ||
+            kind == CXTypeKind.CXType_DependentSizedArray;
     }
 
     @property bool isEnum ()
@@ -32,45 +69,32 @@ struct Type
         return kind == CXTypeKind.CXType_Enum;
     }
 
-    @property Type canonicalType ()
+    @property bool isExposed ()
     {
-        auto r = clang_getCanonicalType(cx);
-        return Type(r);
-    }
-
-    @property Type pointeeType ()
-    {
-        auto r = clang_getPointeeType(cx);
-        return Type(r);
-    }
-
-    @property bool isValid ()
-    {
-        return kind != CXTypeKind.CXType_Invalid;
+        return kind != CXTypeKind.CXType_Unexposed;
     }
 
     @property bool isFunctionType ()
     {
-        return canonicalType.kind == CXTypeKind.CXType_FunctionProto;
+        return canonical.kind == CXTypeKind.CXType_FunctionProto;
     }
 
     @property bool isFunctionPointerType ()
     {
-        with (CXTypeKind)
-            return kind == CXType_Pointer && pointeeType.isFunctionType;
+        return kind == CXTypeKind.CXType_Pointer && pointee.isFunctionType;
     }
 
     @property bool isObjCIdType ()
     {
         return isTypedef &&
-            canonicalType.kind ==  CXTypeKind.CXType_ObjCObjectPointer &&
+            canonical.kind == CXTypeKind.CXType_ObjCObjectPointer &&
             spelling == "id";
     }
 
     @property bool isObjCClassType ()
     {
         return isTypedef &&
-            canonicalType.kind ==  CXTypeKind.CXType_ObjCObjectPointer &&
+            canonical.kind == CXTypeKind.CXType_ObjCObjectPointer &&
             spelling == "Class";
     }
 
@@ -79,9 +103,9 @@ struct Type
         with(CXTypeKind)
             if (isTypedef)
             {
-                auto c = canonicalType;
+                auto c = canonical;
                 return c.kind == CXType_Pointer &&
-                    c.pointeeType.kind == CXType_ObjCSel;
+                    c.pointee.kind == CXType_ObjCSel;
             }
 
             else
@@ -93,31 +117,55 @@ struct Type
         return isObjCIdType || isObjCClassType || isObjCSelType;
     }
 
+    @property bool isPointer ()
+    {
+        return kind == CXTypeKind.CXType_Pointer;
+    }
+
+    @property bool isTypedef ()
+    {
+        return kind == CXTypeKind.CXType_Typedef;
+    }
+
+    @property bool isValid ()
+    {
+        return kind != CXTypeKind.CXType_Invalid;
+    }
+
     @property bool isWideCharType ()
     {
-        with (CXTypeKind)
-            return kind == CXType_WChar;
+        return kind == CXTypeKind.CXType_WChar;
     }
 
-    @property bool isConst ()
+    @property Type canonical()
     {
-        return clang_isConstQualifiedType(cx) == 1;
+        if (isClang)
+            return Type(clang_getCanonicalType(cx));
+        else
+            return Type.init;
     }
 
-    @property bool isExposed ()
+    @property Type pointee()
     {
-        return kind != CXTypeKind.CXType_Unexposed;
-    }
-
-    @property bool isAnonymous ()
-    {
-        return spelling.isEmpty;
+        if (pointee_)
+        {
+            return *pointee_;
+        }
+        else
+        {
+            if (isClang)
+                return Type(clang_getPointeeType(cx));
+            else
+                return Type.init;
+        }
     }
 
     @property Cursor declaration ()
     {
-        auto r = clang_getTypeDeclaration(cx);
-        return Cursor(r);
+        if (isClang)
+            return Cursor(clang_getTypeDeclaration(cx));
+        else
+            return Cursor.empty;
     }
 
     @property FuncType func ()
@@ -130,13 +178,10 @@ struct Type
         return ArrayType(this);
     }
 
-    @property bool isArray ()
+    @property string toString() const
     {
-        return
-            kind == CXTypeKind.CXType_ConstantArray ||
-            kind == CXTypeKind.CXType_IncompleteArray ||
-            kind == CXTypeKind.CXType_VariableArray ||
-            kind == CXTypeKind.CXType_DependentSizedArray;
+        import std.format: format;
+        return format("Type(kind = %s, spelling = %s, isConst = %s)", kind, spelling, isConst);
     }
 }
 

@@ -17,6 +17,7 @@ import clang.File;
 import clang.Index;
 import clang.SourceLocation;
 import clang.SourceRange;
+import clang.Token;
 import clang.Util;
 import clang.Visitor;
 
@@ -27,7 +28,7 @@ struct TranslationUnit
     static TranslationUnit parse (
         Index index,
         string sourceFilename,
-        string[] commandLineArgs,
+        string[] commandLineArgs = ["-Wno-missing-declarations"],
         CXUnsavedFile[] unsavedFiles = null,
         uint options = CXTranslationUnit_Flags.CXTranslationUnit_DetailedPreprocessingRecord)
     {
@@ -45,7 +46,7 @@ struct TranslationUnit
     static TranslationUnit parseString (
         Index index,
         string source,
-        string[] commandLineArgs,
+        string[] commandLineArgs = ["-Wno-missing-declarations"],
         CXUnsavedFile[] unsavedFiles = null,
         uint options = CXTranslationUnit_Flags.CXTranslationUnit_DetailedPreprocessingRecord)
     {
@@ -140,8 +141,8 @@ struct TranslationUnit
         // `cursors` range should at least contain all global
         // preprocessor cursors, although it can contain more.
 
-        bool[string] stacked;
-        bool[string] included;
+        Set!string stacked;
+        Set!string included;
         SourceLocation[] locationStack;
         SourceLocation[] locations = [ location("", 0), location(file.name, 0) ];
 
@@ -151,16 +152,16 @@ struct TranslationUnit
             {
                 auto ptr = cursor.path in stacked;
 
-                if (ptr !is null && *ptr)
+                if (stacked.contains(cursor.path))
                 {
                     while (locationStack[$ - 1].path != cursor.path)
                     {
-                        stacked[locationStack[$ - 1].path] = false;
+                        stacked.remove(locationStack[$ - 1].path);
                         locations ~= locationStack[$ - 1];
                         locationStack = locationStack[0 .. $ - 1];
                     }
 
-                    stacked[cursor.path] = false;
+                    stacked.remove(cursor.path);
                     locations ~= locationStack[$ - 1];
                     locationStack = locationStack[0 .. $ - 1];
                 }
@@ -168,9 +169,9 @@ struct TranslationUnit
                 if ((cursor.includedPath in included) is null)
                 {
                     locationStack ~= cursor.extent.end;
-                    stacked[cursor.path] = true;
+                    stacked.add(cursor.path);
                     locations ~= location(cursor.includedPath, 0);
-                    included[cursor.includedPath] = true;
+                    included.add(cursor.includedPath);
                 }
             }
         }
@@ -244,7 +245,20 @@ struct TranslationUnit
         return relativeLocationAccessorImpl(cursor.all);
     }
 
-    string dumpAST (bool skipIncluded = false)
+    TokenRange tokenize(SourceRange extent)
+    {
+        import std.algorithm.mutation : stripRight;
+
+        CXToken* tokens = null;
+        uint numTokens = 0;
+        clang_tokenize(cx, extent.cx, &tokens, &numTokens);
+        auto result = TokenRange(cx, tokens, numTokens);
+
+        // For some reason libclang returns some tokens out of cursors extent.cursor
+        return result.stripRight!(token => !intersects(extent, token.extent));
+    }
+
+    string dumpAST(bool skipIncluded = true)
     {
         import std.array : appender;
 
@@ -294,4 +308,11 @@ struct DiagnosticVisitor
 
         return result;
     }
+}
+
+TokenRange tokenize(string source)
+{
+    Index index = Index(false, false);
+    auto translUnit = TranslationUnit.parseString(index, source);
+    return translUnit.tokenize(translUnit.extent(0, cast(uint) source.length));
 }

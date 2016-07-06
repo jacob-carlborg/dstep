@@ -14,6 +14,7 @@ import mambo.core._;
 import clang.c.Index;
 import clang.Cursor;
 import clang.File;
+import clang.Index;
 import clang.TranslationUnit;
 import clang.Type;
 import clang.Util;
@@ -25,6 +26,7 @@ import dstep.translator.IncludeHandler;
 import dstep.translator.objc.Category;
 import dstep.translator.objc.ObjcInterface;
 import dstep.translator.Output;
+import dstep.translator.MacroDefinition;
 import dstep.translator.Record;
 import dstep.translator.Type;
 
@@ -173,7 +175,7 @@ class Translator
                     break;
 
                 case CXCursor_MacroDefinition:
-                    output.flushLocation(cursor.extent, false);
+                    output.flushLocation(cursor.extent);
                     translateMacroDefinition(output, cursor, parent);
                     break;
 
@@ -235,17 +237,17 @@ class Translator
         {
             output.singleLine(
                 "alias %s %s;",
-                translateType(context, cursor, cursor.type.canonicalType),
+                translateType(context, cursor, cursor.type.canonical),
                 cursor.spelling);
         }
     }
 
     void translateMacroDefinition(Output output, Cursor cursor, Cursor parent)
     {
-        auto tokens = cursor.tokens();
-
-        if (tokens.length == 2)
-            output.singleLine("enum %s = %s;", tokens[0].spelling, tokens[1].spelling);
+        dstep.translator.MacroDefinition.translateMacroDefinition(
+            output,
+            context,
+            cursor);
     }
 
     void variable (Output output, Cursor cursor, string prefix = "")
@@ -257,7 +259,7 @@ class Translator
     {
         output.singleLine(
             "alias %s %s;",
-            translateType(context, cursor, cursor.type.canonicalType),
+            translateType(context, cursor, cursor.type.canonical),
             cursor.spelling);
     }
 

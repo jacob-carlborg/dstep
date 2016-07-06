@@ -4,7 +4,6 @@
  * Version: Initial created: Mar 21, 2016
  * License: $(LINK2 http://www.boost.org/LICENSE_1_0.txt, Boost Software License 1.0)
  */
-
 module dstep.translator.Context;
 
 import mambo.core._;
@@ -15,6 +14,7 @@ import clang.TranslationUnit;
 
 import dstep.translator.CommentIndex;
 import dstep.translator.IncludeHandler;
+import dstep.translator.MacroDefinition;
 import dstep.translator.MacroIndex;
 import dstep.translator.Options;
 import dstep.translator.Output;
@@ -33,8 +33,11 @@ class Context
     private TypedefIndex typedefIndex_ = null;
     private Translator translator_ = null;
     private Output globalScope_ = null;
+    private Cursor[string] typeNames_;
 
-    public this(TranslationUnit translUnit, Options options, Translator translator)
+    public MacroDefinition[string] macroDefinitions;
+
+    public this(TranslationUnit translUnit, Options options, Translator translator = null)
     {
         this.translUnit = translUnit;
         macroIndex = new MacroIndex(translUnit);
@@ -44,8 +47,14 @@ class Context
             commentIndex_ = new CommentIndex(translUnit);
 
         typedefIndex_ = new TypedefIndex(translUnit);
-        translator_ = translator;
+
+        if (translator !is null)
+            translator_ = translator;
+        else
+            translator_ = new Translator(translUnit, options);
+
         globalScope_ = new Output();
+        typeNames_ = collectGlobalTypes(translUnit);
     }
 
     public string getAnonymousName (Cursor cursor)
@@ -85,6 +94,11 @@ class Context
     public CommentIndex commentIndex()
     {
         return commentIndex_;
+    }
+
+    @property public Cursor[string] typeNames()
+    {
+        return typeNames_;
     }
 
     public TypedefIndex typedefIndex()
@@ -167,9 +181,9 @@ string cursorScopeString(Context context, Cursor cursor)
 }
 
 /**
-  * Returns true, if there is a variable, of type represented by cursor, among
-  * children of its parent.
-  */
+ * Returns true, if there is a variable, of type represented by cursor, among
+ * children of its parent.
+ */
 bool variablesInParentScope(Cursor cursor)
 {
     import std.algorithm.iteration : filter;
@@ -198,9 +212,56 @@ bool shouldBeAnonymous(Context context, Cursor cursor)
 }
 
 /**
-  * Returns true, if cursor is in the global scope.
-  */
+ * Returns true, if cursor is in the global scope.
+ */
 bool isGlobal(Cursor cursor)
 {
     return cursor.semanticParent.kind == CXCursorKind.CXCursor_TranslationUnit;
 }
+
+/**
+ * The collectGlobalTypes function scans the whole AST of the translation unit and produces
+ * a set of the type names in global scope.
+ *
+ * The type names are required for the parsing of C code (e.g. macro definition bodies),
+ * as C grammar isn't context free.
+ */
+
+Cursor[string] collectGlobalTypes(TranslationUnit translUnit)
+{
+    void collectGlobalTypes(ref Cursor[string] result, Cursor parent)
+    {
+        foreach (cursor, _; parent.all)
+        {
+            switch (cursor.kind)
+            {
+                case CXCursorKind.CXCursor_TypedefDecl:
+                    result[cursor.spelling] = cursor;
+                    break;
+
+                case CXCursorKind.CXCursor_StructDecl:
+                    result["struct " ~ cursor.spelling] = cursor;
+                    break;
+
+                case CXCursorKind.CXCursor_UnionDecl:
+                    result["union " ~ cursor.spelling] = cursor;
+                    break;
+
+
+                case CXCursorKind.CXCursor_EnumDecl:
+                    result["enum " ~ cursor.spelling] = cursor;
+                    break;
+
+                default:
+                    break;
+            }
+        }
+    }
+
+    Cursor[string] result;
+
+    collectGlobalTypes(result, translUnit.cursor);
+
+    return result;
+}
+

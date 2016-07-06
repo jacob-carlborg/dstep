@@ -4,7 +4,6 @@
  * Version: Initial created: Feb 14, 2016
  * License: $(LINK2 http://www.boost.org/LICENSE_1_0.txt, Boost Software License 1.0)
  */
-
 module clang.Token;
 
 import std.typecons;
@@ -17,6 +16,20 @@ import clang.Type;
 import clang.Util;
 import clang.Visitor;
 import clang.Cursor;
+
+enum TokenKind
+{
+    punctuation = CXTokenKind.CXToken_Punctuation,
+    keyword = CXTokenKind.CXToken_Keyword,
+    identifier = CXTokenKind.CXToken_Identifier,
+    literal = CXTokenKind.CXToken_Literal,
+    comment = CXTokenKind.CXToken_Comment,
+}
+
+TokenKind toD(CXTokenKind kind)
+{
+    return cast(TokenKind) kind;
+}
 
 struct Token
 {
@@ -38,7 +51,7 @@ struct Token
         }
     }
 
-    private const RefCounted!Container container;
+    private RefCounted!Container container;
     size_t index;
 
     @property private Container* containerPtr() const
@@ -54,14 +67,16 @@ struct Token
 
     @property string spelling() const
     {
+        import clang.Util : toD;
+
         return toD(clang_getTokenSpelling(
             containerPtr.translationUnit,
             containerPtr.tokens[index]));
     }
 
-    @property CXTokenKind kind() const
+    @property TokenKind kind() const
     {
-        return clang_getTokenKind(containerPtr.tokens[index]);
+        return clang_getTokenKind(containerPtr.tokens[index]).toD;
     }
 
     @property SourceLocation location() const
@@ -89,7 +104,7 @@ struct Token
 
 struct TokenRange
 {
-    private const RefCounted!(Token.Container) container;
+    private RefCounted!(Token.Container) container;
     private size_t begin;
     private size_t end;
 
@@ -106,7 +121,7 @@ struct TokenRange
     }
 
     private this(
-        const RefCounted!(Token.Container) container,
+        RefCounted!(Token.Container) container,
         size_t begin,
         size_t end)
     {
@@ -130,12 +145,12 @@ struct TokenRange
         return begin >= end;
     }
 
-    @property Token front() const
+    @property Token front()
     {
         return Token(container, begin);
     }
 
-    @property Token back() const
+    @property Token back()
     {
         return Token(container, end - 1);
     }
@@ -150,7 +165,7 @@ struct TokenRange
         --end;
     }
 
-    @property TokenRange save() const
+    @property TokenRange save()
     {
         return this;
     }
@@ -160,12 +175,12 @@ struct TokenRange
         return end - begin;
     }
 
-    Token opIndex(size_t index) const
+    Token opIndex(size_t index)
     {
         return Token(container, begin + index);
     }
 
-    TokenRange opSlice(size_t begin, size_t end) const
+    TokenRange opSlice(size_t begin, size_t end)
     {
         return TokenRange(container, this.begin + begin, this.begin + end);
     }
