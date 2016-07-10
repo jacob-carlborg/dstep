@@ -153,11 +153,10 @@ int main (string[] args)
 void showHelp (Configuration config, GetoptResult)
 {
     import std.stdio;
-
-    enum Version = "v0.2.2";
+    import std.string;
 
     writeln("Usage: dstep [options] <input>");
-    writeln("Version: ", Version);
+    writeln("Version: ", strip(config.Version));
     writeln();
     writeln("Options:");
     writeln("    -o, --output <file>          Write output to <file>.");
