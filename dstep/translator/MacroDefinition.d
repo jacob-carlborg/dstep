@@ -1029,7 +1029,7 @@ Expression[] parseArgsList(ref Token[] tokens, Cursor[string] table)
     return exprs;
 }
 
-Expression parsePostfixExp(ref Token[] tokens, Cursor[string] table)
+Expression parsePostfixExpr(ref Token[] tokens, Cursor[string] table, bool defined)
 {
     auto local = tokens;
 
@@ -1687,7 +1687,10 @@ string[] parseMacroParams(ref Token[] tokens)
     return params;
 }
 
-MacroDefinition parseMacroDefinition(Token[] tokens, Cursor[string] table)
+MacroDefinition parseMacroDefinition(
+    ref Token[] tokens,
+    Cursor[string] table,
+    bool defined = false)
 {
     auto local = tokens;
 
@@ -1705,7 +1708,10 @@ MacroDefinition parseMacroDefinition(Token[] tokens, Cursor[string] table)
     return result;
 }
 
-MacroDefinition parsePartialMacroDefinition(Token[] tokens, Cursor[string] table)
+MacroDefinition parsePartialMacroDefinition(
+    ref Token[] tokens,
+    Cursor[string] table,
+    bool defined = false)
 {
     auto local = tokens;
 

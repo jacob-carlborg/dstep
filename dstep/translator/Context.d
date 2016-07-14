@@ -38,6 +38,8 @@ class Context
 
     Options options;
 
+    const string source;
+
     public this(TranslationUnit translUnit, Options options, Translator translator = null)
     {
         this.translUnit = translUnit;
@@ -58,6 +60,8 @@ class Context
 
         globalScope_ = new Output();
         typeNames_ = collectGlobalTypes(translUnit);
+
+        source = translUnit.source;
     }
 
     public string getAnonymousName (Cursor cursor)

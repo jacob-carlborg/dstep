@@ -46,6 +46,6 @@ struct Token
     @property string toString() const
     {
         import std.format: format;
-        return format("Token(%s, %s)", kind, spelling);
+        return format("Token(kind = %s, spelling = %s)", kind, spelling);
     }
 }

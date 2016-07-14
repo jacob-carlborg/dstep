@@ -25,6 +25,8 @@ struct TranslationUnit
 {
     mixin CX;
 
+    string sourceString = null;
+
     static TranslationUnit parse (
         Index index,
         string sourceFilename,
@@ -67,6 +69,8 @@ struct TranslationUnit
 
         remove(name);
 
+        translationUnit.sourceString = source;
+
         return translationUnit;
     }
 
@@ -108,6 +112,12 @@ struct TranslationUnit
     @property string spelling ()
     {
         return toD(clang_getTranslationUnitSpelling(cx));
+    }
+
+    @property string source ()
+    {
+        import std.file : readText;
+        return sourceString ? sourceString : readText(spelling);
     }
 
     @property Cursor cursor ()
