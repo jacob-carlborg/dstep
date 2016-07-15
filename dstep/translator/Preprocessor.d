@@ -6,8 +6,31 @@
  */
 module dstep.translator.Preprocessor;
 
+import std.array;
+
+import clang.Cursor;
+import clang.Index;
+import clang.SourceRange;
 import clang.Token;
 import clang.TranslationUnit;
+
+public import dstep.translator.MacroDefinition;
+
+class ConditionalDirective : Directive
+{
+    Expression condition;
+    Directive[] branches;
+    Directive endif;
+}
+
+class PragmaDirective : Directive
+{
+}
+
+class UndefDirective : Directive
+{
+    string identifier;
+}
 
 struct TokenizedDirectiveRange
 {
@@ -130,9 +153,9 @@ TokenizedDirectiveRange tokenizedDirectives(Token[] tokens, string source = null
     return TokenizedDirectiveRange(tokens, source);
 }
 
-TokenizedDirectiveRange directives(string source)
+TokenizedDirectiveRange tokenizedDirectives(string source)
 {
-    return directives(tokenize(source), source);
+    return tokenizedDirectives(tokenize(source), source);
 }
 
 struct DirectiveRange
@@ -488,17 +511,17 @@ unittest
 {
     import std.array : array;
 
-    auto x0 = directives("").array;
+    auto x0 = tokenizedDirectives("").array;
 
     assert(x0.length == 0);
 
 
-    auto x1 = directives("int x = 3;").array;
+    auto x1 = tokenizedDirectives("int x = 3;").array;
 
     assert(x1.length == 0);
 
 
-    auto x2 = directives(q"D
+    auto x2 = tokenizedDirectives(q"D
 int x = 3;
 
 int f()
@@ -510,14 +533,14 @@ D").array;
     assert(x2.length == 0);
 
 
-    auto x3 = directives(q"D
+    auto x3 = tokenizedDirectives(q"D
 #define FOO
 D").array;
 
     assert(x3.length == 1);
 
 
-    auto x4 = directives(q"D
+    auto x4 = tokenizedDirectives(q"D
 #define FOO 0
 
 #define BAR 1
@@ -528,7 +551,7 @@ D").array;
     assert(x4.length == 3);
 
 
-    auto x5 = directives(q"D
+    auto x5 = tokenizedDirectives(q"D
 #if FOO == 0
 
 #elif FOO == 1
@@ -541,7 +564,7 @@ D").array;
     assert(x5.length == 4);
 
 
-    auto x6 = directives(q"D
+    auto x6 = tokenizedDirectives(q"D
 #ifdef FOO
 
 #endif
@@ -554,7 +577,7 @@ D").array;
     assert(x6.length == 4);
 
 
-    auto x7 = directives(q"D
+    auto x7 = tokenizedDirectives(q"D
 #pragma once
 #include <stdio.h>
 #define FOO
@@ -563,7 +586,7 @@ D").array;
     assert(x7.length == 3);
 
 
-    auto x8 = directives(q"D
+    auto x8 = tokenizedDirectives(q"D
 #pragma once
 #line 44
 D").array;
@@ -571,7 +594,7 @@ D").array;
     assert(x8.length == 2);
 
 
-    auto x9 = directives("#pragma once").array;
+    auto x9 = tokenizedDirectives("#pragma once").array;
 
     assert(x9.length == 1);
     assert(x9[0][0].spelling == "#");
@@ -579,7 +602,7 @@ D").array;
     assert(x9[0][2].spelling == "once");
 
 
-    auto x10 = directives(q"D
+    auto x10 = tokenizedDirectives(q"D
 #define FOO 0
 #define BAR 1
 #define BAZ 2
@@ -604,3 +627,279 @@ D").array;
     assert(x10[2][3].spelling == "2");
 }
 
+unittest
+{
+    auto x0 = directives(``);
+
+    assert(x0.length == 0);
+}
+
+unittest
+{
+    auto x0 = directives(`#define FOO`);
+
+    assert(x0.length == 1);
+    assert(cast(MacroDefinition) x0[0]);
+
+    auto foo = cast(MacroDefinition) x0[0];
+
+    assert(foo.spelling == "FOO");
+}
+
+unittest
+{
+    auto x0 = directives(`#pragma once`);
+
+    assert(x0.length == 1);
+    assert(cast(PragmaDirective) x0[0]);
+
+    auto foo = cast(PragmaDirective) x0[0];
+
+    assert(foo.kind == DirectiveKind.pragmaOnce);
+}
+
+// Test parsing of basic conditions.
+unittest
+{
+    auto case0 = directives(`
+    #ifndef FOO
+
+    #endif`);
+
+    assert(case0.length == 2);
+    assert(case0[0].kind == DirectiveKind.ifndef);
+    assert(case0[1].kind == DirectiveKind.endif);
+
+    auto cond0 = cast(ConditionalDirective) case0[0];
+
+    assert(cond0);
+
+    auto unary0 = cast(UnaryExpr) cond0.condition;
+
+    assert(unary0);
+    assert(unary0.operator == "!");
+
+    auto defined0 = cast(DefinedExpr) unary0.subexpr;
+
+    assert(defined0);
+    assert(defined0.identifier == "FOO");
+
+
+    auto case1 = directives(`
+    #ifdef FOO
+
+    #endif`);
+
+    assert(case1.length == 2);
+    assert(cast(ConditionalDirective) case1[0]);
+
+    auto cond1 = cast(ConditionalDirective) case1[0];
+
+    assert(cond1);
+    assert(cond1.condition);
+
+
+    auto case2 = directives(`
+    #if 1
+
+    #endif`);
+
+    assert(case2.length == 2);
+    assert(cast(ConditionalDirective) case2[0]);
+
+    auto cond2 = cast(ConditionalDirective) case2[0];
+
+    assert(cond2);
+    assert(cond2.condition);
+}
+
+// Test parsing of multi-branch directives.
+unittest
+{
+    auto case0 = directives(`
+    #if FOO
+
+    #elif BAR
+
+    #elif BAZ
+
+    #else
+
+    #endif`);
+
+    assert(case0.length == 5);
+
+    assert(case0[0].kind == DirectiveKind.if_);
+    assert(case0[1].kind == DirectiveKind.elif);
+    assert(case0[2].kind == DirectiveKind.elif);
+    assert(case0[3].kind == DirectiveKind.else_);
+    assert(case0[4].kind == DirectiveKind.endif);
+
+    auto cond0 = cast(ConditionalDirective) case0[0];
+    auto cond1 = cast(ConditionalDirective) case0[1];
+    auto cond2 = cast(ConditionalDirective) case0[2];
+
+    assert(cond0);
+    assert(cond1);
+    assert(cond2);
+
+    auto id0 = cast(Identifier) cond0.condition;
+    auto id1 = cast(Identifier) cond1.condition;
+    auto id2 = cast(Identifier) cond2.condition;
+
+    assert(id0);
+    assert(id0.spelling == "FOO");
+    assert(id1);
+    assert(id1.spelling == "BAR");
+    assert(id2);
+    assert(id2.spelling == "BAZ");
+}
+
+// Parse `defined` operator.
+unittest
+{
+    auto case0 = directives(`
+    #if defined FOO
+
+    #endif`);
+
+    auto cond0 = cast(ConditionalDirective) case0[0];
+
+    assert(cond0);
+
+
+    auto case1 = directives(`
+    #if defined(FOO)
+
+    #endif`);
+
+    auto cond1 = cast(ConditionalDirective) case1[0];
+
+    assert(cond1);
+
+    auto expr = cast(DefinedExpr) cond1.condition;
+
+    assert(expr);
+    assert(expr.identifier == "FOO");
+}
+
+// Test if branch pointer are arranged correctly.
+unittest
+{
+    auto case0 = directives(`
+    #if 1
+
+    #endif`);
+
+    auto if0 = cast(ConditionalDirective) case0[0];
+
+    assert(if0);
+    assert(if0.branches.length == 1);
+    assert(if0.endif == case0[1]);
+
+
+    auto case1 = directives(`
+    #if 1
+
+    #else
+
+    #endif`);
+
+    auto if1 = cast(ConditionalDirective) case1[0];
+
+    assert(if1);
+    assert(if1.branches.length == 2);
+    assert(if1.endif == case1[2]);
+
+
+    auto case2 = directives(`
+    #if 1
+
+    #elif defined FOO
+
+    #else
+
+    #endif`);
+
+    auto if2 = cast(ConditionalDirective) case2[0];
+
+    assert(if2);
+    assert(if2.branches.length == 3);
+    assert(if2.branches[0] == case2[0]);
+    assert(if2.branches[1] == case2[1]);
+    assert(if2.branches[2] == case2[2]);
+    assert(if2.endif == case2[3]);
+
+
+    auto case3 = directives(`
+    #if 1
+
+    #elif defined FOO
+
+    #else
+
+    #endif
+
+    #define BAR
+    #undef BAR
+    #define BAZ
+
+    #if 0
+
+    #else
+
+    #endif
+
+    #define FUN(x, y) x + y`);
+
+    assert(case3.length == 11);
+
+    auto if3_0 = cast(ConditionalDirective) case3[0];
+    auto if3_1 = cast(ConditionalDirective) case3[7];
+
+    assert(if3_0);
+    assert(if3_1);
+
+    assert(if3_0.branches.length == 3);
+    assert(if3_1.branches.length == 2);
+
+    assert(if3_0.branches[0] == case3[0]);
+    assert(if3_0.branches[1] == case3[1]);
+    assert(if3_0.branches[2] == case3[2]);
+    assert(if3_0.endif == case3[3]);
+
+    assert(if3_1.branches[0] == case3[7]);
+    assert(if3_1.branches[1] == case3[8]);
+    assert(if3_1.endif == case3[9]);
+
+
+    auto case4 = directives(`
+    #if 1
+
+    #elif defined FOO
+
+        #ifdef BAR
+
+        #else
+
+        #endif
+
+    #else
+
+    #endif`);
+
+
+    assert(case4.length == 7);
+
+    auto if4_0 = cast(ConditionalDirective) case4[0];
+    auto if4_1 = cast(ConditionalDirective) case4[2];
+
+    assert(if4_0.branches[0] == case4[0]);
+    assert(if4_0.branches[1] == case4[1]);
+    assert(if4_0.branches[2] == case4[5]);
+    assert(if4_0.endif == case4[6]);
+
+    assert(if4_1.branches[0] == case4[2]);
+    assert(if4_1.branches[1] == case4[3]);
+    assert(if4_1.endif == case4[4]);
+}

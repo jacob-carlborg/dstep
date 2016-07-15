@@ -22,6 +22,11 @@ struct SourceLocation
         uint offset;
     }
 
+    @property static SourceLocation empty()
+    {
+        return SourceLocation(clang_getNullLocation());
+    }
+
     @property Spelling spelling() const
     {
         Spelling spell;
@@ -42,9 +47,14 @@ struct SourceLocation
 
     @property string path() const
     {
+        return file.name;
+    }
+
+    @property File file() const
+    {
         File file;
         clang_getExpansionLocation(cx, &file.cx, null, null, null);
-        return file.name;
+        return file;
     }
 
     @property uint line() const

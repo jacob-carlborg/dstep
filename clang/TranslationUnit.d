@@ -355,6 +355,11 @@ struct TranslationUnit
         return isFileMultipleIncludeGuarded(spelling);
     }
 
+    TokenRange tokens()
+    {
+        return tokenize(extent(0, cast(uint) source.length));
+    }
+
     string dumpAST(bool skipIncluded = true)
     {
         import std.array : appender;

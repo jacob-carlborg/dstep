@@ -63,7 +63,7 @@ struct Cursor
 
     @property File file () const
     {
-        return location.spelling.file;
+        return location.file;
     }
 
     @property string path () const

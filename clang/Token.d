@@ -49,3 +49,13 @@ struct Token
         return format("Token(kind = %s, spelling = %s)", kind, spelling);
     }
 }
+
+SourceRange extent(Token[] tokens)
+{
+    if (!tokens.empty)
+        return SourceRange(
+            tokens.front.extent.start,
+            tokens.back.extent.end);
+    else
+        return SourceRange.empty;
+}

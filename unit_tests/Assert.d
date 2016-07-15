@@ -65,7 +65,9 @@ void assertTranslatesMacroExpression(
 
     assert(cursor.kind == CXCursorKind.CXCursor_MacroDefinition);
 
-    auto definition = parsePartialMacroDefinition(cursor.tokens, context.typeNames);
+    auto tokens = cursor.tokens;
+
+    auto definition = parsePartialMacroDefinition(tokens, context.typeNames);
 
     Set!string imports;
     string actual = null;
@@ -100,7 +102,9 @@ void assertDoesntParseMacroExpression(
 
     assert(cursor.kind == CXCursorKind.CXCursor_MacroDefinition);
 
-    auto definition = parsePartialMacroDefinition(cursor.tokens, context.typeNames);
+    auto tokens = cursor.tokens;
+
+    auto definition = parsePartialMacroDefinition(tokens, context.typeNames);
 
     if (definition !is null)
         throw new AssertError("Assertion failure", file, line);
