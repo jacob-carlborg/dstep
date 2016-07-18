@@ -927,6 +927,12 @@ class Directive
     {
         return extent.start;
     }
+
+    override string toString()
+    {
+        import std.format : format;
+        return format("Directive(kind = %s)", kind);
+    }
 }
 
 class MacroDefinition : Directive

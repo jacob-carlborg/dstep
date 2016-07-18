@@ -16,6 +16,7 @@ import std.array;
 import std.typecons;
 
 import clang.c.Index;
+import clang.Diagnostic;
 
 import dstep.driver.Application;
 import dstep.translator.CommentIndex;
@@ -94,9 +95,7 @@ TranslationUnit makeTranslationUnit(string source)
     return TranslationUnit.parseString(
         index,
         source,
-        ["-Wno-missing-declarations", "-Iresources"],
-        null,
-        CXTranslationUnit_Flags.CXTranslationUnit_DetailedPreprocessingRecord);
+        ["-Iresources", "-Wno-missing-declarations"]);
 }
 
 CommentIndex makeCommentIndex(string c)
@@ -165,10 +164,15 @@ void assertTranslates(
 
     if (translUnit.numDiagnostics != 0)
     {
-        auto diagnostics = translUnit.diagnosticSet.map!(a => a.toString());
-        string fmt = "\nCannot compile source code. Errors:\n%s\n %s";
-        string message = fmt.format(sep, diagnostics.join("\n"));
-        throw new TranslateAssertError(message, file, line);
+        auto diagnosticSet = translUnit.diagnosticSet;
+
+        if (diagnosticSet.hasError)
+        {
+            auto diagnostics = diagnosticSet.map!(a => a.toString());
+            string fmt = "\nCannot compile source code. Errors:\n%s\n %s";
+            string message = fmt.format(sep, diagnostics.join("\n"));
+            throw new TranslateAssertError(message, file, line);
+        }
     }
 
     auto translated = translate(translUnit, options);

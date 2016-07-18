@@ -103,6 +103,105 @@ D", true);
 
 }
 
+// Test header comment handling in presence of include guard.
+unittest
+{
+    assertTranslates(
+q"C
+/* Header comment. */
+
+#ifndef __FOO
+#define __FOO
+
+/* Comment before variable. */
+int variable;
+
+#endif
+C",
+q"D
+/* Header comment. */
+
+extern (C):
+
+/* Comment before variable. */
+extern __gshared int variable;
+D");
+
+    assertTranslates(
+q"C
+#ifndef __FOO
+#define __FOO
+
+/* Header comment. */
+
+/* Comment before variable. */
+int variable;
+
+#endif
+C",
+q"D
+extern (C):
+
+/* Header comment. */
+
+/* Comment before variable. */
+extern __gshared int variable;
+D");
+
+    assertTranslates(
+q"C
+/* Header
+   comment.
+*/
+
+/* Header comment continued. */
+
+#ifndef __FOO
+#define __FOO
+
+int variable;
+
+#endif
+C",
+q"D
+/* Header
+   comment.
+*/
+
+/* Header comment continued. */
+
+extern (C):
+
+extern __gshared int variable;
+D");
+
+    assertTranslates(
+q"C
+/* Header
+   comment.
+*/
+
+/* Header comment continued. */
+
+#pragma once
+
+int variable;
+
+C",
+q"D
+/* Header
+   comment.
+*/
+
+/* Header comment continued. */
+
+extern (C):
+
+extern __gshared int variable;
+D");
+
+}
+
 // Test translation of comments inside an enum.
 unittest
 {

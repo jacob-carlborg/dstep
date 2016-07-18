@@ -45,8 +45,6 @@ class MacroIndex
 
     this(TranslationUnit translUnit)
     {
-        import std.array : array;
-
         this.translUnit = translUnit;
 
         expansions = new CursorRedBlackTree();
@@ -70,7 +68,7 @@ class MacroIndex
             }
         }
 
-        directives = DirectiveRange(translUnit).array;
+        directives = dstep.translator.Preprocessor.directives(translUnit);
     }
 
     Cursor[] queryExpansion(Cursor cursor) const
@@ -94,5 +92,44 @@ class MacroIndex
             (greater, OpenRight.yes);
 
         return result.data;
+    }
+
+    Tuple!(bool, SourceLocation) includeGuardLocation()
+    {
+        import std.range.primitives : empty;
+
+        bool checkIfndef(ConditionalDirective directives, string identifier)
+        {
+            auto negation = cast (UnaryExpr) directives.condition;
+
+            if (negation && negation.operator == "!")
+            {
+                auto defined = cast (DefinedExpr) negation.subexpr;
+                return defined && defined.identifier == identifier;
+            }
+
+            return false;
+        }
+
+        if (!directives.empty)
+        {
+            if (directives[0].kind == DirectiveKind.pragmaOnce)
+            {
+                return Tuple!(bool, SourceLocation)(true, directives[0].extent.start);
+            }
+            else if (2 <= directives.length)
+            {
+                auto ifndef = cast (ConditionalDirective) directives[0];
+                auto define = cast (MacroDefinition) directives[1];
+                auto endif = directives[$ - 1];
+
+                if (ifndef && define &&
+                    ifndef.endif == endif &&
+                    checkIfndef(ifndef, define.spelling))
+                    return Tuple!(bool, SourceLocation)(true, ifndef.location);
+            }
+        }
+
+        return Tuple!(bool, SourceLocation)(false, SourceLocation.empty);
     }
 }

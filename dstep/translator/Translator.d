@@ -79,9 +79,7 @@ class Translator
                 if (first)
                 {
                     if (result.flushHeaderComment())
-                    {
                         result.separator();
-                    }
 
                     externDeclaration(result);
                     first = false;

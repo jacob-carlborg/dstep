@@ -47,7 +47,7 @@ struct TokenizedDirectiveRange
 
         while (2 < tokens.length &&
             (tokens[1].spelling != "#" ||
-            tokens[0].location.line != tokens[1].location.line - 1 ||
+            tokens[0].location.line >= tokens[1].location.line ||
             !isDirective(tokens[2])))
             tokens.popFront();
 
@@ -155,7 +155,7 @@ TokenizedDirectiveRange tokenizedDirectives(Token[] tokens, string source = null
 
 TokenizedDirectiveRange tokenizedDirectives(string source)
 {
-    return tokenizedDirectives(tokenize(source), source);
+    return tokenizedDirectives(tokenizeNoComments(source), source);
 }
 
 struct DirectiveRange
@@ -902,4 +902,34 @@ unittest
     assert(if4_1.branches[0] == case4[2]);
     assert(if4_1.branches[1] == case4[3]);
     assert(if4_1.endif == case4[4]);
+}
+
+// A case with space between directive and comment.
+unittest
+{
+    auto case1 = tokenizedDirectives(`
+    /* Header comment. */
+
+    #ifndef __FOO
+    #define __FOO
+
+    /* Comment before variable. */
+    int variable;
+
+    #endif`).array;
+
+    assert(case1.length == 3);
+}
+
+// A case with comment after directive.
+unittest
+{
+    auto case0 = tokenizedDirectives(`
+    #ifndef FOO /* Comment. */
+
+    #endif`).array;
+
+    assert(case0.length == 2);
+
+    assert(case0[0].length == 3);
 }

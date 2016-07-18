@@ -125,3 +125,30 @@ struct DiagnosticSet
         return length;
     }
 }
+
+CXDiagnosticSeverity severity(DiagnosticSet diagnostics)
+{
+    import std.algorithm.searching : minPos;
+    import std.algorithm.iteration : map;
+
+    bool less(CXDiagnosticSeverity a, CXDiagnosticSeverity b)
+    {
+        return cast(uint) a > cast(uint) b;
+    }
+
+    if (diagnostics.empty)
+        return CXDiagnosticSeverity.CXDiagnostic_Ignored;
+    else
+        return diagnostics.map!(diagnostic => diagnostic.severity).minPos!less.front;
+}
+
+bool hasError(DiagnosticSet diagnostics)
+{
+    auto severity = diagnostics.severity;
+
+    if (severity == CXDiagnosticSeverity.CXDiagnostic_Error ||
+        severity == CXDiagnosticSeverity.CXDiagnostic_Fatal)
+        return true;
+    else
+        return false;
+}

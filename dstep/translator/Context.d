@@ -49,7 +49,16 @@ class Context
         this.options = options;
 
         if (options.enableComments)
-            commentIndex_ = new CommentIndex(translUnit);
+        {
+            auto location = macroIndex.includeGuardLocation;
+
+            if (location[0])
+                commentIndex_ = new CommentIndex(
+                    translUnit,
+                    location[1]);
+            else
+                commentIndex_ = new CommentIndex(translUnit);
+        }
 
         typedefIndex_ = new TypedefIndex(translUnit);
 
@@ -233,7 +242,6 @@ bool isGlobal(Cursor cursor)
  * The type names are required for the parsing of C code (e.g. macro definition bodies),
  * as C grammar isn't context free.
  */
-
 Cursor[string] collectGlobalTypes(TranslationUnit translUnit)
 {
     void collectGlobalTypes(ref Cursor[string] result, Cursor parent)
