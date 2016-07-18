@@ -33,7 +33,7 @@ enum bool isStringValue(alias T) =
  * and its spelling matches one of the strings passed as Args.
  * It assigns the spelling of the token to the spelling parameter.
  */
-bool accept(Args...)(ref TokenRange tokens, ref string spelling, TokenKind kind)
+bool accept(Args...)(ref Token[] tokens, ref string spelling, TokenKind kind)
     if (Args.length > 0 && allSatisfy!(isStringValue, Args))
 {
     if (!tokens.empty && tokens.front.kind == kind)
@@ -52,7 +52,7 @@ bool accept(Args...)(ref TokenRange tokens, ref string spelling, TokenKind kind)
     return false;
 }
 
-bool accept(ref TokenRange tokens, ref string spelling, TokenKind kind)
+bool accept(ref Token[] tokens, ref string spelling, TokenKind kind)
 {
     if (!tokens.empty && tokens.front.kind == kind)
     {
@@ -64,7 +64,7 @@ bool accept(ref TokenRange tokens, ref string spelling, TokenKind kind)
     return false;
 }
 
-bool accept(Args...)(ref TokenRange tokens, TokenKind kind)
+bool accept(Args...)(ref Token[] tokens, TokenKind kind)
     if (allSatisfy!(isStringValue, Args))
 {
     if (!tokens.empty && tokens.front.kind == kind)
@@ -82,7 +82,7 @@ bool accept(Args...)(ref TokenRange tokens, TokenKind kind)
     return false;
 }
 
-bool accept(Args...)(ref TokenRange tokens, ref string spelling)
+bool accept(Args...)(ref Token[] tokens, ref string spelling)
     if (Args.length > 0 && allSatisfy!(isStringValue, Args))
 {
     if (!tokens.empty)
@@ -101,29 +101,29 @@ bool accept(Args...)(ref TokenRange tokens, ref string spelling)
     return false;
 }
 
-bool acceptPunctuation(Args...)(ref TokenRange tokens, ref string spelling)
+bool acceptPunctuation(Args...)(ref Token[] tokens, ref string spelling)
     if (allSatisfy!(isStringValue, Args))
 {
     return accept!(Args)(tokens, spelling, TokenKind.punctuation);
 }
 
-bool acceptPunctuation(Args...)(ref TokenRange tokens)
+bool acceptPunctuation(Args...)(ref Token[] tokens)
     if (allSatisfy!(isStringValue, Args))
 {
     return accept!(Args)(tokens, TokenKind.punctuation);
 }
 
-bool acceptIdentifier(ref TokenRange tokens, ref string spelling)
+bool acceptIdentifier(ref Token[] tokens, ref string spelling)
 {
     return accept(tokens, spelling, TokenKind.identifier);
 }
 
-bool acceptKeyword(ref TokenRange tokens, ref string spelling)
+bool acceptKeyword(ref Token[] tokens, ref string spelling)
 {
     return accept(tokens, spelling, TokenKind.keyword);
 }
 
-bool acceptStringLiteral(ref TokenRange tokens, ref string spelling)
+bool acceptStringLiteral(ref Token[] tokens, ref string spelling)
 {
     import std.string : startsWith, endsWith;
 
@@ -142,7 +142,7 @@ bool acceptStringLiteral(ref TokenRange tokens, ref string spelling)
 }
 
 Expression parseLeftAssoc(ResultExpr, alias parseChild, Ops...)(
-    ref TokenRange tokens,
+    ref Token[] tokens,
     Cursor[string] table)
     if (allSatisfy!(isStringValue, Ops))
 {
@@ -919,7 +919,7 @@ class MacroDefinition
     }
 }
 
-Expression parseStringConcat(ref TokenRange tokens)
+Expression parseStringConcat(ref Token[] tokens)
 {
     import std.array;
 
@@ -959,7 +959,7 @@ Expression parseStringConcat(ref TokenRange tokens)
     return new StringConcat(substrings);
 }
 
-Expression parsePrimaryExpr(ref TokenRange tokens, Cursor[string] table)
+Expression parsePrimaryExpr(ref Token[] tokens, Cursor[string] table)
 {
     string spelling;
 
@@ -998,7 +998,7 @@ Expression parsePrimaryExpr(ref TokenRange tokens, Cursor[string] table)
     return new SubExpr(subexpr);
 }
 
-Expression[] parseArgsList(ref TokenRange tokens, Cursor[string] table)
+Expression[] parseArgsList(ref Token[] tokens, Cursor[string] table)
 {
     auto local = tokens;
 
@@ -1029,7 +1029,7 @@ Expression[] parseArgsList(ref TokenRange tokens, Cursor[string] table)
     return exprs;
 }
 
-Expression parsePostfixExp(ref TokenRange tokens, Cursor[string] table)
+Expression parsePostfixExp(ref Token[] tokens, Cursor[string] table)
 {
     auto local = tokens;
 
@@ -1115,7 +1115,7 @@ Expression parsePostfixExp(ref TokenRange tokens, Cursor[string] table)
     return expr;
 }
 
-Expression parseSizeofType(ref TokenRange tokens, Cursor[string] table)
+Expression parseSizeofType(ref Token[] tokens, Cursor[string] table)
 {
     auto local = tokens;
 
@@ -1135,7 +1135,7 @@ Expression parseSizeofType(ref TokenRange tokens, Cursor[string] table)
     return null;
 }
 
-Expression parseUnaryExpr(ref TokenRange tokens, Cursor[string] table)
+Expression parseUnaryExpr(ref Token[] tokens, Cursor[string] table)
 {
     auto local = tokens;
 
@@ -1192,7 +1192,7 @@ Expression parseUnaryExpr(ref TokenRange tokens, Cursor[string] table)
     return parsePostfixExp(tokens, table);
 }
 
-Expression parseCastExpr(ref TokenRange tokens, Cursor[string] table)
+Expression parseCastExpr(ref Token[] tokens, Cursor[string] table)
 {
     auto local = tokens;
 
@@ -1232,7 +1232,7 @@ alias parseOrExpr = parseLeftAssoc!(OrExpr, parseXorExpr, "|");
 alias parseLogicalAndExpr = parseLeftAssoc!(LogicalAndExpr, parseOrExpr, "&&");
 alias parseLogicalOrExpr = parseLeftAssoc!(LogicalOrExpr, parseLogicalAndExpr, "||");
 
-Expression parseCondExpr(ref TokenRange tokens, Cursor[string] table)
+Expression parseCondExpr(ref Token[] tokens, Cursor[string] table)
 {
     auto local = tokens;
 
@@ -1267,7 +1267,7 @@ Expression parseCondExpr(ref TokenRange tokens, Cursor[string] table)
     return expr;
 }
 
-bool parseBasicSpecifier(ref TokenRange tokens, ref string spelling, Cursor[string] table)
+bool parseBasicSpecifier(ref Token[] tokens, ref string spelling, Cursor[string] table)
 {
     import std.meta : AliasSeq;
 
@@ -1289,7 +1289,7 @@ bool parseBasicSpecifier(ref TokenRange tokens, ref string spelling, Cursor[stri
     return accept!(specifiers)(tokens, spelling);
 }
 
-bool parseRecordSpecifier(ref TokenRange tokens, ref Type type, Cursor[string] table)
+bool parseRecordSpecifier(ref Token[] tokens, ref Type type, Cursor[string] table)
 {
     auto local = tokens;
     string spelling;
@@ -1310,7 +1310,7 @@ bool parseRecordSpecifier(ref TokenRange tokens, ref Type type, Cursor[string] t
     return false;
 }
 
-bool parseEnumSpecifier(ref TokenRange tokens, ref Type type, Cursor[string] table)
+bool parseEnumSpecifier(ref Token[] tokens, ref Type type, Cursor[string] table)
 {
     auto local = tokens;
     string spelling;
@@ -1330,7 +1330,7 @@ bool parseEnumSpecifier(ref TokenRange tokens, ref Type type, Cursor[string] tab
     return false;
 }
 
-bool parseTypedefName(ref TokenRange tokens, ref Type type, Cursor[string] table)
+bool parseTypedefName(ref Token[] tokens, ref Type type, Cursor[string] table)
 {
     auto local = tokens;
     string spelling;
@@ -1350,14 +1350,14 @@ bool parseTypedefName(ref TokenRange tokens, ref Type type, Cursor[string] table
     return false;
 }
 
-bool parseComplexSpecifier(ref TokenRange tokens, ref Type type, Cursor[string] table)
+bool parseComplexSpecifier(ref Token[] tokens, ref Type type, Cursor[string] table)
 {
     return parseRecordSpecifier(tokens, type, table) ||
         parseEnumSpecifier(tokens, type, table) ||
         parseTypedefName(tokens, type, table);
 }
 
-bool parseTypeQualifier(ref TokenRange tokens, ref string spelling)
+bool parseTypeQualifier(ref Token[] tokens, ref string spelling)
 {
     import std.meta : AliasSeq;
 
@@ -1370,7 +1370,7 @@ bool parseTypeQualifier(ref TokenRange tokens, ref string spelling)
 }
 
 bool parseSpecifierQualifierList(
-    ref TokenRange tokens,
+    ref Token[] tokens,
     ref Type type,
     Cursor[string] table)
 {
@@ -1441,7 +1441,7 @@ bool parseSpecifierQualifierList(
 }
 
 bool parseQualifierList(
-    ref TokenRange tokens,
+    ref Token[] tokens,
     ref Type type)
 {
     auto local = tokens;
@@ -1615,7 +1615,7 @@ bool basicSpecifierListToType(ref Type type, Set!string specifiers)
     return false;
 }
 
-bool parsePointer(ref TokenRange tokens, ref Type type)
+bool parsePointer(ref Token[] tokens, ref Type type)
 {
     if (acceptPunctuation!("*")(tokens))
     {
@@ -1635,12 +1635,12 @@ bool parsePointer(ref TokenRange tokens, ref Type type)
     }
 }
 
-bool parseAbstractDeclarator(ref TokenRange tokens, ref Type type, Cursor[string] table)
+bool parseAbstractDeclarator(ref Token[] tokens, ref Type type, Cursor[string] table)
 {
     return parsePointer(tokens, type);
 }
 
-Type parseTypeName(ref TokenRange tokens, Cursor[string] table)
+Type parseTypeName(ref Token[] tokens, Cursor[string] table)
 {
     auto local = tokens;
 
@@ -1656,12 +1656,12 @@ Type parseTypeName(ref TokenRange tokens, Cursor[string] table)
     return type;
 }
 
-Expression parseExpr(ref TokenRange tokens, Cursor[string] table)
+Expression parseExpr(ref Token[] tokens, Cursor[string] table)
 {
     return parseCondExpr(tokens, table);
 }
 
-string[] parseMacroParams(ref TokenRange tokens)
+string[] parseMacroParams(ref Token[] tokens)
 {
     auto local = tokens;
 
@@ -1687,7 +1687,7 @@ string[] parseMacroParams(ref TokenRange tokens)
     return params;
 }
 
-MacroDefinition parseMacroDefinition(TokenRange tokens, Cursor[string] table)
+MacroDefinition parseMacroDefinition(Token[] tokens, Cursor[string] table)
 {
     auto local = tokens;
 
@@ -1705,7 +1705,7 @@ MacroDefinition parseMacroDefinition(TokenRange tokens, Cursor[string] table)
     return result;
 }
 
-MacroDefinition parsePartialMacroDefinition(TokenRange tokens, Cursor[string] table)
+MacroDefinition parsePartialMacroDefinition(Token[] tokens, Cursor[string] table)
 {
     auto local = tokens;
 

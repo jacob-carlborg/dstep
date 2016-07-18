@@ -245,17 +245,104 @@ struct TranslationUnit
         return relativeLocationAccessorImpl(cursor.all);
     }
 
-    TokenRange tokenize(SourceRange extent)
+    private struct TokenRange
     {
-        import std.algorithm.mutation : stripRight;
+        CXTranslationUnit cx;
+        CXToken* tokens;
+        uint numTokens;
+        uint currentToken;
 
-        CXToken* tokens = null;
-        uint numTokens = 0;
-        clang_tokenize(cx, extent.cx, &tokens, &numTokens);
-        auto result = TokenRange(cx, tokens, numTokens);
+        Token makeToken(CXToken token)
+        {
+            return Token(
+                clang_getTokenKind(token).toD,
+                clang_getTokenSpelling(cx, token).toD,
+                SourceRange(clang_getTokenExtent(cx, token)));
+        }
+
+        Token front()
+        {
+            return makeToken(tokens[currentToken]);
+        }
+
+        bool empty()
+        {
+            return numTokens == 0 || numTokens == currentToken;
+        }
+
+        void popFront()
+        {
+            currentToken++;
+        }
+
+        void dispose()
+        {
+            clang_disposeTokens(cx, tokens, numTokens);
+        }
+    }
+
+    private static TokenRange tokenizeImpl(CXTranslationUnit cx, SourceRange extent)
+    {
+        auto range = TokenRange(cx);
+        clang_tokenize(cx, extent.cx, &range.tokens, &range.numTokens);
+        return range;
+    }
+
+    package static Token[] tokenize(CXTranslationUnit cx, SourceRange extent)
+    {
+        import std.array : array;
+        import std.algorithm : stripRight;
+
+        auto range = tokenizeImpl(cx, extent);
+        auto tokens = range.array;
+        range.dispose();
 
         // For some reason libclang returns some tokens out of cursors extent.cursor
-        return result.stripRight!(token => !intersects(extent, token.extent));
+        return tokens.stripRight!(token => !intersects(extent, token.extent));
+    }
+
+    package static Token[] tokenizeNoComments(CXTranslationUnit cx, SourceRange extent)
+    {
+        import std.array : array;
+        import std.algorithm : filter, stripRight;
+
+        auto range = tokenizeImpl(cx, extent);
+        auto tokens = range.filter!(e => e.kind != TokenKind.comment).array;
+        range.dispose();
+
+        // For some reason libclang returns some tokens out of cursors extent.cursor
+        return tokens.stripRight!(token => !intersects(extent, token.extent));
+    }
+
+    Token[] tokenize(SourceRange extent)
+    {
+        return tokenize(cx, extent);
+    }
+
+    Token[] tokenizeNoComments(SourceRange extent)
+    {
+        return tokenizeNoComments(cx, extent);
+    }
+
+    Token[] tokens()
+    {
+        return tokenize(extent(0, cast(uint) source.length));
+    }
+
+    Token[] tokensNoComments()
+    {
+        return tokenizeNoComments(extent(0, cast(uint) source.length));
+    }
+
+    bool isFileMultipleIncludeGuarded(string path)
+    {
+        auto file = clang_getFile(cx, path.toStringz);
+        return clang_isFileMultipleIncludeGuarded(cx, file) != 0;
+    }
+
+    bool isMultipleIncludeGuarded()
+    {
+        return isFileMultipleIncludeGuarded(spelling);
     }
 
     string dumpAST(bool skipIncluded = true)
@@ -310,9 +397,17 @@ struct DiagnosticVisitor
     }
 }
 
-TokenRange tokenize(string source)
+Token[] tokenize(string source)
 {
     Index index = Index(false, false);
     auto translUnit = TranslationUnit.parseString(index, source);
     return translUnit.tokenize(translUnit.extent(0, cast(uint) source.length));
+}
+
+Token[] tokenizeNoComments(string source)
+{
+    Index index = Index(false, false);
+    auto translUnit = TranslationUnit.parseString(index, source);
+    return translUnit.tokenizeNoComments(
+        translUnit.extent(0, cast(uint) source.length));
 }

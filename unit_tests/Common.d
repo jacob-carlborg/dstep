@@ -109,13 +109,13 @@ MacroDefinition parseMacroDefinition(string source)
 {
     import dstep.translator.MacroDefinition : parseMacroDefinition;
 
-    TokenRange tokenize(string source)
+    Token[] tokenize(string source)
     {
         auto translUnit = makeTranslationUnit(source);
         return translUnit.tokenize(translUnit.extent(0, cast(uint) source.length));
     }
 
-    TokenRange tokens = tokenize(source);
+    Token[] tokens = tokenize(source);
 
     Cursor[string] dummy;
 
@@ -334,12 +334,12 @@ void assertRunsDStep(
     string[] outputPaths;
 
     if (filesPaths.length == 1)
-        outputPaths ~= buildPath(outputDir, 
+        outputPaths ~= buildPath(outputDir,
             Application.defaultOutputFilename(filesPaths[0][0], false));
     else
     {
         foreach (Tuple!(string, string) filesPath; filesPaths)
-            outputPaths ~= buildPath(outputDir, 
+            outputPaths ~= buildPath(outputDir,
                 Application.defaultOutputFilename(filesPath[0], false));
     }
 
