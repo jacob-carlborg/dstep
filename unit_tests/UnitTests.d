@@ -432,6 +432,8 @@ extern (C):
 extern __gshared int a;
 D", options);
 
+}
+
 // Translate function pointer type with unnamed parameter.
 unittest
 {
@@ -460,6 +462,19 @@ extern (C):
 
 extern __gshared size_t foo;
 extern __gshared ptrdiff_t bar;
+D");
+
+}
+
+// Translate array typedef.
+unittest
+{
+    assertTranslates(q"C
+typedef double foo[2];
+C", q"D
+extern (C):
+
+alias double[2] foo;
 D");
 
 }

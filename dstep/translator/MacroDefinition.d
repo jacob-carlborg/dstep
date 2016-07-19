@@ -1855,7 +1855,7 @@ Expression parseExpr(ref Token[] tokens, Cursor[string] table, bool defined)
     if (auto expr = parseTokenConcat(tokens))
         return expr;
 
-    if (auto expr = parseCondExpr(tokens, table))
+    if (auto expr = parseCondExpr(tokens, table, defined))
         return expr;
 
     return null;
