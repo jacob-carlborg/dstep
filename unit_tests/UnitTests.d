@@ -600,6 +600,37 @@ D");
             "#include <wchar.h>\n\nwchar_t x;\n",
             "extern (C):\n\nextern __gshared dchar x;\n", options);
     }
+
+}
+
+// Keep vertical space between structures in presence of preprocessor directive
+// followed by comment between them.
+unittest
+{
+    assertTranslates(q"C
+struct foo {
+     int field;
+};
+
+#include <stddef.h> /* comment */
+struct bar {
+     ptrdiff_t n;
+};
+C", q"D
+extern (C):
+
+struct foo
+{
+    int field;
+}
+
+/* comment */
+struct bar
+{
+    ptrdiff_t n;
+}
+D");
+
 }
 
 // Test translation of the function with no argument list.
