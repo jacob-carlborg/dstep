@@ -70,12 +70,14 @@ void assertTranslatesMacroExpression(
     auto definition = parsePartialMacroDefinition(tokens, context.typeNames);
 
     Set!string imports;
+    Set!string params;
+
     string actual = null;
 
     if (definition !is null)
     {
         if (definition.expr !is null)
-            actual = definition.expr.debraced.translate(context, imports);
+            actual = definition.expr.debraced.translate(context, params, imports);
     }
 
     assertEq(expected, actual, false, file, line);
