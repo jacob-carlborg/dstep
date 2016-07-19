@@ -432,6 +432,17 @@ extern (C):
 extern __gshared int a;
 D", options);
 
+// Translate function pointer type with unnamed parameter.
+unittest
+{
+    assertTranslates(q"C
+typedef int (*read_char)(void *);
+C", q"D
+extern (C):
+
+alias int function (void*) read_char;
+D");
+
 }
 
 // Translate size types as size types.
