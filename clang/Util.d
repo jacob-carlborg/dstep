@@ -13,7 +13,7 @@ import mambo.core._;
 
 import clang.c.Index;
 
-immutable(char*)* strToCArray (string[] arr)
+immutable(char*)* strToCArray (const string[] arr)
 {
     if (!arr)
         return null;

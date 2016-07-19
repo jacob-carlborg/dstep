@@ -23,7 +23,7 @@
     "configurations": [
         {
             "name": "default",
-            "mainSourceFile": "dstep/driver/DStep.d",
+            "mainSourceFile": "dstep/main.d",
             "targetName": "dstep",
             "sourcePaths": ["dstep", "clang"],
             "importPaths": ["dstep", "clang"],

@@ -23,6 +23,7 @@ import dstep.translator.IncludeHandler;
 import dstep.translator.MacroDefinition;
 import dstep.translator.Output;
 import dstep.translator.Translator;
+import dstep.Configuration;
 
 public import clang.Compiler;
 public import clang.Cursor;
