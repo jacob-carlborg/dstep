@@ -20,4 +20,4 @@ struct Bar
 
 extern __gshared const(char)* q;
 
-extern __gshared int function (int, int) e;
+extern __gshared int function (int a, int b) e;

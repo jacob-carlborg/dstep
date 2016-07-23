@@ -3585,7 +3585,7 @@ enum CXChildVisitResult
  * The visitor should return one of the \c CXChildVisitResult values
  * to direct clang_visitCursorChildren().
  */
-alias CXChildVisitResult function (, , void*) CXCursorVisitor;
+alias CXChildVisitResult function (CXCursor cursor, CXCursor parent, CXClientData client_data) CXCursorVisitor;
 
 /**
  * \brief Visit the children of a particular cursor.
@@ -5083,7 +5083,7 @@ void clang_toggleCrashRecovery (uint isEnabled);
  * array is sorted in order of immediate inclusion.  For example,
  * the first element refers to the location that included 'included_file'.
  */
-alias void function (void*, *, uint, void*) CXInclusionVisitor;
+alias void function (CXFile included_file, CXSourceLocation* inclusion_stack, uint include_len, CXClientData client_data) CXInclusionVisitor;
 
 /**
  * \brief Visit the set of preprocessor inclusions in a translation unit.
@@ -5176,7 +5176,7 @@ enum CXVisitorResult
 struct CXCursorAndRangeVisitor
 {
     void* context;
-    CXVisitorResult function (void*, CXCursor, CXSourceRange) visit;
+    CXVisitorResult function (void* context, CXCursor, CXSourceRange) visit;
 }
 
 enum CXResult
@@ -5567,19 +5567,19 @@ struct IndexerCallbacks
      * \brief Called periodically to check whether indexing should be aborted.
      * Should return 0 to continue, and non-zero to abort.
      */
-    int function (CXClientData, void*) abortQuery;
+    int function (CXClientData client_data, void* reserved) abortQuery;
 
     /**
      * \brief Called at the end of indexing; passes the complete diagnostic set.
      */
-    void function (CXClientData, CXDiagnosticSet, void*) diagnostic;
+    void function (CXClientData client_data, CXDiagnosticSet, void* reserved) diagnostic;
 
-    CXIdxClientFile function (CXClientData, CXFile, void*) enteredMainFile;
+    CXIdxClientFile function (CXClientData client_data, CXFile mainFile, void* reserved) enteredMainFile;
 
     /**
      * \brief Called when a file gets \#included/\#imported.
      */
-    CXIdxClientFile function (CXClientData, const(CXIdxIncludedFileInfo)*) ppIncludedFile;
+    CXIdxClientFile function (CXClientData client_data, const(CXIdxIncludedFileInfo)*) ppIncludedFile;
 
     /**
      * \brief Called when a AST file (PCH or module) gets imported.
@@ -5589,19 +5589,19 @@ struct IndexerCallbacks
      * file is not already indexed, to initiate a new indexing job specific to
      * the AST file.
      */
-    CXIdxClientASTFile function (CXClientData, const(CXIdxImportedASTFileInfo)*) importedASTFile;
+    CXIdxClientASTFile function (CXClientData client_data, const(CXIdxImportedASTFileInfo)*) importedASTFile;
 
     /**
      * \brief Called at the beginning of indexing a translation unit.
      */
-    CXIdxClientContainer function (CXClientData, void*) startedTranslationUnit;
+    CXIdxClientContainer function (CXClientData client_data, void* reserved) startedTranslationUnit;
 
-    void function (CXClientData, const(CXIdxDeclInfo)*) indexDeclaration;
+    void function (CXClientData client_data, const(CXIdxDeclInfo)*) indexDeclaration;
 
     /**
      * \brief Called to index a reference of an entity.
      */
-    void function (CXClientData, const(CXIdxEntityRefInfo)*) indexEntityReference;
+    void function (CXClientData client_data, const(CXIdxEntityRefInfo)*) indexEntityReference;
 }
 
 int clang_index_isEntityObjCContainerKind (CXIdxEntityKind);
@@ -5820,7 +5820,7 @@ CXSourceLocation clang_indexLoc_getCXSourceLocation (CXIdxLoc loc);
  * The visitor should return one of the \c CXVisitorResult values
  * to direct \c clang_Type_visitFields.
  */
-alias CXVisitorResult function (, void*) CXFieldVisitor;
+alias CXVisitorResult function (CXCursor C, CXClientData client_data) CXFieldVisitor;
 
 /**
  * \brief Visit the fields of a particular type.
