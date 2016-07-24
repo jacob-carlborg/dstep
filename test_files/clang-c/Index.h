@@ -3594,7 +3594,7 @@ CINDEX_LINKAGE unsigned clang_visitChildren(CXCursor parent,
                                             CXCursorVisitor visitor,
                                             CXClientData client_data);
 #ifdef __has_feature
-#  if __has_feature(blocks)
+#  if 0 && __has_feature(blocks)
 /**
  * \brief Visitor invoked for each cursor found by a traversal.
  *
@@ -5206,7 +5206,7 @@ CINDEX_LINKAGE CXResult clang_findIncludesInFile(CXTranslationUnit TU,
                                               CXCursorAndRangeVisitor visitor);
 
 #ifdef __has_feature
-#  if __has_feature(blocks)
+#  if 0 && __has_feature(blocks)
 
 typedef enum CXVisitorResult
     (^CXCursorAndRangeVisitorBlock)(CXCursor, CXSourceRange);

@@ -116,7 +116,7 @@ string mismatchRegion(
         result.put(prefix);
         result.put("\n");
 
-        for (size_t i = 0; i < q; ++i)
+        foreach (i; 0 .. q)
         {
             result.put(to!string(l + i));
             result.put(": ");
@@ -136,7 +136,7 @@ string mismatchRegion(
         result.put(interfix);
         result.put("\n");
 
-        for (size_t i = 0; i < q; ++i)
+        foreach (i; 0 .. q)
         {
             result.put(to!string(l + i));
             result.put(": ");
@@ -197,7 +197,7 @@ unittest
         {
             auto templ = "\nExpected:\n%s\nActual:\n%s\n";
 
-            string message = templ.format(expected, actual);
+            string message = format(templ, expected, actual);
 
             throw new AssertError(message, file, line);
         }
@@ -282,7 +282,8 @@ void assertEq(
         }
 
         auto templ = "\nExpected:\n%s\nActual:\n%s\n";
-        string message = templ.format(
+        string message = format(
+            templ,
             showWhitespaces(expected),
             showWhitespaces(actual));
         throw new AssertError(message, file, line);
@@ -394,7 +395,7 @@ void assertTranslates(
         }
     }
 
-    auto translated = translate(unit, options);
+    auto translated = translate(translUnit, options);
     auto mismatch = mismatchRegionTranslated(translated, expected, 5, strict);
 
     if (mismatch)
@@ -550,12 +551,12 @@ void assertRunsDStep(
 
     if (filesPaths.length == 1)
         outputPaths ~= buildPath(outputDir,
-            Application.defaultOutputFilename(filesPaths[0][0], false));
+            Application.defaultOutputFilename(filesPaths[0].expected, false));
     else
     {
-        foreach (Tuple!(string, string) filesPath; filesPaths)
+        foreach (filesPath; filesPaths)
             outputPaths ~= buildPath(outputDir,
-                Application.defaultOutputFilename(filesPath[0], false));
+                Application.defaultOutputFilename(filesPath.expected, false));
     }
 
     scope(exit) rmdirRecurse(outputDir);

@@ -16,6 +16,7 @@
 * Multiple input files can be processed in different threads.
 * Extend a functionality that automatically replaces aliases to basic types with their D equivalents.
 * Add a switch `dont-reduce-aliases` which disables the above functionality.
+* Add the `libclang` bindings as a test case.
 
 ### Bugs fixed
 Issue #2: Self alias should be removed bug.

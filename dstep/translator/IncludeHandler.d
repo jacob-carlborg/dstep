@@ -53,6 +53,7 @@ class IncludeHandler
             "string" : "core.stdc.string",
             "tgmath" : "core.stdc.tgmath",
             "time" : "core.stdc.time",
+            "_time_t" : "core.stdc.time",
             "wchar" : "core.stdc.wchar_",
             "wctype" : "core.stdc.wctype",
 

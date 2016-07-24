@@ -42,7 +42,7 @@ unittest
         TestFile("test_files/clang-c/Documentation.d", "test_files/clang-c/Documentation.h"),
         TestFile("test_files/clang-c/Index.d", "test_files/clang-c/Index.h"),
         TestFile("test_files/clang-c/Platform.d", "test_files/clang-c/Platform.h")],
-        ["-Itest_files", "--package", "clang.c"]);
+        ["-Itest_files", "--public-submodules", "--package", "clang.c"]);
 
     assertRunsDStepObjCFile(
         "test_files/objc/methods.d",
