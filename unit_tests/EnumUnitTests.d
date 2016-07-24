@@ -82,7 +82,6 @@ enum Qux
 }
 
 extern __gshared Qux qux;
-
 D");
 
 }
@@ -244,7 +243,6 @@ struct Struct
         BAZ = 2
     }
 }
-
 D");
 
 }
