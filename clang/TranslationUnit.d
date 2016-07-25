@@ -28,7 +28,7 @@ struct TranslationUnit
     static TranslationUnit parse (
         Index index,
         string sourceFilename,
-        string[] commandLineArgs = ["-Wno-missing-declarations"],
+        const string[] commandLineArgs = ["-Wno-missing-declarations"],
         CXUnsavedFile[] unsavedFiles = null,
         uint options = CXTranslationUnit_Flags.CXTranslationUnit_DetailedPreprocessingRecord)
     {

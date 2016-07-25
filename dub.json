@@ -11,6 +11,7 @@
 
     "buildRequirements": ["silenceWarnings"],
     "stringImportPaths": ["resources"],
+    "preGenerateCommands": ["git describe --tags > resources/VERSION"],
     "lflags-osx": ["-macosx_version_min", "10.6", "-lcrt1.10.6.o"],
 
     "buildTypes": {
@@ -23,7 +24,7 @@
     "configurations": [
         {
             "name": "default",
-            "mainSourceFile": "dstep/driver/DStep.d",
+            "mainSourceFile": "dstep/main.d",
             "targetName": "dstep",
             "sourcePaths": ["dstep", "clang"],
             "importPaths": ["dstep", "clang"],

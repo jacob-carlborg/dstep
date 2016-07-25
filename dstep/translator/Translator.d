@@ -19,6 +19,8 @@ import clang.TranslationUnit;
 import clang.Type;
 import clang.Util;
 
+import dstep.Configuration;
+
 import dstep.translator.Context;
 import dstep.translator.Declaration;
 import dstep.translator.Enum;
