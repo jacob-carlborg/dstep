@@ -17,6 +17,7 @@ import std.typecons;
 
 import clang.c.Index;
 
+import dstep.driver.Application;
 import dstep.translator.CommentIndex;
 import dstep.translator.Context;
 import dstep.translator.IncludeHandler;
@@ -333,13 +334,13 @@ void assertRunsDStep(
     string[] outputPaths;
 
     if (filesPaths.length == 1)
-        outputPaths ~= buildPath(outputDir, baseName(filesPaths[0][0]));
+        outputPaths ~= buildPath(outputDir, 
+            Application.defaultOutputFilename(filesPaths[0][0], false));
     else
     {
         foreach (Tuple!(string, string) filesPath; filesPaths)
-        {
-            outputPaths ~= buildPath(outputDir, baseName(filesPath[0]));
-        }
+            outputPaths ~= buildPath(outputDir, 
+                Application.defaultOutputFilename(filesPath[0], false));
     }
 
     scope(exit) rmdirRecurse(outputDir);

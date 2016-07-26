@@ -93,10 +93,11 @@ class Application
             .startConversion();
     }
 
-    string defaultOutputFilename (string inputFile, bool useBaseName = true)
+    static string defaultOutputFilename (string inputFile, bool useBaseName = true)
     {
         if (useBaseName)
             return Path.setExtension(Path.baseName(inputFile), "d");
+
         return Path.setExtension(inputFile, "d");
     }
 }
@@ -115,7 +116,9 @@ private struct ParseFile
         Compiler compiler;
     }
 
-    this (const Configuration config, string inputFile,
+    this (
+        const Configuration config, 
+        string inputFile,
         string outputFile)
     {
         this.config = config;
@@ -140,10 +143,16 @@ private struct ParseFile
 
         if (handleDiagnostics && exists(inputFile))
         {
+            import std.array : array;
+
             Options options;
-            options.outputFile = outputFile;
+            options.inputFiles = config.inputFiles.map!(path => path.asAbsNormPath).array;
+            options.inputFile = inputFile.asAbsNormPath;
+            options.outputFile = outputFile.asAbsNormPath;
             options.language = config.language;
             options.enableComments = !config.noComments;
+            options.packageName = config.packageName;
+            options.publicSubmodules = config.publicSubmodules;
 
             auto translator = new Translator(translationUnit, options);
             translator.translate;
