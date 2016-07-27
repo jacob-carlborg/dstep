@@ -8,8 +8,6 @@ module clang.TranslationUnit;
 
 import std.string;
 
-import mambo.core.io;
-
 import clang.c.Index;
 import clang.Cursor;
 import clang.Diagnostic;

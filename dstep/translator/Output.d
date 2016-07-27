@@ -9,10 +9,6 @@ module dstep.translator.Output;
 import std.array;
 import std.typecons;
 
-import tango.util.container.HashSet;
-
-import mambo.core._;
-
 import clang.Cursor;
 import clang.SourceLocation;
 import clang.SourceRange;
@@ -1021,7 +1017,7 @@ class StructData
 
         Output output = new Output();
 
-        if (name.isPresent)
+        if (name.length)
             name = ' ' ~ name;
 
         if (isFwdDeclaration)
@@ -1062,25 +1058,26 @@ class ClassData : StructData
     string superclass;
     string[] interfaces;
 
-    HashSet!(string) propertyList;
+    Set!string propertyList;
 
     private Set!string mangledMethods;
 
     this (Context context)
     {
         super(context);
-        propertyList = new HashSet!(string);
     }
 
     string getMethodName (FunctionCursor func, string name = "", bool translateIdentifier = true)
     {
+        import std.range : empty;
+
         auto mangledName = mangle(func, name);
         auto selector = func.spelling;
 
         if (!(mangledName in mangledMethods))
         {
             mangledMethods.add(mangledName);
-            name = name.isBlank ? selector : name;
+            name = name.empty ? selector : name;
             return translateSelector(name, false, translateIdentifier);
         }
 
@@ -1089,8 +1086,9 @@ class ClassData : StructData
 
     private string mangle (FunctionCursor func, string name)
     {
+        import std.range : empty;
         auto selector = func.spelling;
-        name = name.isBlank ? translateSelector(selector) : name;
+        name = name.empty ? translateSelector(selector) : name;
         auto mangledName = name;
 
         foreach (param ; func.parameters)
@@ -1112,7 +1110,7 @@ class ClassData : StructData
             type,
             name);
 
-        if (superclass.any)
+        if (superclass.length)
         {
             header.put(" : ");
             header.put(superclass);
@@ -1138,9 +1136,11 @@ private:
 
     void writeInterfaces (ref Appender!string header)
     {
-        if (interfaces.any)
+        import std.range : empty;
+
+        if (interfaces.length)
         {
-            if (superclass.isEmpty)
+            if (superclass.empty)
                 header.put(" : ");
 
             foreach (i, s ; interfaces)

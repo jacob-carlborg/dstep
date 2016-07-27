@@ -9,8 +9,6 @@ module clang.Compiler;
 import std.path;
 import std.typetuple : staticMap;
 
-import mambo.core._;
-
 import clang.c.Index;
 
 struct Compiler
@@ -47,10 +45,14 @@ struct Compiler
 
     CXUnsavedFile[] extraHeaders ()
     {
+        import std.algorithm : map;
+        import std.array;
+        import std.string : toStringz;
+
         return internalHeaders.map!((e) {
             auto path = buildPath(virtualPath, e.filename);
             return CXUnsavedFile(path.toStringz, e.content.ptr, e.content.length);
-        }).toArray;
+        }).array();
     }
 
 private:
@@ -58,10 +60,11 @@ private:
     string virtualPath ()
     {
         import std.random;
+        import std.conv;
 
-        if (virtualPath_.any)
+        if (virtualPath_.length)
             return virtualPath_;
 
-        return virtualPath_ = buildPath(root, uniform(1, 10_000_000).toString);
+        return virtualPath_ = buildPath(root, uniform(1, 10_000_000).to!string);
     }
 }

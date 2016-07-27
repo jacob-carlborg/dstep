@@ -8,13 +8,14 @@ module clang.Util;
 
 import std.conv;
 import std.stdio;
-
-import mambo.core._;
+import std.format;
 
 import clang.c.Index;
 
 immutable(char*)* strToCArray (const string[] arr)
 {
+    import std.string : toStringz;
+
     if (!arr)
         return null;
 

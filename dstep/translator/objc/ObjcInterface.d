@@ -6,8 +6,6 @@
  */
 module dstep.translator.objc.ObjcInterface;
 
-import mambo.core._;
-
 import clang.c.Index;
 import clang.Cursor;
 import clang.Type;
@@ -18,6 +16,9 @@ import dstep.translator.Translator;
 import dstep.translator.Declaration;
 import dstep.translator.Output;
 import dstep.translator.Type;
+
+import std.string;
+import std.exception : assumeUnique;
 
 class ObjcInterface (Data) : Declaration
 {
@@ -86,7 +87,7 @@ private:
         currentClass.name = translateIdentifier(name);
         currentClass.interfaces = interfaces;
 
-        if (superClassName.isPresent)
+        if (superClassName.length)
             currentClass.superclass ~= translateIdentifier(superClassName);
 
         dg();
@@ -180,7 +181,7 @@ private:
             translateIdentifier(name),
             translateType(translator.context, cursor, type));
 
-        if (parameterName.any)
+        if (parameterName.length)
             output.append(" %s", parameterName);
 
         output.append(") ");
@@ -213,9 +214,11 @@ private:
 
     bool isSetter (string name)
     {
+        import std.ascii;
+
         if (name.length > 3 && name.startsWith("set"))
         {
-            auto firstLetter = name[3 .. $].first;
+            auto firstLetter = name[3 .. $][0];
             return firstLetter.isUpper;
         }
 
