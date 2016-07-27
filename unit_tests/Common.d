@@ -17,10 +17,12 @@ import std.typecons;
 
 import clang.c.Index;
 
+import dstep.driver.Application;
 import dstep.translator.CommentIndex;
 import dstep.translator.Context;
 import dstep.translator.IncludeHandler;
 import dstep.translator.MacroDefinition;
+import dstep.translator.Options;
 import dstep.translator.Output;
 import dstep.translator.Translator;
 import dstep.Configuration;
@@ -330,23 +332,26 @@ void assertRunsDStep(
     string outputDir = namedTempDir("dstepUnitTest");
 
     string[] outputPaths;
+
     if (filesPaths.length == 1)
-        outputPaths ~= buildPath(outputDir, baseName(filesPaths[0][0]));
+        outputPaths ~= buildPath(outputDir, 
+            Application.defaultOutputFilename(filesPaths[0][0], false));
     else
     {
         foreach (Tuple!(string, string) filesPath; filesPaths)
-        {
-            outputPaths ~= buildPath(outputDir, filesPath[0]);
-        }
+            outputPaths ~= buildPath(outputDir, 
+                Application.defaultOutputFilename(filesPath[0], false));
     }
 
     scope(exit) rmdirRecurse(outputDir);
 
     auto command = ["./bin/dstep"] ~ actualPaths ~ arguments;
+
     if (outputPaths.length == 1)
         command ~= ["-o", outputPaths[0]];
     else
         command ~= ["-o", outputDir];
+
     auto result = execute(command);
 
     auto sep = "----------------";
@@ -521,15 +526,16 @@ void assertRunsDStepObjCFile(
 
 void assertRunsDStepCFiles(
     Tuple!(string, string)[] filesPaths,
+    string[] arguments = [],
     bool strict = false,
     string file = __FILE__,
     size_t line = __LINE__)
 {
-    string[] arguments = ["-Iresources"];
+    string[] extended = arguments ~ ["-Iresources"];
 
     assertRunsDStep(
         filesPaths,
-        arguments,
+        extended,
         strict,
         file,
         line);

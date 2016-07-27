@@ -58,9 +58,11 @@ auto parseCLI (string[] args)
         std.getopt.config.passThrough,
         std.getopt.config.caseSensitive,
         "output|o", "Write output to", &config.output,
-        "language|x", "Treat subsequent input files as having type <language>", &parseLanguage,
+        "language|x", "Treat subsequent input files as having type <language>.", &parseLanguage,
         "objective-c", "Treat source input file as Objective-C input.", &forceObjectiveC,
-        "no-comments", "Disable translation of comments", &config.noComments
+        "no-comments", "Disable translation of comments.", &config.noComments,
+        "public-submodules", "Use public imports for submodules.", &config.publicSubmodules,
+        "package", "Specify package name.", &config.packageName
     );
 
     // remove dstep binary name (args[0])

@@ -29,4 +29,10 @@ struct Configuration
 
     /// strip all comments while translating
     bool noComments;
+
+    /// package name
+    string packageName;
+
+    /// use public imports for submodules
+    bool publicSubmodules;
 }

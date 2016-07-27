@@ -185,3 +185,11 @@ string namedTempDir(string prefix)
 
     return path.idup;
 }
+
+string asAbsNormPath(string path)
+{
+    import std.path;
+    import std.conv : to;
+
+    return to!string(path.asAbsolutePath.asNormalizedPath);
+}

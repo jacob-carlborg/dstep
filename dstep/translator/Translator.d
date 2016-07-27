@@ -27,6 +27,7 @@ import dstep.translator.Enum;
 import dstep.translator.IncludeHandler;
 import dstep.translator.objc.Category;
 import dstep.translator.objc.ObjcInterface;
+import dstep.translator.Options;
 import dstep.translator.Output;
 import dstep.translator.MacroDefinition;
 import dstep.translator.Record;
@@ -105,10 +106,13 @@ class Translator
     {
         import std.algorithm.mutation : strip;
 
-        auto main = translateCursors();
-        auto imports = context.includeHandler.toImports();
+        Output main = translateCursors();
+        Output head = new Output();
 
-        return main.header ~ imports.data ~ main.content;
+        moduleDeclaration(head);
+        context.includeHandler.toImports(head);
+
+        return main.header ~ head.data ~ main.content;
     }
 
     void translateInGlobalScope(
@@ -273,6 +277,18 @@ private:
             || cursor.isPredefined;
     }
 
+    void moduleDeclaration (Output output)
+    {
+        if (context.options.packageName != "")
+        {
+            output.singleLine("module %s;", fullModuleName(
+                context.options.packageName,
+                context.options.outputFile));
+
+            output.separator();
+        }
+    }
+
     void externDeclaration (Output output)
     {
         final switch (language)
@@ -294,7 +310,7 @@ void translateFunction (Output output, Context context, FunctionCursor func, str
 {
     Parameter[] params;
 
-    if (func.type.isValid) // This will be invalid of Objective-C methods
+    if (func.type.isValid) // This will be invalid for Objective-C methods
         params.reserve(func.type.func.arguments.length);
 
     foreach (param ; func.parameters)

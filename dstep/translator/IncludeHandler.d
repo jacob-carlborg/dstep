@@ -6,16 +6,23 @@
  */
 module dstep.translator.IncludeHandler;
 
-import Path = std.path;
+import std.array : Appender;
 
 import mambo.core._;
 
+import clang.c.Index;
+import clang.Cursor;
+import clang.Util;
+
+import dstep.translator.Options;
 import dstep.translator.Output;
 
 class IncludeHandler
 {
-    private string[] rawIncludes;
-    private string[] imports;
+    private Options options;
+    private string[string] submodules;
+    private bool[string] includes;
+    private bool[string] imports;
     static string[string] knownIncludes;
 
     static this ()
@@ -84,62 +91,123 @@ class IncludeHandler
         ];
     }
 
+    this (Options options)
+    {
+        import std.format;
+
+        this.options = options;
+
+        if (options.packageName != "")
+        {
+            auto inputFiles = options.inputFiles.filter!(
+                x => x != options.inputFile);
+
+            foreach (file; inputFiles)
+                submodules[file] =
+                    fullModuleName(options.packageName, file);
+        }
+    }
+
     void addInclude (string include)
     {
-        rawIncludes ~= include;
+        import std.path;
+        import std.file;
+        import std.array;
+
+        auto absolute = include.asAbsNormPath;
+
+        if (absolute != options.inputFile)
+        {
+            if (exists(absolute) && isFile(absolute))
+                includes[absolute] = true;
+            else
+                includes[include] = true;
+        }
     }
 
     void addImport (string imp)
     {
-        imports ~= imp;
+        imports[imp] = true;
     }
 
     void addCompatible ()
     {
-        imports ~= "core.stdc.config";
+        includes["config.h"] = true;
     }
 
-    Output toImports ()
+    void toImports (Output output)
     {
         import std.array : array;
+        import std.format : format;
 
-        Output output = new Output();
+        string[] standard, package_, unhandled;
 
-        auto r =  rawIncludes.map!((e) {
-            if (auto i = isKnownInclude(e))
-                return toImport(i);
-
+        foreach (entry; includes.byKey)
+        {
+            if (auto i = isKnownInclude(entry))
+                standard ~= toImport(i);
+            else if (auto i = isPackageSubmodule(entry))
+                package_ ~= toSubmoduleImport(i);
             else
-                return "";
-        });
+                unhandled ~= format(`/+ #include "%s" +/`, entry);
+        }
 
-        auto imps = imports.map!(e => toImport(e));
+        auto extra = imports.byKey.map!(e => toImport(e)).array;
 
-        foreach (entry; r.append(imps).filter!(e => e.any).unique)
+        importsBlock(output, standard);
+        importsBlock(output, extra);
+        importsBlock(output, package_);
+
+        if (options.keepUntranslatable)
+            importsBlock(output, unhandled);
+
+        output.finalize();
+    }
+
+private:
+
+    void importsBlock(Output output, string[] imports)
+    {
+        import std.array : empty;
+        import std.algorithm.sorting : sort;
+
+        foreach (entry; imports.sort.filter!(e => !e.empty))
             output.singleLine(entry);
 
         if (!output.empty)
             output.separator();
-
-        output.finalize();
-
-        return output;
     }
-
-private:
 
     string toImport (string str)
     {
         return "import " ~ str ~ ";";
     }
 
+    string toSubmoduleImport (string str)
+    {
+        if (options.publicSubmodules)
+            return "public import " ~ str ~ ";";
+        else
+            return "import " ~ str ~ ";";
+    }
+
     string isKnownInclude (string include)
     {
-        include = Path.stripExtension(include);
+        import std.path : stripExtension, baseName;
 
-        if (auto r = knownIncludes.find!((k, _) => include.endsWith(k)))
-            return r.value;
+        include = stripExtension(baseName(include));
 
-        return null;
+        if (auto ptr = include in knownIncludes)
+            return *ptr;
+        else
+            return null;
+    }
+
+    string isPackageSubmodule (string include)
+    {
+        if (auto ptr = include in submodules)
+            return *ptr;
+        else
+            return null;
     }
 }
