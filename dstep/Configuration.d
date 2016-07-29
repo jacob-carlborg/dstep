@@ -47,4 +47,7 @@ struct Configuration
 
     /// no space after function name
     bool noSpaceAfterFunctionName;
+
+    /// translate functions with empty argument list as vararg
+    bool zeroParamIsVararg;
 }

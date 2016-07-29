@@ -300,8 +300,28 @@ private:
     }
 }
 
-void translateFunction (Output output, Context context, FunctionCursor func, string name, bool isStatic = false)
+void translateFunction (
+    Output output,
+    Context context,
+    FunctionCursor func,
+    string name,
+    bool isStatic = false)
 {
+    bool isVariadic(Context context, size_t numParams, FunctionCursor func)
+    {
+        if (func.isVariadic)
+        {
+            if (context.options.zeroParamIsVararg)
+                return true;
+            else if (numParams == 0)
+                return false;
+            else
+                return true;
+        }
+
+        return false;
+    }
+
     Parameter[] params;
 
     if (func.type.isValid) // This will be invalid for Objective-C methods
@@ -322,7 +342,7 @@ void translateFunction (Output output, Context context, FunctionCursor func, str
         resultType,
         name,
         params,
-        func.isVariadic,
+        isVariadic(context, params.length, func),
         isStatic ? "static " : "",
         spacer,
         multiline);

@@ -22,6 +22,7 @@ Issue #10: Embedded struct not generated.
 Issue #21: wchar_t should be tranlsated to core.stdc.stddef.wchar_t.
 Issue #29: Don't name anonymous enums.
 Issue #30: Single space inserted after function names.
+Issue #38: Spurious generation of variadic args rather than implicit void.
 Issue #39: Recognize and translate __attribute__((__packed__)).
 Issue #46: Generating code that will not compile.
 Issue #47: Treatment of #define enhancement.

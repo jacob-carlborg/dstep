@@ -157,6 +157,7 @@ private struct ParseFile
             options.portableWCharT = !config.noPortableWCharT;
             options.singleLineFunctionHeaders = config.singleLineFunctionHeaders;
             options.noSpaceAfterFunctionName = config.noSpaceAfterFunctionName;
+            options.zeroParamIsVararg = config.zeroParamIsVararg;
 
             auto translator = new Translator(translationUnit, options);
             translator.translate;
