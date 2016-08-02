@@ -21,10 +21,12 @@ Issue #2: Self alias should be removed bug.
 Issue #10: Embedded struct not generated.
 Issue #21: wchar_t should be tranlsated to core.stdc.stddef.wchar_t.
 Issue #29: Don't name anonymous enums.
+Issue #30: Single space inserted after function names.
 Issue #39: Recognize and translate __attribute__((__packed__)).
 Issue #46: Generating code that will not compile.
 Issue #47: Treatment of #define enhancement.
 Issue #50: struct typedef generates recursive alias bug.
+Issue #83: New multiline translation.
 
 ## Version 0.2.1
 ### New/Changed Features

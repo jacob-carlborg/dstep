@@ -41,4 +41,10 @@ struct Configuration
 
     /// translate wchar_t to wchar or dchar depending on its size
     bool noPortableWCharT;
+
+    /// single line function headers
+    bool singleLineFunctionHeaders;
+
+    /// no space after function name
+    bool noSpaceAfterFunctionName;
 }

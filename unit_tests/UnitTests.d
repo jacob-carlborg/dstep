@@ -274,6 +274,41 @@ D");
 
 }
 
+// Long function declarations shouldn't be broken, if disabled in options.
+unittest
+{
+    Options options;
+    options.singleLineFunctionHeaders = true;
+
+    assertTranslates(q"C
+void very_long_function_declaration(double way_too_long_argument,
+                           double another_long_argument);
+C",
+q"D
+extern (C):
+
+void very_long_function_declaration (double way_too_long_argument, double another_long_argument);
+D", options);
+
+}
+
+// Test not putting a space after a function name.
+unittest
+{
+    Options options;
+    options.noSpaceAfterFunctionName = true;
+
+    assertTranslates(q"C
+void very_long_function_declaration(double way_too_long_argument, double another_long_argument);
+C",
+q"D
+extern (C):
+
+void very_long_function_declaration(double way_too_long_argument, double another_long_argument);
+D", options);
+
+}
+
 // Test translation of nested anonymous structures that have associated fields.
 unittest
 {
