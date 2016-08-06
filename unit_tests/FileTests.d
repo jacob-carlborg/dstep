@@ -14,6 +14,16 @@ unittest
         "test_files/objc/categories.h");
 }
 
+version (OSX)
+{
+    unittest
+    {
+        assertTranslatesObjCFile(
+            "test_files/objc/cgfloat.d",
+            "test_files/objc/cgfloat.h");
+    }
+}
+
 unittest
 {
     assertTranslatesObjCFile(
@@ -136,9 +146,13 @@ unittest
 
 unittest
 {
+    Options options;
+    options.reduceAliases = false;
+
     assertTranslatesCFile(
         "test_files/typedef.d",
-        "test_files/typedef.h");
+        "test_files/typedef.h",
+        options);
 }
 
 unittest

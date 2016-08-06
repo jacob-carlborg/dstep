@@ -22,6 +22,22 @@ struct Options
     bool enableComments = true;
     bool publicSubmodules = false;
     bool keepUntranslatable = false;
+    bool reduceAliases = true;
+    bool portableWCharT = true;
+
+    string toString() const
+    {
+        import std.format : format;
+
+        return format(
+            "Options(outputFile = %s, language = %s, enableComments = %s, "
+            "reduceAliases = %s, portableWCharT = %s)",
+            outputFile,
+            language,
+            enableComments,
+            reduceAliases,
+            portableWCharT);
+    }
 }
 
 string fullModuleName(string packageName, string path)

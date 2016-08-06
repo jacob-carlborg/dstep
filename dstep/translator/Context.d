@@ -34,10 +34,9 @@ class Context
     private Translator translator_ = null;
     private Output globalScope_ = null;
     private Cursor[string] typeNames_;
-
     public MacroDefinition[string] macroDefinitions;
 
-    const Options options;
+    Options options;
 
     public this(TranslationUnit translUnit, Options options, Translator translator = null)
     {
@@ -59,6 +58,7 @@ class Context
 
         globalScope_ = new Output();
         typeNames_ = collectGlobalTypes(translUnit);
+        this.options = options;
     }
 
     public string getAnonymousName (Cursor cursor)

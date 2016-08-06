@@ -94,7 +94,7 @@ TranslationUnit makeTranslationUnit(string source)
     return TranslationUnit.parseString(
         index,
         source,
-        ["-Wno-missing-declarations"],
+        ["-Wno-missing-declarations", "-Iresources"],
         null,
         CXTranslationUnit_Flags.CXTranslationUnit_DetailedPreprocessingRecord);
 }
@@ -152,7 +152,7 @@ class TranslateAssertError : AssertError
 
 void assertTranslates(
     string expected,
-    TranslationUnit unit,
+    TranslationUnit translUnit,
     Options options,
     bool strict,
     string file = __FILE__,
@@ -163,15 +163,15 @@ void assertTranslates(
 
     auto sep = "----------------";
 
-    if (unit.numDiagnostics != 0)
+    if (translUnit.numDiagnostics != 0)
     {
-        auto diagnostics = unit.diagnosticSet.map!(a => a.toString());
+        auto diagnostics = translUnit.diagnosticSet.map!(a => a.toString());
         string fmt = "\nCannot compile source code. Errors:\n%s\n %s";
         string message = fmt.format(sep, diagnostics.join("\n"));
         throw new TranslateAssertError(message, file, line);
     }
 
-    auto translated = translate(unit, options);
+    auto translated = translate(translUnit, options);
 
     if (!compareString(expected, translated, strict))
     {
@@ -188,7 +188,7 @@ AST dump:
 %4$s/";
 
         size_t maxSubmessageLength = 10_000;
-        string astDump = unit.dumpAST(true);
+        string astDump = translUnit.dumpAST(true);
 
         if (maxSubmessageLength < translated.length)
             translated = translated[0 .. maxSubmessageLength] ~ "...";

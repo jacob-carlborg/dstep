@@ -398,3 +398,106 @@ extern __gshared int a;
 D", options);
 
 }
+
+// Translate size types as size types.
+unittest
+{
+   assertTranslates(
+q"C
+#include <stddef.h>
+
+size_t foo;
+ptrdiff_t bar;
+C",
+q"D
+extern (C):
+
+extern __gshared size_t foo;
+extern __gshared ptrdiff_t bar;
+D");
+
+}
+
+// Reduce typedefs when underlying type is alias of primitive type.
+unittest
+{
+    Options options;
+    options.reduceAliases = true;
+
+    assertTranslates(
+q"C
+#include <stdint.h>
+
+uint8_t foo;
+uint32_t bar;
+C",
+q"D
+extern (C):
+
+extern __gshared ubyte foo;
+extern __gshared uint bar;
+D", options);
+
+}
+
+// Do not reduce aliases of unknown types.
+unittest
+{
+   Options options;
+   options.reduceAliases = true;
+
+   assertTranslates(
+q"C
+typedef unsigned int Bar;
+Bar foo;
+C",
+q"D
+extern (C):
+
+alias uint Bar;
+extern __gshared Bar foo;
+D", options);
+
+}
+
+// Disable alias reduction.
+unittest
+{
+    Options options;
+    options.reduceAliases = false;
+
+    assertTranslates(
+q"C
+#include <stdint.h>
+
+uint8_t foo;
+uint32_t bar;
+C",
+q"D
+import core.stdc.stdint;
+
+extern (C):
+
+extern __gshared uint8_t foo;
+extern __gshared uint32_t bar;
+
+D", options);
+
+    options.reduceAliases = true;
+
+    assertTranslates(
+q"C
+#include <stdint.h>
+
+uint8_t foo;
+uint32_t bar;
+C",
+q"D
+extern (C):
+
+extern __gshared ubyte foo;
+extern __gshared uint bar;
+
+D", options);
+
+}

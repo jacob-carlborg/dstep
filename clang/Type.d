@@ -19,6 +19,7 @@ struct Type
     mixin CX;
 
     private Type* pointee_;
+    private Type* canonical_;
 
     mixin(bitfields!(
         bool, "isConst", 1,
@@ -50,9 +51,22 @@ struct Type
         return result;
     }
 
+    static Type makeTypedef(string spelling, Type canonical)
+    {
+        Type result = Type(CXTypeKind.CXType_Typedef, spelling);
+        result.canonical_ = new Type();
+        *result.canonical_ = canonical;
+        return result;
+    }
+
     @property bool isAnonymous ()
     {
         return spelling == "";
+    }
+
+    @property Type underlying ()
+    {
+        return declaration.underlyingType;
     }
 
     @property bool isArray ()
@@ -139,10 +153,17 @@ struct Type
 
     @property Type canonical()
     {
-        if (isClang)
-            return Type(clang_getCanonicalType(cx));
+        if (canonical_)
+        {
+            return *canonical_;
+        }
         else
-            return Type.init;
+        {
+            if (isClang)
+                return Type(clang_getCanonicalType(cx));
+            else
+                return Type.init;
+        }
     }
 
     @property Type pointee()
@@ -182,6 +203,12 @@ struct Type
     {
         import std.format: format;
         return format("Type(kind = %s, spelling = %s, isConst = %s)", kind, spelling, isConst);
+    }
+
+    @property string toString()
+    {
+        import std.format : format;
+        return format("Type(kind = %s, spelling = %s)", kind, spelling);
     }
 }
 

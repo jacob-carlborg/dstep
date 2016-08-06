@@ -42,6 +42,14 @@ class IncludeHandler
             "stdarg" : "core.stdc.stdarg",
             "stddef" : "core.stdc.stddef",
             "stdint" : "core.stdc.stdint",
+            "_int8_t" : "core.stdc.stdint",
+            "_int16_t" : "core.stdc.stdint",
+            "_int32_t" : "core.stdc.stdint",
+            "_int64_t" : "core.stdc.stdint",
+            "_uint8_t" : "core.stdc.stdint",
+            "_uint16_t" : "core.stdc.stdint",
+            "_uint32_t" : "core.stdc.stdint",
+            "_uint64_t" : "core.stdc.stdint",
             "stdio" : "core.stdc.stdio",
             "stdlib" : "core.stdc.stdlib",
             "string" : "core.stdc.string",
@@ -80,6 +88,7 @@ class IncludeHandler
             "sys/socket" : "core.sys.posix.sys.socket",
             "sys/stat" : "core.sys.posix.sys.stat",
             "sys/time" : "core.sys.posix.sys.time",
+            "_time_t" : "core.stdc.time",
             "sys/types" : "core.sys.posix.sys.types",
             "sys/_types" : "core.sys.posix.sys.types",
             "sys/uio" : "core.sys.posix.sys.uio",
@@ -140,26 +149,26 @@ class IncludeHandler
         import std.array : array;
         import std.format : format;
 
-        string[] standard, package_, unhandled;
+        Set!string standard, package_, unhandled;
 
         foreach (entry; includes.byKey)
         {
             if (auto i = isKnownInclude(entry))
-                standard ~= toImport(i);
+                standard.add(toImport(i));
             else if (auto i = isPackageSubmodule(entry))
-                package_ ~= toSubmoduleImport(i);
+                package_.add(toSubmoduleImport(i));
             else
-                unhandled ~= format(`/+ #include "%s" +/`, entry);
+                unhandled.add(format(`/+ #include "%s" +/`, entry));
         }
 
         auto extra = imports.byKey.map!(e => toImport(e)).array;
 
-        importsBlock(output, standard);
-        importsBlock(output, extra);
-        importsBlock(output, package_);
+        importsBlock(output, standard.keys);
+        importsBlock(output, extra.array);
+        importsBlock(output, package_.keys);
 
         if (options.keepUntranslatable)
-            importsBlock(output, unhandled);
+            importsBlock(output, unhandled.keys);
 
         output.finalize();
     }

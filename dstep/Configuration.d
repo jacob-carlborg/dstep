@@ -35,4 +35,7 @@ struct Configuration
 
     /// use public imports for submodules
     bool publicSubmodules;
+
+    /// disable reduction of primitive type aliases
+    bool dontReduceAliases;
 }
