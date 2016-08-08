@@ -8,8 +8,6 @@ module dstep.translator.IncludeHandler;
 
 import std.array : Appender;
 
-import mambo.core._;
-
 import clang.c.Index;
 import clang.Cursor;
 import clang.Util;
@@ -103,6 +101,7 @@ class IncludeHandler
     this (Options options)
     {
         import std.format;
+        import std.algorithm : filter;
 
         this.options = options;
 
@@ -146,6 +145,7 @@ class IncludeHandler
 
     void toImports (Output output)
     {
+        import std.algorithm : map;
         import std.array : array;
         import std.format : format;
 
@@ -178,7 +178,7 @@ private:
     void importsBlock(Output output, string[] imports)
     {
         import std.array : empty;
-        import std.algorithm.sorting : sort;
+        import std.algorithm : sort, filter;
 
         foreach (entry; imports.sort.filter!(e => !e.empty))
             output.singleLine(entry);

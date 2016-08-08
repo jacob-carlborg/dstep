@@ -12,13 +12,6 @@ import Path = std.path;
 import std.file;
 import std.parallelism;
 
-import DStack = dstack.application.Application;
-
-import mambo.arguments.Arguments;
-import mambo.core._;
-import mambo.util.Singleton;
-import mambo.util.Use;
-
 import clang.c.Index;
 
 import clang.Compiler;
@@ -34,8 +27,6 @@ import dstep.translator.Translator;
 
 class Application
 {
-    enum Version = "0.2.2";
-
     private
     {
         Configuration config;
@@ -143,6 +134,7 @@ private struct ParseFile
 
         if (handleDiagnostics && exists(inputFile))
         {
+            import std.algorithm : map;
             import std.array : array;
 
             Options options;

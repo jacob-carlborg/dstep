@@ -8,8 +8,7 @@ module clang.Cursor;
 
 import std.array : appender, Appender;
 import std.conv : to;
-
-import mambo.core._;
+import std.string;
 
 import clang.c.Index;
 import clang.Index;
@@ -489,7 +488,7 @@ struct EnumCursor
     @property string value ()
     {
         //return type.kind.isUnsigned ? unsignedValue.toString : signedValue.toString;
-        return signedValue.toString;
+        return signedValue.to!string;
     }
 
     @property long signedValue ()

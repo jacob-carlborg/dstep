@@ -6,9 +6,6 @@
  */
 module dstep.translator.Type;
 
-import mambo.core.string;
-import mambo.core.io;
-
 import clang.c.Index;
 import clang.Cursor;
 import clang.Type;
@@ -65,7 +62,7 @@ body
                 case CXType_ObjCInterface:
                     result = type.spelling;
 
-                    if (result.isEmpty)
+                    if (result.length == 0)
                         result = context.getAnonymousName(type.declaration);
 
                     handleInclude(context, type);
@@ -107,6 +104,9 @@ body
 
 string translateSelector (string str, bool fullName = false, bool translateIdentifier = true)
 {
+    import std.array : replace;
+    import std.string : indexOf; 
+
     if (fullName)
         str = str.replace(":", "_");
 
@@ -243,6 +243,8 @@ in
 }
 body
 {
+    import std.conv;
+
     auto array = type.array;
     string elementType;
 
@@ -287,7 +289,7 @@ body
             }
         }
 
-        return elementType ~ '[' ~ array.size.toString ~ ']';
+        return elementType ~ '[' ~ to!string(array.size) ~ ']';
     }
     else
     {
@@ -373,6 +375,8 @@ body
 
 string translateType (Context context, CXTypeKind kind, bool rewriteIdToObjcObject = true)
 {
+    import std.conv;
+
     with (CXTypeKind)
         switch (kind)
         {
@@ -432,6 +436,6 @@ string translateType (Context context, CXTypeKind kind, bool rewriteIdToObjcObje
             case CXType_MemberPointer:
                 return "<unimplemented>";
 
-            default: assert(0, "Unhandled type kind " ~ kind.toString);
+            default: assert(0, "Unhandled type kind " ~ to!string(kind));
         }
 }

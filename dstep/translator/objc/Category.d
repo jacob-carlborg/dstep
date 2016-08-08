@@ -6,8 +6,6 @@
  */
 module dstep.translator.objc.Category;
 
-import mambo.core._;
-
 import clang.Cursor;
 import clang.Type;
 

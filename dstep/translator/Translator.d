@@ -9,8 +9,6 @@ module dstep.translator.Translator;
 import std.file;
 import std.array;
 
-import mambo.core._;
-
 import clang.c.Index;
 import clang.Cursor;
 import clang.File;
@@ -387,7 +385,7 @@ package void translateFunction (
                 p ~= ')';
         }
 
-        if (param.name.any)
+        if (param.name.length)
             p ~= " " ~ translateIdentifier(param.name);
 
         params ~= p;
@@ -576,7 +574,7 @@ bool isDKeyword (string str)
             case "__EOF__":
                 return true;
 
-            default: return str.any && str.first == '@';
+            default: return str.length && str[0] == '@';
         }
     }
 

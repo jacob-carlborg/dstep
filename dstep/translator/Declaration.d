@@ -6,8 +6,6 @@
  */
 module dstep.translator.Declaration;
 
-import mambo.core._;
-
 import clang.Cursor;
 
 import dstep.translator.Translator;
@@ -46,6 +44,6 @@ abstract class Declaration
     @property string spelling ()
     {
         auto name = cursor.spelling;
-        return name.isPresent || parent.isEmpty ? name : translator.context.generateAnonymousName(cursor);
+        return name.length || parent.isEmpty ? name : translator.context.generateAnonymousName(cursor);
     }
 }

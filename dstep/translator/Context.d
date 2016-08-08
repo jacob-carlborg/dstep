@@ -6,8 +6,6 @@
  */
 module dstep.translator.Context;
 
-import mambo.core._;
-
 import clang.c.Index;
 import clang.Cursor;
 import clang.TranslationUnit;
@@ -84,10 +82,11 @@ class Context
     public string generateAnonymousName (Cursor cursor)
     {
         import std.format : format;
+        import std.range : empty;
 
         auto name = getAnonymousName(cursor);
 
-        if (name.isBlank)
+        if (name.empty)
         {
             name = format("_Anonymous_%d", anonymousNames.length);
             anonymousNames[cursor] = name;
