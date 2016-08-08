@@ -24,6 +24,8 @@ struct Options
     bool keepUntranslatable = false;
     bool reduceAliases = true;
     bool portableWCharT = true;
+    bool singleLineFunctionHeaders = false;
+    bool noSpaceAfterFunctionName = false;
 
     string toString() const
     {

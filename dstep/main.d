@@ -64,7 +64,9 @@ auto parseCLI (string[] args)
         "public-submodules", "Use public imports for submodules.", &config.publicSubmodules,
         "package", "Specify package name.", &config.packageName,
         "dont-reduce-aliases", "Disable reduction of primitive type aliases.", &config.dontReduceAliases,
-        "no-portable-wchar_t", "Translate wchar_t to wchar or dchar depending on its size.", &config.noPortableWCharT);
+        "no-portable-wchar_t", "Translate wchar_t to wchar or dchar depending on its size.", &config.noPortableWCharT,
+        "single-line-function-headers", "Do not break function headers to multiple lines.", &config.singleLineFunctionHeaders,
+        "no-space-after-function-name", "Do not put a space after a function name.", &config.noSpaceAfterFunctionName);
 
     // remove dstep binary name (args[0])
     args = args[1 .. $];

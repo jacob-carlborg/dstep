@@ -314,6 +314,8 @@ void translateFunction (Output output, Context context, FunctionCursor func, str
     }
 
     auto resultType = translateType(context, func, func.resultType);
+    auto multiline = func.extent.isMultiline && !context.options.singleLineFunctionHeaders;
+    auto spacer = context.options.noSpaceAfterFunctionName ? "" : " ";
 
     translateFunction(
         output,
@@ -322,7 +324,8 @@ void translateFunction (Output output, Context context, FunctionCursor func, str
         params,
         func.isVariadic,
         isStatic ? "static " : "",
-        func.extent.isMultiline);
+        spacer,
+        multiline);
 }
 
 package struct Parameter
@@ -339,6 +342,7 @@ package void translateFunction (
     Parameter[] parameters,
     bool variadic,
     string prefix = "",
+    string spacer = " ",
     bool multiline = false)
 {
     import std.format : format;
@@ -375,12 +379,12 @@ package void translateFunction (
         params ~= "...";
 
     if (multiline)
-        output.adaptiveLine("%s%s %s (%@,%@)", prefix, result, name) in {
+        output.adaptiveLine("%s%s %s%s(%@,%@)", prefix, result, name, spacer) in {
             foreach (param; params)
                 output.adaptiveLine(param);
         };
     else
-        output.singleLine("%s%s %s (%s)", prefix, result, name, params.join(", "));
+        output.singleLine("%s%s %s%s(%s)", prefix, result, name, spacer, params.join(", "));
 }
 
 void translateVariable (Output output, Context context, Cursor cursor, string prefix = "")

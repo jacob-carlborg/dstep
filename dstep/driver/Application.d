@@ -155,6 +155,8 @@ private struct ParseFile
             options.publicSubmodules = config.publicSubmodules;
             options.reduceAliases = !config.dontReduceAliases;
             options.portableWCharT = !config.noPortableWCharT;
+            options.singleLineFunctionHeaders = config.singleLineFunctionHeaders;
+            options.noSpaceAfterFunctionName = config.noSpaceAfterFunctionName;
 
             auto translator = new Translator(translationUnit, options);
             translator.translate;
