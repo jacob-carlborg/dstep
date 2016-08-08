@@ -26,6 +26,7 @@ struct Options
     bool portableWCharT = true;
     bool singleLineFunctionHeaders = false;
     bool noSpaceAfterFunctionName = false;
+    bool zeroParamIsVararg = false;
 
     string toString() const
     {

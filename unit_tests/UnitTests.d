@@ -591,3 +591,29 @@ extern __gshared dchar x;
 D", options);
 
 }
+
+// Test translation of the function with no argument list.
+unittest
+{
+    assertTranslates(q"C
+void foo();
+C",
+q"D
+extern (C):
+
+void foo ();
+D");
+
+    Options options;
+    options.zeroParamIsVararg = true;
+
+    assertTranslates(q"C
+void foo();
+C",
+q"D
+extern (C):
+
+void foo (...);
+D", options);
+
+}
