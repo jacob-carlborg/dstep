@@ -38,6 +38,35 @@ struct TokenizedDirectiveRange
     Token[] tokens;
     Token[] result;
 
+    this(Token[] tokens, string source = null)
+    {
+        this.tokens = tokens;
+        this.source = source;
+
+        popFront();
+    }
+
+    @property bool empty() const
+    {
+        return result.empty;
+    }
+
+    @property Token[] front()
+    {
+        return result;
+    }
+
+    void popFront()
+    {
+        findNext();
+        yield();
+    }
+
+    @property string toString() const
+    {
+        return "TokenizedDirectiveRange(..)";
+    }
+
     private void findNext()
     {
         if (1 < tokens.length &&
@@ -116,35 +145,6 @@ struct TokenizedDirectiveRange
             default:
                 return false;
         }
-    }
-
-    this(Token[] tokens, string source = null)
-    {
-        this.tokens = tokens;
-        this.source = source;
-
-        popFront();
-    }
-
-    @property bool empty() const
-    {
-        return result.empty;
-    }
-
-    @property Token[] front()
-    {
-        return result;
-    }
-
-    void popFront()
-    {
-        findNext();
-        yield();
-    }
-
-    @property string toString() const
-    {
-        return "TokenizedDirectiveRange(..)";
     }
 }
 
@@ -521,37 +521,37 @@ unittest
     assert(x1.length == 0);
 
 
-    auto x2 = tokenizedDirectives(q"D
+    auto x2 = tokenizedDirectives(q"C
 int x = 3;
 
 int f()
 {
     return 42;
 }
-D").array;
+C").array;
 
     assert(x2.length == 0);
 
 
-    auto x3 = tokenizedDirectives(q"D
+    auto x3 = tokenizedDirectives(q"C
 #define FOO
-D").array;
+C").array;
 
     assert(x3.length == 1);
 
 
-    auto x4 = tokenizedDirectives(q"D
+    auto x4 = tokenizedDirectives(q"C
 #define FOO 0
 
 #define BAR 1
 
 #define BAZ 2
-D").array;
+C").array;
 
     assert(x4.length == 3);
 
 
-    auto x5 = tokenizedDirectives(q"D
+    auto x5 = tokenizedDirectives(q"C
 #if FOO == 0
 
 #elif FOO == 1
@@ -559,12 +559,12 @@ D").array;
 #else
 
 #endif
-D").array;
+C").array;
 
     assert(x5.length == 4);
 
 
-    auto x6 = tokenizedDirectives(q"D
+    auto x6 = tokenizedDirectives(q"C
 #ifdef FOO
 
 #endif
@@ -572,24 +572,24 @@ D").array;
 #ifndef FOO
 
 #endif
-D").array;
+C").array;
 
     assert(x6.length == 4);
 
 
-    auto x7 = tokenizedDirectives(q"D
+    auto x7 = tokenizedDirectives(q"C
 #pragma once
 #include <stdio.h>
 #define FOO
-D").array;
+C").array;
 
     assert(x7.length == 3);
 
 
-    auto x8 = tokenizedDirectives(q"D
+    auto x8 = tokenizedDirectives(q"C
 #pragma once
 #line 44
-D").array;
+C").array;
 
     assert(x8.length == 2);
 
@@ -602,11 +602,11 @@ D").array;
     assert(x9[0][2].spelling == "once");
 
 
-    auto x10 = tokenizedDirectives(q"D
+    auto x10 = tokenizedDirectives(q"C
 #define FOO 0
 #define BAR 1
 #define BAZ 2
-D").array;
+C").array;
 
     assert(x10.length == 3);
     assert(x10[0][0].spelling == "#");

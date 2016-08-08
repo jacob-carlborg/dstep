@@ -8,6 +8,7 @@
 * Support for translation of whole packages (--package CLI option).
 * Support for translation of preprocessor constants in array sizes.
 * Support for global comments and comments inside structs and enums.
+* Special treatment of a comment before header guard.
 * Support for removing excessive newlines and keeping original spacing.
 * Basic unit tests were added.
 * Most of cucumber tests was replaced with D-based tests.

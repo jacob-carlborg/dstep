@@ -98,7 +98,7 @@ class MacroIndex
     {
         import std.range.primitives : empty;
 
-        bool checkIfndef(ConditionalDirective directives, string identifier)
+        static bool checkIfndef(ConditionalDirective directives, string identifier)
         {
             auto negation = cast (UnaryExpr) directives.condition;
 
