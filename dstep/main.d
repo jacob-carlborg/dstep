@@ -63,7 +63,8 @@ auto parseCLI (string[] args)
         "no-comments", "Disable translation of comments.", &config.noComments,
         "public-submodules", "Use public imports for submodules.", &config.publicSubmodules,
         "package", "Specify package name.", &config.packageName,
-        "dont-reduce-aliases", "Disable reduction of primitive type aliases.", &config.dontReduceAliases);
+        "dont-reduce-aliases", "Disable reduction of primitive type aliases.", &config.dontReduceAliases,
+        "no-portable-wchar_t", "Translate wchar_t to wchar or dchar depending on its size.", &config.noPortableWCharT);
 
     // remove dstep binary name (args[0])
     args = args[1 .. $];

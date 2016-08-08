@@ -18,6 +18,8 @@
 
 ### Bugs fixed
 Issue #2: Self alias should be removed bug.
+Issue #10: Embedded struct not generated.
+Issue #21: wchar_t should be tranlsated to core.stdc.stddef.wchar_t.
 Issue #29: Don't name anonymous enums.
 Issue #39: Recognize and translate __attribute__((__packed__)).
 Issue #46: Generating code that will not compile.

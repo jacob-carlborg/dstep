@@ -491,13 +491,68 @@ q"C
 
 uint8_t foo;
 uint32_t bar;
-C",
-q"D
+C", q"D
 extern (C):
 
 extern __gshared ubyte foo;
 extern __gshared uint bar;
+D", options);
 
+}
+
+// Translate array with immediate struct declaration.
+unittest
+{
+    assertTranslates(q"C
+struct Foo {
+  struct Bar {
+
+  } bar[64];
+};
+C",
+q"D
+extern (C):
+
+struct Foo
+{
+    struct Bar
+    {
+    }
+
+    Bar[64] bar;
+}
+D");
+
+}
+
+// Test portable wchar_t.
+unittest
+{
+    assertTranslates(q"C
+#include <wchar.h>
+
+wchar_t x;
+C",
+q"D
+import core.stdc.stddef;
+
+extern (C):
+
+extern __gshared wchar_t x;
+D");
+
+    Options options;
+    options.portableWCharT = false;
+
+    assertTranslates(q"C
+#include <wchar.h>
+
+wchar_t x;
+C",
+q"D
+extern (C):
+
+extern __gshared dchar x;
 D", options);
 
 }

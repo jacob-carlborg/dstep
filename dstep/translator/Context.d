@@ -58,7 +58,6 @@ class Context
 
         globalScope_ = new Output();
         typeNames_ = collectGlobalTypes(translUnit);
-        this.options = options;
     }
 
     public string getAnonymousName (Cursor cursor)
@@ -200,7 +199,7 @@ bool variablesInParentScope(Cursor cursor)
         return (
             a.kind == CXCursorKind.CXCursor_FieldDecl ||
             a.kind == CXCursorKind.CXCursor_VarDecl) &&
-            a.type.declaration.canonical == canonical;
+            a.type.undecorated.declaration.canonical == canonical;
     }
 
     return !filter!(predicate)(parent.children).empty;

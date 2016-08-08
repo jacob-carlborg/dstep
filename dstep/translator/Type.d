@@ -166,12 +166,27 @@ package bool isAliasReducible(Type type)
 
 private:
 
-string translateTypedef(Context context, Type type)
-in
+string translateWCharT(Context context, Type type)
 {
-    assert(type.kind == CXTypeKind.CXType_Typedef);
+    if (context.options.portableWCharT)
+    {
+        context.includeHandler.addImport("core.stdc.stddef");
+        return "wchar_t";
+    }
+    else
+    {
+        auto kind = type.canonical.kind;
+
+        if (kind == CXTypeKind.CXType_Int)
+            return "dchar";
+        else if (kind == CXTypeKind.CXType_Short)
+            return "wchar";
+        else
+            return null;
+    }
 }
-body
+
+string translateTypedef(Context context, Type type)
 {
     if (context.options.reduceAliases)
     {
@@ -190,16 +205,11 @@ body
                 return spelling;
 
             case "wchar_t":
-                auto kind = type.canonical.kind;
-
-                if (kind == CXType_Int)
-                    return "dchar";
-
-                else if (kind == CXType_Short)
-                    return "wchar";
+                return translateWCharT(context, type);
 
             default: break;
         }
+
 
     handleInclude(context, type);
     return type.spelling;

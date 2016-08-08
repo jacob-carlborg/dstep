@@ -186,7 +186,6 @@ class Translator
                     break;
 
                 default:
-                    output.flushLocation(cursor.extent, false);
                     break;
             }
         }

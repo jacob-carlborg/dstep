@@ -78,6 +78,24 @@ struct Type
             kind == CXTypeKind.CXType_DependentSizedArray;
     }
 
+    /**
+     * Removes array and pointer modifiers from the type.
+     */
+    @property Type undecorated()
+    {
+        if (isArray)
+            return array.elementType.undecorated;
+        else if (kind == CXTypeKind.CXType_Pointer && !pointee.isFunctionType)
+            return pointee.undecorated;
+        else
+            return this;
+    }
+
+    @property bool isDecorated()
+    {
+        return isArray || (kind == CXTypeKind.CXType_Pointer && !pointee.isFunctionType);
+    }
+
     @property bool isEnum ()
     {
         return kind == CXTypeKind.CXType_Enum;
