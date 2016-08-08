@@ -181,6 +181,10 @@ class Translator
                     translateMacroDefinition(output, cursor, parent);
                     break;
 
+                case CXCursor_MacroExpansion:
+                    output.flushLocation(cursor.extent);
+                    break;
+
                 default:
                     break;
             }
