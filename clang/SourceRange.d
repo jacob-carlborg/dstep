@@ -15,6 +15,26 @@ struct SourceRange
 {
     mixin CX;
 
+    this(CXSourceRange cx)
+    {
+        this.cx = cx;
+    }
+
+    @property static SourceRange empty()
+    {
+        return SourceRange(clang_getNullRange());
+    }
+
+    @property bool isEmpty()
+    {
+        return clang_Range_isNull(cx) != 0;
+    }
+
+    this(SourceLocation start, SourceLocation end)
+    {
+        cx = clang_getRange(start.cx, end.cx);
+    }
+
     @property SourceLocation start() const
     {
         return SourceLocation(clang_getRangeStart(cx));

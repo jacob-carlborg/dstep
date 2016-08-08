@@ -16,6 +16,8 @@ import clang.SourceRange;
 import clang.Token;
 import clang.TranslationUnit;
 
+import dstep.translator.Preprocessor;
+
 class MacroIndex
 {
     private static bool pred(in Cursor a, in Cursor b)
@@ -23,11 +25,13 @@ class MacroIndex
         return a.location.lexicalLess(b.location);
     }
 
-    private TranslationUnit unit;
+    private TranslationUnit translUnit;
     private alias CursorRedBlackTree =
         RedBlackTree!(Cursor, (a, b) => pred(a, b));
     private CursorRedBlackTree expansions;
     private Cursor[string] definitions;
+
+    private Directive[] directives;
 
     private static string uniqueID(in Cursor cursor)
     {
@@ -39,15 +43,15 @@ class MacroIndex
             cursor.location.offset);
     }
 
-    this(TranslationUnit unit)
+    this(TranslationUnit translUnit)
     {
-        this.unit = unit;
+        this.translUnit = translUnit;
 
         expansions = new CursorRedBlackTree();
 
         Cursor[string] recent;
 
-        foreach (cursor, parent; unit.cursor.all)
+        foreach (cursor, parent; translUnit.cursor.all)
         {
             if (cursor.kind == CXCursorKind.CXCursor_MacroExpansion)
             {
@@ -63,6 +67,8 @@ class MacroIndex
                 recent[cursor.spelling] = cursor;
             }
         }
+
+        directives = dstep.translator.Preprocessor.directives(translUnit);
     }
 
     Cursor[] queryExpansion(Cursor cursor) const
@@ -86,5 +92,44 @@ class MacroIndex
             (greater, OpenRight.yes);
 
         return result.data;
+    }
+
+    Tuple!(bool, SourceLocation) includeGuardLocation()
+    {
+        import std.range.primitives : empty;
+
+        static bool checkIfndef(ConditionalDirective directives, string identifier)
+        {
+            auto negation = cast (UnaryExpr) directives.condition;
+
+            if (negation && negation.operator == "!")
+            {
+                auto defined = cast (DefinedExpr) negation.subexpr;
+                return defined && defined.identifier == identifier;
+            }
+
+            return false;
+        }
+
+        if (!directives.empty)
+        {
+            if (directives[0].kind == DirectiveKind.pragmaOnce)
+            {
+                return Tuple!(bool, SourceLocation)(true, directives[0].extent.start);
+            }
+            else if (2 <= directives.length)
+            {
+                auto ifndef = cast (ConditionalDirective) directives[0];
+                auto define = cast (MacroDefinition) directives[1];
+                auto endif = directives[$ - 1];
+
+                if (ifndef && define &&
+                    ifndef.endif == endif &&
+                    checkIfndef(ifndef, define.spelling))
+                    return Tuple!(bool, SourceLocation)(true, ifndef.location);
+            }
+        }
+
+        return Tuple!(bool, SourceLocation)(false, SourceLocation.empty);
     }
 }

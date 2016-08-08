@@ -465,8 +465,7 @@ q"C
 
 uint8_t foo;
 uint32_t bar;
-C",
-q"D
+C", q"D
 extern (C):
 
 extern __gshared ubyte foo;

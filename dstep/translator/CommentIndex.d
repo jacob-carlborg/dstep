@@ -73,6 +73,8 @@ class CommentIndex
     private TranslationUnit translUnit;
     private Comment[] comments;
     private SourceRange lastTokenRange;
+    private SourceLocation includeGuardLocation;
+    private bool hasIncludeGuard = false;
 
     this(TranslationUnit translUnit)
     {
@@ -93,6 +95,14 @@ class CommentIndex
             .map!(token => Comment(token)).array;
     }
 
+    this (TranslationUnit translUnit, SourceLocation includeGuardLocation)
+    {
+        this (translUnit);
+
+        this.includeGuardLocation = includeGuardLocation;
+        this.hasIncludeGuard = true;
+    }
+
     auto queryComments(uint begin, uint end)
     {
         auto sorted = assumeSorted(comments);
@@ -110,20 +120,48 @@ class CommentIndex
     }
 
     /**
-     * Returns true if a header comment is present.
-     *
-     * The header comment is a comment placed at the very beginning of the
-     * file, specifically it cannot have any white-spaces before it.
-     */
+      * Returns true if a header comment is present.
+      *
+      * If include guard is present the header comment consists of all of the
+      * comments before the header guard. Otherwise, the header comment is a
+      * comment placed at the very beginning of the file, specifically it cannot
+      * have any white-spaces before it.
+      */
     bool isHeaderCommentPresent()
     {
-        return !comments.empty && comments.front.offset == 0;
+        if (hasIncludeGuard)
+            return !comments.empty &&
+                comments.front.extent.end.offset < includeGuardLocation.offset;
+        else
+            return !comments.empty && comments.front.offset == 0;
     }
 
     SourceRange queryHeaderCommentExtent()
     {
-        return translUnit.extent(
-            comments.front.offset,
-            comments.front.offset + cast(uint) comments.front.content.length);
+        if (hasIncludeGuard)
+        {
+            import std.algorithm.searching : find;
+
+            auto offset = includeGuardLocation.offset;
+            auto prv = comments.front;
+
+            foreach (itr; comments)
+            {
+                if (itr.offset >= offset)
+                    break;
+
+                prv = itr;
+            }
+
+            return translUnit.extent(
+                comments.front.offset,
+                prv.extent.end.offset);
+        }
+        else
+        {
+            return translUnit.extent(
+                comments.front.offset,
+                comments.front.offset + cast(uint) comments.front.content.length);
+        }
     }
 }

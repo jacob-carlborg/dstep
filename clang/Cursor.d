@@ -63,7 +63,7 @@ struct Cursor
 
     @property File file () const
     {
-        return location.spelling.file;
+        return location.file;
     }
 
     @property string path () const
@@ -71,18 +71,11 @@ struct Cursor
         return file.name;
     }
 
-    @property TokenRange tokens() const
+    @property Token[] tokens() const
     {
-        import std.algorithm.mutation : stripRight;
+        CXTranslationUnit translUnit = clang_Cursor_getTranslationUnit(cx);
 
-        CXTranslationUnit unit = clang_Cursor_getTranslationUnit(cx);
-        CXToken* tokens = null;
-        uint numTokens = 0;
-        clang_tokenize(unit, extent.cx, &tokens, &numTokens);
-        auto result = TokenRange(unit, tokens, numTokens);
-
-        // For some reason libclang returns some tokens out of cursors extent.cursor
-        return result.stripRight!(token => !intersects(extent, token.extent));
+        return TranslationUnit.tokenize(translUnit, extent);
     }
 
     @property SourceRange extent() const
@@ -333,7 +326,7 @@ struct Cursor
             return x.startsWith(prefix) ? x[prefixSize..$] : x;
         }
 
-        string prettyTokens(TokenRange tokens, size_t limit = 5)
+        string prettyTokens(Token[] tokens, size_t limit = 5)
         {
             string prettyToken(Token token)
             {

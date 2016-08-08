@@ -38,6 +38,8 @@ class Context
 
     Options options;
 
+    const string source;
+
     public this(TranslationUnit translUnit, Options options, Translator translator = null)
     {
         this.translUnit = translUnit;
@@ -47,7 +49,16 @@ class Context
         this.options = options;
 
         if (options.enableComments)
-            commentIndex_ = new CommentIndex(translUnit);
+        {
+            auto location = macroIndex.includeGuardLocation;
+
+            if (location[0])
+                commentIndex_ = new CommentIndex(
+                    translUnit,
+                    location[1]);
+            else
+                commentIndex_ = new CommentIndex(translUnit);
+        }
 
         typedefIndex_ = new TypedefIndex(translUnit);
 
@@ -58,6 +69,8 @@ class Context
 
         globalScope_ = new Output();
         typeNames_ = collectGlobalTypes(translUnit);
+
+        source = translUnit.source;
     }
 
     public string getAnonymousName (Cursor cursor)
@@ -229,7 +242,6 @@ bool isGlobal(Cursor cursor)
  * The type names are required for the parsing of C code (e.g. macro definition bodies),
  * as C grammar isn't context free.
  */
-
 Cursor[string] collectGlobalTypes(TranslationUnit translUnit)
 {
     void collectGlobalTypes(ref Cursor[string] result, Cursor parent)

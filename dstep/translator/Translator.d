@@ -79,9 +79,7 @@ class Translator
                 if (first)
                 {
                     if (result.flushHeaderComment())
-                    {
                         result.separator();
-                    }
 
                     externDeclaration(result);
                     first = false;
@@ -267,7 +265,7 @@ private:
 
     bool skipDeclaration (Cursor cursor)
     {
-        return (inputFilename != "" && inputFile != cursor.location.spelling.file)
+        return (inputFilename != "" && inputFile != cursor.location.file)
             || cursor.isPredefined;
     }
 

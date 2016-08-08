@@ -6,8 +6,9 @@
  */
 module clang.Token;
 
-import std.typecons;
 import std.conv : to;
+import std.typecons;
+public import std.range.primitives : empty, front, back;
 
 import clang.c.Index;
 import clang.SourceLocation;
@@ -33,160 +34,28 @@ TokenKind toD(CXTokenKind kind)
 
 struct Token
 {
-    private struct Container
+    TokenKind kind;
+    string spelling;
+    SourceRange extent;
+
+    @property SourceLocation location()
     {
-        CXTranslationUnit translationUnit;
-        CXToken* tokens;
-        ulong numTokens;
-
-        ~this()
-        {
-            if (tokens != null)
-            {
-                clang_disposeTokens(
-                    translationUnit,
-                    tokens,
-                    to!uint(numTokens));
-            }
-        }
-    }
-
-    private RefCounted!Container container;
-    size_t index;
-
-    @property private Container* containerPtr() const
-    {
-        return cast(Container*) &(container.refCountedPayload());
-    }
-
-    @property static Cursor empty ()
-    {
-        auto r = clang_getNullCursor();
-        return Cursor(r);
-    }
-
-    @property string spelling() const
-    {
-        import clang.Util : toD;
-
-        return toD(clang_getTokenSpelling(
-            containerPtr.translationUnit,
-            containerPtr.tokens[index]));
-    }
-
-    @property TokenKind kind() const
-    {
-        return clang_getTokenKind(containerPtr.tokens[index]).toD;
-    }
-
-    @property SourceLocation location() const
-    {
-        return SourceLocation(
-            clang_getTokenLocation(
-                containerPtr.translationUnit,
-                containerPtr.tokens[index]));
-    }
-
-    @property SourceRange extent() const
-    {
-        return SourceRange(
-            clang_getTokenExtent(
-                containerPtr.translationUnit,
-                containerPtr.tokens[index]));
+        return extent.start;
     }
 
     @property string toString() const
     {
         import std.format: format;
-        return format("Token(%s, %s)", kind, spelling);
+        return format("Token(kind = %s, spelling = %s)", kind, spelling);
     }
 }
 
-struct TokenRange
+SourceRange extent(Token[] tokens)
 {
-    private RefCounted!(Token.Container) container;
-    private size_t begin;
-    private size_t end;
-
-    private static RefCounted!(Token.Container) makeContainer(
-        CXTranslationUnit translationUnit,
-        CXToken* tokens,
-        ulong numTokens)
-    {
-        RefCounted!(Token.Container) result;
-        result.translationUnit = translationUnit;
-        result.tokens = tokens;
-        result.numTokens = numTokens;
-        return result;
-    }
-
-    private this(
-        RefCounted!(Token.Container) container,
-        size_t begin,
-        size_t end)
-    {
-        this.container = container;
-        this.begin = begin;
-        this.end = end;
-    }
-
-    this(
-        CXTranslationUnit translationUnit,
-        CXToken* tokens,
-        ulong numTokens)
-    {
-        container = makeContainer(translationUnit, tokens, numTokens);
-        begin = 0;
-        end = numTokens;
-    }
-
-    @property bool empty() const
-    {
-        return begin >= end;
-    }
-
-    @property Token front()
-    {
-        return Token(container, begin);
-    }
-
-    @property Token back()
-    {
-        return Token(container, end - 1);
-    }
-
-    @property void popFront()
-    {
-        ++begin;
-    }
-
-    @property void popBack()
-    {
-        --end;
-    }
-
-    @property TokenRange save()
-    {
-        return this;
-    }
-
-    @property size_t length() const
-    {
-        return end - begin;
-    }
-
-    Token opIndex(size_t index)
-    {
-        return Token(container, begin + index);
-    }
-
-    TokenRange opSlice(size_t begin, size_t end)
-    {
-        return TokenRange(container, this.begin + begin, this.begin + end);
-    }
-
-    size_t opDollar() const
-    {
-        return length;
-    }
+    if (!tokens.empty)
+        return SourceRange(
+            tokens.front.extent.start,
+            tokens.back.extent.end);
+    else
+        return SourceRange.empty;
 }

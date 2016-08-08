@@ -125,3 +125,24 @@ struct DiagnosticSet
         return length;
     }
 }
+
+CXDiagnosticSeverity severity(DiagnosticSet diagnostics)
+{
+    import std.algorithm.searching : minPos;
+    import std.algorithm.iteration : map;
+
+    alias less = (a, b) => cast(uint) a > cast(uint) b;
+
+    if (diagnostics.empty)
+        return CXDiagnosticSeverity.CXDiagnostic_Ignored;
+    else
+        return diagnostics.map!(diagnostic => diagnostic.severity).minPos!less.front;
+}
+
+bool hasError(DiagnosticSet diagnostics)
+{
+    auto severity = diagnostics.severity;
+
+    return severity == CXDiagnosticSeverity.CXDiagnostic_Error ||
+        severity == CXDiagnosticSeverity.CXDiagnostic_Fatal;
+}
