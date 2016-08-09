@@ -105,7 +105,7 @@ body
 string translateSelector (string str, bool fullName = false, bool translateIdentifier = true)
 {
     import std.array : replace;
-    import std.string : indexOf; 
+    import std.string : indexOf;
 
     if (fullName)
         str = str.replace(":", "_");
@@ -230,6 +230,29 @@ body
         return translateType(context, type.kind, rewriteIdToObjcObject);
 }
 
+string translateArrayElement(
+    Context context,
+    Cursor cursor,
+    ArrayType array,
+    bool rewriteIdToObjcObject)
+{
+    import std.format : format;
+
+    bool isConst = array.elementType.isConst;
+
+    auto spelling = translateType(
+        context,
+        cursor,
+        array.elementType,
+        rewriteIdToObjcObject,
+        !isConst);
+
+    if (isConst)
+        return format("const(%s)", spelling);
+    else
+        return spelling;
+}
+
 string translateArray (
     Context context,
     Cursor cursor,
@@ -243,7 +266,7 @@ in
 }
 body
 {
-    import std.conv;
+    import std.format : format;
 
     auto array = type.array;
     string elementType;
@@ -259,10 +282,10 @@ body
     }
     else
     {
-        elementType = translateType(
+        elementType = translateArrayElement(
             context,
             cursor,
-            array.elementType,
+            array,
             rewriteIdToObjcObject);
     }
 
@@ -279,30 +302,42 @@ body
                 auto expansions = context.macroIndex.queryExpansion(children[dimension]);
 
                 if (expansions.length == 1)
-                {
-                    return elementType ~ '[' ~ expansions[0].spelling ~ ']';
-                }
+                    return format("%s[%s]", elementType, expansions[0].spelling);
             }
             else if (children[dimension].kind == CXCursorKind.CXCursor_DeclRefExpr)
             {
-                return elementType ~ '[' ~ children[dimension].spelling ~ ']';
+                return format("%s[%s]", elementType, children[dimension].spelling);
             }
         }
 
-        return elementType ~ '[' ~ to!string(array.size) ~ ']';
+        if (cursor.semanticParent.kind == CXCursorKind.CXCursor_FunctionDecl && dimension == 0)
+            return format("ref %s[%s]", elementType, array.size);
+        else
+            return format("%s[%s]", elementType, array.size);
+    }
+    else if (cursor.semanticParent.kind == CXCursorKind.CXCursor_FunctionDecl)
+    {
+        return format("%s*", elementType);
     }
     else
     {
+        // FIXME: Find a way to translate references to static external arrays with unknown size.
+
         // extern static arrays (which are normally present in bindings)
         // have same ABI as extern dynamic arrays, size is only checked
         // against declaration in header. As it is not possible in D
         // to define static array with ABI of dynamic one, only way is to
         // abandon the size information
-        return elementType ~ "[]";
+        return format("%s[]", elementType);
     }
 }
 
-string translatePointer (Context context, Cursor cursor, Type type, bool rewriteIdToObjcObject, bool applyConst)
+string translatePointer (
+    Context context,
+    Cursor cursor,
+    Type type,
+    bool rewriteIdToObjcObject,
+    bool applyConst)
 in
 {
     assert(type.kind == CXTypeKind.CXType_Pointer);
@@ -331,7 +366,6 @@ body
         {
             if (type.isConst)
                 result = "const " ~ result ~ '*';
-
             else
                 result = "const(" ~ result ~ ")*";
         }

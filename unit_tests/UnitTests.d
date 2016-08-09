@@ -699,3 +699,32 @@ alias void function (int c, ClientData client_data) FunPtr;
 D");
 
 }
+
+// Test translation of array arguments.
+unittest
+{
+    assertTranslates(q"C
+int foo (int data[]);
+int bar (const int data[]);
+int baz (const int data[32]);
+int qux (const int data[32][64]);
+C",
+q"D
+extern (C):
+
+int foo (int* data);
+int bar (const(int)* data);
+int baz (ref const(int)[32] data);
+int qux (ref const(int)[64][32] data);
+D");
+
+    // A case with the pointer as an element type.
+    assertTranslates(q"C
+int foo (const void *ptr_data[2]);
+C", q"D
+extern (C):
+
+int foo (ref const(void)*[2] ptr_data);
+D");
+
+}
