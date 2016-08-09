@@ -342,18 +342,40 @@ body
     return result;
 }
 
+Parameter translateParameter (Context context, Cursor parameter)
+{
+    Parameter result;
+
+    result.type = translateType(context, parameter);
+    result.name = parameter.spelling;
+    result.isConst = false;
+
+    return result;
+}
+
+Parameter[] translateParameters (Context context, Cursor cursor, FuncType func)
+{
+    import std.array : Appender;
+
+    auto result = Appender!(Parameter[])();
+    auto arguments = func.arguments;
+
+    foreach (child; cursor.all)
+    {
+        if (child.kind == CXCursorKind.CXCursor_ParmDecl)
+            result.put(translateParameter(context, child));
+    }
+
+    return result.data;
+}
+
 string translateFunctionPointerType (Context context, Cursor cursor, FuncType func)
 {
-    Parameter[] params;
-    params.reserve(func.arguments.length);
-
-    foreach (type ; func.arguments)
-        params ~= Parameter(translateType(context, cursor, type));
-
-    auto resultType = translateType(context, cursor, func.resultType);
+    auto params = translateParameters(context, cursor, func);
+    auto result = translateType(context, cursor, func.resultType);
 
     Output output = new Output();
-    translateFunction(output, resultType, "function", params, func.isVariadic);
+    translateFunction(output, result, "function", params, func.isVariadic);
     return output.data();
 }
 

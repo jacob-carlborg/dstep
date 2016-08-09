@@ -616,3 +616,86 @@ void foo (...);
 D", options);
 
 }
+
+// Test specifying package name.
+unittest
+{
+    Options options;
+    options.outputFile = "qux/Baz.d";
+    options.packageName = "foo.bar";
+
+    assertTranslates(q"C
+int a;
+C", q"D
+module foo.bar.Baz;
+
+extern (C):
+
+extern __gshared int a;
+D", options);
+
+}
+
+// Test translation of function pointers.
+unittest
+{
+    assertTranslates(q"C
+typedef void *ClientData;
+
+typedef struct { } EntityInfo;
+
+void (*fun)(ClientData client_data, const EntityInfo*, unsigned last);
+C", q"D
+extern (C):
+
+alias void* ClientData;
+
+struct EntityInfo
+{
+}
+
+extern __gshared void function (ClientData client_data, const(EntityInfo)*, uint last) fun;
+D");
+
+    assertTranslates(q"C
+typedef void* ClientData;
+
+typedef struct { } Cursor;
+
+enum VisitorResult {
+    Break,
+    Continue
+};
+
+typedef enum VisitorResult (*FunPtr)(Cursor C, ClientData client_data);
+C", q"D
+extern (C):
+
+alias void* ClientData;
+
+struct Cursor
+{
+}
+
+enum VisitorResult
+{
+    Break = 0,
+    Continue = 1
+}
+
+alias VisitorResult function (Cursor C, ClientData client_data) FunPtr;
+D");
+
+    assertTranslates(q"C
+typedef void* ClientData;
+
+typedef void (*FunPtr)(int c, ClientData client_data);
+C", q"D
+extern (C):
+
+alias void* ClientData;
+
+alias void function (int c, ClientData client_data) FunPtr;
+D");
+
+}

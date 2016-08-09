@@ -61,6 +61,13 @@ unittest
 
 unittest
 {
+    assertTranslatesObjCFile(
+        "test_files/objc/time_h_issue.d",
+        "test_files/objc/time_h_issue.h");
+}
+
+unittest
+{
     assertTranslatesCFile(
         "test_files/aggregate.d",
         "test_files/aggregate.h");

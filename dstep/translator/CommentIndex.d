@@ -27,7 +27,7 @@ class CommentIndex
         this(Token token)
         {
             auto location = token.location;
-            content = token.spelling;
+            content = normalize(token.spelling);
             extent = token.extent;
             line = location.line;
             column = location.column;
@@ -67,6 +67,37 @@ class CommentIndex
         int opCmp(uint s) const
         {
             return offset < s ? -1 : (offset == s ? 0 : 1);
+        }
+
+        private static bool isNormalized(string content)
+        {
+            import std.ascii : isWhite;
+            import std.range : iota;
+            import std.algorithm : canFind;
+
+            return !iota(0, content.length).canFind!(
+                i => content[i] == '\n' && content[i - 1].isWhite);
+        }
+
+        private static string normalize(string content)
+        {
+            import std.algorithm : map, splitter;
+            import std.string : stripRight;
+
+            if (isNormalized(content))
+                return content;
+            else
+                return content.splitter("\n").map!(stripRight).join("\n");
+        }
+
+        unittest
+        {
+            assert(normalize("") == "");
+            assert(normalize("foo") == "foo");
+            assert(normalize("foo \n") == "foo\n");
+            assert(normalize("foo \n  ") == "foo\n");
+            assert(normalize("foo \n  bar \n  ") == "foo\n  bar\n");
+            assert(normalize("foo \n  bar \n\n  ") == "foo\n  bar\n\n");
         }
     }
 

@@ -172,6 +172,14 @@ struct Cursor
         return childrenImpl!InOrderVisitor(ignorePredefined);
     }
 
+    Cursor child() const
+    {
+        foreach (child; all)
+            return child;
+
+        return Cursor.empty;
+    }
+
     Cursor findChild(CXCursorKind kind)
     {
         foreach (child; all)

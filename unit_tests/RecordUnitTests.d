@@ -118,7 +118,6 @@ struct Foo
     short y;
     int z;
 }
-
 D");
 
 }

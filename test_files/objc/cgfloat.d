@@ -1,4 +1,3 @@
-
 extern (Objective-C):
 
 extern __gshared CGFloat test;
