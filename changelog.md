@@ -30,6 +30,7 @@ Issue #46: Generating code that will not compile.
 Issue #47: Treatment of #define enhancement.
 Issue #50: struct typedef generates recursive alias bug.
 Issue #83: New multiline translation.
+Issue #85: dstep not converting `const T x[]` to `const (T)* x`.
 
 ## Version 0.2.1
 ### New/Changed Features
