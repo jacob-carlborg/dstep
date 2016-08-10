@@ -12,7 +12,6 @@ import dstep.Configuration;
 import dstep.translator.Options;
 import dstep.core.Exceptions;
 
-
 /**
  *  Processes command-line arguments
  *
@@ -144,7 +143,7 @@ int main (string[] args)
     }
     catch (DStepException e)
     {
-        writeln("An error occurred: ", e);
+        write(e.msg);
         return -1;
     }
     catch (Throwable e)

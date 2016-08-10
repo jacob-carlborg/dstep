@@ -42,14 +42,24 @@ class Application
         import std.exception : enforce;
 
         enforce!DStepException(config.inputFiles.length > 0,
-            "Must supply at least one input file");
+            "dstep: error: must supply at least one input file\n");
+
+        enforceInputFilesExist(config);
 
         // when only one input file is supplied, -o argument is
         // interpreted as file path, otherwise as base directory path
         bool singleFileInput = config.inputFiles.length == 1;
 
+        Task!(
+            startParsingFile,
+            Configuration,
+            string,
+            string)*[] conversionTasks;
+
+        conversionTasks.length = config.inputFiles.length;
+
         // parallel generation of D modules for each of input files
-        foreach (fileName; config.inputFiles)
+        foreach (size_t index, fileName; config.inputFiles)
         {
             string outputFilename;
 
@@ -67,13 +77,36 @@ class Application
             }
 
             string outputDir = Path.dirName(outputFilename);
+
             if (!exists(outputDir))
                 mkdirRecurse(outputDir);
 
-            auto conversionTask = task!startParsingFile(config,
-                fileName, outputFilename);
+            conversionTasks[index] = task!startParsingFile(
+                config,
+                fileName,
+                outputFilename);
 
-            conversionTask.executeInNewThread();
+            conversionTasks[index].executeInNewThread();
+        }
+
+        foreach (conversionTask; conversionTasks)
+            conversionTask.yieldForce();
+    }
+
+    static void enforceInputFilesExist(const Configuration config)
+    {
+        import std.exception : enforce;
+        import std.format : format;
+
+        foreach (inputFile; config.inputFiles)
+        {
+            enforce!DStepException(
+                exists(inputFile),
+                format("dstep: error: file '%s' doesn't exist\n", inputFile));
+
+            enforce!DStepException(
+                isFile(inputFile),
+                format("dstep: error: '%s' is not a file\n", inputFile));
         }
     }
 
@@ -132,7 +165,9 @@ private struct ParseFile
 
         diagnostics = translationUnit.diagnostics;
 
-        if (handleDiagnostics && exists(inputFile))
+        enforceCompiled();
+
+        if (exists(inputFile))
         {
             import std.algorithm : map;
             import std.array : array;
@@ -154,6 +189,7 @@ private struct ParseFile
             auto translator = new Translator(translationUnit, options);
             translator.translate;
         }
+
     }
 
     ~this ()
@@ -174,9 +210,13 @@ private:
         return diagnostics.length > 0;
     }
 
-    bool handleDiagnostics ()
+    void enforceCompiled ()
     {
+        import std.array : Appender;
+        import std.exception : enforce;
+
         bool translate = true;
+        auto message = Appender!string();
 
         foreach (diag ; diagnostics)
         {
@@ -186,9 +226,10 @@ private:
                 if (translate)
                     translate = !(severity == CXDiagnostic_Error || severity == CXDiagnostic_Fatal);
 
-            writeln(stderr, diag.format);
+            message.put(diag.format);
+            message.put("\n");
         }
 
-        return translate;
+        enforce!DStepException(translate, message.data);
     }
 }

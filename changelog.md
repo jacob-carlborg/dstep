@@ -22,6 +22,7 @@
 Issue #2: Self alias should be removed bug.
 Issue #10: Embedded struct not generated.
 Issue #21: wchar_t should be tranlsated to core.stdc.stddef.wchar_t.
+Issue #28: Crashes if fed nonexistent header.
 Issue #29: Don't name anonymous enums.
 Issue #30: Single space inserted after function names.
 Issue #38: Spurious generation of variadic args rather than implicit void.
@@ -29,6 +30,7 @@ Issue #39: Recognize and translate __attribute__((__packed__)).
 Issue #46: Generating code that will not compile.
 Issue #47: Treatment of #define enhancement.
 Issue #50: struct typedef generates recursive alias bug.
+Issue #59: Shouldn't dstep exit with status code when there is some kind of error?
 Issue #83: New multiline translation.
 Issue #85: dstep not converting `const T x[]` to `const (T)* x`.
 

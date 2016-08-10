@@ -5,6 +5,9 @@
  * License: $(LINK2 http://www.boost.org/LICENSE_1_0.txt, Boost Software License 1.0)
  */
 import Common;
+
+import std.algorithm : canFind;
+import std.process : executeShell;
 import std.typecons;
 
 unittest
@@ -51,4 +54,47 @@ unittest
     assertRunsDStepCFiles(
         [TestFile("test_files/multiThreadTest1.d", "test_files/multiThreadTest1.h"),
          TestFile("test_files/multiThreadTest2.d", "test_files/multiThreadTest2.h")]);
+}
+
+// DStep should exit with non-zero status when an input file doesn't exist.
+unittest
+{
+    auto result = executeShell("./bin/dstep test_files/nonexistent.h");
+
+    assert(result.status != 0);
+    assert(result.output.canFind("nonexistent.h"));
+}
+
+// DStep should exit with non-zero status when one of the input files doesn't exist.
+unittest
+{
+    auto result = executeShell("./bin/dstep test_files/nonexistent.h test_files/existent.h");
+
+    assert(result.status != 0);
+    assert(result.output.canFind("nonexistent.h"));
+}
+
+// DStep should exit with non-zero status when there is a syntax error in the input file.
+unittest
+{
+    auto result = executeShell("./bin/dstep test_files/syntax_error.h");
+
+    assert(result.status != 0);
+    assert(result.output.canFind("syntax_error.h"));
+}
+
+// DStep should exit with zero status when everything is fine.
+unittest
+{
+    auto result = executeShell("./bin/dstep test_files/aggregate.h");
+
+    assert(result.status == 0);
+}
+
+// DStep should exit with zero status when asked for help.
+unittest
+{
+    auto result = executeShell("./bin/dstep --help");
+
+    assert(result.status == 0);
 }
