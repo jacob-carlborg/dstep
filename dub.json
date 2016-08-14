@@ -50,8 +50,4 @@
             "excludedSourceFiles": ["dstep/main.d"]
         }
     ],
-
-    "dependencies": {
-        "dstack": "~>0.0.5"
-    }
 }
