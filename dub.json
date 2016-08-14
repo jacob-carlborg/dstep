@@ -36,6 +36,7 @@
             "name": "test",
             "mainSourceFile": "test.d",
             "targetName": "test",
+            "sourceFiles": [ "unit_tests/HttpClient.d" ],
             "excludedSourceFiles": ["dstep/*", "clang/*"]
         },
 

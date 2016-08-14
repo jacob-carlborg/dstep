@@ -193,10 +193,11 @@ private:
         auto url = clang.baseUrl ~ clang.filename;
         auto dest = archivePath(clang.filename);
 
-        import std.net.curl;
+        import std.file : write;
+        import HttpClient : getBinary;
 
         if (!exists(dest))
-            std.net.curl.download(url, dest);
+            write(dest, getBinary(url));
     }
 
     void extractArchive (const ref Clang clang)
