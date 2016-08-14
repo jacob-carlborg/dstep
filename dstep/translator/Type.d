@@ -173,17 +173,17 @@ string translateWCharT(Context context, Type type)
         context.includeHandler.addImport("core.stdc.stddef");
         return "wchar_t";
     }
-    else
+    else if (type.canonical.kind.isIntegral)
     {
-        auto kind = type.canonical.kind;
+        auto sizeOf = type.canonical.sizeOf;
 
-        if (kind == CXTypeKind.CXType_Int)
+        if (sizeOf == 4)
             return "dchar";
-        else if (kind == CXTypeKind.CXType_Short)
+        else if (sizeOf == 2)
             return "wchar";
-        else
-            return null;
     }
+
+    return "<unimplemented>";
 }
 
 string translateTypedef(Context context, Type type)

@@ -1,0 +1,35 @@
+
+platform: x64
+
+environment:
+  matrix:
+  - DC: dmd
+    DVersion: 2.071.0
+    arch: x64
+
+skip_tags: true
+
+branches:
+  only:
+    - windows
+
+install:
+  - ps: echo "Downloading dmd...";
+        Invoke-WebRequest "http://downloads.dlang.org/releases/2.x/$env:DVersion/dmd.$env:DVersion.windows.7z" -OutFile c:\dmd.7z;
+        7z x c:\dmd.7z -oc:\ > $null;
+        echo "Downloading dub...";
+        Invoke-WebRequest https://code.dlang.org/files/dub-1.0.0-beta.1-windows-x86.zip -OutFile c:\dub.zip;
+        7z x c:\dub.zip -oc:\dub > $null;
+
+  - set PATH=c:\dub;%PATH%
+  - dub --version
+
+before_build:
+  - set PATH=c:\dmd2\windows\bin;%PATH%
+  - '"C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall" amd64'
+
+build_script:
+  - dub build --arch=x86_64
+
+test_script:
+  - dub test --arch=x86_64

@@ -100,9 +100,48 @@ Set!T SetFromList(T)(T[] list)
     return result;
 }
 
-extern (C) int mkstemps(char*, int);
-extern (C) char* mkdtemp(char*);
-extern (C) int close(int);
+version (Posix)
+{
+    private extern (C) int mkstemps(char*, int);
+    private extern (C) char* mkdtemp(char*);
+    private extern (C) int close(int);
+}
+else
+{
+    struct GUID {
+        uint Data1;
+        ushort Data2;
+        ushort Data3;
+        ubyte[8] Data4;
+    }
+
+    private extern (Windows) uint CoCreateGuid(GUID* pguid);
+
+    private string createGUID()
+    {
+        char toHex(uint x)
+        {
+            if (x < 10)
+                return cast(char) ('0' + x);
+            else
+                return cast(char) ('A' + x - 10);
+        }
+
+        GUID guid;
+        CoCreateGuid(&guid);
+
+        ubyte* data = cast(ubyte*)&guid;
+        char[32] result;
+
+        foreach (i; 0 .. 16)
+        {
+            result[i * 2 + 0] = toHex(data[i] & 0x0fu);
+            result[i * 2 + 1] = toHex(data[i] >> 16);
+        }
+
+        return result.idup;
+    }
+}
 
 class NamedTempFileException : object.Exception
 {
@@ -143,24 +182,33 @@ File namedTempFile(string prefix, string suffix)
     import std.path;
     import std.format;
 
-    string name = format("%sXXXXXXXXXXXXXXXX%s\0", prefix, suffix);
-    char[] path = buildPath(tempDir(), name).dup;
-    const size_t termAnd6XSize = 7;
+    version (Posix)
+    {
+        string name = format("%sXXXXXXXXXXXXXXXX%s\0", prefix, suffix);
+        char[] path = buildPath(tempDir(), name).dup;
+        const size_t termAnd6XSize = 7;
 
-    immutable size_t begin = path.length - name.length + prefix.length;
-    immutable size_t end = path.length - suffix.length - termAnd6XSize;
+        immutable size_t begin = path.length - name.length + prefix.length;
+        immutable size_t end = path.length - suffix.length - termAnd6XSize;
 
-    randstr(path[begin .. end]);
+        randstr(path[begin .. end]);
 
-    int fd = mkstemps(path.ptr, cast(int) suffix.length);
-    scope (exit) close(fd);
+        int fd = mkstemps(path.ptr, cast(int) suffix.length);
+        scope (exit) close(fd);
 
-    path = path[0..$-1];
+        path = path[0 .. $ - 1];
 
-    if (fd == -1)
-        throw new NamedTempFileException(path.idup);
+        if (fd == -1)
+            throw new NamedTempFileException(path.idup);
 
-    return File(path, "wb+");
+        return File(path, "wb+");
+    }
+    else
+    {
+        string name = format("%s%s%s", prefix, createGUID(), suffix);
+        string path = buildPath(tempDir(), name);
+        return File(path, "wb+");
+    }
 }
 
 string namedTempDir(string prefix)
@@ -169,22 +217,37 @@ string namedTempDir(string prefix)
     import std.path;
     import std.format;
 
-    string name = format("%sXXXXXXXXXXXXXXXX\0", prefix);
-    char[] path = buildPath(tempDir(), name).dup;
-    const size_t termAnd6XSize = 7;
+    version (Posix)
+    {
+        string name = format("%sXXXXXXXXXXXXXXXX\0", prefix);
+        char[] path = buildPath(tempDir(), name).dup;
+        const size_t termAnd6XSize = 7;
 
-    immutable size_t begin = path.length - name.length + prefix.length;
+        immutable size_t begin = path.length - name.length + prefix.length;
 
-    randstr(path[begin .. $ - termAnd6XSize]);
+        randstr(path[begin .. $ - termAnd6XSize]);
 
-    char* result = mkdtemp(path.ptr);
+        char* result = mkdtemp(path.ptr);
 
-    path = path[0..$-1];
+        path = path[0..$-1];
 
-    if (result == null)
-        throw new NamedTempDirException(path.idup);
+        if (result == null)
+            throw new NamedTempDirException(path.idup);
 
-    return path.idup;
+        return path.idup;
+    }
+    else
+    {
+        string name = prefix ~ createGUID();
+        string path = buildPath(tempDir(), name);
+
+        try
+            mkdirRecurse(path);
+        catch (FileException)
+            throw new NamedTempDirException(path);
+
+        return path;
+    }
 }
 
 string asAbsNormPath(string path)

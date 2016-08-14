@@ -29,7 +29,7 @@
             "sourcePaths": ["dstep", "clang"],
             "importPaths": ["dstep", "clang"],
             "lflags-posix": ["-lclang", "-rpath", ".", "-rpath", "/usr/lib/llvm-3.7/lib", "-L.", "-L/usr/lib64/llvm", "-L/usr/lib/llvm-3.7/lib"],
-            "lflags-windows": ["+\\", "+clang"]
+            "lflags-windows": ["/LIBPATH:C:\\PROGRA~1\\LLVM\\lib", "libclang.lib", "Ole32.lib"],
         },
 
         {
@@ -47,7 +47,7 @@
             "sourcePaths": ["dstep", "clang", "unit_tests"],
             "importPaths": ["dstep", "clang"],
             "lflags-posix": ["-lclang", "-rpath", ".", "-L.", "-L/usr/lib64/llvm", "-L/usr/lib/llvm-3.7/lib"],
-            "lflags-windows": ["+\\", "+clang"],
+            "lflags-windows": ["/LIBPATH:C:\\PROGRA~1\\LLVM\\lib", "libclang.lib", "Ole32.lib"],
             "excludedSourceFiles": ["dstep/main.d"]
         }
     ],

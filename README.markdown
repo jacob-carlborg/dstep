@@ -21,13 +21,15 @@ The source code is available under the [Boost Software License 1.0](http://www.b
 
 ## Building
 
-### Requirements
+### Linux
+
+#### Requirements
 
 * libclang - [http://clang.llvm.org](http://clang.llvm.org) - 3.4 or later that is binary compatible with 3.4
 * DMD - [http://dlang.org/download.html](http://dlang.org/download.html) - 2.069.2
 * Dub [http://code.dlang.org/download](http://code.dlang.org/download)
 
-### Building
+#### Building
 
 1. Install all requirements, see [above](#requirements)
 2. Clone the repository by running:
@@ -35,6 +37,28 @@ The source code is available under the [Boost Software License 1.0](http://www.b
         $ git clone git://github.com/jacob-carlborg/dstep.git
 
 3. run `dub build`
+
+### Windows
+
+#### Requirements
+
+* LLVM 64-bit - [http://llvm.org/releases/download.html](http://llvm.org/releases/download.html) - pre-built 64-bit binaries for Windows
+* DMD - [http://dlang.org/download.html](http://dlang.org/download.html) - 2.069.2
+* Dub - [http://code.dlang.org/download](http://code.dlang.org/download)
+* Visual Studio - for example Visual Studio Community
+
+#### Building
+
+1. Install all requirements, see [above](#requirements)
+2. Clone the repository by running:
+
+		$ git clone git://github.com/jacob-carlborg/dstep.git
+
+3. run `dub build --arch=x86_64 --build=release`
+
+#### Remarks
+
+Currently only 64-bit release version is supported. Remeber to install 64-bit version of LLVM to the default destination (`Program Files`) and to add its binaries to PATH enviromental variable.
 
 ## Usage
 

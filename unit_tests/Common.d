@@ -36,6 +36,16 @@ public import clang.Token;
 
 Index index;
 
+version (linux)
+{
+    version = OptionalGNUStep;
+}
+
+version (Windows)
+{
+    version = OptionalGNUStep;
+}
+
 static this()
 {
     index = Index(false, false);
@@ -363,7 +373,7 @@ string translate(TranslationUnit translationUnit, Options options)
 
 class TranslateAssertError : AssertError
 {
-    this (string message, string file, ulong line)
+    this (string message, string file, size_t line)
     {
         super(message, file, line);
     }
@@ -419,10 +429,14 @@ void assertTranslates(
     string file = __FILE__,
     size_t line = __LINE__)
 {
-    auto unit = makeTranslationUnit(c);
+    auto translUnit = makeTranslationUnit(c);
     Options options;
+
+    if (options.inputFile.empty)
+        options.inputFile = translUnit.spelling;
+
     options.language = Language.c;
-    assertTranslates(d, unit, options, strict, file, line);
+    assertTranslates(d, translUnit, options, strict, file, line);
 }
 
 void assertTranslates(
@@ -433,8 +447,12 @@ void assertTranslates(
     string file = __FILE__,
     size_t line = __LINE__)
 {
-    auto unit = makeTranslationUnit(c);
-    assertTranslates(d, unit, options, strict, file, line);
+    auto translUnit = makeTranslationUnit(c);
+
+    if (options.inputFile.empty)
+        options.inputFile = translUnit.spelling;
+
+    assertTranslates(d, translUnit, options, strict, file, line);
 }
 
 void assertTranslatesFile(
@@ -446,11 +464,16 @@ void assertTranslatesFile(
     string file = __FILE__,
     size_t line = __LINE__)
 {
+    import clang.Util : asAbsNormPath;
     import std.file : readText;
 
     auto expected = readText(expectedPath);
-    auto unit = TranslationUnit.parse(index, actualPath, arguments);
-    assertTranslates(expected, unit, options, strict, file, line);
+    auto translUnit = TranslationUnit.parse(index, actualPath, arguments);
+
+    if (options.inputFile.empty)
+        options.inputFile = translUnit.spelling.asAbsNormPath;
+
+    assertTranslates(expected, translUnit, options, strict, file, line);
 }
 
 string findGNUStepIncludePath()
@@ -671,7 +694,7 @@ void assertTranslatesObjCFile(
 {
     string[] arguments = ["-ObjC", "-Iresources"];
 
-    version (linux)
+    version (OptionalGNUStep)
     {
         auto extra = findExtraGNUStepPaths(file, line);
 
@@ -721,7 +744,7 @@ void assertRunsDStepObjCFile(
 {
     string[] extended = arguments ~ ["-ObjC", "-Iresources"];
 
-    version (linux)
+    version (OptionalGNUStep)
     {
         auto extra = findExtraGNUStepPaths(file, line);
 

@@ -247,7 +247,7 @@ struct TranslationUnit
         return &accessor;
     }
 
-    size_t delegate (SourceLocation)
+    ulong delegate (SourceLocation)
         relativeLocationAccessor()
     {
         return relativeLocationAccessorImpl(cursor.all);

@@ -49,11 +49,13 @@ class IncludeHandler
             "_uint32_t" : "core.stdc.stdint",
             "_uint64_t" : "core.stdc.stdint",
             "stdio" : "core.stdc.stdio",
+            "corecrt_wstdio" : "core.stdc.stdio",
             "stdlib" : "core.stdc.stdlib",
             "string" : "core.stdc.string",
             "tgmath" : "core.stdc.tgmath",
             "time" : "core.stdc.time",
             "_time_t" : "core.stdc.time",
+            "corecrt" : "core.stdc.time",
             "wchar" : "core.stdc.wchar_",
             "wctype" : "core.stdc.wctype",
 
@@ -125,7 +127,7 @@ class IncludeHandler
 
         auto absolute = include.asAbsNormPath;
 
-        if (absolute != options.inputFile)
+        if (absolute != options.inputFile && !include.empty)
         {
             if (exists(absolute) && isFile(absolute))
                 includes[absolute] = true;
@@ -149,6 +151,7 @@ class IncludeHandler
         import std.algorithm : map;
         import std.array : array;
         import std.format : format;
+        import std.algorithm.iteration : filter, map;
 
         Set!string standard, package_, unhandled;
 
