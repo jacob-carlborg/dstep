@@ -80,6 +80,11 @@ mixin template CX ()
     }
 }
 
+string clangVersion()
+{
+    return clang_getClangVersion().toD;
+}
+
 alias Set(T) = void[0][T];
 
 void add(T)(ref void[0][T] set, T value) {

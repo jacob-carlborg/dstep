@@ -56,6 +56,8 @@ auto parseCLI (string[] args)
         args,
         std.getopt.config.passThrough,
         std.getopt.config.caseSensitive,
+        "version", &config.dstepVersion,
+        "clang-version", &config.clangVersion,
         "output|o", "Write output to", &config.output,
         "language|x", "Treat subsequent input files as having type <language>.", &parseLanguage,
         "objective-c", "Treat source input file as Objective-C input.", &forceObjectiveC,
@@ -122,6 +124,10 @@ else:
  */
 int main (string[] args)
 {
+    import std.stdio;
+    import std.string;
+    import clang.Util;
+
     auto parseResult = parseCLI(args);
     Configuration config = parseResult[0];
     GetoptResult getoptResult = parseResult[1];
@@ -132,8 +138,19 @@ int main (string[] args)
         return 0;
     }
 
+    if (config.dstepVersion)
+    {
+        writeln(strip(config.Version));
+        return 0;
+    }
+
+    if (config.clangVersion)
+    {
+        writeln(clangVersion());
+        return 0;
+    }
+
     import dstep.driver.Application;
-    import std.stdio;
 
     auto application = new Application(config);
 
