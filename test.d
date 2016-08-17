@@ -26,9 +26,15 @@ struct TestRunner
 
         foreach (const clang ; matrix.clangs)
         {
+            import std.string;
+
             activate(clang);
-            writeln("Testing with libclang version ", clang.version_);
+
+            auto output = execute(["./bin/dstep", "--clang-version"]);
+
+            writeln("Testing with ", strip(output.output));
             result += unitTest();
+            stdout.flush();
         }
 
         return result;
@@ -71,7 +77,10 @@ struct TestRunner
     {
         writeln("Running unit tests ");
 
-        auto result = executeShell("dub test");
+        version (Posix)
+            auto result = executeShell("dub test");
+        else
+            auto result = executeShell("dub test --arch=x86_64");
 
         if (result.status != 0)
             writeln(result.output);
@@ -81,7 +90,10 @@ struct TestRunner
 
     void build ()
     {
-        auto result = executeShell("dub build");
+        version (Posix)
+            auto result = executeShell("dub build");
+        else
+            auto result = executeShell("dub build --arch=x86_64");
 
         if (result.status != 0)
         {
@@ -112,7 +124,7 @@ struct Clang
     else version (Windows)
     {
         enum extension = ".dll";
-        enum prefix = "";
+        enum prefix = "lib";
     }
 
     else version (FreeBSD)
@@ -206,7 +218,10 @@ private:
         auto dest = clangPath();
         mkdirRecurse(dest);
 
-        auto result = execute(["tar", "--strip-components=1", "-C", dest, "-xf", src]);
+        version (Posix)
+            auto result = execute(["tar", "--strip-components=1", "-C", dest, "-xf", src]);
+        else
+            auto result = execute(["7z", "x", src, "-y", format("-o%s", dest)]);
 
         if (result.status != 0)
             throw new ProcessException("Failed to extract archive");
@@ -227,7 +242,11 @@ private:
 
     void extractLibclang (const ref Clang clang)
     {
-        auto src = buildNormalizedPath(clangPath, "lib", clang.libclang);
+        version (Posix)
+            auto src = buildNormalizedPath(clangPath, "lib", clang.libclang);
+        else
+            auto src = buildNormalizedPath(clangPath, "bin", clang.libclang);
+
         auto dest = buildNormalizedPath(workingDirectory, clang.versionedLibclang);
 
         copy(src, dest);

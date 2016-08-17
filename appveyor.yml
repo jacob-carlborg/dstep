@@ -32,4 +32,4 @@ build_script:
   - dub build --arch=x86_64
 
 test_script:
-  - dub test --arch=x86_64
+  - dub --config=test --arch=x86_64

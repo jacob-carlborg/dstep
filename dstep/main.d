@@ -146,7 +146,7 @@ int main (string[] args)
 
     if (config.clangVersion)
     {
-        writeln(clangVersion());
+        writeln(strip(clangVersion()));
         return 0;
     }
 
