@@ -322,10 +322,11 @@ void assertFileExists(
 
 TranslationUnit makeTranslationUnit(string source)
 {
-    return TranslationUnit.parseString(
-        index,
-        source,
-        ["-Iresources", "-Wno-missing-declarations"]);
+    auto arguments = ["-Iresources", "-Wno-missing-declarations"];
+
+    arguments ~= findExtraIncludePaths();
+
+    return TranslationUnit.parseString(index, source, arguments);
 }
 
 CommentIndex makeCommentIndex(string c)
@@ -467,6 +468,8 @@ void assertTranslatesFile(
     import clang.Util : asAbsNormPath;
     import std.file : readText;
 
+    arguments ~= findExtraIncludePaths();
+
     auto expected = readText(expectedPath);
     auto translUnit = TranslationUnit.parse(index, actualPath, arguments);
 
@@ -489,30 +492,56 @@ string findGNUStepIncludePath()
         return null;
 }
 
+string[] extractIncludePaths(string output)
+{
+    import std.algorithm.searching;
+    import std.algorithm.iteration;
+    import std.string;
+
+    string start = "#include <...> search starts here:";
+    string stop = "End of search list.";
+
+    auto paths = output.findSplitAfter(start)[1]
+        .findSplitBefore(stop)[0].strip();
+    auto args = map!(a => format("-I%s", a.strip()))(paths.splitLines());
+    return paths.empty ? null : args.array;
+}
+
 string[] findCcIncludePaths()
 {
-    string[] extract(string output)
-    {
-        import std.algorithm.searching;
-        import std.algorithm.iteration;
-        import std.string;
-
-        string start = "#include <...> search starts here:";
-        string stop = "End of search list.";
-
-        auto paths = output.findSplitAfter(start)[1]
-            .findSplitBefore(stop)[0].strip();
-        auto args = map!(a => format("-I%s", a.strip()))(paths.splitLines());
-        return paths.empty ? null : args.array;
-    }
-
     import std.process : executeShell;
     auto result = executeShell("cc -E -v - < /dev/null");
 
     if (result.status == 0)
-        return extract(result.output);
+        return extractIncludePaths(result.output);
     else
         return null;
+}
+
+string[] findMinGWIncludePaths()
+{
+    string sample = "c:\\MinGW\\include\\stdio.h";
+    string include = "-Ic:\\MinGW\\include";
+
+    if (exists(sample) && isFile(sample))
+        return [include];
+    else
+        return null;
+}
+
+string[] findExtraIncludePaths()
+{
+    import clang.Util : clangVersion;
+
+    version (Windows)
+    {
+        auto ver = clangVersion();
+
+        if (ver.major == 3 && ver.minor == 7)
+            return findMinGWIncludePaths();
+    }
+
+    return [];
 }
 
 string[] findExtraGNUStepPaths(string file, size_t line)
@@ -559,6 +588,8 @@ void assertRunsDStep(
     import std.format : format;
     import clang.Util : namedTempDir;
     import std.file : readText, mkdirRecurse, copy;
+
+    arguments ~= findExtraIncludePaths();
 
     string[] actualPaths;
 

@@ -5,13 +5,12 @@ environment:
   matrix:
   - DC: dmd
     DVersion: 2.071.0
-    arch: x64
+    arch: x86
+  - DC: dmd
+    DVersion: 2.071.0
+    arch: x86_64
 
 skip_tags: true
-
-branches:
-  only:
-    - windows
 
 install:
   - ps: echo "Downloading dmd...";
@@ -20,16 +19,33 @@ install:
         echo "Downloading dub...";
         Invoke-WebRequest https://code.dlang.org/files/dub-1.0.0-beta.1-windows-x86.zip -OutFile c:\dub.zip;
         7z x c:\dub.zip -oc:\dub > $null;
+        if ($env:arch -eq "x86") {
+          echo "Downloading 32-bit LLVM...";
+          Invoke-WebRequest http://llvm.org/releases/3.8.1/LLVM-3.8.1-win32.exe -OutFile c:\LLVM.exe;
+          7z x c:\LLVM.exe -oc:\PROGRA~2\LLVM > $null;
+        }
 
   - set PATH=c:\dub;%PATH%
   - dub --version
 
 before_build:
   - set PATH=c:\dmd2\windows\bin;%PATH%
-  - '"C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall" amd64'
+  - ps: $env:compilersetup = "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall";
+        if ($env:arch -eq "x86") {
+          $env:compilersetupargs = "x86";
+          $env:PATH = "c:\PROGRA~2\LLVM\bin;$($env:PATH)";
+          $env:archswitch = "";
+        }
+        else {
+          $env:compilersetupargs = "amd64";
+          $env:PATH = "c:\PROGRA~2\LLVM\bin;$($env:PATH)";
+          $env:archswitch = "--arch=x86_64";
+        }
+
+  - '"%compilersetup%" %compilersetupargs%'
 
 build_script:
-  - dub build --arch=x86_64
+  - dub build %archswitch%
 
 test_script:
-  - dub --config=test --arch=x86_64
+  - dub --config=test --arch=%arch%

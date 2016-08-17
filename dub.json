@@ -28,8 +28,10 @@
             "targetName": "dstep",
             "sourcePaths": ["dstep", "clang"],
             "importPaths": ["dstep", "clang"],
+            "dflags-windows-x86": ["-m32mscoff"],
             "lflags-posix": ["-lclang", "-rpath", ".", "-rpath", "/usr/lib/llvm-3.7/lib", "-L.", "-L/usr/lib64/llvm", "-L/usr/lib/llvm-3.7/lib"],
-            "lflags-windows": ["/LIBPATH:C:\\PROGRA~1\\LLVM\\lib", "libclang.lib", "Ole32.lib"],
+            "lflags-windows-x86": ["/LIBPATH:C:\\PROGRA~2\\LLVM\\lib", "libclang.lib", "Ole32.lib"],
+            "lflags-windows-x86_64": ["/LIBPATH:C:\\PROGRA~1\\LLVM\\lib", "libclang.lib", "Ole32.lib"],
         },
 
         {
@@ -37,7 +39,8 @@
             "mainSourceFile": "test.d",
             "targetName": "test",
             "sourceFiles": [ "unit_tests/HttpClient.d" ],
-            "excludedSourceFiles": ["dstep/*", "clang/*"]
+            "excludedSourceFiles": ["dstep/*", "clang/*"],
+            "dflags-windows-x86": ["-m32mscoff"],
         },
 
         {
@@ -46,9 +49,11 @@
             "targetName": "unittest",
             "sourcePaths": ["dstep", "clang", "unit_tests"],
             "importPaths": ["dstep", "clang"],
+            "excludedSourceFiles": ["dstep/main.d"],
+            "dflags-windows-x86": ["-m32mscoff"],
             "lflags-posix": ["-lclang", "-rpath", ".", "-L.", "-L/usr/lib64/llvm", "-L/usr/lib/llvm-3.7/lib"],
-            "lflags-windows": ["/LIBPATH:C:\\PROGRA~1\\LLVM\\lib", "libclang.lib", "Ole32.lib"],
-            "excludedSourceFiles": ["dstep/main.d"]
+            "lflags-windows-x86": ["/LIBPATH:C:\\PROGRA~2\\LLVM\\lib", "libclang.lib", "Ole32.lib"],
+            "lflags-windows-x86_64": ["/LIBPATH:C:\\PROGRA~1\\LLVM\\lib", "libclang.lib", "Ole32.lib"],
         }
     ],
 }

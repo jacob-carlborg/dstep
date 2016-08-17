@@ -32,12 +32,19 @@ struct TranslationUnit
         CXUnsavedFile[] unsavedFiles = null,
         uint options = CXTranslationUnit_Flags.CXTranslationUnit_DetailedPreprocessingRecord)
     {
+        string[] arguments = commandLineArgs.dup;
+
+        auto version_ = clangVersion();
+
+        if (version_.major == 3 && version_.minor == 7)
+            arguments ~= "-D__int64=long long";
+
         return TranslationUnit(
             clang_parseTranslationUnit(
                 index.cx,
                 sourceFilename.toStringz,
-                strToCArray(commandLineArgs),
-                cast(int) commandLineArgs.length,
+                strToCArray(arguments),
+                cast(int) arguments.length,
                 toCArray!(CXUnsavedFile)(unsavedFiles),
                 cast(uint) unsavedFiles.length,
                 options));

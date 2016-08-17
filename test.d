@@ -8,6 +8,7 @@ import std.algorithm;
 import std.string;
 import std.exception;
 
+
 int main ()
 {
     return TestRunner().run;
@@ -77,10 +78,10 @@ struct TestRunner
     {
         writeln("Running unit tests ");
 
-        version (Posix)
-            auto result = executeShell("dub test");
-        else
+        version (Win64)
             auto result = executeShell("dub test --arch=x86_64");
+        else
+            auto result = executeShell("dub test");
 
         if (result.status != 0)
             writeln(result.output);
@@ -90,10 +91,10 @@ struct TestRunner
 
     void build ()
     {
-        version (Posix)
-            auto result = executeShell("dub build");
-        else
+        version (Win64)
             auto result = executeShell("dub build --arch=x86_64");
+        else
+            auto result = executeShell("dub build");
 
         if (result.status != 0)
         {
@@ -174,6 +175,7 @@ struct ClangMatrix
 
             writeln("Downloading clang ", clang.version_);
             mkdirRecurse(basePath);
+            stdout.flush();
             download(clang);
         }
     }
@@ -188,6 +190,7 @@ struct ClangMatrix
             writeln("Extracting clang ", clang.version_);
             extractArchive(clang);
             extractLibclang(clang);
+            stdout.flush();
             clean();
         }
     }
@@ -378,12 +381,27 @@ private:
                 static assert(false, "Only 64bit versions of OS X are supported");
         }
 
-        else version (Windows)
+        else version (Win32)
         {
             return [
+                // Clang("3.8.1", "http://llvm.org/releases/3.8.1/", "LLVM-3.8.1-win32.exe"),
+                Clang("3.8.0", "http://llvm.org/releases/3.8.0/", "LLVM-3.8.0-win32.exe"),
+                // Clang("3.7.1", "http://llvm.org/releases/3.7.1/", "LLVM-3.7.1-win32.exe"),
+                Clang("3.7.0", "http://llvm.org/releases/3.7.0/", "LLVM-3.7.0-win32.exe"),
+                // Clang("3.6.2", "http://llvm.org/releases/3.6.2/", "LLVM-3.6.2-win32.exe"),
+                // Clang("3.6.1", "http://llvm.org/releases/3.6.1/", "LLVM-3.6.1-win32.exe"),
+                Clang("3.6.0", "http://llvm.org/releases/3.6.0/", "LLVM-3.6.0-win32.exe"),
                 Clang("3.5.0", "http://llvm.org/releases/3.5.0/", "LLVM-3.5.0-win32.exe"),
-                Clang("3.4.1", "http://llvm.org/releases/3.4.1/", "LLVM-3.4.1-win32.exe"),
+                // Clang("3.4.1", "http://llvm.org/releases/3.4.1/", "LLVM-3.4.1-win32.exe"),
                 Clang("3.4", "http://llvm.org/releases/3.4/", "LLVM-3.4-win32.exe")
+            ];
+        }
+
+        else version (Win64)
+        {
+            return [
+                Clang("3.8.0", "http://llvm.org/releases/3.8.0/", "LLVM-3.8.0-win64.exe"),
+                Clang("3.7.0", "http://llvm.org/releases/3.7.0/", "LLVM-3.7.0-win64.exe"),
             ];
         }
 

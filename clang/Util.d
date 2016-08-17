@@ -80,9 +80,39 @@ mixin template CX ()
     }
 }
 
-string clangVersion()
+string clangVersionString()
 {
-    return clang_getClangVersion().toD;
+    import std.string : strip;
+
+    return strip(clang_getClangVersion().toD);
+}
+
+struct Version
+{
+    uint major = 0;
+    uint minor = 0;
+    uint release = 0;
+}
+
+Version clangVersion()
+{
+    import std.algorithm : find;
+    import std.conv : parse;
+    import std.ascii : isDigit;
+    import std.range;
+
+    Version result;
+    auto verstr = clangVersionString().find!(x => x.isDigit);
+
+    result.major = verstr.parse!uint;
+    verstr.popFront();
+    result.minor = verstr.parse!uint;
+    verstr.popFront();
+
+    if (!verstr.empty && verstr.back.isDigit)
+        result.release = verstr.parse!uint;
+
+    return result;
 }
 
 alias Set(T) = void[0][T];
