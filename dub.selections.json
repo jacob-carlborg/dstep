@@ -1,8 +1,5 @@
 {
 	"fileVersion": 1,
 	"versions": {
-		"dstack": "0.0.5",
-		"mambo": "0.0.7",
-		"tango": "1.0.3+2.068"
 	}
 }

@@ -1,11 +1,12 @@
 module test;
 
 import std.process;
-import std.file : rmdirRecurse;
-
-import Path = tango.io.Path;
-
-import mambo.core._;
+import std.stdio;
+import std.file;
+import std.path;
+import std.algorithm;
+import std.string;
+import std.exception;
 
 int main ()
 {
@@ -20,13 +21,13 @@ struct TestRunner
     {
         int result = 0;
         auto matrix = setup();
-        activate(matrix.clangs.first);
+        activate(matrix.clangs[0]);
         build();
 
         foreach (const clang ; matrix.clangs)
         {
             activate(clang);
-            println("Testing with libclang version ", clang.version_);
+            writeln("Testing with libclang version ", clang.version_);
             result += unitTest();
         }
 
@@ -35,12 +36,10 @@ struct TestRunner
 
     string workingDirectory ()
     {
-        import tango.sys.Environment;
-
-        if (wd.any)
+        if (wd.length)
             return wd;
 
-        return wd = Environment.cwd.assumeUnique;
+        return wd = getcwd();
     }
 
     auto setup ()
@@ -54,28 +53,28 @@ struct TestRunner
 
     string clangBasePath ()
     {
-        return Path.join(workingDirectory, "clangs").assumeUnique;
+        return buildNormalizedPath(workingDirectory, "clangs");
     }
 
     void activate (const Clang clang)
     {
-        auto src = Path.join(workingDirectory, clang.versionedLibclang);
-        auto dest = Path.join(workingDirectory, clang.libclang);
+        auto src = buildNormalizedPath(workingDirectory, clang.versionedLibclang);
+        auto dest = buildNormalizedPath(workingDirectory, clang.libclang);
 
-        if (Path.exists(dest))
-            Path.remove(dest);
+        if (exists(dest))
+            remove(dest);
 
-        Path.copy(src, dest);
+        copy(src, dest);
     }
 
     int unitTest ()
     {
-        println("Running unit tests ");
+        writeln("Running unit tests ");
 
         auto result = executeShell("dub test");
 
         if (result.status != 0)
-            println(result.output);
+            writeln(result.output);
 
         return result.status;
     }
@@ -86,7 +85,7 @@ struct TestRunner
 
         if (result.status != 0)
         {
-            println(result.output);
+            writeln(result.output);
             throw new Exception("Failed to build DStep");
         }
     }
@@ -138,8 +137,6 @@ struct Clang
 
 struct ClangMatrix
 {
-    import Path = tango.io.Path;
-
     private
     {
         string basePath;
@@ -163,8 +160,8 @@ struct ClangMatrix
             if (libclangExists(clang))
                 continue;
 
-            println("Downloading clang ", clang.version_);
-            Path.createPath(basePath);
+            writeln("Downloading clang ", clang.version_);
+            mkdirRecurse(basePath);
             download(clang);
         }
     }
@@ -176,7 +173,7 @@ struct ClangMatrix
             if (libclangExists(clang))
                 continue;
 
-            println("Extracting clang ", clang.version_);
+            writeln("Extracting clang ", clang.version_);
             extractArchive(clang);
             extractLibclang(clang);
             clean();
@@ -187,8 +184,8 @@ private:
 
     bool libclangExists (const ref Clang clang)
     {
-        auto libclangPath = Path.join(workingDirectory, clang.versionedLibclang);
-        return Path.exists(libclangPath);
+        auto libclangPath = buildNormalizedPath(workingDirectory, clang.versionedLibclang);
+        return exists(libclangPath);
     }
 
     void download (const ref Clang clang)
@@ -196,15 +193,18 @@ private:
         auto url = clang.baseUrl ~ clang.filename;
         auto dest = archivePath(clang.filename);
 
-        if (!Path.exists(dest))
-            Http.download(url, dest);
+        import std.file : write;
+        import HttpClient : getBinary;
+
+        if (!exists(dest))
+            write(dest, getBinary(url));
     }
 
     void extractArchive (const ref Clang clang)
     {
         auto src = archivePath(clang.filename);
         auto dest = clangPath();
-        Path.createPath(dest);
+        mkdirRecurse(dest);
 
         auto result = execute(["tar", "--strip-components=1", "-C", dest, "-xf", src]);
 
@@ -214,23 +214,23 @@ private:
 
     string archivePath (string filename)
     {
-        return Path.join(basePath, filename).assumeUnique;
+        return buildNormalizedPath(basePath, filename);
     }
 
     string clangPath ()
     {
-        if (clangPath_.any)
+        if (clangPath_.length)
             return clangPath_;
 
-        return clangPath_ = Path.join(basePath, "clang").assumeUnique;
+        return clangPath_ = buildNormalizedPath(basePath, "clang");
     }
 
     void extractLibclang (const ref Clang clang)
     {
-        auto src = Path.join(clangPath, "lib", clang.libclang);
-        auto dest = Path.join(workingDirectory, clang.versionedLibclang);
+        auto src = buildNormalizedPath(clangPath, "lib", clang.libclang);
+        auto dest = buildNormalizedPath(workingDirectory, clang.versionedLibclang);
 
-        Path.copy(src, dest);
+        copy(src, dest);
     }
 
     void clean ()
@@ -402,17 +402,17 @@ version (linux):
 
     bool isFedora ()
     {
-        return nodename.contains("fedora");
+        return nodename.canFind("fedora");
     }
 
     bool isUbuntu ()
     {
-        return nodename.contains("ubuntu") || update.contains("ubuntu");
+        return nodename.canFind("ubuntu") || update.canFind("ubuntu");
     }
 
     bool isDebian ()
     {
-        return nodename.contains("debian");
+        return nodename.canFind("debian");
     }
 
     private utsname data()
@@ -428,160 +428,17 @@ version (linux):
 
     string update ()
     {
-        if (update_.any)
+        if (update_.length)
             return update_;
 
-        return update_ = data.update.ptr.toString.toLower;
+        return update_ = data.update.ptr.fromStringz.toLower.assumeUnique;
     }
 
     string nodename ()
     {
-        if (nodename_.any)
+        if (nodename_.length)
             return nodename_;
 
-        return nodename_ = data.nodename.ptr.toString.toLower;
-    }
-}
-
-struct Http
-{
-    import tango.io.device.File;
-    import tango.io.model.IConduit;
-    import tango.net.device.Socket;
-    import tango.net.http.HttpGet;
-    import tango.net.http.HttpConst;
-
-static:
-
-    void download (string url, string destination, float timeout = 30f, ProgressHandler progress = new CliProgressHandler)
-    {
-        auto data = download(url, timeout, progress);
-        writeFile(data, destination);
-    }
-
-    void[] download (string url, float timeout = 30f, ProgressHandler progress = new CliProgressHandler)
-    {
-        scope page = new HttpGet(url);
-        page.setTimeout(timeout);
-        auto buffer = page.open;
-
-        checkPageStatus(page, url);
-
-        auto contentLength = page.getResponseHeaders.getInt(HttpHeader.ContentLength);
-
-        enum width = 40;
-        int bytesLeft = contentLength;
-        int chunkSize = bytesLeft / width;
-
-        progress.start(contentLength, chunkSize, width);
-
-        while (bytesLeft > 0)
-        {
-            buffer.load(chunkSize > bytesLeft ? bytesLeft : chunkSize);
-            bytesLeft -= chunkSize;
-            progress(bytesLeft);
-        }
-
-        progress.end();
-
-        return buffer.slice;
-    }
-
-    bool exists (string url)
-    {
-        scope resource = new HttpGet(url);
-        resource.open;
-
-        return resource.isResponseOK;
-    }
-
-private:
-
-    void checkPageStatus (HttpGet page, string url)
-    {
-        import tango.core.Exception;
-
-        if (page.getStatus == 404)
-            throw new IOException(format(`The resource with URL "{}" could not be found.`, url));
-
-        else if (!page.isResponseOK)
-            throw new IOException(format(`An unexpected error occurred. The resource "{}" responded with the message "{}" and the status code {}.`, url, page.getResponse.getReason, page.getResponse.getStatus));
-    }
-
-    void writeFile (void[] data, string filename)
-    {
-        scope file = new File(filename, File.WriteCreate);
-        file.write(data);
-    }
-}
-
-abstract class ProgressHandler
-{
-    void start (int length, int chunkSize, int width);
-    void opCall (int bytesLeft);
-    void end ();
-}
-
-class CliProgressHandler : ProgressHandler
-{
-    private
-    {
-        int num;
-        int width;
-        int chunkSize;
-        int contentLength;
-
-        version (Posix)
-            enum
-            {
-                clearLine = "\033[1K", // clear backwards
-                saveCursor = "\0337",
-                restoreCursor = "\0338"
-            }
-
-        else
-            enum
-            {
-                clearLine = "\r",
-                saveCursor = "",
-                restoreCursor = ""
-            }
-    }
-
-    override void start (int contentLength, int chunkSize, int width)
-    {
-        this.chunkSize = chunkSize;
-        this.contentLength = contentLength;
-        this.width = width;
-        this.num = width;
-
-        print(saveCursor);
-    }
-
-    override void opCall (int bytesLeft)
-    {
-        int i = 0;
-
-        print(clearLine ~ restoreCursor ~ saveCursor);
-        print("[");
-
-        for ( ; i < (width - num); i++)
-            print("=");
-
-        print(">");
-
-        for ( ; i < width; i++)
-            print(" ");
-
-        print("]");
-        print(format(" {}/{} KB", (contentLength - bytesLeft) / 1024, contentLength / 1024).assumeUnique);
-
-        num--;
-    }
-
-    override void end ()
-    {
-        println(restoreCursor);
-        println();
+        return nodename_ = data.nodename.ptr.fromStringz.toLower.assumeUnique;
     }
 }
