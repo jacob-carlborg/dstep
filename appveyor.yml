@@ -13,39 +13,10 @@ environment:
 skip_tags: true
 
 install:
-  - ps: echo "Downloading dmd...";
-        Invoke-WebRequest "http://downloads.dlang.org/releases/2.x/$env:DVersion/dmd.$env:DVersion.windows.7z" -OutFile c:\dmd.7z;
-        7z x c:\dmd.7z -oc:\ > $null;
-        echo "Downloading dub...";
-        Invoke-WebRequest https://code.dlang.org/files/dub-1.0.0-beta.1-windows-x86.zip -OutFile c:\dub.zip;
-        7z x c:\dub.zip -oc:\dub > $null;
-        if ($env:arch -eq "x86") {
-          echo "Downloading 32-bit LLVM...";
-          Invoke-WebRequest http://llvm.org/releases/3.8.1/LLVM-3.8.1-win32.exe -OutFile c:\LLVM.exe;
-          7z x c:\LLVM.exe -oc:\PROGRA~2\LLVM > $null;
-        }
-
-  - set PATH=c:\dub;%PATH%
-  - dub --version
-
-before_build:
-  - set PATH=c:\dmd2\windows\bin;%PATH%
-  - ps: $env:compilersetup = "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall";
-        if ($env:arch -eq "x86") {
-          $env:compilersetupargs = "x86";
-          $env:PATH = "c:\PROGRA~2\LLVM\bin;$($env:PATH)";
-          $env:archswitch = "";
-        }
-        else {
-          $env:compilersetupargs = "amd64";
-          $env:PATH = "c:\PROGRA~2\LLVM\bin;$($env:PATH)";
-          $env:archswitch = "--arch=x86_64";
-        }
-
-  - '"%compilersetup%" %compilersetupargs%'
+  - echo dummy install script - dont remove me
 
 build_script:
-  - dub build %archswitch%
+  - echo dummy build script - dont remove me
 
 test_script:
-  - dub --config=test --arch=%arch%
+  - powershell -NoProfile -File appveyor.ps1 < NUL
