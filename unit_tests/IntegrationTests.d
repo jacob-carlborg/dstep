@@ -36,7 +36,7 @@ unittest
         TestFile("test_files/module/include.d", "test_files/module/include.h"),
         TestFile("test_files/module/unused.d", "test_files/module/unused.h")],
         ["--public-submodules", "--package", "modules"]);
-    
+
     assertRunsDStepCFiles([
         TestFile("test_files/clang-c/BuildSystem.d", "test_files/clang-c/BuildSystem.h"),
         TestFile("test_files/clang-c/CXCompilationDatabase.d", "test_files/clang-c/CXCompilationDatabase.h"),
@@ -59,7 +59,7 @@ unittest
 // DStep should exit with non-zero status when an input file doesn't exist.
 unittest
 {
-    auto result = executeShell("./bin/dstep test_files/nonexistent.h");
+    auto result = executeShell(`"./bin/dstep" test_files/nonexistent.h`);
 
     assert(result.status != 0);
     assert(result.output.canFind("nonexistent.h"));
@@ -68,7 +68,7 @@ unittest
 // DStep should exit with non-zero status when one of the input files doesn't exist.
 unittest
 {
-    auto result = executeShell("./bin/dstep test_files/nonexistent.h test_files/existent.h");
+    auto result = executeShell(`"./bin/dstep" test_files/nonexistent.h test_files/existent.h`);
 
     assert(result.status != 0);
     assert(result.output.canFind("nonexistent.h"));
@@ -77,7 +77,7 @@ unittest
 // DStep should exit with non-zero status when there is a syntax error in the input file.
 unittest
 {
-    auto result = executeShell("./bin/dstep test_files/syntax_error.h");
+    auto result = executeShell(`"./bin/dstep" test_files/syntax_error.h`);
 
     assert(result.status != 0);
     assert(result.output.canFind("syntax_error.h"));
@@ -86,7 +86,7 @@ unittest
 // DStep should exit with zero status when everything is fine.
 unittest
 {
-    auto result = executeShell("./bin/dstep test_files/aggregate.h");
+    auto result = executeShell(`"./bin/dstep" test_files/aggregate.h`);
 
     assert(result.status == 0);
 }
@@ -94,7 +94,7 @@ unittest
 // DStep should exit with zero status when asked for help.
 unittest
 {
-    auto result = executeShell("./bin/dstep --help");
+    auto result = executeShell(`"./bin/dstep" --help`);
 
     assert(result.status == 0);
 }

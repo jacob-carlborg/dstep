@@ -51,7 +51,7 @@ struct Compiler
 
         return internalHeaders.map!((e) {
             auto path = buildPath(virtualPath, e.filename);
-            return CXUnsavedFile(path.toStringz, e.content.ptr, e.content.length);
+            return CXUnsavedFile(path.toStringz, e.content.ptr, cast(uint)e.content.length);
         }).array();
     }
 

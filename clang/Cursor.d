@@ -281,6 +281,11 @@ struct Cursor
         foreach (cursor; unit.cursor.children)
             result[cursor.spelling] = cursor.kind;
 
+        auto version_ = clangVersion();
+
+        if (version_.major == 3 && version_.minor == 7)
+            result["__int64"] = CXCursorKind.CXCursor_MacroDefinition;
+
         return result;
     }
 

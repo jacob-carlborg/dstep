@@ -50,4 +50,10 @@ struct Configuration
 
     /// translate functions with empty argument list as vararg
     bool zeroParamIsVararg;
+
+    /// show dstep version
+    bool dstepVersion;
+
+    /// show libclang version
+    bool clangVersion;
 }

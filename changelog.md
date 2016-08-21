@@ -11,12 +11,14 @@
 * Special treatment of a comment before header guard.
 * Support for removing excessive newlines and keeping original spacing.
 * Basic unit tests were added.
-* Most of cucumber tests was replaced with D-based tests.
+* Cucumber tests were replaced with D-based tests.
 * Statements are translated in original 'C' order now.
 * Multiple input files can be processed in different threads.
 * Extend a functionality that automatically replaces aliases to basic types with their D equivalents.
 * Add a switch `dont-reduce-aliases` which disables the above functionality.
 * Add the `libclang` bindings as a test case.
+* Add support for MS Windows.
+* Run Windows tests on AppVeyor.
 
 ### Bugs fixed
 Issue #2: Self alias should be removed bug.

@@ -21,20 +21,45 @@ The source code is available under the [Boost Software License 1.0](http://www.b
 
 ## Building
 
-### Requirements
+### Posix
+
+#### Requirements
 
 * libclang - [http://clang.llvm.org](http://clang.llvm.org) - 3.4 or later that is binary compatible with 3.4
 * DMD - [http://dlang.org/download.html](http://dlang.org/download.html) - 2.069.2
 * Dub [http://code.dlang.org/download](http://code.dlang.org/download)
 
-### Building
+#### Building
 
 1. Install all requirements, see [above](#requirements)
 2. Clone the repository by running:
 
         $ git clone git://github.com/jacob-carlborg/dstep.git
 
-3. run `dub build`
+3. Run `dub build`
+
+### Windows
+
+#### Requirements
+
+* LLVM - [http://llvm.org/releases/download.html](http://llvm.org/releases/download.html) - pre-built binaries for Windows
+* DMD - [http://dlang.org/download.html](http://dlang.org/download.html) - 2.069.2
+* Dub - [http://code.dlang.org/download](http://code.dlang.org/download)
+* Visual Studio - for example Visual Studio Community
+
+#### Building
+
+1. Install all requirements, see [above](#requirements)
+2. Clone the repository by running:
+
+		$ git clone git://github.com/jacob-carlborg/dstep.git
+
+3. Run `dub build --build=release` to build 32-bit version
+4. Run `dub build --arch=x86_64 --build=release` to build 64-bit version
+
+#### Remarks
+
+Building 32-bit version requires a 32-bit variant of the Visual Studio toolchain to be present in `PATH`. The same for 64-bit. Remember *not* to specify `-arch=x86` when building 32-bit version (`dub` will overwrite `-m32mscoff` with unsupported `-m32` switch). If you use libclang versions <= 3.7, you may need to install MinGW for header files. Remember to install LLVM to its default installation path and to add its binaries to the `PATH` environmental variable (otherwise you may need to change `dub.json`).
 
 ## Usage
 

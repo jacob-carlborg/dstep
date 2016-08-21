@@ -1,0 +1,22 @@
+
+platform: x64
+
+environment:
+  matrix:
+  - DC: dmd
+    DVersion: 2.071.0
+    arch: x86
+  - DC: dmd
+    DVersion: 2.071.0
+    arch: x86_64
+
+skip_tags: true
+
+install:
+  - echo dummy install script - dont remove me
+
+build_script:
+  - echo dummy build script - dont remove me
+
+test_script:
+  - powershell -NoProfile -File appveyor.ps1 < NUL

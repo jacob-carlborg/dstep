@@ -7,6 +7,7 @@
 *.o
 *.dylib
 *.dll
+*.exe
 *.so
 main
 tmp

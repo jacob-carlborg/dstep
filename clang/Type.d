@@ -217,6 +217,23 @@ struct Type
         return ArrayType(this);
     }
 
+    @property size_t sizeOf()
+    {
+        if (isClang)
+        {
+            auto result = clang_Type_getSizeOf(cx);
+
+            if (result < 0)
+                throwTypeLayoutError(cast(CXTypeLayoutError) result, spelling);
+
+            return cast(size_t) result;
+        }
+        else
+        {
+            throw new TypeLayoutErrorUnknown(spelling);
+        }
+    }
+
     @property string toString() const
     {
         import std.format: format;
@@ -318,6 +335,36 @@ struct Arguments
     }
 }
 
+@property bool isIntegral (CXTypeKind kind)
+{
+    with (CXTypeKind)
+        switch (kind)
+        {
+            case CXType_Bool:
+            case CXType_Char_U:
+            case CXType_UChar:
+            case CXType_Char16:
+            case CXType_Char32:
+            case CXType_UShort:
+            case CXType_UInt:
+            case CXType_ULong:
+            case CXType_ULongLong:
+            case CXType_UInt128:
+            case CXType_Char_S:
+            case CXType_SChar:
+            case CXType_WChar:
+            case CXType_Short:
+            case CXType_Int:
+            case CXType_Long:
+            case CXType_LongLong:
+            case CXType_Int128:
+                return true;
+
+            default:
+                return false;
+        }
+}
+
 @property bool isUnsigned (CXTypeKind kind)
 {
     with (CXTypeKind)
@@ -333,4 +380,81 @@ struct Arguments
 
             default: return false;
         }
+}
+
+class TypeLayoutError : object.Exception
+{
+    this (string message, string file = __FILE__, size_t line = __LINE__)
+    {
+        super(message, file, line);
+    }
+}
+
+class TypeLayoutErrorUnknown : TypeLayoutError
+{
+    this (string spelling, string file = __FILE__, size_t line = __LINE__)
+    {
+        super("The layout of the type is unknown: '" ~ spelling ~ "'.");
+    }
+}
+
+class TypeLayoutErrorInvalid : TypeLayoutError
+{
+    this (string spelling, string file = __FILE__, size_t line = __LINE__)
+    {
+        super("The type is of invalid kind.");
+    }
+}
+
+class TypeLayoutErrorIncomplete : TypeLayoutError
+{
+    this (string spelling, string file = __FILE__, size_t line = __LINE__)
+    {
+        super("The type '" ~ spelling ~ "' is an incomplete type.");
+    }
+}
+
+class TypeLayoutErrorDependent : TypeLayoutError
+{
+    this (string spelling, string file = __FILE__, size_t line = __LINE__)
+    {
+        super("The type `" ~ spelling ~ "` is a dependent type.");
+    }
+}
+
+class TypeLayoutErrorNotConstantSize : TypeLayoutError
+{
+    this (string spelling, string file = __FILE__, size_t line = __LINE__)
+    {
+        super("The type '" ~ spelling ~ "'is not a constant size type.");
+    }
+}
+
+class TypeLayoutErrorInvalidFieldName : TypeLayoutError
+{
+    this (string spelling, string file = __FILE__, size_t line = __LINE__)
+    {
+        super("The field name '" ~ spelling ~ "' is not valid for this record.");
+    }
+}
+
+void throwTypeLayoutError(
+    CXTypeLayoutError layout,
+    string spelling,
+    string file = __FILE__,
+    size_t line = __LINE__)
+{
+    final switch (layout)
+    {
+        case CXTypeLayoutError.CXTypeLayoutError_Invalid:
+            throw new TypeLayoutErrorInvalid(spelling, file, line);
+        case CXTypeLayoutError.CXTypeLayoutError_Incomplete:
+            throw new TypeLayoutErrorIncomplete(spelling, file, line);
+        case CXTypeLayoutError.CXTypeLayoutError_Dependent:
+            throw new TypeLayoutErrorDependent(spelling, file, line);
+        case CXTypeLayoutError.CXTypeLayoutError_NotConstantSize:
+            throw new TypeLayoutErrorNotConstantSize(spelling, file, line);
+        case CXTypeLayoutError.CXTypeLayoutError_InvalidFieldName:
+            throw new TypeLayoutErrorInvalidFieldName(spelling, file, line);
+    }
 }

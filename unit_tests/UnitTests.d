@@ -578,17 +578,18 @@ D");
     Options options;
     options.portableWCharT = false;
 
-    assertTranslates(q"C
-#include <wchar.h>
-
-wchar_t x;
-C",
-q"D
-extern (C):
-
-extern __gshared dchar x;
-D", options);
-
+    version (Windows)
+    {
+        assertTranslates(
+            "#include <wchar.h>\n\nwchar_t x;\n",
+            "extern (C):\n\nextern __gshared wchar x;\n", options);
+    }
+    else
+    {
+        assertTranslates(
+            "#include <wchar.h>\n\nwchar_t x;\n",
+            "extern (C):\n\nextern __gshared dchar x;\n", options);
+    }
 }
 
 // Test translation of the function with no argument list.
