@@ -5,35 +5,36 @@
 
 * Support for simple defines (like `#define FOO 1`).
 * Translation of defines to functions (like `#define FOO(a, b) a + b`).
-* Support for translation of whole packages (--package CLI option).
+* Support for translation of whole packages (`--package` CLI option).
 * Support for translation of preprocessor constants in array sizes.
 * Support for global comments and comments inside structs and enums.
 * Special treatment of a comment before header guard.
 * Support for removing excessive newlines and keeping original spacing.
 * Basic unit tests were added.
 * Cucumber tests were replaced with D-based tests.
-* Statements are translated in original 'C' order now.
-* Multiple input files can be processed in different threads.
+* Statements are now translated in the original order as the input file.
+* Multiple input files can be processed at once.
 * Extend a functionality that automatically replaces aliases to basic types with their D equivalents.
-* Add a switch `dont-reduce-aliases` which disables the above functionality.
+* Add a switch `--dont-reduce-aliases` which disables the above functionality.
 * Add the `libclang` bindings as a test case.
-* Add support for MS Windows.
+* Add support for Microsoft Windows.
 * Run Windows tests on AppVeyor.
 
-### Bugs fixed
+### Bugs Fixed
+
 Issue #2: Self alias should be removed bug.
 Issue #10: Embedded struct not generated.
-Issue #20: #define (simplest cases only?).
-Issue #21: wchar_t should be tranlsated to core.stdc.stddef.wchar_t.
+Issue #20: `#define` (simplest cases only?).
+Issue #21: `wchar_t` should be translated to `core.stdc.stddef.wchar_t`.
 Issue #28: Crashes if fed nonexistent header.
 Issue #29: Don't name anonymous enums.
 Issue #30: Single space inserted after function names.
 Issue #38: Spurious generation of variadic args rather than implicit void.
-Issue #39: Recognize and translate __attribute__((__packed__)).
+Issue #39: Recognize and translate `__attribute__((__packed__))`.
 Issue #46: Generating code that will not compile.
 Issue #47: Treatment of #define enhancement.
 Issue #50: struct typedef generates recursive alias bug.
-Issue #59: Shouldn't dstep exit with status code when there is some kind of error?
+Issue #59: Shouldn't dstep exit with status code when there is some kind of error.
 Issue #83: New multiline translation.
 Issue #85: dstep not converting `const T x[]` to `const (T)* x`.
 
