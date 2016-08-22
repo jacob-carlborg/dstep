@@ -22,21 +22,21 @@
 
 ### Bugs Fixed
 
-* Issue #2: Self alias should be removed bug
-* Issue #10: Embedded struct not generated
-* Issue #20: `#define` (simplest cases only?)
-* Issue #21: `wchar_t` should be translated to `core.stdc.stddef.wchar_t`
-* Issue #28: Crashes if fed nonexistent header
-* Issue #29: Don't name anonymous enums
-* Issue #30: Single space inserted after function names
-* Issue #38: Spurious generation of variadic args rather than implicit void
-* Issue #39: Recognize and translate `__attribute__((__packed__))`
-* Issue #46: Generating code that will not compile
-* Issue #47: Treatment of #define enhancement
-* Issue #50: struct typedef generates recursive alias bug
-* Issue #59: Shouldn't dstep exit with status code when there is some kind of error
-* Issue #83: New multiline translation
-* Issue #85: dstep not converting `const T x[]` to `const (T)* x`
+* [Issue 2](https://github.com/jacob-carlborg/dstep/issues/2): Self alias should be removed bug
+* [Issue 10](https://github.com/jacob-carlborg/dstep/issues/10): Embedded struct not generated
+* [Issue 20](https://github.com/jacob-carlborg/dstep/issues/20): `#define` (simplest cases only?)
+* [Issue 21](https://github.com/jacob-carlborg/dstep/issues/21): `wchar_t` should be translated to `core.stdc.stddef.wchar_t`
+* [Issue 28](https://github.com/jacob-carlborg/dstep/issues/28): Crashes if fed nonexistent header
+* [Issue 29](https://github.com/jacob-carlborg/dstep/issues/29): Don't name anonymous enums
+* [Issue 30](https://github.com/jacob-carlborg/dstep/issues/30): Single space inserted after function names
+* [Issue 38](https://github.com/jacob-carlborg/dstep/issues/38): Spurious generation of variadic args rather than implicit void
+* [Issue 39](https://github.com/jacob-carlborg/dstep/issues/39): Recognize and translate `__attribute__((__packed__))`
+* [Issue 46](https://github.com/jacob-carlborg/dstep/issues/46): Generating code that will not compile
+* [Issue 47](https://github.com/jacob-carlborg/dstep/issues/47): Treatment of #define enhancement
+* [Issue 50](https://github.com/jacob-carlborg/dstep/issues/50): struct typedef generates recursive alias bug
+* [Issue 59](https://github.com/jacob-carlborg/dstep/issues/59): Shouldn't dstep exit with status code when there is some kind of error
+* [Issue 83](https://github.com/jacob-carlborg/dstep/issues/83): New multiline translation
+* [Issue 85](https://github.com/jacob-carlborg/dstep/issues/85): dstep not converting `const T x[]` to `const (T)* x`
 
 ## Version 0.2.1
 ### New/Changed Features
@@ -54,9 +54,9 @@
 
 ### Bugs Fixed
 
-* Issue #42: Compile failure with DMD v2.0.68
-* Issue #37: Regression: clang 3.5 causes struct members to be defined again
-* Issue #26: dstep dumps core on a simple header
+* [Issue 42](https://github.com/jacob-carlborg/dstep/issues/42): Compile failure with DMD v2.0.68
+* [Issue 37](https://github.com/jacob-carlborg/dstep/issues/37): Regression: clang 3.5 causes struct members to be defined again
+* [Issue 26](https://github.com/jacob-carlborg/dstep/issues/26): dstep dumps core on a simple header
 
 ## Version 0.1.1
 ### New/Changed Features
@@ -84,9 +84,9 @@
 
 ### Bugs Fixed
 
-* Issue 1: Escape D keywords for function parameters
-* Issue 5: Forward declaration of structures
-* Issue 4: Handle typedefs of empty struct
+* [Issue 1](https://github.com/jacob-carlborg/dstep/issues/1): Escape D keywords for function parameters
+* [Issue 5](https://github.com/jacob-carlborg/dstep/issues/5): Forward declaration of structures
+* [Issue 4](https://github.com/jacob-carlborg/dstep/issues/4): Handle typedefs of empty struct
 
 ## Version 0.0.1
 ### New/Changed Features
