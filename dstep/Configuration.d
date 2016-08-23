@@ -18,8 +18,14 @@ struct Configuration
     /// array of file names to translate to D
     string[] inputFiles;
 
-    /// expected programming language of input files
+    @("language|x", "Treat subsequent input files as having type <language>.")
     Language language;
+
+    @("version", "Show dstep version.")
+    bool dstepVersion;
+
+    @("clang-version", "Show libclang version.")
+    bool clangVersion;
 
     /// array of parameters needed to be forwarded to clang driver
     string[] clangParams;
@@ -27,33 +33,56 @@ struct Configuration
     /// output file name or folder (in case there are many input files)
     string output;
 
-    /// strip all comments while translating
-    bool noComments;
-
-    /// package name
+    @("package", "Use <package> as package name.")
     string packageName;
 
-    /// use public imports for submodules
-    bool publicSubmodules;
+    @("comments", "Translate comments [default: true].")
+    bool enableComments = true;
 
-    /// disable reduction of primitive type aliases
-    bool dontReduceAliases;
+    @("public-submodules", "Use public imports for submodules [default: false].")
+    bool publicSubmodules = false;
 
-    /// translate wchar_t to wchar or dchar depending on its size
-    bool noPortableWCharT;
+    @("reduce-aliases", "Reduce primitive type aliases [default: true].")
+    bool reduceAliases = true;
 
-    /// single line function headers
-    bool singleLineFunctionHeaders;
+    @("portable-wchar_t", "Translate wchar_t as core.stdc.stddef.wchar_t [default: true].")
+    bool portableWCharT = true;
 
-    /// no space after function name
-    bool noSpaceAfterFunctionName;
+    @("zero-param-is-vararg", "Translate functions with no arguments as variadic functions [default: false].")
+    bool zeroParamIsVararg = false;
 
-    /// translate functions with empty argument list as vararg
-    bool zeroParamIsVararg;
+    @("single-line-function-headers", "Break function headers to multiple lines [default: false].")
+    bool singleLineFunctionHeaders = false;
 
-    /// show dstep version
-    bool dstepVersion;
-
-    /// show libclang version
-    bool clangVersion;
+    @("space-after-function-name", "Put a space after a function name [default: true].")
+    bool spaceAfterFunctionName = true;
 }
+
+template makeGetOptArgs(alias config)
+{
+    import std.meta;
+
+    template expand(alias spelling)
+    {
+        static if (
+            __traits(compiles, &__traits(getMember, config, spelling)) &&
+            __traits(getAttributes, __traits(getMember, config, spelling)).length == 2)
+        {
+            auto ptr() @property
+            {
+                return &__traits(getMember, config, spelling);
+            }
+
+            alias expand = AliasSeq!(
+                __traits(getAttributes, __traits(getMember, config, spelling)),
+                ptr);
+        }
+        else
+        {
+            alias expand = AliasSeq!();
+        }
+    }
+
+    alias makeGetOptArgs = staticMap!(expand, __traits(allMembers, typeof(config)));
+}
+

@@ -23,7 +23,7 @@ unittest
     assertRunsDStepCFile(
         "test_files/comments_disabled.d",
         "test_files/comments_disabled.h",
-        ["--no-comments"]);
+        ["--comments=false"]);
 
     assertRunsDStepCFiles([
         TestFile("test_files/module/main0.d", "test_files/module/main0.h"),
