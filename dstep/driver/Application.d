@@ -179,7 +179,7 @@ private struct ParseFile
             options.reduceAliases = config.reduceAliases;
             options.portableWCharT = config.portableWCharT;
             options.zeroParamIsVararg = config.zeroParamIsVararg;
-            options.singleLineFunctionHeaders = config.singleLineFunctionHeaders;
+            options.singleLineFunctionSignatures = config.singleLineFunctionSignatures;
             options.spaceAfterFunctionName = config.spaceAfterFunctionName;
 
             auto translator = new Translator(translationUnit, options);

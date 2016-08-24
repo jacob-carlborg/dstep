@@ -278,7 +278,7 @@ D");
 unittest
 {
     Options options;
-    options.singleLineFunctionHeaders = true;
+    options.singleLineFunctionSignatures = true;
 
     assertTranslates(q"C
 void very_long_function_declaration(double way_too_long_argument,

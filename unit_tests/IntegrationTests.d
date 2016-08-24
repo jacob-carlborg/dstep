@@ -98,3 +98,12 @@ unittest
 
     assert(result.status == 0);
 }
+
+// Test `--objective-c` option.
+unittest
+{
+    assertRunsDStep(
+        [TestFile("test_files/objc/primitives.d", "test_files/objc/primitives.h")],
+        ["--objective-c", "-Iresources"],
+        false);
+}

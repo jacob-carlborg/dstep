@@ -78,6 +78,9 @@ auto parseCLI (string[] args)
 
     import std.algorithm : canFind;
 
+    if (forceObjectiveC)
+        config.clangParams ~= "-ObjC";
+
     if (config.clangParams.canFind("-ObjC"))
         config.language = Language.objC;
 
@@ -167,8 +170,8 @@ void showHelp (Configuration config, GetoptResult getoptResult)
 {
     import std.stdio;
     import std.string;
-    import std.algorithm;
     import std.range;
+    import std.algorithm;
 
     struct Entry
     {
@@ -215,18 +218,21 @@ void showHelp (Configuration config, GetoptResult getoptResult)
 
     auto entries = chain(customEntries, generatedEntries);
 
-    auto maxLength = entries.map!(entry => entry.option.length).maxPos.front;
+    auto maxLength = entries.map!(entry => entry.option.length).array.reduce!max;
 
-    writeln("Usage: dstep [options] <input>");
-    writeln("Version: ", strip(config.Version));
-    writeln();
-    writeln("Options:");
+    auto helpString = appender!string();
+
+    helpString.put("Usage: dstep [options] <input>\n");
+    helpString.put(format("Version: %s\n\n", strip(config.Version)));
+    helpString.put("Options:\n");
 
     foreach (entry; entries)
-        writeln(format("    %-*s %s", cast(int) maxLength + 1, entry.option, entry.help));
+        helpString.put(format("    %-*s %s\n", cast(int) maxLength + 1, entry.option, entry.help));
 
-    writeln("");
-    writeln("All options that Clang accepts can be used as well. "
-        "Use the `-h' flag for help. "
-        "To disable boolean options use false, e.g. --comments=false.");
+    helpString.put(
+        "\nTo disable boolean options use false, e.g. --comments=false.\n"
+        "All options that Clang accepts can be used as well.\n"
+        "Use the `-h' flag for help.");
+
+    writeln(helpString.data);
 }

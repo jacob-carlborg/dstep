@@ -334,7 +334,8 @@ void translateFunction (
     }
 
     auto resultType = translateType(context, func, func.resultType);
-    auto multiline = func.extent.isMultiline && !context.options.singleLineFunctionHeaders;
+    auto multiline = func.extent.isMultiline &&
+        !context.options.singleLineFunctionSignatures;
     auto spacer = context.options.spaceAfterFunctionName ? " " : "";
 
     translateFunction(

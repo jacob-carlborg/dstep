@@ -25,7 +25,7 @@ struct Options
     bool reduceAliases = true;
     bool portableWCharT = true;
     bool zeroParamIsVararg = false;
-    bool singleLineFunctionHeaders = false;
+    bool singleLineFunctionSignatures = false;
     bool spaceAfterFunctionName = true;
 
     string toString() const

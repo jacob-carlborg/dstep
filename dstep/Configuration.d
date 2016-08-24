@@ -18,12 +18,15 @@ struct Configuration
     /// array of file names to translate to D
     string[] inputFiles;
 
+    /// expected programming language of input files
     @("language|x", "Treat subsequent input files as having type <language>.")
     Language language;
 
+    /// show dstep version
     @("version", "Show dstep version.")
     bool dstepVersion;
 
+    /// show libclang version
     @("clang-version", "Show libclang version.")
     bool clangVersion;
 
@@ -33,28 +36,36 @@ struct Configuration
     /// output file name or folder (in case there are many input files)
     string output;
 
+    /// package name
     @("package", "Use <package> as package name.")
     string packageName;
 
-    @("comments", "Translate comments [default: true].")
+    /// enable translation of comments
+    @("comments", "Translate comments [default].")
     bool enableComments = true;
 
-    @("public-submodules", "Use public imports for submodules [default: false].")
+    /// use public imports for submodules
+    @("public-submodules", "Use public imports for submodules [default].")
     bool publicSubmodules = false;
 
-    @("reduce-aliases", "Reduce primitive type aliases [default: true].")
+    /// enable reduction of primitive type aliases
+    @("reduce-aliases", "Reduce primitive type aliases [default].")
     bool reduceAliases = true;
 
-    @("portable-wchar_t", "Translate wchar_t as core.stdc.stddef.wchar_t [default: true].")
+    /// translate to wchar_t to core.stdc.stddef.wchar_t
+    @("portable-wchar_t", "Translate wchar_t as core.stdc.stddef.wchar_t [default].")
     bool portableWCharT = true;
 
-    @("zero-param-is-vararg", "Translate functions with no arguments as variadic functions [default: false].")
+    /// translate functions with empty argument list as vararg
+    @("zero-param-is-vararg", "Translate functions with no arguments as variadic functions [default].")
     bool zeroParamIsVararg = false;
 
-    @("single-line-function-headers", "Break function headers to multiple lines [default: false].")
-    bool singleLineFunctionHeaders = false;
+    /// single line function headers
+    @("single-line-function-signatures", "Keep function signatures in a single line [default].")
+    bool singleLineFunctionSignatures = false;
 
-    @("space-after-function-name", "Put a space after a function name [default: true].")
+    /// space after function name
+    @("space-after-function-name", "Put a space after a function name [default].")
     bool spaceAfterFunctionName = true;
 }
 
@@ -73,8 +84,36 @@ template makeGetOptArgs(alias config)
                 return &__traits(getMember, config, spelling);
             }
 
+            auto formatHelp(alias spelling)(string help)
+            {
+                import std.algorithm : canFind;
+                import std.format : format;
+                import std.string : replace;
+
+
+                Configuration config;
+
+                static if (is(typeof(__traits(getMember, config, spelling)) == bool))
+                {
+                    auto default_ = "[default]";
+
+                    if (help.canFind(default_))
+                        return help.replace(
+                            default_,
+                            format("[default: %s]", __traits(getMember, config, spelling)));
+                    else
+                        return help;
+                }
+                else
+                {
+                    return help;
+                }
+            }
+
             alias expand = AliasSeq!(
-                __traits(getAttributes, __traits(getMember, config, spelling)),
+                __traits(getAttributes, __traits(getMember, config, spelling))[0],
+                formatHelp!spelling(
+                    __traits(getAttributes, __traits(getMember, config, spelling))[1]),
                 ptr);
         }
         else

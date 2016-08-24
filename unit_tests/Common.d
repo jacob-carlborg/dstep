@@ -468,6 +468,19 @@ void assertTranslatesFile(
     import clang.Util : asAbsNormPath;
     import std.file : readText;
 
+    version (OptionalGNUStep)
+    {
+        if (options.language == Language.objC)
+        {
+            auto extra = findExtraGNUStepPaths(file, line);
+
+            if (extra.empty)
+                return;
+            else
+                arguments ~= extra;
+        }
+    }
+
     arguments ~= findExtraIncludePaths();
 
     auto expected = readText(expectedPath);
@@ -588,6 +601,20 @@ void assertRunsDStep(
     import std.format : format;
     import clang.Util : namedTempDir;
     import std.file : readText, mkdirRecurse, copy;
+    import std.algorithm : canFind;
+
+    version (OptionalGNUStep)
+    {
+        if (arguments.canFind("-ObjC") || arguments.canFind("--objective-c"))
+        {
+            auto extra = findExtraGNUStepPaths(file, line);
+
+            if (extra.empty)
+                return;
+            else
+                arguments ~= extra;
+        }
+    }
 
     arguments ~= findExtraIncludePaths();
 
@@ -725,16 +752,6 @@ void assertTranslatesObjCFile(
 {
     string[] arguments = ["-ObjC", "-Iresources"];
 
-    version (OptionalGNUStep)
-    {
-        auto extra = findExtraGNUStepPaths(file, line);
-
-        if (extra.empty)
-            return;
-        else
-            arguments ~= extra;
-    }
-
     options.language = Language.objC;
 
     assertTranslatesFile(
@@ -774,16 +791,6 @@ void assertRunsDStepObjCFile(
     size_t line = __LINE__)
 {
     string[] extended = arguments ~ ["-ObjC", "-Iresources"];
-
-    version (OptionalGNUStep)
-    {
-        auto extra = findExtraGNUStepPaths(file, line);
-
-        if (extra.empty)
-            return;
-        else
-            extended ~= extra;
-    }
 
     assertRunsDStep(
         [TestFile(expectedPath, objCPath)],
