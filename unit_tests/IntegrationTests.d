@@ -99,6 +99,15 @@ unittest
     assert(result.status == 0);
 }
 
+// DStep should show help when invoked without arguments.
+unittest
+{
+    auto result = executeShell(`"./bin/dstep"`);
+
+    assert(result.status == 0);
+    assert(result.output.canFind("Usage: dstep [options] <input>"));
+}
+
 // Test `--objective-c` option.
 unittest
 {

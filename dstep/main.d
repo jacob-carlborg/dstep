@@ -126,7 +126,7 @@ int main (string[] args)
     Configuration config = parseResult[0];
     GetoptResult getoptResult = parseResult[1];
 
-    if (getoptResult.helpWanted)
+    if (getoptResult.helpWanted || args.length == 1)
     {
         showHelp(config, getoptResult);
         return 0;
