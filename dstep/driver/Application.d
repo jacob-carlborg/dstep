@@ -159,10 +159,6 @@ private struct ParseFile
             config.clangParams,
             compiler.extraHeaders);
 
-        // hope that the diagnostics below handle everything
-        // if (!translationUnit.isValid)
-        //     throw new DStepException("An unknown error occurred");
-
         diagnostics = translationUnit.diagnostics;
 
         enforceCompiled();
@@ -177,14 +173,14 @@ private struct ParseFile
             options.inputFile = inputFile.asAbsNormPath;
             options.outputFile = outputFile.asAbsNormPath;
             options.language = config.language;
-            options.enableComments = !config.noComments;
+            options.enableComments = config.enableComments;
             options.packageName = config.packageName;
             options.publicSubmodules = config.publicSubmodules;
-            options.reduceAliases = !config.dontReduceAliases;
-            options.portableWCharT = !config.noPortableWCharT;
-            options.singleLineFunctionHeaders = config.singleLineFunctionHeaders;
-            options.noSpaceAfterFunctionName = config.noSpaceAfterFunctionName;
+            options.reduceAliases = config.reduceAliases;
+            options.portableWCharT = config.portableWCharT;
             options.zeroParamIsVararg = config.zeroParamIsVararg;
+            options.singleLineFunctionSignatures = config.singleLineFunctionSignatures;
+            options.spaceAfterFunctionName = config.spaceAfterFunctionName;
 
             auto translator = new Translator(translationUnit, options);
             translator.translate;

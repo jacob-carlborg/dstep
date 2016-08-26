@@ -17,16 +17,16 @@ struct Options
     string[] inputFiles;
     string inputFile;
     string outputFile;
-    string packageName;
     Language language = Language.c;
+    string packageName;
     bool enableComments = true;
     bool publicSubmodules = false;
     bool keepUntranslatable = false;
     bool reduceAliases = true;
     bool portableWCharT = true;
-    bool singleLineFunctionHeaders = false;
-    bool noSpaceAfterFunctionName = false;
     bool zeroParamIsVararg = false;
+    bool singleLineFunctionSignatures = false;
+    bool spaceAfterFunctionName = true;
 
     string toString() const
     {

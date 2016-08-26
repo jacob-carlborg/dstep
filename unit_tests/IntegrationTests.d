@@ -23,7 +23,7 @@ unittest
     assertRunsDStepCFile(
         "test_files/comments_disabled.d",
         "test_files/comments_disabled.h",
-        ["--no-comments"]);
+        ["--comments=false"]);
 
     assertRunsDStepCFiles([
         TestFile("test_files/module/main0.d", "test_files/module/main0.h"),
@@ -97,4 +97,13 @@ unittest
     auto result = executeShell(`"./bin/dstep" --help`);
 
     assert(result.status == 0);
+}
+
+// Test `--objective-c` option.
+unittest
+{
+    assertRunsDStep(
+        [TestFile("test_files/objc/primitives.d", "test_files/objc/primitives.h")],
+        ["--objective-c", "-Iresources"],
+        false);
 }

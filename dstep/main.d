@@ -56,19 +56,10 @@ auto parseCLI (string[] args)
         args,
         std.getopt.config.passThrough,
         std.getopt.config.caseSensitive,
-        "version", &config.dstepVersion,
-        "clang-version", &config.clangVersion,
-        "output|o", "Write output to", &config.output,
-        "language|x", "Treat subsequent input files as having type <language>.", &parseLanguage,
-        "objective-c", "Treat source input file as Objective-C input.", &forceObjectiveC,
-        "no-comments", "Disable translation of comments.", &config.noComments,
-        "public-submodules", "Use public imports for submodules.", &config.publicSubmodules,
-        "package", "Specify package name.", &config.packageName,
-        "dont-reduce-aliases", "Disable reduction of primitive type aliases.", &config.dontReduceAliases,
-        "no-portable-wchar_t", "Translate wchar_t to wchar or dchar depending on its size.", &config.noPortableWCharT,
-        "single-line-function-headers", "Do not break function headers to multiple lines.", &config.singleLineFunctionHeaders,
-        "no-space-after-function-name", "Do not put a space after a function name.", &config.noSpaceAfterFunctionName,
-        "zero-param-is-vararg", "Translate functions with empty argument list as variadic functions.", &config.zeroParamIsVararg);
+        "output|o", &config.output,
+        "language|x", &parseLanguage,
+        "objective-c", &forceObjectiveC,
+        makeGetOptArgs!config);
 
     // remove dstep binary name (args[0])
     args = args[1 .. $];
@@ -86,6 +77,9 @@ auto parseCLI (string[] args)
     // Post-processing of CLI
 
     import std.algorithm : canFind;
+
+    if (forceObjectiveC)
+        config.clangParams ~= "-ObjC";
 
     if (config.clangParams.canFind("-ObjC"))
         config.language = Language.objC;
@@ -172,23 +166,73 @@ int main (string[] args)
     return 0;
 }
 
-void showHelp (Configuration config, GetoptResult)
+void showHelp (Configuration config, GetoptResult getoptResult)
 {
     import std.stdio;
     import std.string;
+    import std.range;
+    import std.algorithm;
 
-    writeln("Usage: dstep [options] <input>");
-    writeln("Version: ", strip(config.Version));
-    writeln();
-    writeln("Options:");
-    writeln("    -o, --output <file>          Write output to <file>.");
-    writeln("    -o, --output <directory>     Write all the files to <directory>, in case of multiple input files.");
-    writeln("    -ObjC, --objective-c         Treat source input file as Objective-C input.");
-    writeln("    -x, --language <language>    Treat subsequent input files as having type <language>.");
-    writeln("    -h, --help                   Show this message and exit.");
-    writeln("    --no-comments                Disable translation of comments.");
-    writeln();
-    writeln("All options that Clang accepts can be used as well.");
-    writeln();
-    writeln("Use the `-h' flag for help.");
+    struct Entry
+    {
+        this(string option, string help)
+        {
+            this.option = option;
+            this.help = help;
+        }
+
+        this(Option option)
+        {
+            if (option.optShort && option.optLong)
+                this.option = format("%s, %s", option.optShort, option.optLong);
+            else if (option.optShort)
+                this.option = option.optShort;
+            else
+                this.option = option.optLong;
+
+            this.help = option.help;
+
+            auto beginning = findSplitBefore(this.help, "<");
+
+            if (!beginning[0].empty)
+            {
+                auto placeholder = findSplitAfter(beginning[1], ">");
+
+                if (!placeholder[0].empty)
+                    this.option ~= format(" %s", placeholder[0]);
+            }
+        }
+
+        string option;
+        string help;
+    }
+
+    auto customEntries = [
+        Entry("-o, --output <file>", "Write output to <file>."),
+        Entry("-o, --output <directory>", "Write all the files to <directory>, in case of multiple input files."),
+        Entry("-ObjC, --objective-c", "Treat source input file as Objective-C input.")];
+
+    auto generatedEntries = getoptResult.options
+        .filter!(option => !option.help.empty)
+        .map!(option => Entry(option));
+
+    auto entries = chain(customEntries, generatedEntries);
+
+    auto maxLength = entries.map!(entry => entry.option.length).array.reduce!max;
+
+    auto helpString = appender!string();
+
+    helpString.put("Usage: dstep [options] <input>\n");
+    helpString.put(format("Version: %s\n\n", strip(config.Version)));
+    helpString.put("Options:\n");
+
+    foreach (entry; entries)
+        helpString.put(format("    %-*s %s\n", cast(int) maxLength + 1, entry.option, entry.help));
+
+    helpString.put(
+        "\nTo disable boolean options use false, e.g. --comments=false.\n"
+        "All options that Clang accepts can be used as well.\n"
+        "Use the `-h' flag for help.");
+
+    writeln(helpString.data);
 }

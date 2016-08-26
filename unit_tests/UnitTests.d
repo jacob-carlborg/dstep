@@ -278,7 +278,7 @@ D");
 unittest
 {
     Options options;
-    options.singleLineFunctionHeaders = true;
+    options.singleLineFunctionSignatures = true;
 
     assertTranslates(q"C
 void very_long_function_declaration(double way_too_long_argument,
@@ -296,7 +296,7 @@ D", options);
 unittest
 {
     Options options;
-    options.noSpaceAfterFunctionName = true;
+    options.spaceAfterFunctionName = false;
 
     assertTranslates(q"C
 void very_long_function_declaration(double way_too_long_argument, double another_long_argument);
