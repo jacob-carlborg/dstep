@@ -116,3 +116,9 @@ unittest
         ["--objective-c", "-Iresources"],
         false);
 }
+
+// DStep should issue a warning when it detects a name collision.
+unittest
+{
+    assertIssuesWarning("test_files/collision.h");
+}

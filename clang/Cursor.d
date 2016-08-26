@@ -242,7 +242,7 @@ struct Cursor
         return clang_getCursorLanguage(cx);
     }
 
-    equals_t opEquals (const ref Cursor cursor) const
+    equals_t opEquals (in Cursor cursor) const
     {
         return clang_equalCursors(cast(CXCursor) cursor.cx, cast(CXCursor) cx) != 0;
     }

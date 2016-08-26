@@ -60,7 +60,7 @@ void translateEnumDef(Output output, Context context, Cursor cursor)
     auto spelling = "enum";
 
     if (!anonymous || variables || !cursor.isGlobal)
-        spelling = "enum " ~ translateIdentifier(context.translateSpelling(cursor));
+        spelling = "enum " ~ translateIdentifier(context.translateTagSpelling(cursor));
 
     output.subscopeStrong(cursor.extent, "%s", spelling) in
     {

@@ -175,7 +175,7 @@ int main (string[] args)
     }
     catch (Throwable e)
     {
-        writeln("An unknown error occurred: ", e);
+        writeln("dstep: an unknown error occurred: ", e);
         throw e;
     }
 
@@ -206,16 +206,16 @@ void showHelp (Configuration config, GetoptResult getoptResult)
             else
                 this.option = option.optLong;
 
-            this.help = option.help;
+            auto pair = findSplitAfter(option.help, "!");
 
-            auto beginning = findSplitBefore(this.help, "<");
-
-            if (!beginning[0].empty)
+            if (!pair[0].empty)
             {
-                auto placeholder = findSplitAfter(beginning[1], ">");
-
-                if (!placeholder[0].empty)
-                    this.option ~= format(" %s", placeholder[0]);
+                this.option ~= pair[0][0 .. $ - 1];
+                this.help = pair[1];
+            }
+            else
+            {
+                this.help = option.help;
             }
         }
 
@@ -246,8 +246,7 @@ void showHelp (Configuration config, GetoptResult getoptResult)
         helpString.put(format("    %-*s %s\n", cast(int) maxLength + 1, entry.option, entry.help));
 
     helpString.put(
-        "\nTo disable boolean options use false, e.g. --comments=false.\n"
-        "All options that Clang accepts can be used as well.\n"
+        "\nAll options that Clang accepts can be used as well.\n"
         "Use the `-h' flag for help.");
 
     writeln(helpString.data);

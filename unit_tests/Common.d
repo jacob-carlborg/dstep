@@ -14,6 +14,8 @@ import std.conv;
 import std.algorithm;
 import std.array;
 import std.typecons;
+import std.traits : ReturnType;
+import std.process : execute;
 
 import clang.c.Index;
 import clang.Diagnostic;
@@ -71,7 +73,7 @@ string mismatchRegion(
     string suffix = ">>>>>>> actual")
 {
     import std.algorithm.iteration : splitter;
-    import std.string : lineSplitter, stripRight;
+    import std.string : lineSplitter, stripRight, strip;
     import std.algorithm.comparison : min;
 
     if (!strict)
@@ -113,6 +115,10 @@ string mismatchRegion(
         else
             aItr = lineSplitter("\n");
     }
+
+    margin = expected.strip.empty
+        || actual.strip.empty
+        ? size_t.max : margin;
 
     if (!aItr.empty || !bItr.empty)
     {
@@ -406,8 +412,10 @@ void assertTranslates(
         }
     }
 
+    options.printDiagnostics = false;
+
     auto translated = translate(translUnit, options);
-    auto mismatch = mismatchRegionTranslated(translated, expected, 5, strict);
+    auto mismatch = mismatchRegionTranslated(translated, expected, 8, strict);
 
     if (mismatch)
     {
@@ -583,25 +591,38 @@ string[] findExtraGNUStepPaths(string file, size_t line)
     return ccIncludePaths ~ gnuStepPath;
 }
 
-struct TestFile
+class NoGNUStepException : object.Exception
 {
-    string expected;
-    string actual;
+    this (string file = __FILE__, size_t line = __LINE__)
+    {
+        super("Cannot find GNUStep.", file, line);
+    }
 }
 
-void assertRunsDStep(
-    TestFile[] filesPaths,
+class NoOutputFile : object.Exception
+{
+    TestRunDStepResult result;
+    string path;
+
+    this (TestRunDStepResult result, string path, string file = __FILE__, size_t line = __LINE__)
+    {
+        super(path, file, line);
+        this.result = result;
+        this.path = path;
+    }
+}
+
+auto testRunDStep(
+    string[] sourcePaths,
     string[] arguments,
-    bool strict,
+    string[]* outputContents = null,
+    string* command = null,
     string file = __FILE__,
     size_t line = __LINE__)
 {
-    import std.process : execute;
-    import std.path : baseName;
-    import std.format : format;
-    import clang.Util : namedTempDir;
-    import std.file : readText, mkdirRecurse, copy;
     import std.algorithm : canFind;
+    import std.process : execute;
+    import clang.Util : namedTempDir;
 
     version (OptionalGNUStep)
     {
@@ -610,7 +631,7 @@ void assertRunsDStep(
             auto extra = findExtraGNUStepPaths(file, line);
 
             if (extra.empty)
-                return;
+                throw new NoGNUStepException();
             else
                 arguments ~= extra;
         }
@@ -618,40 +639,114 @@ void assertRunsDStep(
 
     arguments ~= findExtraIncludePaths();
 
-    string[] actualPaths;
-
-    foreach (filesPath; filesPaths)
-    {
-        assertFileExists(filesPath.actual, file, line);    //Actual Paths
-        actualPaths ~= filesPath.actual;
-    }
+    foreach (sourcePath; sourcePaths)
+        assertFileExists(sourcePath, file, line);
 
     string outputDir = namedTempDir("dstepUnitTest");
+    scope(exit) rmdirRecurse(outputDir);
 
     string[] outputPaths;
 
-    if (filesPaths.length == 1)
+    if (sourcePaths.length == 1)
+    {
         outputPaths ~= buildPath(outputDir,
-            Application.defaultOutputFilename(filesPaths[0].expected, false));
+            Application.defaultOutputFilename(sourcePaths[0], false));
+    }
     else
     {
-        foreach (filesPath; filesPaths)
+        foreach (sourcePath; sourcePaths)
             outputPaths ~= buildPath(outputDir,
-                Application.defaultOutputFilename(filesPath.expected, false));
+                Application.defaultOutputFilename(sourcePath, false));
     }
 
-    scope(exit) rmdirRecurse(outputDir);
-
-    auto command = ["./bin/dstep"] ~ actualPaths ~ arguments;
+    auto localCommand = ["./bin/dstep"] ~ sourcePaths ~ arguments;
 
     if (outputPaths.length == 1)
-        command ~= ["-o", outputPaths[0]];
+        localCommand ~= ["-o", outputPaths[0]];
     else
-        command ~= ["-o", outputDir];
+        localCommand ~= ["-o", outputDir];
 
-    auto result = execute(command);
+    if (command)
+        *command = join(localCommand, " ");
+
+    auto result = execute(localCommand);
+
+    if (outputContents)
+        outputContents.length = outputPaths.length;
+
+    foreach (i, outputPath; outputPaths)
+    {
+        if (!exists(outputPath) || !isFile(outputPath))
+            throw new NoOutputFile(result, outputPath);
+
+        if (outputContents)
+            (*outputContents)[i] = readText(outputPath);
+    }
+
+    return result;
+}
+
+alias TestRunDStepResult = ReturnType!execute;
+
+struct TestFile
+{
+    string expected;
+    string actual;
+}
+
+void assertRunsDStep(
+    TestFile[] testFiles,
+    string[] arguments,
+    bool strict,
+    string file = __FILE__,
+    size_t line = __LINE__)
+{
+    import std.file : readText, write;
+    import std.format : format;
+    import std.traits : ReturnType;
 
     auto sep = "----------------";
+
+    string[] outputContents;
+    string command;
+
+    ReturnType!testRunDStep result;
+
+    try
+    {
+        result = testRunDStep(
+            testFiles.map!(x => x.actual).array,
+            arguments,
+            &outputContents,
+            &command,
+            file,
+            line);
+    }
+    catch (NoGNUStepException)
+    {
+        return;
+    }
+    catch (NoOutputFile exception)
+    {
+        auto templ = q"/
+Output file `%4$s` doesn't exist.
+%1$s
+DStep command:
+%2$s
+%1$s
+DStep output:
+%3$s/";
+
+        auto message = format(
+            templ,
+            sep,
+            command,
+            exception.result.output,
+            exception.msg);
+
+        throw new AssertError(message, file, line);
+    }
+
 
     if (result.status != 0)
     {
@@ -667,55 +762,32 @@ DStep output:
         auto message = format(
             templ,
             sep,
-            join(command, " "),
+            command,
             result.output,
             result.status);
 
         throw new AssertError(message, file, line);
     }
 
-    foreach (i, outputPath; outputPaths)
+    foreach (index, testFile; testFiles)
     {
-        if (!exists(outputPath) || !isFile(outputPath))
+        if (fileExists(testFile.expected))
         {
-            auto templ = q"/
-Output file `%4$s` doesn't exist.
-%1$s
-DStep command:
-%2$s
-%1$s
-DStep output:
-%3$s/";
+            string expected = readText(testFile.expected);
+            string actual = outputContents[index];
 
-            auto message = format(
-                templ,
-                sep,
-                join(command, " "),
-                result.output,
-                outputPath);
-
-            throw new AssertError(message, file, line);
-        }
-
-        if (fileExists(filesPaths[i].expected))
-        {
-            string expected = readText(filesPaths[i].expected);
-            string actual = readText(outputPath);
-
-            auto mismatch = mismatchRegionTranslated(actual, expected, 5, strict);
+            auto mismatch = mismatchRegionTranslated(actual, expected, 8, strict);
 
             if (mismatch)
             {
-                string commandString = join(command, " ");
-
-                string message = format("\n%s\nDStep command:\n%s", mismatch, commandString);
+                string message = format("\n%s\nDStep command:\n%s", mismatch, command);
 
                 throw new AssertError(message, file, line);
             }
         }
         else
         {
-            copy(outputPath, filesPaths[i].expected);
+            write(testFile.expected, outputContents[index]);
         }
     }
 }
@@ -815,4 +887,37 @@ void assertRunsDStepCFiles(
         strict,
         file,
         line);
+}
+
+void assertIssuesWarning(
+    string sourcePath,
+    string[] arguments = [],
+    string file = __FILE__,
+    size_t line = __LINE__)
+{
+    import std.format : format;
+
+    try
+    {
+        auto result = testRunDStep(
+            [sourcePath],
+            arguments,
+            null,
+            null,
+            file,
+            line);
+
+        if (!canFind(result.output, "warning:"))
+        {
+            string message = format(
+                "\nThe output doesn't contain any warnings.\nThe output:\n%s",
+                result.output);
+
+            throw new AssertError(message, file, line);
+        }
+    }
+    catch (NoGNUStepException)
+    {
+        return;
+    }
 }

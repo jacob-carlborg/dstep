@@ -31,7 +31,12 @@ struct SourceLocation
     {
         Spelling spell;
 
-        clang_getSpellingLocation(cx, &spell.file.cx, &spell.line, &spell.column, &spell.offset);
+        clang_getSpellingLocation(
+            cx,
+            &spell.file.cx,
+            &spell.line,
+            &spell.column,
+            &spell.offset);
 
         return spell;
     }
@@ -40,7 +45,12 @@ struct SourceLocation
     {
         Spelling spell;
 
-        clang_getExpansionLocation(cx, &spell.file.cx, &spell.line, &spell.column, &spell.offset);
+        clang_getExpansionLocation(
+            cx,
+            &spell.file.cx,
+            &spell.line,
+            &spell.column,
+            &spell.offset);
 
         return spell;
     }
@@ -86,18 +96,25 @@ struct SourceLocation
     @property string toString() const
     {
         import std.format : format;
-        auto s = spelling;
-        return format("SourceLocation(file = %s, line = %d, column = %d, offset = %d)", s.file, s.line, s.column, s.offset);
+        auto localSpelling = spelling;
+
+        return format(
+            "SourceLocation(file = %s, line = %d, column = %d, offset = %d)",
+            localSpelling.file,
+            localSpelling.line,
+            localSpelling.column,
+            localSpelling.offset);
     }
 
-    bool lexicalLess(in SourceLocation that)
+    @property string toColonSeparatedString() const
     {
-        File fileA, fileB;
-        uint offsetA, offsetB;
+        import std.format : format;
+        auto localSpelling = spelling;
 
-        clang_getSpellingLocation(cx, &fileA.cx, null, null, &offsetA);
-        clang_getSpellingLocation(that.cx, &fileB.cx, null, null, &offsetB);
-
-        return fileA != fileB ? fileA < fileB : offsetA < offsetB;
+        return format(
+            "%s:%d:%d",
+            localSpelling.file.name,
+            localSpelling.line,
+            localSpelling.column);
     }
 }

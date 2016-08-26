@@ -17,6 +17,7 @@ import clang.TranslationUnit;
 import clang.Type;
 import clang.Util;
 
+import dstep.core.Exceptions;
 import dstep.Configuration;
 
 import dstep.translator.Context;
@@ -32,6 +33,14 @@ import dstep.translator.Record;
 import dstep.translator.Type;
 
 public import dstep.translator.Options;
+
+class TranslationException : DStepException
+{
+    this (string message, string file = __FILE__, size_t line = __LINE__)
+    {
+        super(message, file, line);
+    }
+}
 
 class Translator
 {
