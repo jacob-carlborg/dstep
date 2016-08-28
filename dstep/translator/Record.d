@@ -114,11 +114,11 @@ bool shouldSkipRecord(Context context, Cursor cursor)
         cursor.kind == CXCursorKind.CXCursor_UnionDecl)
     {
         auto typedefp = context.typedefParent(cursor.canonical);
+        auto spelling = typedefp.isValid && cursor.spelling == ""
+            ? typedefp.spelling
+            : cursor.spelling;
 
-        if (typedefp.isValid && cursor.spelling == "")
-            return context.options.skipSymbols.contains(typedefp.spelling);
-        else
-            return context.options.skipSymbols.contains(cursor.spelling);
+        return context.options.skipSymbols.contains(spelling);
     }
 
     return false;
@@ -130,11 +130,11 @@ bool shouldSkipRecordDefinition(Context context, Cursor cursor)
         cursor.kind == CXCursorKind.CXCursor_UnionDecl)
     {
         auto typedefp = context.typedefParent(cursor.canonical);
+        auto spelling = typedefp.isValid && cursor.spelling == ""
+            ? typedefp.spelling
+            : cursor.spelling;
 
-        if (typedefp.isValid && cursor.spelling == "")
-            return context.options.skipDefinitions.contains(typedefp.spelling);
-        else
-            return context.options.skipDefinitions.contains(cursor.spelling);
+        return context.options.skipDefinitions.contains(spelling);
     }
 
     return false;

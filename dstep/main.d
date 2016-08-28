@@ -112,7 +112,7 @@ unittest
     assert(config.output == "folder");
 
     AliasSeq!(config, getoptResult) = parseCLI(
-        [ "dstep", "file.h", "--skipdef", "foo" ]);
+        [ "dstep", "file.h", "--skip-definition", "foo" ]);
     assert(!config.skipDefinitions.find("foo").empty);
 
     AliasSeq!(config, getoptResult) = parseCLI(
@@ -120,7 +120,7 @@ unittest
     assert(!config.skipSymbols.find("foo").empty);
 
     AliasSeq!(config, getoptResult) = parseCLI(
-        [ "dstep", "file.h", "--skip", "foo", "--skipdef", "bar" ]);
+        [ "dstep", "file.h", "--skip", "foo", "--skip-definition", "bar" ]);
     assert(!config.skipDefinitions.find("bar").empty);
     assert(!config.skipSymbols.find("foo").empty);
 }

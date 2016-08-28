@@ -113,6 +113,24 @@ struct Foo
 alias Foo Bar;
 D");
 
+    // Skip macro-definition.
+    assertSkipSymbols(
+        ["FOO", "BAZ"], q"C
+#define FOO 42
+#define BAR 31415
+#define BAZ(x) x * 2
+#define QUX(x) x == 42 ? 0 : 1
+C", q"D
+extern (C):
+
+enum BAR = 31415;
+
+extern (D) int QUX(T)(auto ref T x)
+{
+    return x == 42 ? 0 : 1;
+}
+D");
+
 }
 
 unittest

@@ -71,7 +71,7 @@ struct Configuration
     bool spaceAfterFunctionName = true;
 
     /// do not translate bodies of following structs and unions
-    @("skipdef", "Keep only the signature of <symbol>.")
+    @("skip-definition", "Keep only the signature of <symbol>.")
     string[] skipDefinitions;
 
     /// do not translate following symbols

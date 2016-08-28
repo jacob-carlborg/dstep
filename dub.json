@@ -49,7 +49,6 @@
             "targetName": "unittest",
             "sourcePaths": ["dstep", "clang", "unit_tests"],
             "importPaths": ["dstep", "clang"],
-            "excludedSourceFiles": ["dstep/main.d"],
             "dflags-windows-x86": ["-m32mscoff"],
             "lflags-posix": ["-lclang", "-rpath", ".", "-L.", "-L/usr/lib64/llvm", "-L/usr/lib/llvm-3.7/lib"],
             "lflags-windows-x86": ["/LIBPATH:C:\\PROGRA~2\\LLVM\\lib", "libclang.lib", "Ole32.lib"],
