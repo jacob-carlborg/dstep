@@ -514,7 +514,6 @@ extern (C):
 
 extern __gshared uint8_t foo;
 extern __gshared uint32_t bar;
-
 D", options);
 
     options.reduceAliases = true;

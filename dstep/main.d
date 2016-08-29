@@ -8,6 +8,8 @@ module dstep.main;
 import std.typecons : tuple, Tuple;
 import std.getopt;
 
+import clang.Util;
+
 import dstep.Configuration;
 import dstep.translator.Options;
 import dstep.core.Exceptions;
@@ -89,24 +91,38 @@ auto parseCLI (string[] args)
 
 unittest
 {
+    import std.algorithm.searching : find, empty;
     import std.meta : AliasSeq;
 
     Configuration config;
-    GetoptResult getopResult;
+    GetoptResult getoptResult;
 
-    AliasSeq!(config, getopResult) = parseCLI(
+    AliasSeq!(config, getoptResult) = parseCLI(
         [ "dstep", "-Xpreprocessor", "-lsomething", "-x", "c-header", "file.h" ]);
     assert(config.language == Language.c);
     assert(config.inputFiles == [ "file.h" ]);
     assert(config.clangParams == [ "-x", "c-header", "-Xpreprocessor", "-lsomething" ]);
     assert(config.output == "");
 
-    AliasSeq!(config, getopResult) = parseCLI(
+    AliasSeq!(config, getoptResult) = parseCLI(
         [ "dstep", "-ObjC", "file2.h", "--output=folder", "file.h" ]);
     assert(config.language == Language.objC);
     assert(config.inputFiles == [ "file2.h", "file.h" ]);
     assert(config.clangParams == [ "-ObjC" ]);
     assert(config.output == "folder");
+
+    AliasSeq!(config, getoptResult) = parseCLI(
+        [ "dstep", "file.h", "--skip-definition", "foo" ]);
+    assert(!config.skipDefinitions.find("foo").empty);
+
+    AliasSeq!(config, getoptResult) = parseCLI(
+        [ "dstep", "file.h", "--skip", "foo" ]);
+    assert(!config.skipSymbols.find("foo").empty);
+
+    AliasSeq!(config, getoptResult) = parseCLI(
+        [ "dstep", "file.h", "--skip", "foo", "--skip-definition", "bar" ]);
+    assert(!config.skipDefinitions.find("bar").empty);
+    assert(!config.skipSymbols.find("foo").empty);
 }
 
 version (unittest) { }

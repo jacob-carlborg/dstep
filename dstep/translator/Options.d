@@ -6,6 +6,8 @@
  */
 module dstep.translator.Options;
 
+import clang.Util;
+
 enum Language
 {
     c,
@@ -27,6 +29,8 @@ struct Options
     bool zeroParamIsVararg = false;
     bool singleLineFunctionSignatures = false;
     bool spaceAfterFunctionName = true;
+    Set!string skipDefinitions;
+    Set!string skipSymbols;
 
     string toString() const
     {
