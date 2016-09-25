@@ -8,6 +8,7 @@
 * Support for translation of whole packages (`--package` CLI option)
 * Support for translation of preprocessor constants in array sizes
 * Support for global comments and comments inside structs and enums
+* Detecting collisions of renamed tag-space names (struct name_t ...) with existing ones
 * Special treatment of a comment before header guard
 * Support for removing excessive newlines and keeping original spacing
 * Basic unit tests were added
@@ -23,6 +24,7 @@
 ### Bugs Fixed
 
 * [Issue 2](https://github.com/jacob-carlborg/dstep/issues/2): Self alias should be removed bug
+* [Issue 8](https://github.com/jacob-carlborg/dstep/issues/8): Typedef and anonymous structs
 * [Issue 10](https://github.com/jacob-carlborg/dstep/issues/10): Embedded struct not generated
 * [Issue 20](https://github.com/jacob-carlborg/dstep/issues/20): `#define` (simplest cases only?)
 * [Issue 21](https://github.com/jacob-carlborg/dstep/issues/21): `wchar_t` should be translated to `core.stdc.stddef.wchar_t`
