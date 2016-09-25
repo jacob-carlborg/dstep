@@ -1401,8 +1401,7 @@ bool parseRecordSpecifier(ref Token[] tokens, ref Type type, Cursor[string] tabl
     {
         if (auto ptr = (keywordType ~ " " ~ spelling in table))
         {
-            type.kind = CXTypeKind.CXType_Record;
-            type.spelling = spelling;
+            type = ptr.type;
             tokens = local;
             return true;
         }
@@ -1420,9 +1419,7 @@ bool parseEnumSpecifier(ref Token[] tokens, ref Type type, Cursor[string] table)
     {
         if (auto ptr = ("enum " ~ spelling in table))
         {
-            type.kind = CXTypeKind.CXType_Enum;
-            type.spelling = spelling;
-
+            type = ptr.type;
             tokens = local;
             return true;
         }

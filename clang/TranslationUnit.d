@@ -260,6 +260,38 @@ struct TranslationUnit
         return relativeLocationAccessorImpl(cursor.all);
     }
 
+    bool delegate (SourceLocation, SourceLocation)
+        relativeLocationLessOp()
+    {
+        auto accessor = relativeLocationAccessor();
+
+        bool lessOp(SourceLocation a, SourceLocation b)
+        {
+            if (a.file == b.file)
+                return a.offset < b.offset;
+            else
+                return accessor(a) < accessor(b);
+        }
+
+        return &lessOp;
+    }
+
+    bool delegate (Cursor, Cursor)
+        relativeCursorLocationLessOp()
+    {
+        auto accessor = relativeLocationAccessor();
+
+        bool lessOp(Cursor a, Cursor b)
+        {
+            if (a.file == b.file)
+                return a.location.offset < b.location.offset;
+            else
+                return accessor(a.location) < accessor(b.location);
+        }
+
+        return &lessOp;
+    }
+
     private struct TokenRange
     {
         CXTranslationUnit cx;

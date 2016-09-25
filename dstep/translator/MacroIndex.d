@@ -6,8 +6,9 @@
  */
 module dstep.translator.MacroIndex;
 
-import std.container.rbtree;
 import std.typecons;
+import std.algorithm;
+import std.range;
 
 import clang.c.Index;
 import clang.Cursor;
@@ -20,55 +21,50 @@ import dstep.translator.Preprocessor;
 
 class MacroIndex
 {
-    private static bool pred(in Cursor a, in Cursor b)
-    {
-        return a.location.lexicalLess(b.location);
-    }
-
     private TranslationUnit translUnit;
-    private alias CursorRedBlackTree =
-        RedBlackTree!(Cursor, (a, b) => pred(a, b));
-    private CursorRedBlackTree expansions;
-    private Cursor[string] definitions;
-
+    private bool delegate (Cursor, Cursor) lessOp;
+    private Cursor[] expansions;
+    private Cursor[string] globalCursors_;
     private Directive[] directives;
-
-    private static string uniqueID(in Cursor cursor)
-    {
-        import std.format : format;
-        return format(
-            "%s@%s:%d",
-            cursor.spelling,
-            cursor.location.path,
-            cursor.location.offset);
-    }
 
     this(TranslationUnit translUnit)
     {
         this.translUnit = translUnit;
 
-        expansions = new CursorRedBlackTree();
-
-        Cursor[string] recent;
+        auto expansionsAppender = appender!(Cursor[])();
 
         foreach (cursor, parent; translUnit.cursor.all)
         {
             if (cursor.kind == CXCursorKind.CXCursor_MacroExpansion)
-            {
-                expansions.insert(cursor);
+                expansionsAppender.put(cursor);
 
-                Cursor* def = cursor.spelling in recent;
-
-                if (def !is null)
-                    definitions[uniqueID(cursor)] = *def;
-            }
-            else if (cursor.kind == CXCursorKind.CXCursor_MacroDefinition)
-            {
-                recent[cursor.spelling] = cursor;
-            }
+            if (!cursor.spelling.empty)
+                globalCursors_[extendedSpelling(cursor)] = cursor;
         }
 
+        lessOp = translUnit.relativeCursorLocationLessOp();
+        expansions = expansionsAppender.data.sort!((a, b) => lessOp(a, b)).array;
         directives = dstep.translator.Preprocessor.directives(translUnit);
+    }
+
+    static string extendedSpelling(Cursor cursor)
+    {
+        import std.format : format;
+
+        switch (cursor.kind)
+        {
+            case CXCursorKind.CXCursor_StructDecl:
+                return format("struct %s", cursor.spelling);
+
+            case CXCursorKind.CXCursor_UnionDecl:
+                return format("union %s", cursor.spelling);
+
+            case CXCursorKind.CXCursor_EnumDecl:
+                return format("enum %s", cursor.spelling);
+
+            default:
+                return cursor.spelling;
+        }
     }
 
     Cursor[] queryExpansion(Cursor cursor) const
@@ -78,8 +74,10 @@ class MacroIndex
 
         SourceRange extent = cursor.extent;
 
-        auto equal = expansions.equalRange(cursor);
-        auto greater = expansions.upperBound(cursor);
+        auto expansionsSorted = expansions.assumeSorted!((a, b) => lessOp(a, b));
+
+        auto equal = expansionsSorted.equalRange(cursor);
+        auto greater = expansionsSorted.upperBound(cursor);
 
         auto result = appender!(Cursor[])();
 
@@ -131,5 +129,10 @@ class MacroIndex
         }
 
         return Tuple!(bool, SourceLocation)(false, SourceLocation.empty);
+    }
+
+    Cursor[string] globalCursors()
+    {
+        return globalCursors_;
     }
 }

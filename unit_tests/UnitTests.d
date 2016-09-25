@@ -708,8 +708,7 @@ int foo (int data[]);
 int bar (const int data[]);
 int baz (const int data[32]);
 int qux (const int data[32][64]);
-C",
-q"D
+C", q"D
 extern (C):
 
 int foo (int* data);
@@ -726,5 +725,156 @@ extern (C):
 
 int foo (ref const(void)*[2] ptr_data);
 D");
+
+}
+
+// Test renaming on spelling collision.
+unittest
+{
+    assertTranslates(q"C
+struct foo { };
+
+void foo();
+C", q"D
+extern (C):
+
+struct foo_
+{
+}
+
+void foo ();
+D");
+
+    assertTranslates(q"C
+struct foo { };
+
+int foo;
+C", q"D
+extern (C):
+
+struct foo_
+{
+}
+
+extern __gshared int foo;
+D");
+
+    assertTranslates(q"C
+struct foo { };
+
+#define foo 0
+C", q"D
+extern (C):
+
+struct foo_
+{
+}
+
+enum foo = 0;
+D");
+
+    assertTranslates(q"C
+enum foo { FOO };
+
+void foo();
+C", q"D
+extern (C):
+
+enum foo_
+{
+    FOO = 0
+}
+
+void foo ();
+D");
+
+    assertTranslates(q"C
+union foo { };
+
+void foo();
+C", q"D
+extern (C):
+
+union foo_
+{
+}
+
+void foo ();
+D");
+
+}
+
+// Test renaming on spelling collision.
+// Don't be fooled by names referring to just considered symbol.
+unittest
+{
+    assertTranslates(q"C
+struct foo;
+struct foo { };
+C", q"D
+extern (C):
+
+struct foo
+{
+}
+D");
+
+    assertTranslates(q"C
+typedef struct foo { } foo;
+C", q"D
+extern (C):
+
+struct foo
+{
+}
+D");
+
+}
+
+// Test ignore spelling collisions.
+unittest
+{
+    Options options;
+    options.collisionAction = CollisionAction.ignore;
+
+    assertTranslates(q"C
+enum foo { FOO };
+
+void foo();
+C", q"D
+extern (C):
+
+enum foo
+{
+    FOO = 0
+}
+
+void foo ();
+D", options);
+
+}
+
+// Test abort on spelling collision.
+unittest
+{
+    import std.exception : assertThrown;
+
+    Options options;
+    options.collisionAction = CollisionAction.abort;
+
+    assertThrown!TranslationException(assertTranslates(q"C
+enum foo { FOO };
+
+void foo();
+C", q"D
+extern (C):
+
+enum foo
+{
+    FOO = 0
+}
+
+void foo ();
+D", options));
 
 }

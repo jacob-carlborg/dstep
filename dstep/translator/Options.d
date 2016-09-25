@@ -14,6 +14,13 @@ enum Language
     objC
 }
 
+enum CollisionAction
+{
+    ignore,
+    rename,
+    abort
+}
+
 struct Options
 {
     string[] inputFiles;
@@ -31,6 +38,8 @@ struct Options
     bool spaceAfterFunctionName = true;
     Set!string skipDefinitions;
     Set!string skipSymbols;
+    bool printDiagnostics = true;
+    CollisionAction collisionAction = CollisionAction.rename;
 
     string toString() const
     {

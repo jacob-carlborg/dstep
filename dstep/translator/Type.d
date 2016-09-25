@@ -6,6 +6,10 @@
  */
 module dstep.translator.Type;
 
+import std.conv;
+import std.string;
+import std.range;
+
 import clang.c.Index;
 import clang.Cursor;
 import clang.Type;
@@ -14,8 +18,6 @@ import dstep.translator.Context;
 import dstep.translator.IncludeHandler;
 import dstep.translator.Translator;
 import dstep.translator.Output;
-
-import std.conv;
 
 string translateType (Context context, Cursor cursor, bool rewriteIdToObjcObject = true, bool applyConst = true)
 {
@@ -59,14 +61,18 @@ body
 
                 case CXType_Record:
                 case CXType_Enum:
+                    result = context.translateTagSpelling(type.declaration);
+                    handleInclude(context, type);
+                    break;
+
                 case CXType_ObjCInterface:
                     result = type.spelling;
 
-                    if (result.length == 0)
+                    if (result.empty)
                         result = context.getAnonymousName(type.declaration);
 
                     handleInclude(context, type);
-                break;
+                    break;
 
                 case CXType_ConstantArray:
                 case CXType_IncompleteArray:

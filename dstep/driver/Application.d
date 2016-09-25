@@ -183,11 +183,12 @@ private struct ParseFile
             options.spaceAfterFunctionName = config.spaceAfterFunctionName;
             options.skipDefinitions = setFromList(config.skipDefinitions);
             options.skipSymbols = setFromList(config.skipSymbols);
+            options.printDiagnostics = config.printDiagnostics;
+            options.collisionAction = config.collisionAction;
 
             auto translator = new Translator(translationUnit, options);
             translator.translate;
         }
-
     }
 
     ~this ()

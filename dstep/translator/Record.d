@@ -44,7 +44,7 @@ void translateRecordDef(
 
     import std.format;
 
-    auto spelling = keepUnnamed ? "" : context.translateSpelling(cursor);
+    auto spelling = keepUnnamed ? "" : context.translateTagSpelling(cursor);
     spelling = spelling == "" ? spelling : " " ~ spelling;
     auto type = translateRecordTypeKeyword(cursor);
 
@@ -96,7 +96,7 @@ void translateRecordDef(
 
 void translateRecordDecl(Output output, Context context, Cursor cursor)
 {
-    auto spelling = context.translateSpelling(cursor);
+    auto spelling = context.translateTagSpelling(cursor);
     spelling = spelling == "" ? spelling : " " ~ spelling;
     auto type = translateRecordTypeKeyword(cursor);
     output.singleLine(cursor.extent, "%s%s;", type, spelling);

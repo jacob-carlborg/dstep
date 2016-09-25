@@ -32,6 +32,7 @@ class Context
     private Translator translator_ = null;
     private Output globalScope_ = null;
     private Cursor[string] typeNames_;
+    private string[Cursor] translatedSpellings;
     public MacroDefinition[string] macroDefinitions;
 
     Options options;
@@ -136,16 +137,106 @@ class Context
         return typedefIndex_.typedefParent(cursor);
     }
 
+    private string translateSpellingImpl(in Cursor cursor)
+    {
+        return cursor.spelling == ""
+            ? generateAnonymousName(cursor)
+            : cursor.spelling;
+    }
+
     public string translateSpelling(in Cursor cursor)
     {
-        auto typedefp = typedefParent(cursor.canonical);
-
-        if (typedefp.isValid && cursor.spelling == "")
-            return typedefp.spelling;
+        if (auto spelling = (cursor in translatedSpellings))
+        {
+            return *spelling;
+        }
         else
-            return cursor.spelling == ""
-                ? generateAnonymousName(cursor)
-                : cursor.spelling;
+        {
+            auto spelling = translateSpellingImpl(cursor);
+            translatedSpellings[cursor] = spelling;
+            return spelling;
+        }
+    }
+
+    private void printCollisionWarning(
+        string spelling,
+        Cursor cursor,
+        Cursor collision)
+    {
+        import std.format : format;
+        import std.stdio : writeln;
+
+        if (options.printDiagnostics)
+        {
+            auto message = format(
+                "%s: warning: a type renamed to '%s' due to the " ~
+                "collision with the symbol declared in %s",
+                cursor.location.toColonSeparatedString,
+                spelling,
+                collision.location.toColonSeparatedString);
+
+            writeln(message);
+        }
+    }
+
+    private void throwCollisionError(
+        string spelling,
+        Cursor cursor,
+        Cursor collision) {
+        import std.format : format;
+
+        throw new TranslationException(
+            format(
+                "%s: error: a type name '%s' " ~
+                "collides with the symbol declared in %s",
+                cursor.location.toColonSeparatedString,
+                spelling,
+                collision.location.toColonSeparatedString));
+    }
+
+    public string translateTagSpelling(Cursor cursor)
+    {
+        if (auto spelling = (cursor.canonical in translatedSpellings))
+        {
+            return *spelling;
+        }
+        else
+        {
+            auto typedefp = typedefParent(cursor.canonical);
+            string spelling;
+
+            if (typedefp.isValid && cursor.spelling == "")
+            {
+                spelling = typedefp.spelling;
+            }
+            else
+            {
+                string tentative = translateSpellingImpl(cursor);
+
+                spelling = tentative;
+
+                if (options.collisionAction != CollisionAction.ignore)
+                {
+                    auto collision = spelling in macroIndex.globalCursors;
+
+                    while (collision &&
+                        collision.canonical != cursor.canonical &&
+                        collision.canonical != typedefParent(cursor.canonical))
+                    {
+                        if (options.collisionAction == CollisionAction.abort)
+                            throwCollisionError(spelling, cursor, *collision);
+
+                        spelling ~= "_";
+                        printCollisionWarning(spelling, cursor, *collision);
+                        collision = spelling in macroIndex.globalCursors;
+                    }
+                }
+            }
+
+            translatedSpellings[cursor.canonical] = spelling;
+
+            return spelling;
+        }
     }
 
     public Translator translator()

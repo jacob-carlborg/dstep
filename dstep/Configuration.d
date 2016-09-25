@@ -77,6 +77,14 @@ struct Configuration
     /// do not translate following symbols
     @("skip", "Skip translation of <symbol>.")
     string[] skipSymbols;
+
+    /// print diagnostic informations
+    @("print-diagnostics", "Print diagnostic informations [default].")
+    bool printDiagnostics = true;
+
+    /// action to take on symbol collision
+    @("collision-action", "Action to take when translated symbol collides with a preexisting symbol [default].")
+    CollisionAction collisionAction = CollisionAction.rename;
 }
 
 template makeGetOptArgs(alias config)
@@ -85,9 +93,11 @@ template makeGetOptArgs(alias config)
 
     template expand(alias spelling)
     {
+        alias member = Alias!(__traits(getMember, config, spelling));
+
         static if (
             __traits(compiles, &__traits(getMember, config, spelling)) &&
-            __traits(getAttributes, __traits(getMember, config, spelling)).length == 2)
+            __traits(getAttributes, member).length == 2)
         {
             auto ptr() @property
             {
@@ -96,28 +106,51 @@ template makeGetOptArgs(alias config)
 
             auto formatHelp(alias spelling)(string help)
             {
-                import std.algorithm : canFind;
-                import std.format : format;
-                import std.string : replace;
-
+                import std.algorithm;
+                import std.format;
+                import std.string;
+                import std.range;
 
                 Configuration config;
 
-                static if (is(typeof(__traits(getMember, config, spelling)) == bool))
+                string suffix;
+
+                static if (is(typeof(member) == bool) || is(typeof(member) == enum))
                 {
                     auto default_ = "[default]";
 
                     if (help.canFind(default_))
-                        return help.replace(
+                    {
+                        help = help.replace(
                             default_,
                             format("[default: %s]", __traits(getMember, config, spelling)));
-                    else
-                        return help;
+
+                        static if (is(typeof(member) == bool))
+                        {
+                            suffix = "=true|false";
+                        }
+                        else
+                        {
+                            suffix = format(
+                                "=%s",
+                                join([ __traits(allMembers, typeof(member)) ], "|"));
+                        }
+                    }
                 }
                 else
                 {
-                    return help;
+                    auto beginning = findSplitBefore(help, "<");
+
+                    if (!beginning[0].empty)
+                    {
+                        auto placeholder = findSplitAfter(beginning[1], ">");
+
+                        if (!placeholder[0].empty)
+                            suffix = format(" %s", placeholder[0]);
+                    }
                 }
+
+                return format("%s!%s", suffix, help);
             }
 
             alias expand = AliasSeq!(
