@@ -629,3 +629,78 @@ enum FOO = Bar.sizeof;
 D");
 
 }
+
+// Translate token concatenation operator.
+unittest
+{
+    assertTranslates(q"C
+#define FOO_CONCAT(prefix, name) prefix ## name
+C", q"D
+extern (C):
+
+extern (D) string FOO_CONCAT(T0, T1)(auto ref T0 prefix, auto ref T1 name)
+{
+    import std.conv : to;
+
+    return to!string(prefix) ~ to!string(name);
+}
+D");
+
+    assertTranslates(q"C
+#define BAR_CONCAT(prefix) prefix ## name
+C", q"D
+extern (C):
+
+extern (D) string BAR_CONCAT(T)(auto ref T prefix)
+{
+    import std.conv : to;
+
+    return to!string(prefix) ~ "name";
+}
+D");
+
+    assertTranslates(q"C
+#define BAR_CONCAT(prefix, name) prefix ## name ## suffix
+C", q"D
+extern (C):
+
+extern (D) string BAR_CONCAT(T0, T1)(auto ref T0 prefix, auto ref T1 name)
+{
+    import std.conv : to;
+
+    return to!string(prefix) ~ to!string(name) ~ "suffix";
+}
+D");
+
+}
+
+// Translate token concatenation operator with literal arguments.
+unittest
+{
+    assertTranslates(q"C
+#define BAR_CONCAT(prefix) prefix ## 42
+C", q"D
+extern (C):
+
+extern (D) string BAR_CONCAT(T)(auto ref T prefix)
+{
+    import std.conv : to;
+
+    return to!string(prefix) ~ "42";
+}
+D");
+
+    assertTranslates(q"C
+#define BAR_CONCAT(prefix) prefix ## 42 ## suffix
+C", q"D
+extern (C):
+
+extern (D) string BAR_CONCAT(T)(auto ref T prefix)
+{
+    import std.conv : to;
+
+    return to!string(prefix) ~ "42" ~ "suffix";
+}
+D");
+
+}

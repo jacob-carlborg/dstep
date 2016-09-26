@@ -120,6 +120,11 @@ bool acceptIdentifier(ref Token[] tokens, ref string spelling)
     return accept(tokens, spelling, TokenKind.identifier);
 }
 
+bool acceptLiteral(ref Token[] tokens, ref string spelling)
+{
+    return accept(tokens, spelling, TokenKind.literal);
+}
+
 bool acceptKeyword(ref Token[] tokens, ref string spelling)
 {
     return accept(tokens, spelling, TokenKind.keyword);
@@ -304,7 +309,7 @@ class Identifier : Expression
 
     string spelling;
 
-    override string translate(Context context, ref Set!string imports)
+    override string translate(Context context, Set!string params, ref Set!string imports)
     {
         return spelling;
     }
@@ -344,7 +349,7 @@ class Literal : Expression
 
     string spelling;
 
-    override string translate(Context context, ref Set!string imports)
+    override string translate(Context context, Set!string params, ref Set!string imports)
     {
         return spelling;
     }
@@ -384,7 +389,7 @@ class StringifyExpr : Expression
         this.spelling = spelling;
     }
 
-    override string translate(Context context, ref Set!string imports)
+    override string translate(Context context, Set!string params, ref Set!string imports)
     {
         import std.format : format;
 
@@ -415,12 +420,12 @@ class StringConcat : Expression
         this.substrings = substrings;
     }
 
-    override string translate(Context context, ref Set!string imports)
+    override string translate(Context context, Set!string params, ref Set!string imports)
     {
         import std.algorithm.iteration : map;
         import std.array : join;
 
-        return substrings.map!(a => a.translate(context, imports)).join(" ~ ");
+        return substrings.map!(a => a.translate(context, params, imports)).join(" ~ ");
     }
 
     override ExprType guessExprType()
@@ -436,9 +441,53 @@ class StringConcat : Expression
     }
 }
 
-class StringsSequence : Expression
+class TokenConcat : Expression
 {
-    StringLiteral[] literals;
+    Expression[] subexprs;
+
+    this (Expression[] subexprs)
+    {
+        this.subexprs = subexprs;
+    }
+
+    override string translate(Context context, Set!string params, ref Set!string imports)
+    {
+        import std.algorithm.iteration : map;
+        import std.array : join;
+        import std.format : format;
+
+        string stringify(Expression subexpr)
+        {
+            auto identifier = cast(Identifier) subexpr;
+
+            if (identifier && params.contains(identifier.spelling))
+            {
+                import std.format : format;
+
+                imports.add("std.conv : to");
+
+                return format("to!string(%s)", identifier.spelling);
+            }
+            else
+            {
+                return format(`"%s"`, subexpr.translate(context, params, imports));
+            }
+        }
+
+        return subexprs.map!stringify.join(" ~ ");
+    }
+
+    override ExprType guessExprType()
+    {
+        return ExprType("string");
+    }
+
+    override string toString()
+    {
+        import std.format : format;
+
+        return format("TokenConcat(subexprs = %s)", subexprs);
+    }
 }
 
 class IndexExpr : Expression
@@ -446,14 +495,14 @@ class IndexExpr : Expression
     Expression subexpr;
     Expression index;
 
-    override string translate(Context context, ref Set!string imports)
+    override string translate(Context context, Set!string params, ref Set!string imports)
     {
         import std.format : format;
 
         return format(
             "%s[%s]",
-            subexpr.translate(context, imports),
-            index.translate(context, imports));
+            subexpr.translate(context, params, imports),
+            index.translate(context, params, imports));
     }
 
     override ExprType guessExprType()
@@ -474,7 +523,7 @@ class CallExpr : Expression
     Expression expr;
     Expression[] args;
 
-    override string translate(Context context, ref Set!string imports)
+    override string translate(Context context, Set!string params, ref Set!string imports)
     {
         import std.algorithm.iteration : map;
         import std.format : format;
@@ -482,8 +531,8 @@ class CallExpr : Expression
 
         return format(
             "%s(%s)",
-            expr.translate(context, imports),
-            args.map!(a => a.translate(context, imports)).join(", "));
+            expr.translate(context, params, imports),
+            args.map!(a => a.translate(context, params, imports)).join(", "));
     }
 
     override ExprType guessExprType()
@@ -504,14 +553,14 @@ class DotExpr : Expression
     Expression subexpr;
     string identifier;
 
-    override string translate(Context context, ref Set!string imports)
+    override string translate(Context context, Set!string params, ref Set!string imports)
     {
         import std.format : format;
         import std.string : join;
 
         return format(
             "%s.%s",
-            subexpr.translate(context, imports),
+            subexpr.translate(context, params, imports),
             identifier);
     }
 
@@ -553,14 +602,14 @@ class SubExpr : Expression
         this.subexpr = subexpr;
     }
 
-    override string translate(Context context, ref Set!string imports)
+    override string translate(Context context, Set!string params, ref Set!string imports)
     {
         import std.format : format;
 
         if (surplus)
-            return format("%s", subexpr.translate(context, imports));
+            return format("%s", subexpr.translate(context, params, imports));
         else
-            return format("(%s)", subexpr.translate(context, imports));
+            return format("(%s)", subexpr.translate(context, params, imports));
     }
 
     bool surplus() const
@@ -603,16 +652,16 @@ class UnaryExpr : Expression
     string operator;
     bool postfix = false;
 
-    override string translate(Context context, ref Set!string imports)
+    override string translate(Context context, Set!string params, ref Set!string imports)
     {
         import std.format : format;
 
         if (operator == "sizeof")
-            return format("%s.sizeof", subexpr.braced.translate(context, imports));
+            return format("%s.sizeof", subexpr.braced.translate(context, params, imports));
         else if (postfix)
-            return format("%s%s", subexpr.translate(context, imports), operator);
+            return format("%s%s", subexpr.translate(context, params, imports), operator);
         else
-            return format("%s%s", operator, subexpr.translate(context, imports));
+            return format("%s%s", operator, subexpr.translate(context, params, imports));
     }
 
     override ExprType guessExprType()
@@ -665,7 +714,7 @@ class SizeofType : Expression
 {
     Type type;
 
-    override string translate(Context context, ref Set!string imports)
+    override string translate(Context context, Set!string params, ref Set!string imports)
     {
         import std.format : format;
 
@@ -690,14 +739,14 @@ class CastExpr : Expression
     Type type;
     Expression subexpr;
 
-    override string translate(Context context, ref Set!string imports)
+    override string translate(Context context, Set!string params, ref Set!string imports)
     {
         import std.format : format;
 
         return format(
             "cast(%s) %s",
             translateType(context, type),
-            subexpr.debraced.translate(context, imports));
+            subexpr.debraced.translate(context, params, imports));
     }
 
     override ExprType guessExprType()
@@ -727,15 +776,15 @@ class BinaryExpr : Expression
     Expression right;
     string operator;
 
-    override string translate(Context context, ref Set!string imports)
+    override string translate(Context context, Set!string params, ref Set!string imports)
     {
         import std.format : format;
 
         return format(
             "%s %s %s",
-            left.translate(context, imports),
+            left.translate(context, params, imports),
             operator,
-            right.translate(context, imports));
+            right.translate(context, params, imports));
     }
 
     override ExprType guessExprType()
@@ -803,15 +852,15 @@ class CondExpr : Expression
     Expression left;
     Expression right;
 
-    override string translate(Context context, ref Set!string imports)
+    override string translate(Context context, Set!string params, ref Set!string imports)
     {
         import std.format : format;
 
         return format(
             "%s ? %s : %s",
-            expr.translate(context, imports),
-            left.translate(context, imports),
-            right.translate(context, imports));
+            expr.translate(context, params, imports),
+            left.translate(context, params, imports),
+            right.translate(context, params, imports));
     }
 
     override ExprType guessExprType()
@@ -850,13 +899,7 @@ class Expression
         return dstep.translator.Type.translateType(context, Cursor.init, type);
     }
 
-    string translate(Context context)
-    {
-        Set!string imports;
-        return translate(context, imports);
-    }
-
-    string translate(Context context, ref Set!string imports)
+    string translate(Context context, Set!string params, ref Set!string imports)
     {
         return "<" ~ toString ~ ">";
     }
@@ -1017,6 +1060,59 @@ Expression parseStringConcat(ref Token[] tokens)
         return substrings.front;
 
     return new StringConcat(substrings);
+}
+
+Expression parseTokenConcat(ref Token[] tokens)
+{
+    Expression parseSubexpr(ref Token[] tokens)
+    {
+        string spelling;
+
+        if (acceptIdentifier(tokens, spelling))
+            return new Identifier(spelling);
+
+        if (acceptLiteral(tokens, spelling))
+            return new Literal(spelling);
+
+        return null;
+    }
+
+    auto local = tokens;
+
+    Expression[] subexprs;
+
+    if (auto first = parseSubexpr(local))
+    {
+        if (!acceptPunctuation!("##")(local))
+            return null;
+
+        if (auto expr = parseSubexpr(local))
+        {
+            subexprs ~= first;
+            subexprs ~= expr;
+
+            tokens = local;
+
+            while (acceptPunctuation!("##")(local))
+            {
+                expr = parseSubexpr(local);
+
+                if (expr)
+                {
+                    subexprs ~= expr;
+                    tokens = local;
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            return new TokenConcat(subexprs);
+        }
+    }
+
+    return null;
 }
 
 Expression parsePrimaryExpr(ref Token[] tokens, Cursor[string] table, bool defined)
@@ -1756,7 +1852,13 @@ Type parseTypeName(ref Token[] tokens, Cursor[string] table)
 
 Expression parseExpr(ref Token[] tokens, Cursor[string] table, bool defined)
 {
-    return parseCondExpr(tokens, table, defined);
+    if (auto expr = parseTokenConcat(tokens))
+        return expr;
+
+    if (auto expr = parseCondExpr(tokens, table, defined))
+        return expr;
+
+    return null;
 }
 
 Expression parseExpr(ref Token[] tokens, bool defined)
@@ -1825,6 +1927,7 @@ MacroDefinition parsePartialMacroDefinition(
     if (!accept(local, result.spelling, TokenKind.identifier))
         return null;
 
+    // Functional macros mustn't contain space before parentheses of parameter list.
     bool space =
         tokens.length > 2 &&
         tokens[0].extent.end.offset == tokens[1].extent.start.offset;
@@ -1857,12 +1960,17 @@ MacroDefinition parsePartialMacroDefinition(
     }
 }
 
-void translateConstDirective(Output output, Context context, MacroDefinition directive)
+void translateConstDirective(
+    Output output,
+    Context context,
+    MacroDefinition directive)
 {
+    Set!string params, imports;
+
     output.singleLine(
         "enum %s = %s;",
         directive.spelling,
-        directive.expr.debraced.translate(context));
+        directive.expr.debraced.translate(context, params, imports));
 }
 
 string translateDirectiveParamList(string[] params, ExprType[string] types)
@@ -1927,19 +2035,21 @@ string translateDirectiveTypeList(string[] params, ref ExprType[string] types)
 bool translateFunctAlias(
     Output output,
     Context context,
-    MacroDefinition definition)
+    MacroDefinition definition,
+    Set!string params)
 {
     import std.algorithm.comparison : equal;
     import std.algorithm.iteration : map;
 
     CallExpr expr = cast(CallExpr) definition.expr;
+    Set!string imports;
 
     if (expr !is null)
     {
         Identifier ident = cast(Identifier) expr.expr;
 
         if (ident !is null &&
-            equal(definition.params, expr.args.map!(a => a.translate(context))))
+            equal(definition.params, expr.args.map!(a => a.translate(context, params, imports))))
         {
             output.singleLine("alias %s = %s;", definition.spelling, ident.spelling);
             return true;
@@ -1957,7 +2067,9 @@ void translateFunctDirective(
     import std.format : format;
     import std.array : join;
 
-    if (translateFunctAlias(output, context, definition))
+    Set!string params;
+
+    if (translateFunctAlias(output, context, definition, params))
         return;
 
     ExprType returnType = definition.expr.guessExprType();
@@ -1978,11 +2090,14 @@ void translateFunctDirective(
             typeStrings = format("(%s)", typeList);
 
         paramStrings = translateDirectiveParamList(definition.params, types);
+
+        foreach (param; types.byKey)
+            params.add(param);
     }
 
     Set!string imports;
 
-    auto translated = definition.expr.debraced.translate(context, imports);
+    auto translated = definition.expr.debraced.translate(context, params, imports);
 
     output.subscopeStrong(
         "%s%s %s%s(%s)",

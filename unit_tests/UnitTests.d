@@ -434,6 +434,19 @@ D", options);
 
 }
 
+// Translate function pointer type with unnamed parameter.
+unittest
+{
+    assertTranslates(q"C
+typedef int (*read_char)(void *);
+C", q"D
+extern (C):
+
+alias int function (void*) read_char;
+D");
+
+}
+
 // Translate size types as size types.
 unittest
 {
@@ -449,6 +462,19 @@ extern (C):
 
 extern __gshared size_t foo;
 extern __gshared ptrdiff_t bar;
+D");
+
+}
+
+// Translate array typedef.
+unittest
+{
+    assertTranslates(q"C
+typedef double foo[2];
+C", q"D
+extern (C):
+
+alias double[2] foo;
 D");
 
 }
@@ -589,6 +615,37 @@ D");
             "#include <wchar.h>\n\nwchar_t x;\n",
             "extern (C):\n\nextern __gshared dchar x;\n", options);
     }
+
+}
+
+// Keep vertical space between structures in presence of preprocessor directive
+// followed by comment between them.
+unittest
+{
+    assertTranslates(q"C
+struct foo {
+     int field;
+};
+
+#include <stddef.h> /* comment */
+struct bar {
+     ptrdiff_t n;
+};
+C", q"D
+extern (C):
+
+struct foo
+{
+    int field;
+}
+
+/* comment */
+struct bar
+{
+    ptrdiff_t n;
+}
+D");
+
 }
 
 // Test translation of the function with no argument list.

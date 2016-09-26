@@ -240,10 +240,14 @@ class Translator
             if (child.kind == CXCursorKind.CXCursor_TypeRef)
                 child = child.referenced;
 
-            if (child.spelling == cursor.spelling ||
-                child.spelling == "" ||
-                shouldSkipRecord(context, child))
-                ignoreTypedef = true;
+            if (child.isDeclaration &&
+                child.kind != CXCursorKind.CXCursor_ParmDecl)
+            {
+                if (child.spelling == cursor.spelling ||
+                    child.spelling == "" ||
+                    shouldSkipRecord(context, child))
+                    ignoreTypedef = true;
+            }
 
             break;
         }
