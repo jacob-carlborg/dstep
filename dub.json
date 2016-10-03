@@ -12,7 +12,7 @@
     "buildRequirements": ["silenceWarnings"],
     "stringImportPaths": ["resources"],
     "preGenerateCommands": ["git describe --tags > resources/VERSION"],
-    "lflags-osx": ["-macosx_version_min", "10.6", "-lcrt1.10.6.o"],
+    "lflags-osx": ["-macosx_version_min", "10.7", "-lcrt1.o"],
 
     "buildTypes": {
         "unittest": {
