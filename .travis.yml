@@ -1,5 +1,9 @@
 language: d
-d: dmd-2.070.0
+d:
+  - dmd
+  - dmd-2.072.0-b2
+  - dmd-2.071.2
+  - dmd-2.070.0
 
 script: "dub --config=test"
 
