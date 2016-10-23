@@ -184,7 +184,7 @@ private:
         import std.array : empty;
         import std.algorithm : sort, filter;
 
-        foreach (entry; imports.sort.filter!(e => !e.empty))
+        foreach (entry; imports.sort().filter!(e => !e.empty))
             output.singleLine(entry);
 
         if (!output.empty)

@@ -302,7 +302,7 @@ time_t clang_getFileTime(CXFile SFile);
  * across an indexing session.
  */
 struct CXFileUniqueID {
-  ulong data[3];
+  ulong[3] data;
 }
 
 /**
@@ -367,7 +367,7 @@ int clang_File_isEqual(CXFile file1, CXFile file2);
  * to map a source location to a particular file, line, and column.
  */
 struct CXSourceLocation {
-  const(void)* ptr_data[2];
+  const(void)*[2] ptr_data;
   uint int_data;
 }
 
@@ -378,7 +378,7 @@ struct CXSourceLocation {
  * starting and end locations from a source range, respectively.
  */
 struct CXSourceRange {
-  const(void)* ptr_data[2];
+  const(void)*[2] ptr_data;
   uint begin_int_data;
   uint end_int_data;
 }
@@ -2316,7 +2316,7 @@ enum CXCursorKind {
 struct CXCursor {
   CXCursorKind kind;
   int xdata;
-  const(void)*data[3];
+  const(void)*[3] data;
 }
 
 /**
@@ -2884,7 +2884,7 @@ enum CXCallingConv {
  */
 struct CXType {
   CXTypeKind kind;
-  void* data[2];
+  void*[2] data;
 }
 
 /**
@@ -4117,7 +4117,7 @@ enum CXTokenKind {
  * \brief Describes a single preprocessing token.
  */
 struct CXToken {
-  uint int_data[4];
+  uint[4] int_data;
   void* ptr_data;
 }
 
@@ -5166,7 +5166,7 @@ alias CXIdxClientASTFile = void*;
  * \brief Source location passed to index callbacks.
  */
 struct CXIdxLoc {
-  void* ptr_data[2];
+  void*[2] ptr_data;
   uint int_data;
 }
 

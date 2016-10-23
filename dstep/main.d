@@ -246,7 +246,7 @@ void showHelp (Configuration config, GetoptResult getoptResult)
         helpString.put(format("    %-*s %s\n", cast(int) maxLength + 1, entry.option, entry.help));
 
     helpString.put(
-        "\nAll options that Clang accepts can be used as well.\n"
+        "\nAll options that Clang accepts can be used as well.\n" ~
         "Use the `-h' flag for help.");
 
     writeln(helpString.data);

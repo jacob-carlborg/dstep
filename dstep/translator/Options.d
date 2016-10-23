@@ -46,7 +46,7 @@ struct Options
         import std.format : format;
 
         return format(
-            "Options(outputFile = %s, language = %s, enableComments = %s, "
+            "Options(outputFile = %s, language = %s, enableComments = %s, " ~
             "reduceAliases = %s, portableWCharT = %s)",
             outputFile,
             language,
