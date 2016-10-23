@@ -204,6 +204,14 @@ struct Type
         return Type(clang_getElementType(cx));
     }
 
+    @property Type named()
+    {
+        if (isClang)
+            return Type(clang_Type_getNamedType(cx));
+        else
+            return Type.init;
+    }
+
     @property Cursor declaration ()
     {
         if (isClang)

@@ -978,3 +978,23 @@ void foo ();
 D", options);
 
 }
+
+// Test function argument of elaborate type.
+unittest
+{
+    assertTranslates(q"C
+struct foo_t { };
+
+void bar(const struct foo_t *foo);
+C",
+q"D
+extern (C):
+
+struct foo_t
+{
+}
+
+void bar (const(foo_t)* foo);
+D");
+
+}

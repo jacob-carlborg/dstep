@@ -62,14 +62,19 @@ void translateRecordDef(
                     case CXCursor_FieldDecl:
                         output.flushLocation(cursor);
 
-                        auto undecorated = cursor.type.undecorated;
+                        auto undecorated =
+                            cursor.type.kind == CXTypeKind.CXType_Elaborated ?
+                                cursor.type.named.undecorated :
+                                cursor.type.undecorated;
+
                         auto declaration = undecorated.declaration;
 
-                        if (!undecorated.isExposed &&
-                            undecorated.declaration.isValid &&
-                            !context.alreadyDefined(declaration)
-                             && !declaration.isGlobalLexically)
+                        if (undecorated.declaration.isValid &&
+                            !context.alreadyDefined(declaration) &&
+                            !declaration.isGlobalLexically)
+                        {
                             context.translator.translate(output, declaration);
+                        }
 
                         translateVariable(output, context, cursor);
 
