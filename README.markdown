@@ -26,7 +26,7 @@ The source code is available under the [Boost Software License 1.0](http://www.b
 #### Requirements
 
 * libclang - [http://clang.llvm.org](http://clang.llvm.org) - 3.4 or later that is binary compatible with 3.4
-* DMD - [http://dlang.org/download.html](http://dlang.org/download.html) - 2.069.2
+* DMD - [http://dlang.org/download.html](http://dlang.org/download.html) - 2.070.0 or later
 * Dub [http://code.dlang.org/download](http://code.dlang.org/download)
 
 #### Building
@@ -43,7 +43,7 @@ The source code is available under the [Boost Software License 1.0](http://www.b
 #### Requirements
 
 * LLVM - [http://llvm.org/releases/download.html](http://llvm.org/releases/download.html) - pre-built binaries for Windows
-* DMD - [http://dlang.org/download.html](http://dlang.org/download.html) - 2.069.2
+* DMD - [http://dlang.org/download.html](http://dlang.org/download.html) - 2.070.0 or later
 * Dub - [http://code.dlang.org/download](http://code.dlang.org/download)
 * Visual Studio - for example Visual Studio Community
 
