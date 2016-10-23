@@ -35,7 +35,7 @@ struct Compiler
         }
 
         enum internalHeaders = [staticMap!(toInternalHeader,
-            "float.h", "stdarg.h", "stddef.h")];
+            "float.h", "stdarg.h", "stddef.h", "stdbool.h")];
     }
 
     string[] extraIncludePaths ()
