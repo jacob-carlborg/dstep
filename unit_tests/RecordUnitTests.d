@@ -37,6 +37,51 @@ struct A
 D");
 }
 
+// Test translation and declaration of typedef and struct in one statement.
+unittest
+{
+    assertTranslates(
+q"C
+typedef struct A B;
+
+struct A { };
+C",
+q"D
+extern (C):
+
+struct A;
+alias A B;
+
+struct A
+{
+}
+D");
+}
+
+// Test translation and definition of typedef and struct in one statement.
+unittest
+{
+    assertTranslates(
+q"C
+typedef struct A { } B;
+
+struct Q { };
+C",
+q"D
+extern (C):
+
+struct A
+{
+}
+
+alias A B;
+
+struct Q
+{
+}
+D");
+}
+
 // Test translation of a nested anonymous structures.
 unittest
 {

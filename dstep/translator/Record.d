@@ -60,18 +60,11 @@ void translateRecordDef(
                     case CXCursor_FieldDecl:
                         output.flushLocation(cursor);
 
-                        if (!cursor.type.isExposed && cursor.type.declaration.isValid)
-                        {
-                            context.translator.translate(
-                                output,
-                                cursor.type.declaration);
-                        }
-                        else if (cursor.type.isDecorated)
-                        {
-                            context.translator.translate(
-                                output,
-                                cursor.type.undecorated.declaration);
-                        }
+                        auto undecorated = cursor.type.undecorated;
+                        auto declaration = undecorated.declaration;
+
+                        if (!undecorated.isExposed && undecorated.declaration.isValid && !context.alreadyDeclared(declaration))
+                            context.translator.translate(output, declaration);
 
                         translateVariable(output, context, cursor);
 
@@ -92,6 +85,8 @@ void translateRecordDef(
                 }
         }
     };
+
+    context.markAsDefined(cursor);
 }
 
 void translateRecordDecl(Output output, Context context, Cursor cursor)
@@ -100,6 +95,7 @@ void translateRecordDecl(Output output, Context context, Cursor cursor)
     spelling = spelling == "" ? spelling : " " ~ spelling;
     auto type = translateRecordTypeKeyword(cursor);
     output.singleLine(cursor.extent, "%s%s;", type, spelling);
+    context.markAsDeclared(cursor);
 }
 
 void translateAnonymousRecord(Output output, Context context, Cursor cursor, Cursor parent)
@@ -142,17 +138,19 @@ bool shouldSkipRecordDefinition(Context context, Cursor cursor)
 
 void translateRecord(Output output, Context context, Cursor cursor)
 {
+    if (context.isInsideTypedef(cursor) && !cursor.isDefinition)
+        return;
+
     auto canonical = cursor.canonical;
+    auto definition = canonical.definition;
 
-    if (!context.alreadyDefined(cursor.canonical))
+    if (definition.isValid && !shouldSkipRecordDefinition(context, cursor))
     {
-        auto definition = canonical.definition;
-
-        if (definition.isValid && !shouldSkipRecordDefinition(context, cursor))
+        if (!context.alreadyDefined(definition))
             translateRecordDef(output, context, definition);
-        else
-            translateRecordDecl(output, context, cursor);
-
-        context.markAsDefined(cursor);
+    }
+    else if (!context.alreadyDefined(cursor))
+    {
+        translateRecordDecl(output, context, cursor);
     }
 }

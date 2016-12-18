@@ -68,3 +68,9 @@ bool intersects(in SourceRange a, in SourceRange b)
         (a.start.offset <= b.start.offset && b.start.offset < a.end.offset) ||
         (a.start.offset < b.end.offset && b.end.offset <= a.end.offset);
 }
+
+bool contains(in SourceRange a, in SourceRange b)
+{
+    return a.path == b.path &&
+        a.start.offset <= b.start.offset && b.end.offset <= a.end.offset;
+}

@@ -229,6 +229,37 @@ class Translator
         output.append(";");
     }
 
+    bool isTypedefOfRecordFirstDeclaration(in Cursor cursor)
+    {
+        if (cursor.kind != CXCursorKind.CXCursor_TypedefDecl)
+            return false;
+
+        auto typeRef = cursor.findChild(CXCursorKind.CXCursor_TypeRef);
+
+        if (typeRef.isEmpty)
+            return false;
+
+        auto referenced = typeRef.referenced;
+
+        if (referenced.kind != CXCursorKind.CXCursor_StructDecl &&
+            referenced.kind != CXCursorKind.CXCursor_UnionDecl)
+            return false;
+
+        if (context.alreadyDeclared(referenced.canonical))
+            return false;
+
+        return true;
+    }
+
+    void forwardDeclareRecordForTypedef(Output output, Cursor cursor)
+    {
+        assert(cursor.kind == CXCursorKind.CXCursor_TypedefDecl);
+
+        if (isTypedefOfRecordFirstDeclaration(cursor)) {
+            translateRecordDecl(output, context, cursor.children[0].referenced);
+        }
+    }
+
     void translateTypedefDecl(Output output, Cursor cursor)
     {
         output.flushLocation(cursor.extent);
@@ -257,10 +288,14 @@ class Translator
 
         if (!ignoreTypedef)
         {
+            forwardDeclareRecordForTypedef(output, cursor);
+
             output.singleLine(
                 "alias %s %s;",
                 translateType(context, cursor, cursor.type.canonical),
                 cursor.spelling);
+
+            context.markAsDeclared(cursor);
         }
     }
 
