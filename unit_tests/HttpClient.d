@@ -10,8 +10,18 @@ static import std.uri;
 
 ubyte[] getBinary(string url, string[string] cookies = null) {
 	auto hr = httpRequest("GET", url, null, cookies);
+
+	const uint maxAttempts = 32;
+	uint attempts = 0;
+
+	while (hr.code == 302 && attempts < maxAttempts) {
+		hr = httpRequest("GET", hr.headers["Location"], null, cookies);
+		++attempts;
+	}
+
 	if(hr.code != 200)
 		throw new Exception(format("HTTP answered %d instead of 200 on %s", hr.code, url));
+
 	return hr.content;
 }
 
@@ -19,7 +29,7 @@ struct HttpResponse {
 	int code;
 	string contentType;
 	string[string] cookies;
-	string[] headers;
+	string[string] headers;
 	ubyte[] content;
 }
 
@@ -106,7 +116,7 @@ HttpResponse httpRequest(string method, string uri, const(ubyte)[] content = nul
 			SSL_library_init();
 			OpenSSL_add_all_algorithms();
 			SSL_load_error_strings();
-			
+
 			ctx = SSL_CTX_new(SSLv3_client_method());
 			sslAssert(!(ctx is null));
 
@@ -143,7 +153,7 @@ HttpResponse httpRequest(string method, string uri, const(ubyte)[] content = nul
 	of the parameters are the caller's responsibility. Content-Length is added automatically,
 	but YOU must give Content-Type!
 */
-HttpResponse doHttpRequestOnHelpers(void delegate(string) write, char[] delegate() read, string method, string uri, const(ubyte)[] content = null, string[string] cookies = null, string[] headers = null, bool https = false) 
+HttpResponse doHttpRequestOnHelpers(void delegate(string) write, char[] delegate() read, string method, string uri, const(ubyte)[] content = null, string[string] cookies = null, string[] headers = null, bool https = false)
 	in {
 		assert(method == "POST" || method == "GET");
 	}
@@ -226,7 +236,14 @@ body {
 	while(line.length) {
 		if(line.strip.length == 0)
 			break;
-		hr.headers ~= line;
+
+		import std.algorithm : findSplit;
+		import std.range : empty;
+		auto split = findSplit(line, ":");
+
+		if (!split[0].empty && !split[1].empty)
+			hr.headers[split[0]] = split[2].strip();
+
 		if(line.startsWith("Content-Type: "))
 			hr.contentType = line[14..$-1];
 		if(line.startsWith("Set-Cookie: ")) {
