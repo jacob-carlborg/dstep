@@ -82,7 +82,7 @@ string mismatchRegion(
         actual = stripRight(actual);
     }
 
-    string Q[];
+    string[] Q;
     size_t q = 0;
     size_t p = 0;
     Q.length = margin;
@@ -921,3 +921,4 @@ void assertIssuesWarning(
         return;
     }
 }
+

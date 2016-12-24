@@ -9,6 +9,7 @@ module dstep.translator.Context;
 import clang.c.Index;
 import clang.Cursor;
 import clang.TranslationUnit;
+import clang.SourceRange;
 
 import dstep.translator.CommentIndex;
 import dstep.translator.IncludeHandler;
@@ -25,6 +26,7 @@ class Context
     public TranslationUnit translUnit;
 
     private string[Cursor] anonymousNames;
+    private bool[Cursor] alreadyDeclared_;
     private bool[Cursor] alreadyDefined_;
     private IncludeHandler includeHandler_;
     private CommentIndex commentIndex_ = null;
@@ -127,14 +129,43 @@ class Context
         return (cursor in alreadyDefined_) !is null;
     }
 
+    public bool alreadyDeclared(in Cursor cursor)
+    {
+        return (cursor in alreadyDeclared_) !is null;
+    }
+
     public void markAsDefined(in Cursor cursor)
     {
+        alreadyDeclared_[cursor] = true;
         alreadyDefined_[cursor] = true;
+    }
+
+    public void markAsDeclared(in Cursor cursor)
+    {
+        alreadyDeclared_[cursor] = true;
     }
 
     public Cursor typedefParent(in Cursor cursor)
     {
         return typedefIndex_.typedefParent(cursor);
+    }
+
+    public bool isInsideTypedef(in Cursor cursor)
+    {
+        assert(cursor.kind == CXCursorKind.CXCursor_EnumDecl
+            || cursor.kind == CXCursorKind.CXCursor_StructDecl
+            || cursor.kind == CXCursorKind.CXCursor_UnionDecl);
+
+        if (auto typedef_ = typedefIndex_.typedefParent(cursor))
+        {
+            auto inner = cursor.extent;
+            auto outer = typedef_.extent;
+            return contains(outer, inner);
+        }
+        else
+        {
+            return false;
+        }
     }
 
     private string translateSpellingImpl(in Cursor cursor)

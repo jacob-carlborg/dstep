@@ -180,7 +180,7 @@ struct Cursor
         return Cursor.empty;
     }
 
-    Cursor findChild(CXCursorKind kind)
+    Cursor findChild(CXCursorKind kind) const
     {
         foreach (child; all)
         {
