@@ -217,7 +217,12 @@ class Translator
 
     void translateVarDecl(Output output, Cursor cursor, Cursor parent)
     {
-        variable(output, cursor, "extern __gshared ");
+        version (D1)
+            string storageClass = "extern ";
+        else
+            string storageClass = "extern __gshared ";
+
+        variable(output, cursor, storageClass);
     }
 
     void translateFunctionDecl(Output output, Cursor cursor, Cursor parent)
