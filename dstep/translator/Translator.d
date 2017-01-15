@@ -255,47 +255,41 @@ class Translator
     {
         assert(cursor.kind == CXCursorKind.CXCursor_TypedefDecl);
 
-        if (isTypedefOfRecordFirstDeclaration(cursor)) {
+        if (isTypedefOfRecordFirstDeclaration(cursor))
+        {
             translateRecordDecl(output, context, cursor.children[0].referenced);
         }
     }
 
-    void translateTypedefDecl(Output output, Cursor cursor)
+    bool shouldSkipAlias(Cursor typedef_)
     {
-        output.flushLocation(cursor.extent);
+        assert(typedef_.kind == CXCursorKind.CXCursor_TypedefDecl);
+        return context.options.reduceAliases && typedef_.type.isAliasReducible;
+    }
 
-        bool ignoreTypedef = false;
+    void translateTypedefDecl(Output output, Cursor typedef_)
+    {
+        assert(typedef_.kind == CXCursorKind.CXCursor_TypedefDecl);
 
-        foreach (child; cursor.all)
+        output.flushLocation(typedef_.extent);
+
+        auto underlying = typedef_.underlyingCursor;
+
+        if (!context.shouldSkipRecord(underlying) && !shouldSkipAlias(typedef_))
         {
-            if (child.kind == CXCursorKind.CXCursor_TypeRef)
-                child = child.referenced;
+            forwardDeclareRecordForTypedef(output, typedef_);
 
-            if (child.isDeclaration &&
-                child.kind != CXCursorKind.CXCursor_ParmDecl)
+            if (underlying.isEmpty ||
+                (underlying.spelling != typedef_.spelling &&
+                underlying.spelling != ""))
             {
-                if (child.spelling == cursor.spelling ||
-                    child.spelling == "" ||
-                    shouldSkipRecord(context, child))
-                    ignoreTypedef = true;
+                output.singleLine(
+                    "alias %s %s;",
+                    translateType(context, typedef_, typedef_.type.canonical),
+                    typedef_.spelling);
+
+                context.markAsDeclared(typedef_);
             }
-
-            break;
-        }
-
-        if (context.options.reduceAliases && cursor.type.isAliasReducible)
-            ignoreTypedef = true;
-
-        if (!ignoreTypedef)
-        {
-            forwardDeclareRecordForTypedef(output, cursor);
-
-            output.singleLine(
-                "alias %s %s;",
-                translateType(context, cursor, cursor.type.canonical),
-                cursor.spelling);
-
-            context.markAsDeclared(cursor);
         }
     }
 

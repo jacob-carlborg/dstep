@@ -213,7 +213,8 @@ D");
 
 }
 
-// Do not generate alias for typedef with the same name as structure.
+// Translate typedef to forward declaration if it has the same name as
+// underlying structure or union.
 unittest
 {
     assertTranslates(q"C
@@ -226,9 +227,17 @@ struct Foo
         int x;
     } bar;
 };
+
+typedef union Baz Baz;
+
+typedef struct Qux {
+    int tmp;
+} Qux;
 C",
 q"D
 extern (C):
+
+struct Foo;
 
 struct Foo
 {
@@ -240,6 +249,12 @@ struct Foo
     Bar bar;
 }
 
+union Baz;
+
+struct Qux
+{
+    int tmp;
+}
 D");
 }
 
