@@ -91,6 +91,10 @@ body
                         rewriteIdToObjcObject);
                     break;
 
+                case CXType_Complex:
+                    result = translateComplex(type);
+                    break;
+
                 default: result = translateType(context, type.kind, rewriteIdToObjcObject);
             }
     }
@@ -234,6 +238,17 @@ body
         return translateType(context, declaration, rewriteIdToObjcObject);
     else
         return translateType(context, type.kind, rewriteIdToObjcObject);
+}
+
+string translateComplex (Type type)
+{
+    switch (type.element.kind)
+    {
+        case CXTypeKind.CXType_Float: return "cfloat";
+        case CXTypeKind.CXType_Double: return "cdouble";
+        case CXTypeKind.CXType_LongDouble: return "creal";
+        default: return "<unimplemented>";
+    }
 }
 
 string translateArrayElement(
@@ -481,7 +496,6 @@ string translateType (Context context, CXTypeKind kind, bool rewriteIdToObjcObje
             case CXType_ObjCClass: return "Class";
             case CXType_ObjCSel: return "SEL";
 
-            case CXType_Complex:
             case CXType_Pointer:
             case CXType_BlockPointer:
             case CXType_LValueReference:

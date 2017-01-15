@@ -21,6 +21,7 @@
 * Add the `libclang` bindings as a test case
 * Add support for Microsoft Windows
 * Run Windows tests on AppVeyor
+* Handle complex floating-point types.
 
 ### Bugs Fixed
 
