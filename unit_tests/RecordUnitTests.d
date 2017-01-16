@@ -49,7 +49,6 @@ C",
 q"D
 extern (C):
 
-struct A;
 alias A B;
 
 struct A
@@ -264,6 +263,36 @@ D");
 
 }
 
+// Maintain ordering of record definitions in presence of forward declarations.
+unittest
+{
+    assertTranslates(
+q"C
+struct A;
+
+union B {
+};
+
+struct A {
+    int foo;
+};
+
+union B;
+C",
+q"D
+extern (C):
+
+union B
+{
+}
+
+struct A
+{
+    int foo;
+}
+D");
+}
+
 // Translate nested structure with immediate pointer variable.
 unittest
 {
@@ -327,4 +356,76 @@ struct Foo
 
 D");
 
+}
+
+// Skip typedef of structure when the names of typedef and structure are the
+// same and the structure has definition somewhere else.
+unittest
+{
+    assertTranslates(q"C
+typedef struct Foo Foo;
+struct Foo;
+struct Foo
+{
+    struct Bar
+    {
+        int x;
+    } bar;
+};
+
+typedef union Baz Baz;
+
+typedef struct Qux {
+    int tmp;
+} Qux;
+C",
+q"D
+extern (C):
+
+struct Foo
+{
+    struct Bar
+    {
+        int x;
+    }
+
+    Bar bar;
+}
+
+union Baz;
+
+struct Qux
+{
+    int tmp;
+}
+D");
+}
+
+// Do not skip typedef of structure when the names of typedef and structure
+// are the same and the structure has not definition.
+unittest
+{
+    assertTranslates(q"C
+typedef struct Foo Foo;
+C",
+q"D
+extern (C):
+
+struct Foo;
+D");
+
+    assertTranslates(q"C
+typedef struct Foo Foo;
+
+struct Bar;
+
+struct Foo;
+C",
+q"D
+extern (C):
+
+struct Foo;
+
+struct Bar;
+D");
 }

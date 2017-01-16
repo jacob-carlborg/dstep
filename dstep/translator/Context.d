@@ -26,7 +26,6 @@ class Context
     public TranslationUnit translUnit;
 
     private string[Cursor] anonymousNames;
-    private bool[Cursor] alreadyDeclared_;
     private bool[Cursor] alreadyDefined_;
     private IncludeHandler includeHandler_;
     private CommentIndex commentIndex_ = null;
@@ -129,20 +128,9 @@ class Context
         return (cursor in alreadyDefined_) !is null;
     }
 
-    public bool alreadyDeclared(in Cursor cursor)
-    {
-        return (cursor in alreadyDeclared_) !is null;
-    }
-
     public void markAsDefined(in Cursor cursor)
     {
-        alreadyDeclared_[cursor] = true;
         alreadyDefined_[cursor] = true;
-    }
-
-    public void markAsDeclared(in Cursor cursor)
-    {
-        alreadyDeclared_[cursor] = true;
     }
 
     public Cursor typedefParent(in Cursor cursor)
