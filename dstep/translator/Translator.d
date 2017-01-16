@@ -234,36 +234,27 @@ class Translator
         output.append(";");
     }
 
-    bool isTypedefOfRecordFirstDeclaration(in Cursor cursor)
+    void declareRecordForTypedef(Output output, Cursor typedef_)
     {
-        if (cursor.kind != CXCursorKind.CXCursor_TypedefDecl)
-            return false;
+        assert(typedef_.kind == CXCursorKind.CXCursor_TypedefDecl);
 
-        auto typeRef = cursor.findChild(CXCursorKind.CXCursor_TypeRef);
+        auto underlying = typedef_.underlyingCursor();
 
-        if (typeRef.isEmpty)
-            return false;
+        if (underlying.isEmpty)
+            return;
 
-        auto referenced = typeRef.referenced;
+        if (underlying.isEmpty ||
+            underlying.kind != CXCursorKind.CXCursor_StructDecl &&
+            underlying.kind != CXCursorKind.CXCursor_UnionDecl)
+            return;
 
-        if (referenced.kind != CXCursorKind.CXCursor_StructDecl &&
-            referenced.kind != CXCursorKind.CXCursor_UnionDecl)
-            return false;
+        if (context.alreadyDefined(underlying.canonical))
+            return;
 
-        if (context.alreadyDeclared(referenced.canonical))
-            return false;
+        bool skipdef = shouldSkipRecordDefinition(context, underlying);
 
-        return true;
-    }
-
-    void forwardDeclareRecordForTypedef(Output output, Cursor cursor)
-    {
-        assert(cursor.kind == CXCursorKind.CXCursor_TypedefDecl);
-
-        if (isTypedefOfRecordFirstDeclaration(cursor))
-        {
-            translateRecordDecl(output, context, cursor.children[0].referenced);
-        }
+        if (underlying.definition.isEmpty || skipdef)
+            translateRecordDecl(output, context, underlying);
     }
 
     bool shouldSkipAlias(Cursor typedef_)
@@ -282,7 +273,7 @@ class Translator
 
         if (!context.shouldSkipRecord(underlying) && !shouldSkipAlias(typedef_))
         {
-            forwardDeclareRecordForTypedef(output, typedef_);
+            declareRecordForTypedef(output, typedef_);
 
             if (underlying.isEmpty ||
                 (underlying.spelling != typedef_.spelling &&
@@ -293,7 +284,7 @@ class Translator
                     translateType(context, typedef_, typedef_.type.canonical),
                     typedef_.spelling);
 
-                context.markAsDeclared(typedef_);
+                context.markAsDefined(typedef_);
             }
         }
     }

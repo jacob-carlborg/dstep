@@ -40,6 +40,7 @@
 * [Issue 59](https://github.com/jacob-carlborg/dstep/issues/59): Shouldn't dstep exit with status code when there is some kind of error
 * [Issue 83](https://github.com/jacob-carlborg/dstep/issues/83): New multiline translation
 * [Issue 85](https://github.com/jacob-carlborg/dstep/issues/85): dstep not converting `const T x[]` to `const (T)* x`
+* [Issue 107](https://github.com/jacob-carlborg/dstep/issues/107): Handle typedef of opaque structs.
 
 ## Version 0.2.1
 ### New/Changed Features

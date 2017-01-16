@@ -213,51 +213,6 @@ D");
 
 }
 
-// Translate typedef to forward declaration if it has the same name as
-// underlying structure or union.
-unittest
-{
-    assertTranslates(q"C
-typedef struct Foo Foo;
-struct Foo;
-struct Foo
-{
-    struct Bar
-    {
-        int x;
-    } bar;
-};
-
-typedef union Baz Baz;
-
-typedef struct Qux {
-    int tmp;
-} Qux;
-C",
-q"D
-extern (C):
-
-struct Foo;
-
-struct Foo
-{
-    struct Bar
-    {
-        int x;
-    }
-
-    Bar bar;
-}
-
-union Baz;
-
-struct Qux
-{
-    int tmp;
-}
-D");
-}
-
 // Long function declarations should be broken to multiple lines.
 unittest
 {

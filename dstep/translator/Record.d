@@ -63,7 +63,7 @@ void translateRecordDef(
                         auto undecorated = cursor.type.undecorated;
                         auto declaration = undecorated.declaration;
 
-                        if (!undecorated.isExposed && undecorated.declaration.isValid && !context.alreadyDeclared(declaration))
+                        if (!undecorated.isExposed && undecorated.declaration.isValid && !context.alreadyDefined(declaration))
                             context.translator.translate(output, declaration);
 
                         translateVariable(output, context, cursor);
@@ -95,7 +95,7 @@ void translateRecordDecl(Output output, Context context, Cursor cursor)
     spelling = spelling == "" ? spelling : " " ~ spelling;
     auto type = translateRecordTypeKeyword(cursor);
     output.singleLine(cursor.extent, "%s%s;", type, spelling);
-    context.markAsDeclared(cursor);
+    context.markAsDefined(cursor);
 }
 
 void translateAnonymousRecord(Output output, Context context, Cursor cursor, Cursor parent)
@@ -136,21 +136,15 @@ bool shouldSkipRecordDefinition(Context context, Cursor cursor)
     return false;
 }
 
-void translateRecord(Output output, Context context, Cursor cursor)
+void translateRecord(Output output, Context context, Cursor record)
 {
-    if (context.isInsideTypedef(cursor) && !cursor.isDefinition)
+    if (context.alreadyDefined(record.canonical))
         return;
 
-    auto canonical = cursor.canonical;
-    auto definition = canonical.definition;
+    bool skipdef = shouldSkipRecordDefinition(context, record);
 
-    if (definition.isValid && !shouldSkipRecordDefinition(context, cursor))
-    {
-        if (!context.alreadyDefined(definition))
-            translateRecordDef(output, context, definition);
-    }
-    else if (!context.alreadyDefined(cursor))
-    {
-        translateRecordDecl(output, context, cursor);
-    }
+    if (record.isDefinition && !skipdef)
+        translateRecordDef(output, context, record);
+    else if (!context.isInsideTypedef(record) && (record.definition.isEmpty || skipdef))
+        translateRecordDecl(output, context, record);
 }
