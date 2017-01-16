@@ -93,6 +93,23 @@ struct Cursor
         return Type(clang_getTypedefDeclUnderlyingType(cx));
     }
 
+    @property Cursor underlyingCursor() const
+    {
+        foreach (child; all)
+        {
+            if (child.kind == CXCursorKind.CXCursor_TypeRef)
+                return child.referenced;
+
+            if (child.isDeclaration &&
+                child.kind != CXCursorKind.CXCursor_ParmDecl)
+            {
+                return child;
+            }
+        }
+
+        return empty;
+    }
+
     @property bool isDeclaration ()
     {
         return clang_isDeclaration(cx.kind) != 0;
