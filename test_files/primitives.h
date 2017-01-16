@@ -16,3 +16,8 @@ unsigned char x17;
 signed char x27;
 
 long double x18;
+
+// issue 106
+float _Complex x19;
+double _Complex x20;
+long double _Complex x21;

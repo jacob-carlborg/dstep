@@ -19,3 +19,7 @@ extern __gshared ubyte x17;
 extern __gshared byte x27;
 
 extern __gshared real x18;
+
+extern __gshared cfloat x19;
+extern __gshared cdouble x20;
+extern __gshared creal x21;

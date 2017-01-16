@@ -199,6 +199,11 @@ struct Type
         }
     }
 
+    @property Type element()
+    {
+        return Type(clang_getElementType(cx));
+    }
+
     @property Cursor declaration ()
     {
         if (isClang)
