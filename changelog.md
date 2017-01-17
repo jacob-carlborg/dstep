@@ -23,6 +23,7 @@
 * Run Windows tests on AppVeyor
 * Handle complex floating-point types.
 * Use the new alias syntax (`alias Y = X`) in the output
+* Support for custom global attributes (e.g. `nothrow`, `@nogc`)
 
 ### Bugs Fixed
 

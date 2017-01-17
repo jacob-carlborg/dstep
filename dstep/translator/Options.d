@@ -40,6 +40,7 @@ struct Options
     Set!string skipSymbols;
     bool printDiagnostics = true;
     CollisionAction collisionAction = CollisionAction.rename;
+    const(string)[] globalAttributes;
 
     string toString() const
     {

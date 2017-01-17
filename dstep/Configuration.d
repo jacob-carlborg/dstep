@@ -84,6 +84,10 @@ struct Configuration
     /// action to take on symbol collision
     @("collision-action", "Action to take when translated symbol collides with a preexisting symbol [default].")
     CollisionAction collisionAction = CollisionAction.rename;
+
+    /// add global attributes
+    @("global-attribute", "Add <attribute> as a global attribute.")
+    string[] globalAttributes;
 }
 
 template makeGetOptArgs(alias config)

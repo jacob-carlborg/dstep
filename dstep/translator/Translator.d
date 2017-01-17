@@ -337,6 +337,9 @@ private:
                 break;
         }
 
+        foreach (attribute; context.options.globalAttributes)
+            output.singleLine("%s:", attribute);
+
         output.separator();
     }
 }
