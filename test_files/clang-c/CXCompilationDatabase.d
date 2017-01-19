@@ -31,7 +31,7 @@ extern (C):
  *
  * Must be freed by \c clang_CompilationDatabase_dispose
  */
-alias void* CXCompilationDatabase;
+alias CXCompilationDatabase = void*;
 
 /**
  * \brief Contains the results of a search in the compilation database
@@ -42,12 +42,12 @@ alias void* CXCompilationDatabase;
  * commands is wrapped in this opaque data structure. It must be freed by
  * \c clang_CompileCommands_dispose.
  */
-alias void* CXCompileCommands;
+alias CXCompileCommands = void*;
 
 /**
  * \brief Represents the command line invocation to compile a specific file.
  */
-alias void* CXCompileCommand;
+alias CXCompileCommand = void*;
 
 /**
  * \brief Error codes for Compilation Database

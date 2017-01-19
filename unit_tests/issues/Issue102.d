@@ -23,7 +23,7 @@ C",
 q"D
 extern (C):
 
-alias _ProtobufCMethodDescriptor ProtobufCMethodDescriptor;
+alias ProtobufCMethodDescriptor = _ProtobufCMethodDescriptor;
 
 struct _ProtobufCMethodDescriptor
 {

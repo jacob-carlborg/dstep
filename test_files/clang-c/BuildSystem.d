@@ -33,7 +33,7 @@ ulong clang_getBuildSessionTimestamp ();
  * file/directories over the real file system.
  */
 struct CXVirtualFileOverlayImpl;
-alias CXVirtualFileOverlayImpl* CXVirtualFileOverlay;
+alias CXVirtualFileOverlay = CXVirtualFileOverlayImpl*;
 
 /**
  * \brief Create a \c CXVirtualFileOverlay object.
@@ -95,7 +95,7 @@ void clang_VirtualFileOverlay_dispose (CXVirtualFileOverlay);
  * \brief Object encapsulating information about a module.map file.
  */
 struct CXModuleMapDescriptorImpl;
-alias CXModuleMapDescriptorImpl* CXModuleMapDescriptor;
+alias CXModuleMapDescriptor = CXModuleMapDescriptorImpl*;
 
 /**
  * \brief Create a \c CXModuleMapDescriptor object.

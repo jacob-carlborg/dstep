@@ -1,3 +1,3 @@
 extern (C):
 
-alias int foo;
+alias foo = int;

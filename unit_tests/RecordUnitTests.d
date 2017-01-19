@@ -49,7 +49,7 @@ C",
 q"D
 extern (C):
 
-alias A B;
+alias B = A;
 
 struct A
 {
@@ -73,7 +73,7 @@ struct A
 {
 }
 
-alias A B;
+alias B = A;
 
 struct Q
 {

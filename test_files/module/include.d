@@ -7,4 +7,4 @@ struct Foo
     int qux;
 }
 
-alias Foo Bar;
+alias Bar = Foo;

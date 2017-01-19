@@ -280,9 +280,9 @@ class Translator
                 underlying.spelling != ""))
             {
                 output.singleLine(
-                    "alias %s %s;",
-                    translateType(context, typedef_, typedef_.type.canonical),
-                    typedef_.spelling);
+                    "alias %s = %s;",
+                    typedef_.spelling,
+                    translateType(context, typedef_, typedef_.type.canonical));
 
                 context.markAsDefined(typedef_);
             }
