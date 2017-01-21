@@ -42,6 +42,7 @@
 * [Issue 83](https://github.com/jacob-carlborg/dstep/issues/83): New multiline translation
 * [Issue 85](https://github.com/jacob-carlborg/dstep/issues/85): dstep not converting `const T x[]` to `const (T)* x`
 * [Issue 107](https://github.com/jacob-carlborg/dstep/issues/107): Handle typedef of opaque structs.
+* [Issue 114](https://github.com/jacob-carlborg/dstep/issues/114): Crash on recursive typedef.
 
 ## Version 0.2.1
 ### New/Changed Features
