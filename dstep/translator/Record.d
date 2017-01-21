@@ -40,6 +40,8 @@ void translateRecordDef(
     Cursor cursor,
     bool keepUnnamed = false)
 {
+    context.markAsDefined(cursor);
+
     auto canonical = cursor.canonical;
 
     import std.format;
@@ -85,17 +87,16 @@ void translateRecordDef(
                 }
         }
     };
-
-    context.markAsDefined(cursor);
 }
 
 void translateRecordDecl(Output output, Context context, Cursor cursor)
 {
+    context.markAsDefined(cursor);
+
     auto spelling = context.translateTagSpelling(cursor);
     spelling = spelling == "" ? spelling : " " ~ spelling;
     auto type = translateRecordTypeKeyword(cursor);
     output.singleLine(cursor.extent, "%s%s;", type, spelling);
-    context.markAsDefined(cursor);
 }
 
 void translateAnonymousRecord(Output output, Context context, Cursor cursor, Cursor parent)

@@ -429,3 +429,46 @@ struct Foo;
 struct Bar;
 D");
 }
+
+// Handle recursive types.
+unittest
+{
+    assertTranslates(q"C
+typedef struct Foo {
+    struct Foo *next;
+} Foo;
+
+struct Bar {
+    struct Bar* bar;
+};
+
+struct Baz;
+typedef struct Baz Qux;
+
+struct Baz {
+    Qux* ptr;
+};
+C",
+q"D
+extern (C):
+
+struct Foo
+{
+    Foo* next;
+}
+
+struct Bar
+{
+    Bar* bar;
+}
+
+alias Baz Qux;
+
+struct Baz
+{
+    Qux* ptr;
+}
+D");
+
+}
+
