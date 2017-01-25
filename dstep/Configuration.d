@@ -21,7 +21,6 @@ struct Configuration
     string[] inputFiles;
 
     /// expected programming language of input files
-    @("language|x", "Treat subsequent input files as having type <language>.")
     Language language;
 
     /// show dstep version

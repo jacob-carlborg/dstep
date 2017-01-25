@@ -59,8 +59,8 @@ auto parseCLI (string[] args)
         std.getopt.config.passThrough,
         std.getopt.config.caseSensitive,
         "output|o", &config.output,
-        "language|x", &parseLanguage,
         "objective-c", &forceObjectiveC,
+        "language|x", &parseLanguage,
         makeGetOptArgs!config);
 
     // remove dstep binary name (args[0])
@@ -226,7 +226,8 @@ void showHelp (Configuration config, GetoptResult getoptResult)
     auto customEntries = [
         Entry("-o, --output <file>", "Write output to <file>."),
         Entry("-o, --output <directory>", "Write all the files to <directory>, in case of multiple input files."),
-        Entry("-ObjC, --objective-c", "Treat source input file as Objective-C input.")];
+        Entry("-ObjC, --objective-c", "Treat source input file as Objective-C input."),
+        Entry("-x, --language", "Treat subsequent input files as having type <language>.")];
 
     auto generatedEntries = getoptResult.options
         .filter!(option => !option.help.empty)
