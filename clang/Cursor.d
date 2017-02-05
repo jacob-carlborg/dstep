@@ -279,6 +279,11 @@ struct Cursor
         return clang_isTranslationUnit(kind) != 0;
     }
 
+    File includedFile()
+    {
+        return File(clang_getIncludedFile(cx));
+    }
+
     string includedPath ()
     {
         auto file = clang_getIncludedFile(cx);
