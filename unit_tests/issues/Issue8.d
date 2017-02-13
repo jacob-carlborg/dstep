@@ -46,14 +46,14 @@ struct rd_kafka
     int dummy;
 }
 
-alias rd_kafka rd_kafka_t;
+alias rd_kafka_t = rd_kafka;
 
 struct rd_kafka_topic
 {
     int dummy;
 }
 
-alias rd_kafka_topic rd_kafka_topic_t;
+alias rd_kafka_topic_t = rd_kafka_topic;
 
 struct rd_kafka_metadata_
 {
@@ -69,7 +69,7 @@ struct rd_kafka_metadata_
     char* orig_broker_name; /* Name of originating broker */
 }
 
-alias rd_kafka_metadata_ rd_kafka_metadata_t;
+alias rd_kafka_metadata_t = rd_kafka_metadata_;
 
 int rd_kafka_metadata (
     rd_kafka_t* rk,

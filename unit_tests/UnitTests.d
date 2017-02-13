@@ -412,7 +412,7 @@ typedef int (*read_char)(void *);
 C", q"D
 extern (C):
 
-alias int function (void*) read_char;
+alias read_char = int function (void*);
 D");
 
 }
@@ -444,7 +444,7 @@ typedef double foo[2];
 C", q"D
 extern (C):
 
-alias double[2] foo;
+alias foo = double[2];
 D");
 
 }
@@ -484,7 +484,7 @@ C",
 q"D
 extern (C):
 
-alias uint Bar;
+alias Bar = uint;
 extern __gshared Bar foo;
 D", options);
 
@@ -675,7 +675,7 @@ void (*fun)(ClientData client_data, const EntityInfo*, unsigned last);
 C", q"D
 extern (C):
 
-alias void* ClientData;
+alias ClientData = void*;
 
 struct EntityInfo
 {
@@ -698,7 +698,7 @@ typedef enum VisitorResult (*FunPtr)(Cursor C, ClientData client_data);
 C", q"D
 extern (C):
 
-alias void* ClientData;
+alias ClientData = void*;
 
 struct Cursor
 {
@@ -710,7 +710,7 @@ enum VisitorResult
     Continue = 1
 }
 
-alias VisitorResult function (Cursor C, ClientData client_data) FunPtr;
+alias FunPtr = VisitorResult function (Cursor C, ClientData client_data);
 D");
 
     assertTranslates(q"C
@@ -720,9 +720,9 @@ typedef void (*FunPtr)(int c, ClientData client_data);
 C", q"D
 extern (C):
 
-alias void* ClientData;
+alias ClientData = void*;
 
-alias void function (int c, ClientData client_data) FunPtr;
+alias FunPtr = void function (int c, ClientData client_data);
 D");
 
 }

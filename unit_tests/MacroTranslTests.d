@@ -386,7 +386,7 @@ typedef unsigned int uint_32;
 C", q"D
 extern (C):
 
-alias uint uint_32;
+alias uint_32 = uint;
 
 extern (D) auto ROWBYTES(T0, T1)(auto ref T0 pixel_bits, auto ref T1 width)
 {
@@ -417,8 +417,8 @@ typedef unsigned long long foo_t;
 C", q"D
 extern (C):
 
-alias uint uint_32;
-alias ulong foo_t;
+alias uint_32 = uint;
+alias foo_t = ulong;
 
 enum UINT_31_MAX = cast(uint_32) 0x7fffffffL;
 enum UINT_32_MAX = cast(uint_32) -1;
@@ -454,7 +454,7 @@ typedef int uint_32;
 C", q"D
 extern (C):
 
-alias int uint_32;
+alias uint_32 = int;
 
 extern (D) auto Foo()
 {
@@ -564,7 +564,7 @@ typedef unsigned int uint_32;
 C", q"D
 extern (C):
 
-alias uint uint_32;
+alias uint_32 = uint;
 
 extern (D) auto ROWBYTES(T)(auto ref T pixel_bits)
 {

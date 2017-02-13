@@ -7,4 +7,4 @@ struct Unused_T
     int qux;
 }
 
-alias Unused_T Unused;
+alias Unused = Unused_T;

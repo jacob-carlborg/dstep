@@ -1,6 +1,6 @@
 extern (C):
 
-alias _Foo Foo;
+alias Foo = _Foo;
 
 struct _Foo
 {

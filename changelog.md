@@ -22,6 +22,7 @@
 * Add support for Microsoft Windows
 * Run Windows tests on AppVeyor
 * Handle complex floating-point types.
+* Use the new alias syntax (`alias Y = X`) in the output
 
 ### Bugs Fixed
 

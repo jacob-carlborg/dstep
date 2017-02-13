@@ -110,7 +110,7 @@ struct Foo
 {
 }
 
-alias Foo Bar;
+alias Bar = Foo;
 D");
 
     // Skip macro-definition.
@@ -214,7 +214,7 @@ C", q"D
 extern (C):
 
 struct Foo;
-alias Foo Bar;
+alias Bar = Foo;
 D");
 
 }

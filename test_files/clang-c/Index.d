@@ -75,19 +75,19 @@ enum CINDEX_VERSION_STRING = CINDEX_VERSION_STRINGIZE(CINDEX_VERSION_MAJOR, CIND
  * \brief An "index" that consists of a set of translation units that would
  * typically be linked together into an executable or library.
  */
-alias void* CXIndex;
+alias CXIndex = void*;
 
 /**
  * \brief A single translation unit, which resides in an index.
  */
 struct CXTranslationUnitImpl;
-alias CXTranslationUnitImpl* CXTranslationUnit;
+alias CXTranslationUnit = CXTranslationUnitImpl*;
 
 /**
  * \brief Opaque pointer representing client data that will be passed through
  * to various callbacks and visitors.
  */
-alias void* CXClientData;
+alias CXClientData = void*;
 
 /**
  * \brief Provides the contents of a file that has not yet been saved to disk.
@@ -283,7 +283,7 @@ uint clang_CXIndex_getGlobalOptions (CXIndex);
 /**
  * \brief A particular source file that is part of a translation unit.
  */
-alias void* CXFile;
+alias CXFile = void*;
 
 /**
  * \brief Retrieve the complete file and path name of the given file.
@@ -687,12 +687,12 @@ enum CXDiagnosticSeverity
  * \brief A single diagnostic, containing the diagnostic's severity,
  * location, text, source ranges, and fix-it hints.
  */
-alias void* CXDiagnostic;
+alias CXDiagnostic = void*;
 
 /**
  * \brief A group of CXDiagnostics.
  */
-alias void* CXDiagnosticSet;
+alias CXDiagnosticSet = void*;
 
 /**
  * \brief Determine the number of diagnostics in a CXDiagnosticSet.
@@ -2645,7 +2645,7 @@ CXTranslationUnit clang_Cursor_getTranslationUnit (CXCursor);
  * \brief A fast container representing a set of CXCursors.
  */
 struct CXCursorSetImpl;
-alias CXCursorSetImpl* CXCursorSet;
+alias CXCursorSet = CXCursorSetImpl*;
 
 /**
  * \brief Creates an empty CXCursorSet.
@@ -3586,7 +3586,7 @@ enum CXChildVisitResult
  * The visitor should return one of the \c CXChildVisitResult values
  * to direct clang_visitCursorChildren().
  */
-alias CXChildVisitResult function (CXCursor cursor, CXCursor parent, CXClientData client_data) CXCursorVisitor;
+alias CXCursorVisitor = CXChildVisitResult function (CXCursor cursor, CXCursor parent, CXClientData client_data);
 
 /**
  * \brief Visit the children of a particular cursor.
@@ -3949,7 +3949,7 @@ CXStringSet* clang_Cursor_getCXXManglings (CXCursor);
  * @{
  */
 
-alias void* CXModule;
+alias CXModule = void*;
 
 /**
  * \brief Given a CXCursor_ModuleImportDecl cursor, return the associated module.
@@ -4362,7 +4362,7 @@ void clang_executeOnThread (
  * with actual code,of a specific kind. See \c CXCompletionChunkKind for a
  * description of the different kinds of chunks.
  */
-alias void* CXCompletionString;
+alias CXCompletionString = void*;
 
 /**
  * \brief A single result of code completion.
@@ -5084,7 +5084,7 @@ void clang_toggleCrashRecovery (uint isEnabled);
  * array is sorted in order of immediate inclusion.  For example,
  * the first element refers to the location that included 'included_file'.
  */
-alias void function (CXFile included_file, CXSourceLocation* inclusion_stack, uint include_len, CXClientData client_data) CXInclusionVisitor;
+alias CXInclusionVisitor = void function (CXFile included_file, CXSourceLocation* inclusion_stack, uint include_len, CXClientData client_data);
 
 /**
  * \brief Visit the set of preprocessor inclusions in a translation unit.
@@ -5109,7 +5109,7 @@ void clang_getInclusions (
 /**
  * \brief A remapping of original source files and their translated files.
  */
-alias void* CXRemapping;
+alias CXRemapping = void*;
 
 /**
  * \brief Retrieve a remapping.
@@ -5236,24 +5236,24 @@ CXResult clang_findIncludesInFile (
 /**
  * \brief The client's data object that is associated with a CXFile.
  */
-alias void* CXIdxClientFile;
+alias CXIdxClientFile = void*;
 
 /**
  * \brief The client's data object that is associated with a semantic entity.
  */
-alias void* CXIdxClientEntity;
+alias CXIdxClientEntity = void*;
 
 /**
  * \brief The client's data object that is associated with a semantic container
  * of entities.
  */
-alias void* CXIdxClientContainer;
+alias CXIdxClientContainer = void*;
 
 /**
  * \brief The client's data object that is associated with an AST file (PCH
  * or module).
  */
-alias void* CXIdxClientASTFile;
+alias CXIdxClientASTFile = void*;
 
 /**
  * \brief Source location passed to index callbacks.
@@ -5656,7 +5656,7 @@ void clang_index_setClientEntity (const(CXIdxEntityInfo)*, CXIdxClientEntity);
  * \brief An indexing action/session, to be applied to one or multiple
  * translation units.
  */
-alias void* CXIndexAction;
+alias CXIndexAction = void*;
 
 /**
  * \brief An indexing action/session, to be applied to one or multiple
@@ -5827,7 +5827,7 @@ CXSourceLocation clang_indexLoc_getCXSourceLocation (CXIdxLoc loc);
  * The visitor should return one of the \c CXVisitorResult values
  * to direct \c clang_Type_visitFields.
  */
-alias CXVisitorResult function (CXCursor C, CXClientData client_data) CXFieldVisitor;
+alias CXFieldVisitor = CXVisitorResult function (CXCursor C, CXClientData client_data);
 
 /**
  * \brief Visit the fields of a particular type.
