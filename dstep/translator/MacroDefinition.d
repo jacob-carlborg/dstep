@@ -1967,8 +1967,13 @@ void translateConstDirective(
 {
     Set!string params, imports;
 
+    version (D1)
+        enum fmt = "const %s = %s;";
+    else
+        enum fmt = "enum %s = %s;";
+
     output.singleLine(
-        "enum %s = %s;",
+        fmt,
         directive.spelling,
         directive.expr.debraced.translate(context, params, imports));
 }

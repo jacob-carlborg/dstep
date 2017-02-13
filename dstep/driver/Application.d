@@ -152,11 +152,17 @@ private struct ParseFile
 
     void startConversion ()
     {
+        import std.algorithm.iteration : map;
+        import std.array;
+
         index = Index(false, false);
+
+        auto include_flags = compiler
+            .extraIncludePaths.map!(e => "-I" ~ e).array();
         translationUnit = TranslationUnit.parse(
             index,
             inputFile,
-            config.clangParams,
+            config.clangParams ~ include_flags,
             compiler.extraHeaders);
 
         diagnostics = translationUnit.diagnostics;
