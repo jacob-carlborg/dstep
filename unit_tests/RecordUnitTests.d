@@ -462,7 +462,7 @@ struct Bar
     Bar* bar;
 }
 
-alias Baz Qux;
+alias Qux = Baz;
 
 struct Baz
 {
