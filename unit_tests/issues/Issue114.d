@@ -25,7 +25,7 @@ struct _Foo_List
     _Foo_List* next;
 }
 
-alias _Foo_List Foo_List;
+alias Foo_List = _Foo_List;
 D");
 
 }
