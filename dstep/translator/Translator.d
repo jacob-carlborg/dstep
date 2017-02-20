@@ -279,8 +279,13 @@ class Translator
                 (underlying.spelling != typedef_.spelling &&
                 underlying.spelling != ""))
             {
+                version (D1)
+                    enum fmt = "alias %2$s %1$s;";
+                else
+                    enum fmt = "alias %1$s = %2$s;";
+
                 output.singleLine(
-                    "alias %s = %s;",
+                    fmt,
                     typedef_.spelling,
                     translateType(context, typedef_, typedef_.type.canonical));
 
