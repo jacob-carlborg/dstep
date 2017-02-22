@@ -33,16 +33,20 @@ void generateEnumAliases(Output output, Context context, Cursor cursor, string s
 {
     string subscope = cursorScopeString(context, cursor) ~ ".";
 
+    version (D1)
+        enum fmt = "alias %2$s %1$s;";
+    else
+        enum fmt = "alias %1$s = %2$s;";
+
     foreach (item; cursor.all)
     {
         switch (item.kind)
         {
             case CXCursorKind.CXCursor_EnumConstantDecl:
                 output.singleLine(
-                    "alias %s = %s%s;",
+                    fmt,
                     item.spelling,
-                    subscope,
-                    item.spelling);
+                    subscope ~ item.spelling);
                 break;
 
             default:
