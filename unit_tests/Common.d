@@ -780,7 +780,21 @@ DStep output:
 
             if (mismatch)
             {
-                string message = format("\n%s\nDStep command:\n%s", mismatch, command);
+                auto templ = q"/
+%4$s
+%1$s
+DStep command:
+%2$s
+%1$s
+DStep output:
+%3$s/";
+
+                string message = format(
+                    templ,
+                    sep,
+                    command,
+                    result.output,
+                    mismatch);
 
                 throw new AssertError(message, file, line);
             }
