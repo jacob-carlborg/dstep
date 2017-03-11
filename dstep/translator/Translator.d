@@ -465,7 +465,15 @@ string translateIdentifier (string str)
 
 void handleInclude (Context context, Type type)
 {
-    context.includeHandler.addInclude(type.declaration.path);
+    import std.algorithm.searching;
+    import std.path;
+
+    if (type.kind == CXTypeKind.CXType_Typedef
+        && type.spelling == "time_t"
+        && type.declaration.path.asNormalizedPath.array.endsWith("sys\\types.h"))
+        context.includeHandler.addInclude("time.h");
+    else
+        context.includeHandler.addInclude(type.declaration.path);
 }
 
 bool isDKeyword (string str)

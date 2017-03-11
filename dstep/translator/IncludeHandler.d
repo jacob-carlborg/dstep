@@ -56,6 +56,7 @@ class IncludeHandler
             "time" : "core.stdc.time",
             "_time_t" : "core.stdc.time",
             "corecrt" : "core.stdc.time",
+            "crtdefs" : "core.stdc.time",
             "wchar" : "core.stdc.wchar_",
             "wctype" : "core.stdc.wctype",
 

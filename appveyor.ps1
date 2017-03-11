@@ -50,5 +50,14 @@ Invoke-CmdScript $env:compilersetup $env:compilersetupargs;
 
 echo "Building dstep...";
 dub build $env:archswitch;
+
+if ($LastExitCode -ne 0) {
+  $host.SetShouldExit(-1)
+}
+
 echo "Running tests...";
 dub --config=test $env:archswitch;
+
+if ($LastExitCode -ne 0) {
+  $host.SetShouldExit(-1)
+}
