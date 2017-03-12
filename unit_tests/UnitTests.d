@@ -942,3 +942,21 @@ alias foo = int function(int function() bar);
 D", options);
 
 }
+
+// Test global attributes
+unittest
+{
+    Options options;
+    options.globalAttributes = ["nothrow", "@nogc"];
+
+    assertTranslates(q"C
+void foo();
+C", q"D
+extern (C):
+nothrow:
+@nogc:
+
+void foo ();
+D", options);
+
+}

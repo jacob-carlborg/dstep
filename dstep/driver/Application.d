@@ -191,6 +191,7 @@ private struct ParseFile
             options.skipSymbols = setFromList(config.skipSymbols);
             options.printDiagnostics = config.printDiagnostics;
             options.collisionAction = config.collisionAction;
+            options.globalAttributes = config.globalAttributes;
 
             auto translator = new Translator(translationUnit, options);
             translator.translate;
