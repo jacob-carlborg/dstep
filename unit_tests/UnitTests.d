@@ -911,3 +911,34 @@ D", options));
 
     }
 }
+
+// Put or don't put a space after the 'function' keyword when
+// --space-after-function-name is or isn't specified.
+unittest
+{
+    Options options;
+    options.spaceAfterFunctionName = true;
+
+    assertTranslates(
+q"C
+typedef int (*foo)(int (*bar)(void));
+C",
+q"D
+extern (C):
+
+alias foo = int function (int function () bar);
+D", options);
+
+    options.spaceAfterFunctionName = false;
+
+    assertTranslates(
+q"C
+typedef int (*foo)(int (*bar)(void));
+C",
+q"D
+extern (C):
+
+alias foo = int function(int function() bar);
+D", options);
+
+}

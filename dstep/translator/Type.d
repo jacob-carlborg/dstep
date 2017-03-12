@@ -430,7 +430,10 @@ string translateFunctionPointerType (Context context, Cursor cursor, FuncType fu
     auto result = translateType(context, cursor, func.resultType);
 
     Output output = new Output();
-    translateFunction(output, result, "function", params, func.isVariadic);
+    auto spacer = context.options.spaceAfterFunctionName ? " " : "";
+    translateFunction(output, result, "function",
+                      params, func.isVariadic, "", spacer);
+
     return output.data();
 }
 
