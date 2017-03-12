@@ -4,6 +4,7 @@ d:
   - dmd-2.071.2
   - dmd-2.070.0
 
+before_script: git fetch --unshallow
 script: "dub --config=test"
 
 os:
