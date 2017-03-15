@@ -2056,7 +2056,12 @@ bool translateFunctAlias(
         if (ident !is null &&
             equal(definition.params, expr.args.map!(a => a.translate(context, params, imports))))
         {
-            output.singleLine("alias %s = %s;", definition.spelling, ident.spelling);
+            version (D1)
+                enum fmt = "alias %2$s %1$s;";
+            else
+                enum fmt = "alias %1$s = %2$s;";
+
+            output.singleLine(fmt, definition.spelling, ident.spelling);
             return true;
         }
     }
