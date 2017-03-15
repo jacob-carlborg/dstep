@@ -261,6 +261,17 @@ extern (D) auto STRINGIZE(T0, T1)(auto ref T0 major, auto ref T1 minor)
 }
 D");
 
+    assertTranslates(q"C
+#define PROTOBUF_C_ASSERT(condition) assert(condition)
+C", q"D
+extern (C):
+
+void PROTOBUF_C_ASSERT(T...)(T args)
+    if (T.length <= 2)
+{
+    assert(args);
+}
+D");
 }
 
 // Translate member access operators.
