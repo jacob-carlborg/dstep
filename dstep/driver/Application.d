@@ -183,6 +183,7 @@ private struct ParseFile
             options.packageName = config.packageName;
             options.publicSubmodules = config.publicSubmodules;
             options.reduceAliases = config.reduceAliases;
+            options.aliasEnumMembers = config.aliasEnumMembers;
             options.portableWCharT = config.portableWCharT;
             options.zeroParamIsVararg = config.zeroParamIsVararg;
             options.singleLineFunctionSignatures = config.singleLineFunctionSignatures;

@@ -36,6 +36,7 @@ struct Options
     bool zeroParamIsVararg = false;
     bool singleLineFunctionSignatures = false;
     bool spaceAfterFunctionName = true;
+    bool aliasEnumMembers = false;
     Set!string skipDefinitions;
     Set!string skipSymbols;
     bool printDiagnostics = true;

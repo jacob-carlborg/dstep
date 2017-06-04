@@ -53,6 +53,10 @@ struct Configuration
     @("reduce-aliases", "Reduce primitive type aliases [default].")
     bool reduceAliases = true;
 
+    /// generate aliases for enum members in global scope
+    @("alias-enum-members", "Generate aliases for enum members in global scope [default].")
+    bool aliasEnumMembers = false;
+
     /// translate to wchar_t to core.stdc.stddef.wchar_t
     @("portable-wchar_t", "Translate wchar_t as core.stdc.stddef.wchar_t [default].")
     bool portableWCharT = true;
