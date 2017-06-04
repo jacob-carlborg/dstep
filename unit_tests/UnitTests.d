@@ -49,6 +49,24 @@ D");
 
 }
 
+// Don't repeat the definition of an external variable.
+unittest
+{
+    assertTranslates(q"C
+extern int foo;
+extern int bar;
+extern int foo;
+extern int foo;
+C",
+q"D
+extern (C):
+
+extern __gshared int foo;
+extern __gshared int bar;
+D");
+
+}
+
 unittest
 {
     assertTranslates(
