@@ -344,6 +344,14 @@ bool isGlobal(Cursor cursor)
 }
 
 /**
+ * Returns true, if cursor is in the global scope.
+ */
+bool isGlobalLexically(Cursor cursor)
+{
+    return cursor.lexicalParent.kind == CXCursorKind.CXCursor_TranslationUnit;
+}
+
+/**
  * The collectGlobalTypes function scans the whole AST of the translation unit and produces
  * a set of the type names in global scope.
  *
