@@ -2,8 +2,10 @@
 
 if [ -s "$HOME/.dvm/scripts/dvm" ] ; then
     . "$HOME/.dvm/scripts/dvm" ;
-    dvm use 2.069.2
+    dvm use 2.071.1
 fi
 
-dub build
-#rdmd --build-only -debug -gc -ofbin/dstep -Idstack/mambo -Idstack -L-L. -L-lclang -L-ltango -L-rpath -L. "$@" dstep/driver/DStep.d
+SOURCES=`find ./dstep ./clang -name \*.d`
+
+DC=${DC:-dmd}
+$DC $DFLAGS -g -O -inline -Jresources -L-lclang -ofbin/dstep $SOURCES
