@@ -470,5 +470,57 @@ struct Baz
 }
 D");
 
+// Don't generate nested declaration of the structure if its declared in global
+// scope.
+assertTranslates(q"C
+
+// dummy comment #1
+typedef struct {
+    struct bar_s *vfs;
+} foo_t;
+
+typedef int baz_t;
+
+// dummy comment #2
+// dummy comment #3
+// dummy comment #4
+typedef struct bar_s {
+    // dummy comment #5
+    const char **(*fptr_0) (void);
+
+    int (*is_sth) (void); // dummy comment #6
+
+    // dummy comment #7
+    void (*do_sth) (foo_t *foo);
+} bar_t;
+C",
+q"D
+extern (C):
+
+// dummy comment #1
+struct foo_t
+{
+    bar_s* vfs;
+}
+
+alias baz_t = int;
+
+// dummy comment #2
+// dummy comment #3
+// dummy comment #4
+struct bar_s
+{
+    // dummy comment #5
+    const(char*)* function () fptr_0;
+
+    int function () is_sth; // dummy comment #6
+
+    // dummy comment #7
+    void function (foo_t* foo) do_sth;
+}
+
+alias bar_t = bar_s;
+D");
+
 }
 

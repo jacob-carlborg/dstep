@@ -65,7 +65,10 @@ void translateRecordDef(
                         auto undecorated = cursor.type.undecorated;
                         auto declaration = undecorated.declaration;
 
-                        if (!undecorated.isExposed && undecorated.declaration.isValid && !context.alreadyDefined(declaration))
+                        if (!undecorated.isExposed &&
+                            undecorated.declaration.isValid &&
+                            !context.alreadyDefined(declaration)
+                             && !declaration.isGlobalLexically)
                             context.translator.translate(output, declaration);
 
                         translateVariable(output, context, cursor);
