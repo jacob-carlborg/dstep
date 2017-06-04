@@ -459,11 +459,15 @@ package void translateFunction (
 
 void translateVariable (Output output, Context context, Cursor cursor, string prefix = "")
 {
-    output.singleLine(
-        "%s%s %s;",
-        prefix,
-        translateType(context, cursor, cursor.type),
-        translateIdentifier(cursor.spelling));
+    if (!context.alreadyDefined(cursor.canonical)) {
+        output.singleLine(
+            "%s%s %s;",
+            prefix,
+            translateType(context, cursor, cursor.type),
+            translateIdentifier(cursor.spelling));
+
+        context.markAsDefined(cursor.canonical);
+    }
 }
 
 string translateIdentifier (string str)
