@@ -18,6 +18,7 @@
 * Multiple input files can be processed at once
 * Extend a functionality that automatically replaces aliases to basic types with their D equivalents
 * Add a switch `--dont-reduce-aliases` which disables the above functionality
+* Add a switch `--alias-enum-members` which enables generation of aliases for enum members in the global scope
 * Add the `libclang` bindings as a test case
 * Add support for Microsoft Windows
 * Run Windows tests on AppVeyor
@@ -47,6 +48,9 @@
 * [Issue 114](https://github.com/jacob-carlborg/dstep/issues/114): Crash on recursive typedef.
 * [Issue 116](https://github.com/jacob-carlborg/dstep/issues/116): Option --space-after-function-name doesn't work with function pointer syntax.
 * [Issue 117](https://github.com/jacob-carlborg/dstep/issues/117): fatal error: 'limits.h' file not found.
+* [Issue 137](https://github.com/jacob-carlborg/dstep/issues/137): struct member expansion.
+* [Issue 138](https://github.com/jacob-carlborg/dstep/issues/138): Repeated declarations cause problems.
+* [Issue 140](https://github.com/jacob-carlborg/dstep/issues/140): On enums and scope.
 
 ## Version 0.2.1
 ### New/Changed Features
