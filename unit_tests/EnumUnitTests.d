@@ -248,6 +248,68 @@ D", options);
 
 }
 
+// Test aliasing of all enum members in nested scope
+unittest
+{
+    Options options;
+    options.aliasEnumMembers = true;
+
+    assertTranslates(
+q"C
+enum Enum
+{
+    FOO,
+};
+
+struct Foo
+{
+    enum FooEnum
+    {
+        BAR,
+        BAZ,
+    } fooEnum;
+
+    enum BarEnum
+    {
+        QUX
+    } barEnum;
+};
+C",
+q"D
+extern (C):
+
+enum Enum
+{
+    FOO = 0
+}
+
+alias FOO = Enum.FOO;
+
+struct Foo
+{
+    enum FooEnum
+    {
+        BAR = 0,
+        BAZ = 1
+    }
+
+    FooEnum fooEnum;
+
+    enum BarEnum
+    {
+        QUX = 0
+    }
+
+    BarEnum barEnum;
+}
+
+alias BAR = Foo.FooEnum.BAR;
+alias BAZ = Foo.FooEnum.BAZ;
+alias QUX = Foo.BarEnum.QUX;
+D", options);
+
+}
+
 // Test a named enum inside a struct.
 unittest
 {

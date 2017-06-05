@@ -282,7 +282,7 @@ string[] cursorScope(Context context, Cursor cursor)
             case CXCursorKind.CXCursor_StructDecl:
             case CXCursorKind.CXCursor_UnionDecl:
             case CXCursorKind.CXCursor_EnumDecl:
-                cursorScope(context, cursor.semanticParent, result);
+                cursorScope(context, cursor.lexicalParent, result);
                 spelling = context.spelling(cursor);
                 break;
 
