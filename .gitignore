@@ -20,5 +20,7 @@ clangs
 *.gch
 bin/test
 bin/unittest
+bin/dstep_configure
 .DS_Store
 resources/VERSION
+linker_flags.txt

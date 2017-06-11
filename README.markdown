@@ -26,7 +26,7 @@ The source code is available under the [Boost Software License 1.0](http://www.b
 #### Requirements
 
 * libclang - [http://clang.llvm.org](http://clang.llvm.org) - 3.4 or later that is binary compatible with 3.4
-* DMD - [http://dlang.org/download.html](http://dlang.org/download.html) - 2.070.0 or later
+* DMD - [http://dlang.org/download.html](http://dlang.org/download.html) - 2.071.2 or later
 * Dub [http://code.dlang.org/download](http://code.dlang.org/download)
 
 #### Building
@@ -38,12 +38,21 @@ The source code is available under the [Boost Software License 1.0](http://www.b
 
 3. Run `dub build`
 
+A configuration script will try to automatically locate libclang by looking
+through a couple of default search paths. If libclang is not found in any of the
+default paths, please manually invoke the configuration script and specify the
+path to where libclang is installed using the `--llvm-path` flag.
+
+```
+$ ./configure --llvm-path /usr/lib/llvm-4.0/lib
+```
+
 ### Windows
 
 #### Requirements
 
 * LLVM - [http://llvm.org/releases/download.html](http://llvm.org/releases/download.html) - pre-built binaries for Windows
-* DMD - [http://dlang.org/download.html](http://dlang.org/download.html) - 2.070.0 or later
+* DMD - [http://dlang.org/download.html](http://dlang.org/download.html) - 2.071.0 or later
 * Dub - [http://code.dlang.org/download](http://code.dlang.org/download)
 * Visual Studio - for example Visual Studio Community
 
