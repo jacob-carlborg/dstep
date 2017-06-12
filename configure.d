@@ -144,7 +144,8 @@ static:
             "/usr/lib",
             "/usr/local/lib",
             "/usr/lib/x86_64-linux-gnu", // Debian
-            "/usr/lib64" // Fedora
+            "/usr/lib64", // Fedora
+            "/usr/lib32" // Fedora
         ];
 
         immutable llvmLibPaths = [
@@ -152,7 +153,8 @@ static:
             "/usr/lib/llvm-3.9/lib", // Debian
             "/usr/lib/llvm-3.8/lib", // Debian
             "/usr/lib/llvm-3.7/lib", // Debian
-            "/usr/lib64/llvm" // CentOS
+            "/usr/lib64/llvm", // CentOS
+            "/usr/lib32/llvm" // CentOS
         ] ~ standardPaths;
 
         immutable additionalLibPaths = standardPaths;
