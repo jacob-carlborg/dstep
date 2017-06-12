@@ -143,7 +143,8 @@ static:
         enum standardPaths = [
             "/usr/lib",
             "/usr/local/lib",
-            "/usr/lib/x86_64-linux-gnu" // Debian
+            "/usr/lib/x86_64-linux-gnu", // Debian
+            "/usr/lib64" // Fedora
         ];
 
         immutable llvmLibPaths = [
