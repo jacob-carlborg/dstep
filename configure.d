@@ -151,7 +151,8 @@ static:
             "/usr/lib/llvm-4.0/lib", // Debian
             "/usr/lib/llvm-3.9/lib", // Debian
             "/usr/lib/llvm-3.8/lib", // Debian
-            "/usr/lib/llvm-3.7/lib" // Debian
+            "/usr/lib/llvm-3.7/lib", // Debian
+            "/usr/lib64/llvm" // CentOS
         ] ~ standardPaths;
 
         immutable additionalLibPaths = standardPaths;
