@@ -234,6 +234,11 @@ struct TranslationUnit
         foreach (uint index, location; locations)
             map[location.path] ~= Entry(index, location);
 
+        import std.algorithm;
+
+        foreach (key, ref value; map)
+            sort(value);
+
         uint findIndex(SourceLocation a)
         {
             auto entries = map[a.path];
