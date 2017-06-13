@@ -73,7 +73,7 @@ class Application
             else
             {
                 outputFilename = Path.buildPath(config.output,
-                    defaultOutputFilename(fileName, false));
+                    defaultOutputFilename(fileName));
             }
 
             string outputDir = Path.dirName(outputFilename);
