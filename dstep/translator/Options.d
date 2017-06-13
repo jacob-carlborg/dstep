@@ -32,6 +32,7 @@ struct Options
     bool publicSubmodules = false;
     bool keepUntranslatable = false;
     bool reduceAliases = true;
+    bool translateMacros = true;
     bool portableWCharT = true;
     bool zeroParamIsVararg = false;
     bool singleLineFunctionSignatures = false;

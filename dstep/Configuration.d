@@ -53,6 +53,10 @@ struct Configuration
     @("reduce-aliases", "Reduce primitive type aliases [default].")
     bool reduceAliases = true;
 
+    /// translate C preprocessor macros if possible
+    @("translate-macros", "Translate C preprocessor macros if possible [default].")
+    bool translateMacros = true;
+
     /// generate aliases for enum members in global scope
     @("alias-enum-members", "Generate aliases for enum members in global scope [default].")
     bool aliasEnumMembers = false;
@@ -92,6 +96,43 @@ struct Configuration
     /// add global attributes
     @("global-attribute", "Add <attribute> as a global attribute.")
     string[] globalAttributes;
+
+    Options toOptions(string inputFile, string outputFile) const
+    {
+        Options options = toOptions();
+
+        options.inputFile = inputFile.asAbsNormPath;
+        options.outputFile = outputFile.asAbsNormPath;
+
+        return options;
+    }
+
+    Options toOptions() const
+    {
+        import std.algorithm.iteration : map;
+        import std.array;
+
+        Options options;
+        options.inputFiles = inputFiles.map!(path => path.asAbsNormPath).array;
+        options.language = language;
+        options.enableComments = enableComments;
+        options.packageName = packageName;
+        options.publicSubmodules = publicSubmodules;
+        options.reduceAliases = reduceAliases;
+        options.translateMacros = translateMacros;
+        options.aliasEnumMembers = aliasEnumMembers;
+        options.portableWCharT = portableWCharT;
+        options.zeroParamIsVararg = zeroParamIsVararg;
+        options.singleLineFunctionSignatures = singleLineFunctionSignatures;
+        options.spaceAfterFunctionName = spaceAfterFunctionName;
+        options.skipDefinitions = setFromList(skipDefinitions);
+        options.skipSymbols = setFromList(skipSymbols);
+        options.printDiagnostics = printDiagnostics;
+        options.collisionAction = collisionAction;
+        options.globalAttributes = globalAttributes;
+
+        return options;
+    }
 }
 
 template makeGetOptArgs(alias config)

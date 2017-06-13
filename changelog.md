@@ -19,6 +19,7 @@
 * Extend a functionality that automatically replaces aliases to basic types with their D equivalents
 * Add a switch `--dont-reduce-aliases` which disables the above functionality
 * Add a switch `--alias-enum-members` which enables generation of aliases for enum members in the global scope
+* Add a switch `--translate-macros` which can disable the translation of C macro definitions
 * Add the `libclang` bindings as a test case
 * Add support for Microsoft Windows
 * Run Windows tests on AppVeyor
@@ -57,6 +58,7 @@
 * [Issue 137](https://github.com/jacob-carlborg/dstep/issues/137): struct member expansion.
 * [Issue 138](https://github.com/jacob-carlborg/dstep/issues/138): Repeated declarations cause problems.
 * [Issue 140](https://github.com/jacob-carlborg/dstep/issues/140): On enums and scope.
+* [Issue 154](https://github.com/jacob-carlborg/dstep/issues/154): Falling back to blunt pre-processor phase.
 
 ## Version 0.2.1
 ### New/Changed Features

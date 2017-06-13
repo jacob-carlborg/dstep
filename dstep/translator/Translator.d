@@ -296,10 +296,13 @@ class Translator
 
     void translateMacroDefinition(Output output, Cursor cursor, Cursor parent)
     {
-        dstep.translator.MacroDefinition.translateMacroDefinition(
-            output,
-            context,
-            cursor);
+        if (context.options.translateMacros)
+        {
+            dstep.translator.MacroDefinition.translateMacroDefinition(
+                output,
+                context,
+                cursor);
+        }
     }
 
     void variable (Output output, Cursor cursor, string prefix = "")
