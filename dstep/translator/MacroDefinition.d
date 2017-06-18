@@ -2053,6 +2053,18 @@ bool translateFunctAlias(
     {
         Identifier ident = cast(Identifier) expr.expr;
 
+        if (ident.spelling == "assert")
+        {
+            // aliasing `assert` from C "assert.h" is commong enough to warrant
+            // a special case to use function instead of an alias
+            output.singleLine("void %s(T...)(T args)", definition.spelling);
+            output.singleLine("    if (T.length <= 2)");
+            output.singleLine("{");
+            output.singleLine("    assert(args);");
+            output.singleLine("}");
+            return true;
+        }
+
         if (ident !is null &&
             equal(definition.params, expr.args.map!(a => a.translate(context, params, imports))))
         {
