@@ -2058,7 +2058,14 @@ bool translateFunctAlias(
             // aliasing `assert` from C "assert.h" is commong enough to warrant
             // a special case to use function instead of an alias
             output.singleLine("void %s(T...)(T args)", definition.spelling);
-            output.singleLine("    if (T.length <= 2)");
+            version (D1)
+            {
+                // does not support template constraints
+            }
+            else
+            {
+                output.singleLine("    if (T.length <= 2)");
+            }
             output.singleLine("{");
             output.singleLine("    assert(args);");
             output.singleLine("}");
