@@ -61,6 +61,10 @@ struct Configuration
     @("alias-enum-members", "Generate aliases for enum members in global scope [default].")
     bool aliasEnumMembers = false;
 
+    /// attempt to rename the enumeration members to D conforming form
+    @("rename-enum-members", "Attempt to rename the enumeration members to D conforming form. [default].")
+    bool renameEnumMembers = false;
+
     /// translate to wchar_t to core.stdc.stddef.wchar_t
     @("portable-wchar_t", "Translate wchar_t as core.stdc.stddef.wchar_t [default].")
     bool portableWCharT = true;
@@ -121,6 +125,7 @@ struct Configuration
         options.reduceAliases = reduceAliases;
         options.translateMacros = translateMacros;
         options.aliasEnumMembers = aliasEnumMembers;
+        options.renameEnumMembers = renameEnumMembers;
         options.portableWCharT = portableWCharT;
         options.zeroParamIsVararg = zeroParamIsVararg;
         options.singleLineFunctionSignatures = singleLineFunctionSignatures;

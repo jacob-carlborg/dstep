@@ -31,6 +31,7 @@
 * Always test using the latest version of DMD and LDC, including beta and nightly builds
 * Bump the minimum requirement of libclang to 3.9.0
 * Automatically generate the libclang bindings using DStep
+* Add a switch `--rename-enum-members`, which enables stripping of superfluous prefixes from enum members.
 
 ### Bugs Fixed
 
