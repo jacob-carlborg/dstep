@@ -62,11 +62,29 @@ struct Options
     /// The specified path to the LLVM/Clang library path.
     string llvmLibPath;
 
-    /// The specified path to the location of the `ncurses` library.
-    string ncursesLibPath;
+    /**
+     * The specified path to the location of additional libraries, like
+     * `ncurses` or `tinfo`, that needs to linked when linking libclang
+     * statically.
+     */
+    string additionalLibPath;
 
     /// Indicates if libclang should be statically or dynamically linked.
-    bool dynamicClang = true;
+    bool staticallyLinkClang = false;
+}
+
+/// This struct contains the name and filename of a library.
+struct LibraryName
+{
+    /**
+     * The name of the library.
+     *
+     * Used in error message and similar.
+     */
+    string name;
+
+    /// The filename of the library.
+    string filename;
 }
 
 /// Default configuration and paths.
@@ -94,11 +112,11 @@ static:
         immutable string[] additionalLibPaths = [];
 
         /**
-         * The name of the Ncurses static library.
+         * The name of the additional static library, like `ncurses` or `tinfo`.
          *
          * Used when statically linking libclang.
          */
-        enum ncursesLib = "";
+        enum additionalLib = LibraryName();
 
         /**
          * The name of the C++ standard library.
@@ -132,7 +150,7 @@ static:
             "/opt/local/lib"
         ] ~ standardPaths;
 
-        enum ncursesLib = "libncurses.a";
+        enum additionalLib = LibraryName("ncurses", "libncurses.a");
         enum cppLib = "c++";
     }
 
@@ -159,7 +177,7 @@ static:
 
         immutable additionalLibPaths = standardPaths;
 
-        enum ncursesLib = "libncurses.a";
+        enum additionalLib = LibraryName("tinfo", "libtinfo.a");
         enum cppLib = "stdc++";
     }
 
@@ -181,7 +199,7 @@ static:
 
         immutable additionalLibPaths = standardPaths;
 
-        enum ncursesLib = "libncurses.a";
+        enum ncursesLib = LibraryName("ncurses", "libncurses.a");
         enum cppLib = "stdc++";
     }
 
@@ -391,7 +409,7 @@ private:
     /// Returns: the configuration, that is, the linker flags.
     string config()
     {
-        return flags.join("\n") ~ '\n';
+        return flags.filter!(e => !e.empty).join("\n") ~ '\n';
     }
 }
 
@@ -405,9 +423,39 @@ struct StaticConfigurator
 
     private
     {
-        Path llvmLibPath;
-        string llvmLibPath_;
-        Path ncursesLibPath;
+        version (D_Ddoc)
+        {
+            /**
+             * Contains the `--start-group` flag on non-macOS platforms.
+             *
+             * Used on non-macOS platforms to group the LLVM and Clang
+             * libraries to be searched repeatedly to resolve undefined symbols.
+             */
+            enum startGroupFlag = "";
+
+            /**
+             * Contains the `--end-group` flag on non-macOS platforms.
+             *
+             * Used on non-macOS platforms to group the LLVM and Clang
+             * libraries to be searched repeatedly to resolve undefined symbols.
+             */
+            enum endGroupFlag = "";
+        }
+
+        else version (OSX)
+        {
+            enum startGroupFlag = "".only;
+            enum endGroupFlag = "".only;
+        }
+
+        else
+        {
+            enum startGroupFlag = "--start-group".only;
+            enum endGroupFlag = "-Wl,--end-group".only;
+        }
+
+        /// Local cache for the additional library path.
+        Path additionalLibPath;
     }
 
     /**
@@ -421,9 +469,9 @@ struct StaticConfigurator
     {
         initialize(options, defaultConfig);
 
-        ncursesLibPath = new Path("ncurses",
+        additionalLibPath = new Path(defaultConfig.additionalLib.name,
             DefaultConfig.additionalLibPaths,
-            options.ncursesLibPath, DefaultConfig.ncursesLib);
+            options.additionalLibPath, defaultConfig.additionalLib.filename);
     }
 
     /**
@@ -434,8 +482,11 @@ struct StaticConfigurator
      */
     void generateConfig()
     {
-        enforceLibrariesExist("ncurses", ncursesLibPath,
-            DefaultConfig.ncursesLib);
+        enforceLibrariesExist(
+            DefaultConfig.additionalLib.name,
+            additionalLibPath,
+            DefaultConfig.additionalLib.filename
+        );
 
         writeConfig(config);
     }
@@ -445,7 +496,14 @@ private:
     /// Return: a range of all the necessary linker flags.
     auto flags()
     {
-        return cppFlags.chain(ncursesFlags, llvmFlags, libclangFlags);
+        return chain(
+            startGroupFlag,
+            libclangFlags,
+            llvmFlags,
+            endGroupFlag,
+            additionalLibFlags,
+            cppFlags
+        );
     }
 
     /**
@@ -461,9 +519,11 @@ private:
      * Returns: a range of linker flags necessary to link with the ncurses
      *  library.
      */
-    auto ncursesFlags()
+    auto additionalLibFlags()
     {
-        return ncursesLibPath.buildPath(DefaultConfig.ncursesLib).only;
+        return additionalLibPath
+            .buildPath(DefaultConfig.additionalLib.filename)
+            .only;
     }
 
     /**
@@ -535,10 +595,10 @@ void main(string[] args)
 
     if (!options.help)
     {
-        if (options.dynamicClang)
-            DynamicConfigurator(options, DefaultConfig()).generateConfig();
-        else
+        if (options.staticallyLinkClang)
             StaticConfigurator(options, DefaultConfig()).generateConfig();
+        else
+            DynamicConfigurator(options, DefaultConfig()).generateConfig();
     }
 }
 
@@ -560,7 +620,7 @@ Options parseArguments(string[] args)
         "llvm-path", "The path to where the LLVM/Clang libraries are located.", &options.llvmLibPath,
         // Only dynamic linking is supported for now
         // "ncurses-lib-path", "The path to the ncurses library.", &options.ncursesLibPath,
-        // "dynamic-clang", "Link dynamically to libclang. Defaults to yes.", &options.dynamicClang
+        "statically-link-clang", "Statically link libclang. Defaults to no.", &options.staticallyLinkClang
     );
 
     if (help.helpWanted)
