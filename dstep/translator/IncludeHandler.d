@@ -21,9 +21,9 @@ class IncludeHandler
     private string[string] submodules;
     private bool[string] includes;
     private bool[string] imports;
-    static string[string] knownIncludes;
+    immutable static string[string] knownIncludes;
 
-    static this ()
+    shared static this ()
     {
         knownIncludes = [
             "complex" : "core.stdc.complex",

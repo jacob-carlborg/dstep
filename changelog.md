@@ -25,6 +25,7 @@
 * Handle complex floating-point types.
 * Use the new alias syntax (`alias Y = X`) in the output
 * Support for custom global attributes (e.g. `nothrow`, `@nogc`)
+* Add support for building with LDC
 
 ### Bugs Fixed
 
