@@ -18,9 +18,7 @@ foo.d
 .dub
 clangs
 *.gch
-bin/test
-bin/unittest
-bin/dstep_configure
+bin/*
 .DS_Store
 resources/VERSION
 linker_flags.txt
