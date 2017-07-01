@@ -26,7 +26,7 @@ The source code is available under the [Boost Software License 1.0](http://www.b
 #### Requirements
 
 * libclang - [http://clang.llvm.org](http://clang.llvm.org) - 3.4 or later that is binary compatible with 3.4
-* A D compiler - [DMD](http://dlang.org/download.html) 2.071.2 or later or [LDC](https://github.com/ldc-developers/ldc/releases/tag/v1.2.0) 1.2.0 or later
+* A D compiler - The latest version of [DMD](http://dlang.org/download.html) or [LDC](https://github.com/ldc-developers/ldc/releases/latest)
 * Dub [http://code.dlang.org/download](http://code.dlang.org/download) (also shipped with the compilers)
 
 #### Building

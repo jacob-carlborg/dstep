@@ -1,9 +1,7 @@
 language: d
 d:
-  - dmd-2.072.2
-  - dmd-2.071.2
+  - dmd
   - ldc
-  - ldc-beta
 
 before_script: git fetch --unshallow
 script: "dub --config=test"
@@ -11,3 +9,12 @@ script: "dub --config=test"
 os:
   - linux
   - osx
+
+matrix:
+  include:
+    - d: dmd-beta
+      os: linux
+    - d: dmd-nightly
+      os: linux
+    - d: ldc-beta
+      os: linux

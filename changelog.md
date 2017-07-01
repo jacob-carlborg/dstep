@@ -26,6 +26,8 @@
 * Use the new alias syntax (`alias Y = X`) in the output
 * Support for custom global attributes (e.g. `nothrow`, `@nogc`)
 * Add support for building with LDC
+* Bump the minimum requirement D compilers to their latest version
+* Always test using the latest version of DMD and LDC, including beta and nightly builds
 
 ### Bugs Fixed
 
