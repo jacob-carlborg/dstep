@@ -28,6 +28,7 @@
 * Add support for building with LDC
 * Bump the minimum requirement D compilers to their latest version
 * Always test using the latest version of DMD and LDC, including beta and nightly builds
+* Bump the minimum requirement of libclang to 3.8.0
 
 ### Bugs Fixed
 

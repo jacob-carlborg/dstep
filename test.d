@@ -277,49 +277,22 @@ private:
         {
             version (D_LP64)
                 return [
-                    // clang("3.7.1", "http://llvm.org/releases/3.7.1/", "clang+llvm-3.7.1-amd64-unknown-freebsd10.tar.xz"),
-                    // clang("3.7.0", "http://llvm.org/releases/3.7.0/", "clang+llvm-3.7.0-amd64-unknown-freebsd10.tar.xz"),
-                    // clang("3.6.2", "http://llvm.org/releases/3.6.2/", "clang+llvm-3.6.2-amd64-unknown-freebsd10.tar.xz"),
-                    // clang("3.6.1", "http://llvm.org/releases/3.6.1/", "clang+llvm-3.6.1-amd64-unknown-freebsd10.tar.xz"),
-                    // clang("3.6.0", "http://llvm.org/releases/3.6.0/", "clang+llvm-3.6.0-amd64-unknown-freebsd10.tar.xz"),
-                    // clang("3.5.0", "http://llvm.org/releases/3.5.0/", "clang+llvm-3.5.0-amd64-unknown-freebsd10.tar.xz"),
-                    clang("3.4", "http://llvm.org/releases/3.4/", "clang+llvm-3.4-amd64-unknown-freebsd9.2.tar.xz"),
+                    clang("3.8.0", "http://releases.llvm.org/3.8.0/", "clang+llvm-3.8.0-amd64-unknown-freebsd10.tar.xz")
                 ];
 
             else
                 return [
-                    // clang("3.7.1", "http://llvm.org/releases/3.7.1/", "clang+llvm-3.7.1-i386-unknown-freebsd10.tar.xz"),
-                    // clang("3.7.0", "http://llvm.org/releases/3.7.1/", "clang+llvm-3.7.0-i386-unknown-freebsd10.tar.xz"),
-                    // clang("3.6.2", "http://llvm.org/releases/3.6.2/", "clang+llvm-3.6.2-i386-unknown-freebsd10.tar.xz"),
-                    // clang("3.6.1", "http://llvm.org/releases/3.6.1/", "clang+llvm-3.6.1-i386-unknown-freebsd10.tar.xz"),
-                    // clang("3.6.0", "http://llvm.org/releases/3.6.0/", "clang+llvm-3.6.0-i386-unknown-freebsd10.tar.xz"),
-                    // clang("3.5.0", "http://llvm.org/releases/3.5.0/", "clang+llvm-3.5.0-i386-unknown-freebsd10.tar.xz"),
-                    clang("3.4", "http://llvm.org/releases/3.4/", "clang+llvm-3.4-i386-unknown-freebsd9.2.tar.xz"),
+                    clang("3.8.0", "http://releases.llvm.org/3.8.0/", "clang+llvm-3.8.0-i386-unknown-freebsd10.tar.xz")
                 ];
         }
 
         else version (linux)
         {
-            if (System.isTravis)
-            {
-                return [
-                    // clang("3.5.1", "http://llvm.org/releases/3.5.1/", "clang+llvm-3.5.1-x86_64-linux-gnu.tar.xz"),
-                    // clang("3.5.0", "http://llvm.org/releases/3.5.0/", "clang+llvm-3.5.0-x86_64-linux-gnu-ubuntu-14.04.tar.xz"),
-                    clang("3.4.2", "http://llvm.org/releases/3.4.2/", "clang+llvm-3.4.2-x86_64-unknown-ubuntu12.04.xz"),
-                    clang("3.4.1", "http://llvm.org/releases/3.4.1/", "clang+llvm-3.4.1-x86_64-unknown-ubuntu12.04.tar.xz"),
-                    clang("3.4", "http://llvm.org/releases/3.4/", "clang+llvm-3.4-x86_64-unknown-ubuntu12.04.tar.xz"),
-                ];
-            }
-
-            else if (System.isUbuntu)
+            if (System.isUbuntu || System.isTravis)
             {
                 version (D_LP64)
                     return [
-                        clang("3.5.1", "http://llvm.org/releases/3.5.1/", "clang+llvm-3.5.1-x86_64-linux-gnu.tar.xz"),
-                        clang("3.5.0", "http://llvm.org/releases/3.5.0/", "clang+llvm-3.5.0-x86_64-linux-gnu-ubuntu-14.04.tar.xz"),
-                        clang("3.4.2", "http://llvm.org/releases/3.4.2/", "clang+llvm-3.4.2-x86_64-unknown-ubuntu12.04.xz"),
-                        clang("3.4.1", "http://llvm.org/releases/3.4.1/", "clang+llvm-3.4.1-x86_64-unknown-ubuntu12.04.tar.xz"),
-                        clang("3.4", "http://llvm.org/releases/3.4/", "clang+llvm-3.4-x86_64-unknown-ubuntu12.04.tar.xz"),
+                        clang("3.8.0", "http://releases.llvm.org/3.8.0/", "clang+llvm-3.8.0-x86_64-linux-gnu-ubuntu-14.04.tar.xz")
                     ];
                 else
                     return [
@@ -330,28 +303,22 @@ private:
             {
                 version (D_LP64)
                     return [
+                        clang("3.8.0", "http://releases.llvm.org/3.8.0/", "clang+llvm-3.8.0-x86_64-linux-gnu-debian8.tar.xz")
                     ];
                 else
                     return [
                     ];
-
             }
 
             else if (System.isFedora)
             {
                 version (D_LP64)
                     return [
-                        clang("3.5.1", "http://llvm.org/releases/3.5.1/", "clang+llvm-3.5.1-x86_64-fedora20.tar.xz"),
-                        clang("3.5.0", "http://llvm.org/releases/3.5.0/", "clang+llvm-3.5.0-x86_64-fedora20.tar.xz"),
-                        clang("3.4", "http://llvm.org/releases/3.4/", "clang+llvm-3.4-x86_64-fedora19.tar.gz"),
+                        clang("3.8.0", "http://releases.llvm.org/3.8.0/", "clang+llvm-3.8.0-x86_64-fedora23.tar.xz")
                     ];
                 else
                     return [
-                        clang("3.5.1", "http://llvm.org/releases/3.5.1/", "clang+llvm-3.5.1-i686-fedora20.tar.xz"),
-                        clang("3.5.0", "http://llvm.org/releases/3.5.0/", "clang+llvm-3.5.0-i686-fedora20.tar.xz"),
-                        clang("3.4.2", "http://llvm.org/releases/3.4.2/", "clang+llvm-3.4.2-i686-fedora20.xz"),
-                        clang("3.4.1", "http://llvm.org/releases/3.4.1/", "clang+llvm-3.4.1-i686-fedora20.tar.xz"),
-                        clang("3.4", "http://llvm.org/releases/3.4/", "clang+llvm-3.4-i686-fedora19.tar.gz"),
+                        clang("3.8.0", "http://releases.llvm.org/3.8.0/", "clang+llvm-3.8.0-i686-fedora23.tar.xz")
                     ];
             }
 
@@ -363,30 +330,9 @@ private:
         {
             version (D_LP64)
             {
-                if (System.isTravis)
-                    return [
-                        clang("3.7.0", "http://llvm.org/releases/3.7.0/", "clang+llvm-3.7.0-x86_64-apple-darwin.tar.xz"),
-                        clang("3.6.2", "http://llvm.org/releases/3.6.2/", "clang+llvm-3.6.2-x86_64-apple-darwin.tar.xz"),
-                        clang("3.6.1", "http://llvm.org/releases/3.6.1/", "clang+llvm-3.6.1-x86_64-apple-darwin.tar.xz"),
-                        clang("3.6.0", "http://llvm.org/releases/3.6.0/", "clang+llvm-3.6.0-x86_64-apple-darwin.tar.xz"),
-                        clang("3.5.0", "http://llvm.org/releases/3.5.0/", "clang+llvm-3.5.0-macosx-apple-darwin.tar.xz"),
-                        // clang("3.4.2", "http://llvm.org/releases/3.4.2/", "clang+llvm-3.4.2-x86_64-apple-darwin10.9.xz"),
-                        // clang("3.4.1", "http://llvm.org/releases/3.4.1/", "clang+llvm-3.4.1-x86_64-apple-darwin10.9.tar.xz"),
-                        // clang("3.4", "http://llvm.org/releases/3.4/", "clang+llvm-3.4-x86_64-apple-darwin10.9.tar.gz"),
-                    ];
-
-                else
-                    return [
-                        clang("3.7.0", "http://llvm.org/releases/3.7.0/", "clang+llvm-3.7.0-x86_64-apple-darwin.tar.xz"),
-                        clang("3.6.2", "http://llvm.org/releases/3.6.2/", "clang+llvm-3.6.2-x86_64-apple-darwin.tar.xz"),
-                        // clang("3.6.1", "http://llvm.org/releases/3.6.1/", "clang+llvm-3.6.1-x86_64-apple-darwin.tar.xz"),
-                        // clang("3.6.0", "http://llvm.org/releases/3.6.0/", "clang+llvm-3.6.0-x86_64-apple-darwin.tar.xz"),
-                        // clang("3.5.0", "http://llvm.org/releases/3.5.0/", "clang+llvm-3.5.0-macosx-apple-darwin.tar.xz"),
-                        // clang("3.4.2", "http://llvm.org/releases/3.4.2/", "clang+llvm-3.4.2-x86_64-apple-darwin10.9.xz"),
-
-                        // clang("3.4.1", "http://llvm.org/releases/3.4.1/", "clang+llvm-3.4.1-x86_64-apple-darwin10.9.tar.xz"),
-                        // clang("3.4", "http://llvm.org/releases/3.4/", "clang+llvm-3.4-x86_64-apple-darwin10.9.tar.gz"),
-                    ];
+                return [
+                    clang("3.8.0", "http://releases.llvm.org/3.8.0/", "clang+llvm-3.8.0-x86_64-apple-darwin.tar.xz")
+                ];
             }
 
             else
@@ -396,24 +342,14 @@ private:
         else version (Win32)
         {
             return [
-                // clang("3.8.1", "http://llvm.org/releases/3.8.1/", "LLVM-3.8.1-win32.exe"),
-                clang("3.8.0", "http://llvm.org/releases/3.8.0/", "LLVM-3.8.0-win32.exe"),
-                // clang("3.7.1", "http://llvm.org/releases/3.7.1/", "LLVM-3.7.1-win32.exe"),
-                clang("3.7.0", "http://llvm.org/releases/3.7.0/", "LLVM-3.7.0-win32.exe"),
-                // clang("3.6.2", "http://llvm.org/releases/3.6.2/", "LLVM-3.6.2-win32.exe"),
-                // clang("3.6.1", "http://llvm.org/releases/3.6.1/", "LLVM-3.6.1-win32.exe"),
-                clang("3.6.0", "http://llvm.org/releases/3.6.0/", "LLVM-3.6.0-win32.exe"),
-                clang("3.5.0", "http://llvm.org/releases/3.5.0/", "LLVM-3.5.0-win32.exe"),
-                // clang("3.4.1", "http://llvm.org/releases/3.4.1/", "LLVM-3.4.1-win32.exe"),
-                clang("3.4", "http://llvm.org/releases/3.4/", "LLVM-3.4-win32.exe")
+                clang("3.8.0", "http://releases.llvm.org/3.8.0/", "LLVM-3.8.0-win32.exe")
             ];
         }
 
         else version (Win64)
         {
             return [
-                clang("3.8.0", "http://llvm.org/releases/3.8.0/", "LLVM-3.8.0-win64.exe"),
-                clang("3.7.0", "http://llvm.org/releases/3.7.0/", "LLVM-3.7.0-win64.exe"),
+                clang("3.8.0", "http://releases.llvm.org/3.8.0/", "LLVM-3.8.0-win64.exe"),
             ];
         }
 
