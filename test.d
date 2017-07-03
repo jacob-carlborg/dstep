@@ -273,6 +273,12 @@ private:
 
     immutable(Clang[]) getClangs ()
     {
+        version (Posix)
+            void unsupported()
+            {
+                throw new Exception("Current version of '" ~ System.update ~ "' is not supported");
+            }
+
         version (FreeBSD)
         {
             version (D_LP64)
@@ -295,8 +301,7 @@ private:
                         clang("3.8.0", "http://releases.llvm.org/3.8.0/", "clang+llvm-3.8.0-x86_64-linux-gnu-ubuntu-14.04.tar.xz")
                     ];
                 else
-                    return [
-                    ];
+                    unsupported();
             }
 
             else if (System.isDebian)
@@ -306,8 +311,7 @@ private:
                         clang("3.8.0", "http://releases.llvm.org/3.8.0/", "clang+llvm-3.8.0-x86_64-linux-gnu-debian8.tar.xz")
                     ];
                 else
-                    return [
-                    ];
+                    unsupported();
             }
 
             else if (System.isFedora)
@@ -323,7 +327,9 @@ private:
             }
 
             else
-                throw new Exception("Current Linux distribution '" ~ System.update ~ "' is not supported");
+                unsupported();
+
+            return null;
         }
 
         else version (OSX)
@@ -374,7 +380,7 @@ static:
             return false;
         }
 
-version (linux):
+version (Posix):
 
     import core.sys.posix.sys.utsname;
 
