@@ -30,9 +30,10 @@ extern (C):
  * Use \c clang_getCString() to retrieve the string data and, once finished
  * with the string data, call \c clang_disposeString() to free the string.
  */
-struct CXString {
-  const(void)* data;
-  uint private_flags;
+struct CXString
+{
+    const(void)* data;
+    uint private_flags;
 }
 
 /**
@@ -44,3 +45,8 @@ const(char)* clang_getCString(CXString string);
  * \brief Free the given string.
  */
 void clang_disposeString(CXString string);
+
+/**
+ * @}
+ */
+
