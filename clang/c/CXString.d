@@ -36,6 +36,12 @@ struct CXString
     uint private_flags;
 }
 
+struct CXStringSet
+{
+    CXString* Strings;
+    uint Count;
+}
+
 /**
  * \brief Retrieve the character data associated with the given string.
  */
@@ -45,6 +51,11 @@ const(char)* clang_getCString(CXString string);
  * \brief Free the given string.
  */
 void clang_disposeString(CXString string);
+
+/**
+ * \brief Free the given string set.
+ */
+void clang_disposeStringSet(CXStringSet* set);
 
 /**
  * @}
