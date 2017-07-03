@@ -37,6 +37,7 @@ struct Compiler
         enum internalHeaders = [
             staticMap!(
                 toInternalHeader,
+                "__stddef_max_align_t.h",
                 "float.h",
                 "limits.h",
                 "stdarg.h",
