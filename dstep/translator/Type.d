@@ -91,11 +91,21 @@ body
                         rewriteIdToObjcObject);
                     break;
 
+                case CXType_Elaborated:
+                    result = translateElaborated(
+                        context,
+                        cursor,
+                        type,
+                        rewriteIdToObjcObject);
+                    break;
+
                 case CXType_Complex:
                     result = translateComplex(type);
                     break;
 
-                default: result = translateType(context, type.kind, rewriteIdToObjcObject);
+                default:
+                    result = translateType(context, type.kind,
+                                           rewriteIdToObjcObject);
             }
     }
 
@@ -110,6 +120,26 @@ body
     }
 
     return result;
+}
+
+string translateElaborated (Context context, Cursor cursor, Type type, bool rewriteIdToObjcObject = true, bool applyConst = true)
+{
+    auto named = type.named();
+
+    if (named.kind == CXTypeKind.CXType_Record || named.kind == CXTypeKind.CXType_Enum)
+    {
+        auto result = context.translateTagSpelling(named.declaration);
+        handleInclude(context, type);
+        return result;
+    }
+    else
+    {
+        return translateType(
+            context,
+            cursor,
+            type.named,
+            rewriteIdToObjcObject);
+    }
 }
 
 string translateSelector (string str, bool fullName = false, bool translateIdentifier = true)
@@ -513,6 +543,7 @@ string translateType (Context context, CXTypeKind kind, bool rewriteIdToObjcObje
             case CXType_VariableArray:
             case CXType_DependentSizedArray:
             case CXType_MemberPointer:
+            case CXType_Elaborated:
                 return "<unimplemented>";
 
             default: assert(0, "Unhandled type kind " ~ to!string(kind));

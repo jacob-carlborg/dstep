@@ -28,7 +28,7 @@
 * Add support for building with LDC
 * Bump the minimum requirement D compilers to their latest version
 * Always test using the latest version of DMD and LDC, including beta and nightly builds
-* Bump the minimum requirement of libclang to 3.8.0
+* Bump the minimum requirement of libclang to 3.9.0
 * Automatically generate the libclang bindings using DStep
 
 ### Bugs Fixed
@@ -49,6 +49,7 @@
 * [Issue 59](https://github.com/jacob-carlborg/dstep/issues/59): Shouldn't dstep exit with status code when there is some kind of error
 * [Issue 83](https://github.com/jacob-carlborg/dstep/issues/83): New multiline translation
 * [Issue 85](https://github.com/jacob-carlborg/dstep/issues/85): dstep not converting `const T x[]` to `const (T)* x`
+* [Issue 98](https://github.com/jacob-carlborg/dstep/issues/98): dstep segfaults: Unhandled type kind cast(CXTypeKind)119
 * [Issue 107](https://github.com/jacob-carlborg/dstep/issues/107): Handle typedef of opaque structs.
 * [Issue 114](https://github.com/jacob-carlborg/dstep/issues/114): Crash on recursive typedef.
 * [Issue 116](https://github.com/jacob-carlborg/dstep/issues/116): Option --space-after-function-name doesn't work with function pointer syntax.
