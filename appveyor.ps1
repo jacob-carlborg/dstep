@@ -1,3 +1,8 @@
+
+ls "C:\Program Files\LLVM\bin"
+ls "C:\Program Files\LLVM\lib"
+ls "C:\Program Files\LLVM\include"
+
 echo "Downloading dmd...";
 Invoke-WebRequest "http://downloads.dlang.org/releases/2.x/$env:DVersion/dmd.$env:DVersion.windows.7z" -OutFile c:\dmd.7z;
 7z x c:\dmd.7z -oc:\ > $null;
@@ -9,6 +14,9 @@ $env:PATH = "c:\dub;$($env:PATH)";
 $env:PATH = "c:\dmd2\windows\bin;$($env:PATH)";
 
 $env:compilersetup = "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall";
+
+ls "C:\Program Files (x86)"
+ls "C:\Program Files"
 
 if ($env:arch -eq "x86") {
   $env:compilersetupargs = "x86";
