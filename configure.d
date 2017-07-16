@@ -74,6 +74,12 @@ struct Options
 
     /// Indicates if libclang should be statically or dynamically linked.
     bool staticallyLinkClang = false;
+
+    /**
+     * Indicates if the whole binary, including the C standard library, should
+     * be statically linked.
+     */
+    bool staticallyLinkBinary = false;
 }
 
 /// This struct contains the name and filename of a library.
@@ -505,7 +511,8 @@ private:
             llvmFlags,
             endGroupFlag,
             additionalLibFlags,
-            cppFlags
+            cppFlags,
+            extraFlags
         );
     }
 
@@ -545,6 +552,11 @@ private:
     auto libclangFlags()
     {
         return dirEntries(llvmLibPath, "libclang*.a", SpanMode.shallow);
+    }
+
+    auto extraFlags()
+    {
+         return (options.staticallyLinkBinary ? "-static" : "").only;
     }
 }
 
@@ -617,34 +629,59 @@ private:
  */
 Options parseArguments(string[] args)
 {
+    import std.typecons : tuple;
+
     Options options;
 
-    auto help = getopt(args,
+    auto defaultGetoptArgs = tuple(
+        args,
         "llvm-path", "The path to where the LLVM/Clang libraries are located.", &options.llvmLibPath,
-        // Only dynamic linking is supported for now
         // "ncurses-lib-path", "The path to the ncurses library.", &options.ncursesLibPath,
-        "statically-link-clang", "Statically link libclang. Defaults to no.", &options.staticallyLinkClang
+        "statically-link-clang", "Statically link libclang. Defaults to no.", &options.staticallyLinkClang,
+        "statically-link-binary", "Completely statically link the binary. Defaults to no.", &options.staticallyLinkBinary
     );
 
-    if (help.helpWanted)
-        handleHelp(help, options);
+    version (OSX)
+        auto getoptArgs = defaultGetoptArgs;
+    else
+    {
+        auto getoptArgs = tuple(
+            defaultGetoptArgs.tupleof,
+            "statically-link-binary", "Completely statically link the binary. Defaults to no.", &options.staticallyLinkBinary
+        );
+    }
+
+    auto help = getopt(defaultGetoptArgs.tupleof);
+    postProcessArguments(help, options);
 
     return options;
 }
 
 /**
- * Handles the help flag.
+ * Post processes the arguments.
  *
- * This will print the help/usage information, if that was requested. It will
- * also set the `help` field of the `options` struct to `true`, if help was
- * requested.
+ * This will:
+ * $(UL
+ *      $(LI Print the help/usage information, if that was requested)
+ *      $(LI
+ *          Set the `help` field of the `options` struct to `true`, if help was
+ *          requested
+ *      )
+ *      $(LI
+ *           Set `staticallyLinkClang` to `true` if `staticallyLinkBinary` is
+ *           true
+ *      )
+ * )
  *
  * Params:
  *  result = the result value from the call to `getopt`
  *  options = the struct containing the parsed arguments
  */
-void handleHelp(GetoptResult result, ref Options options)
+void postProcessArguments(GetoptResult result, ref Options options)
 {
+    if (options.staticallyLinkBinary)
+        options.staticallyLinkClang = true;
+
     if (!result.helpWanted)
         return;
 
