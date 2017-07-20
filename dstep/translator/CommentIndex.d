@@ -121,7 +121,7 @@ class CommentIndex
 
         comments = tokens
             .filter!(token =>
-                token.kind == CXTokenKind.CXToken_Comment &&
+                token.kind == TokenKind.comment &&
                 token.location.isFromMainFile)
             .map!(token => Comment(token)).array;
     }
