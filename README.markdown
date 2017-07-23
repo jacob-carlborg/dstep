@@ -63,12 +63,12 @@ $ ./configure --llvm-path /usr/lib/llvm-4.0/lib
 
 		$ git clone git://github.com/jacob-carlborg/dstep.git
 
-3. Run `dub build --build=release` to build 32-bit version
+3. Run `dub build --arch=x86_mscoff --build=release` to build 32-bit version
 4. Run `dub build --arch=x86_64 --build=release` to build 64-bit version
 
 #### Remarks
 
-Building 32-bit version requires a 32-bit variant of the Visual Studio toolchain to be present in `PATH`. The same for 64-bit. Remember *not* to specify `-arch=x86` when building 32-bit version (`dub` will overwrite `-m32mscoff` with unsupported `-m32` switch). If you use libclang versions <= 3.7, you may need to install MinGW for header files. Remember to install LLVM to its default installation path and to add its binaries to the `PATH` environmental variable (otherwise you may need to change `dub.json`).
+Building 32-bit version requires a 32-bit variant of the Visual Studio toolchain to be present in `PATH`. The same for 64-bit. Remember to specify `--arch=x86_mscoff` when building 32-bit version. The architecture specification is mandatory as with the default architecture or `--arch=x86` dub will try to use unsupported `OPTLINK` linker. `OPTLINK` linker requires unsupported version of libclang binaries. Remember to install LLVM to its default installation path and to add its binaries to the `PATH` environmental variable (otherwise you may need to change `dub.json`).
 
 ## Usage
 

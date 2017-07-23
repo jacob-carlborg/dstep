@@ -2,7 +2,7 @@ echo "Downloading dmd...";
 Invoke-WebRequest "http://downloads.dlang.org/releases/2.x/$env:DVersion/dmd.$env:DVersion.windows.7z" -OutFile c:\dmd.7z;
 7z x c:\dmd.7z -oc:\ > $null;
 echo "Downloading dub...";
-Invoke-WebRequest https://code.dlang.org/files/dub-1.0.0-beta.1-windows-x86.zip -OutFile c:\dub.zip;
+Invoke-WebRequest https://code.dlang.org/files/dub-1.4.0-windows-x86.zip -OutFile c:\dub.zip;
 7z x c:\dub.zip -oc:\dub > $null;
 
 $env:PATH = "c:\dub;$($env:PATH)";
@@ -12,7 +12,7 @@ $env:compilersetup = "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcv
 
 if ($env:arch -eq "x86") {
   $env:compilersetupargs = "x86";
-  $env:archswitch = "";
+  $env:archswitch = "--arch=x86_mscoff";
 }
 else {
   $env:compilersetupargs = "amd64";
