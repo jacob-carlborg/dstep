@@ -5,13 +5,6 @@
  */
 module dstep.main;
 
-import std.getopt;
-
-import clang.Util;
-import dstep.CommandLine;
-import dstep.Configuration;
-import dstep.core.Exceptions;
-
 version (unittest) { }
 else:
 
@@ -21,121 +14,6 @@ else:
  */
 int main (string[] args)
 {
-    import std.stdio;
-    import std.string;
-    import clang.Util;
-
-    auto parseResult = parseCommandLine(args);
-    Configuration config = parseResult[0];
-    GetoptResult getoptResult = parseResult[1];
-
-    if (getoptResult.helpWanted || args.length == 1)
-    {
-        showHelp(config, getoptResult);
-        return 0;
-    }
-
-    if (config.dstepVersion)
-    {
-        writeln(strip(config.Version));
-        return 0;
-    }
-
-    if (config.clangVersion)
-    {
-        writeln(clangVersionString());
-        return 0;
-    }
-
-    import dstep.driver.Application;
-
-    auto application = new Application(config);
-
-    try
-    {
-        application.run();
-    }
-    catch (DStepException e)
-    {
-        write(e.msg);
-        return -1;
-    }
-    catch (Throwable e)
-    {
-        writeln("dstep: an unknown error occurred: ", e);
-        throw e;
-    }
-
-    return 0;
-}
-
-void showHelp (Configuration config, GetoptResult getoptResult)
-{
-    import std.stdio;
-    import std.string;
-    import std.range;
-    import std.algorithm;
-
-    struct Entry
-    {
-        this(string option, string help)
-        {
-            this.option = option;
-            this.help = help;
-        }
-
-        this(Option option)
-        {
-            if (option.optShort && option.optLong)
-                this.option = format("%s, %s", option.optShort, option.optLong);
-            else if (option.optShort)
-                this.option = option.optShort;
-            else
-                this.option = option.optLong;
-
-            auto pair = findSplitAfter(option.help, "!");
-
-            if (!pair[0].empty)
-            {
-                this.option ~= pair[0][0 .. $ - 1];
-                this.help = pair[1];
-            }
-            else
-            {
-                this.help = option.help;
-            }
-        }
-
-        string option;
-        string help;
-    }
-
-    auto customEntries = [
-        Entry("-o, --output <file>", "Write output to <file>."),
-        Entry("-o, --output <directory>", "Write all the files to <directory>, in case of multiple input files."),
-        Entry("-ObjC, --objective-c", "Treat source input file as Objective-C input."),
-        Entry("-x, --language", "Treat subsequent input files as having type <language>.")];
-
-    auto generatedEntries = getoptResult.options
-        .filter!(option => !option.help.empty)
-        .map!(option => Entry(option));
-
-    auto entries = chain(customEntries, generatedEntries);
-
-    auto maxLength = entries.map!(entry => entry.option.length).array.reduce!max;
-
-    auto helpString = appender!string();
-
-    helpString.put("Usage: dstep [options] <input>\n");
-    helpString.put(format("Version: %s\n\n", strip(config.Version)));
-    helpString.put("Options:\n");
-
-    foreach (entry; entries)
-        helpString.put(format("    %-*s %s\n", cast(int) maxLength + 1, entry.option, entry.help));
-
-    helpString.put(
-        "\nAll options that Clang accepts can be used as well.\n" ~
-        "Use the `-h' flag for help.");
-
-    writeln(helpString.data);
+    import dstep.CommandLine: run;
+    return run(args);
 }

@@ -13,7 +13,7 @@
     "stringImportPaths": ["resources"],
 
     "preGenerateCommands": [
-        "git describe --tags > resources/VERSION"
+        "cd $PACKAGE_DIR && git describe --tags > resources/VERSION"
     ],
 
     "lflags-osx": ["-macosx_version_min", "10.7", "-lcrt1.o"],
@@ -65,6 +65,14 @@
             "lflags-windows-x86_64": ["/LIBPATH:C:\\PROGRA~1\\LLVM\\lib", "libclang.lib", "Ole32.lib"],
 
             "lflags-posix": ["@linker_flags.txt"]
+        },
+
+        {
+            "name": "library",
+            "targetType": "library",
+            "sourcePaths": ["dstep", "clang"],
+            "importPaths": ["dstep", "clang"],
+            "excludedSourceFiles": ["dstep/main.d"]
         }
     ],
 }
