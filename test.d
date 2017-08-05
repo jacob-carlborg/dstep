@@ -89,7 +89,7 @@ struct TestRunner
         }
 
         build();
-        
+
         writeln(" [DONE]");
     }
 
@@ -97,10 +97,17 @@ struct TestRunner
     {
         writeln("Running unit tests ");
 
-        version (Win64)
-            auto result = executeShell("dub test --arch=x86_64");
+        version (Windows)
+        {
+            version (X86_64)
+                auto result = executeShell("dub test --arch=x86_64");
+            else
+                auto result = executeShell("dub test --arch=x86_mscoff");
+        }
         else
+        {
             auto result = executeShell("dub test");
+        }
 
         if (result.status != 0)
             writeln(result.output);
@@ -112,10 +119,17 @@ struct TestRunner
     {
         try
         {
-            version (Win64)
-                auto result = executeShell("dub build --arch=x86_64");
+            version (Windows)
+            {
+                version (X86_64)
+                    auto result = executeShell("dub build --arch=x86_64");
+                else
+                    auto result = executeShell("dub build --arch=x86_mscoff");
+            }
             else
+            {
                 auto result = executeShell("dub build");
+            }
 
             if (result.status != 0)
             {
@@ -269,6 +283,7 @@ private:
         auto url = clang.baseUrl ~ clang.filename;
 
         std.stdio.write("Downloading clang ", clang.version_);
+        stdout.flush();
         write(dest, getBinary(url));
         writeln(" [DONE]");
     }
