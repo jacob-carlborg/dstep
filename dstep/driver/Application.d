@@ -174,25 +174,7 @@ private struct ParseFile
             import std.algorithm : map;
             import std.array : array;
 
-            Options options;
-            options.inputFiles = config.inputFiles.map!(path => path.asAbsNormPath).array;
-            options.inputFile = inputFile.asAbsNormPath;
-            options.outputFile = outputFile.asAbsNormPath;
-            options.language = config.language;
-            options.enableComments = config.enableComments;
-            options.packageName = config.packageName;
-            options.publicSubmodules = config.publicSubmodules;
-            options.reduceAliases = config.reduceAliases;
-            options.aliasEnumMembers = config.aliasEnumMembers;
-            options.portableWCharT = config.portableWCharT;
-            options.zeroParamIsVararg = config.zeroParamIsVararg;
-            options.singleLineFunctionSignatures = config.singleLineFunctionSignatures;
-            options.spaceAfterFunctionName = config.spaceAfterFunctionName;
-            options.skipDefinitions = setFromList(config.skipDefinitions);
-            options.skipSymbols = setFromList(config.skipSymbols);
-            options.printDiagnostics = config.printDiagnostics;
-            options.collisionAction = config.collisionAction;
-            options.globalAttributes = config.globalAttributes;
+            Options options = this.config.toOptions(inputFile, outputFile);
 
             auto translator = new Translator(translationUnit, options);
             translator.translate;

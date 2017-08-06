@@ -715,3 +715,52 @@ extern (D) string BAR_CONCAT(T)(auto ref T prefix)
 D");
 
 }
+
+// Test enabling disabling macro translation.
+unittest
+{
+    Options translateMacrosTrue;
+    Options translateMacrosFalse;
+
+    translateMacrosTrue.translateMacros = true;
+    translateMacrosFalse.translateMacros = false;
+
+    assertTranslates(q"C
+#define STRINGIZE(major, minor)   \
+    #major"."#minor
+C", q"D
+extern (C):
+D",
+translateMacrosFalse);
+
+    assertTranslates(q"C
+#define STRINGIZE(major, minor)   \
+    #major"."#minor
+C", q"D
+extern (C):
+
+extern (D) string STRINGIZE(T0, T1)(auto ref T0 major, auto ref T1 minor)
+{
+    import std.conv : to;
+
+    return to!string(major) ~ "." ~ to!string(minor);
+}
+D",
+translateMacrosTrue);
+
+    assertTranslates(q"C
+#define FOO 0
+C", q"D
+extern (C):
+D",
+translateMacrosFalse);
+
+    assertTranslates(q"C
+#define FOO 0
+C", q"D
+extern (C):
+
+enum FOO = 0;
+D",
+translateMacrosTrue);
+}
