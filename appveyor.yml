@@ -1,14 +1,15 @@
+platform:
+  - x64
+  - x86
 
-platform: x64
+configuration:
+  - LLVM 4.0.0
+  - LLVM 3.9.1
+  - LLVM 3.9.0
 
 environment:
-  matrix:
-  - DC: dmd
-    DVersion: 2.071.0
-    arch: x86
-  - DC: dmd
-    DVersion: 2.071.0
-    arch: x86_64
+  DVersion: 2.071.0
+  DC: dmd
 
 skip_tags: true
 
