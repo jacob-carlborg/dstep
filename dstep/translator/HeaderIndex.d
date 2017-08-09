@@ -17,10 +17,16 @@ class IncludeGraph
 {
     import std.typecons;
 
+    struct Inclusion
+    {
+        size_t included;
+        size_t including;
+    }
+
     private size_t[string] headers_;
     private string[size_t] reverse_;
-    private Set!(Tuple!(size_t, size_t)) directInclusions;
-    private Set!(Tuple!(size_t, size_t)) indirectInclusions;
+    private Set!Inclusion directInclusions;
+    private Set!Inclusion indirectInclusions;
     private string internalPrefix;
 
     public this(TranslationUnit translationUnit)
@@ -60,15 +66,17 @@ class IncludeGraph
                     headers_[includedPath] = headers_.length;
                 }
 
-                auto pair = tuple(headers_[includedPath], headers_[path]);
+                auto pair = Inclusion(headers_[includedPath], headers_[path]);
                 directInclusions.add(pair);
             }
         }
 
+        removeCycles(directInclusions);
+
         foreach (header, closure; transitiveClosure())
         {
             foreach (closureHeader; closure)
-                indirectInclusions.add(tuple(header, closureHeader));
+                indirectInclusions.add(Inclusion(header, closureHeader));
         }
     }
 
@@ -79,19 +87,65 @@ class IncludeGraph
 
     bool isIncludedBy(string header, string by)
     {
-        return directInclusions.contains(
-            tuple(headers_[header.asAbsNormPath], headers_[by.asAbsNormPath]));
+        auto inclusion = Inclusion(
+            headers_[header.asAbsNormPath],
+            headers_[by.asAbsNormPath]);
+
+        return directInclusions.contains(inclusion);
     }
 
     bool isReachableBy(string header, string by)
     {
-        return indirectInclusions.contains(
-            tuple(headers_[header.asAbsNormPath], headers_[by.asAbsNormPath]));
+        auto inclusion = Inclusion(
+            headers_[header.asAbsNormPath],
+            headers_[by.asAbsNormPath]);
+
+        return indirectInclusions.contains(inclusion);
     }
 
     bool isReachableThrough(string header, string via, string by)
     {
         return isReachableBy(header, via) && isReachableBy(via, by);
+    }
+
+    void removeCycles(Set!Inclusion inclusions)
+    {
+        enum Status
+        {
+            pristine,
+            visiting,
+            visited
+        }
+
+        auto statuses = new Status[headers_.length];
+        auto includedBy = new size_t[][headers_.length];
+
+        foreach (inclusion; inclusions.byKey)
+            includedBy[inclusion.included] ~= inclusion.including;
+
+        void visit(size_t header, size_t includedHeader)
+        {
+            if (statuses[header] == Status.visited)
+                return;
+
+            if (statuses[header] == Status.visiting)
+            {
+                inclusions.remove(Inclusion(includedHeader, header));
+            }
+            else
+            {
+                statuses[header] = Status.visiting;
+                foreach (includingHeader; includedBy[header])
+                    visit(includingHeader, header);
+                statuses[header] = Status.visited;
+            }
+        }
+
+        foreach (header; headers_.byValue)
+        {
+            if (statuses[header] == Status.pristine)
+                visit(header, size_t.max);
+        }
     }
 
     private size_t[] topologicalSort()
@@ -110,8 +164,7 @@ class IncludeGraph
         auto includedBy = new size_t[][headers_.length];
 
         foreach (inclusion; directInclusions.byKey)
-            includedBy[inclusion[0]] ~= inclusion[1];
-
+            includedBy[inclusion.included] ~= inclusion.including;
 
         void visit(size_t header)
         {
@@ -123,8 +176,8 @@ class IncludeGraph
 
             statuses[header] = Status.visiting;
 
-            foreach (includingHeader; includedBy[header])
-                visit(includingHeader);
+            foreach (includedHeader; includedBy[header])
+                visit(includedHeader);
 
             statuses[header] = Status.visited;
             sorted ~= header;
@@ -149,7 +202,7 @@ class IncludeGraph
         auto includedTo = new size_t[][headers_.length];
 
         foreach (inclusion; directInclusions.byKey)
-            includedTo[inclusion[1]] ~= inclusion[0];
+            includedTo[inclusion.including] ~= inclusion.included;
 
         foreach (header; sorted)
         {
@@ -170,44 +223,110 @@ class HeaderIndex
 {
     private IncludeGraph includeGraph_;
     private string[string] stdLibPaths;
+    private string[string] knownModules;
     private string mainFilePath;
 
     public this(TranslationUnit translationUnit)
     {
+        immutable string[string] standardModuleMapping = [
+            // standard c library
+            "assert.h" : "core.stdc.assert_",
+            "ctype.h" : "core.stdc.ctype",
+            "errno.h" : "core.stdc.errno",
+            "float.h" : "core.stdc.float_",
+            "limits.h" : "core.stdc.limits",
+            "locale.h" : "core.stdc.locale",
+            "math.h" : "core.stdc.math",
+            "signal.h" : "core.stdc.signal",
+            "stdarg.h" : "core.stdc.stdarg",
+            "stddef.h" : "core.stdc.stddef",
+            "stdio.h" : "core.stdc.stdio",
+            "stdlib.h" : "core.stdc.stdlib",
+            "string.h" : "core.stdc.string",
+            "time.h" : "core.stdc.time",
+            "wctype.h" : "core.stdc.wctype",
+            "wchar.h" : "core.stdc.wchar_",
+            "complex.h" : "core.stdc.complex",
+            "fenv.h" : "core.stdc.fenv",
+            "inttypes.h" : "core.stdc.inttypes",
+            "tgmath.h" : "core.stdc.tgmath",
+            "stdint.h" : "core.stdc.stdint",
+            // posix library
+            "dirent.h" : "core.sys.posix.dirent",
+            "dlfcn.h" : "core.sys.posix.dlfcn",
+            "fcntl.h" : "core.sys.posix.fcntl",
+            "netdb.h" : "core.sys.posix.netdb",
+            "poll.h" : "core.sys.posix.poll",
+            "pthread.h" : "core.sys.posix.pthread",
+            "pwd.h" : "core.sys.posix.pwd",
+            "sched.h" : "core.sys.posix.sched",
+            "semaphore.h" : "core.sys.posix.semaphore",
+            "setjmp.h" : "core.sys.posix.setjmp",
+            "signal.h" : "core.sys.posix.signal",
+            "termios.h" : "core.sys.posix.termios",
+            "ucontext.h" : "core.sys.posix.ucontext",
+            "unistd.h" : "core.sys.posix.unistd",
+            "utime.h" : "core.sys.posix.utime",
+            "arpa/inet.h" : "core.sys.posix.arpa.inet",
+            "net/if.h" : "core.sys.posix.net.if_",
+            "netinet/in.h" : "core.sys.posix.netinet.in_",
+            "netinet/tcp.h" : "core.sys.posix.netinet.tcp",
+            "sys/ipc.h" : "core.sys.posix.sys.ipc",
+            "sys/mman.h" : "core.sys.posix.sys.mman",
+            "sys/select.h" : "core.sys.posix.sys.select",
+            "sys/shm.h" : "core.sys.posix.sys.shm",
+            "sys/socket.h" : "core.sys.posix.sys.socket",
+            "sys/stat.h" : "core.sys.posix.sys.stat",
+            "sys/time.h" : "core.sys.posix.sys.time",
+            "sys/types.h" : "core.sys.posix.sys.types",
+            "sys/_types.h" : "core.sys.posix.sys.types",
+            "sys/uio.h" : "core.sys.posix.sys.uio",
+            "sys/un.h" : "core.sys.posix.sys.un",
+            "sys/utsname.h" : "core.sys.posix.sys.utsname",
+            "sys/wait.h" : "core.sys.posix.sys.wait",
+            "sys/ioctl.h" : "core.sys.posix.sys.ioctl",
+            // windows library
+            "windows" : "core.sys.windows.windows"
+        ];
+
+        this (translationUnit, standardModuleMapping);
+    }
+
+    public this(
+        TranslationUnit translationUnit,
+        const string[string] moduleMapping)
+    {
         import std.algorithm;
 
-        auto directives = translationUnit.cursor.children
-            .filter!(cursor => cursor.kind == CXCursorKind.inclusionDirective);
+        if (!translationUnit.isCompiled())
+        {
+            throw new Exception(
+                "The translation unit has to be compiled without errors.");
+        }
+
+        alias predicate =
+            cursor => cursor.kind == CXCursorKind.inclusionDirective;
+
+        auto directives = translationUnit.cursor.children.filter!predicate;
 
         includeGraph_ = new IncludeGraph(directives);
         mainFilePath = translationUnit.spelling.asAbsNormPath;
-        this(directives);
+        this(directives, moduleMapping);
     }
 
-    private this(T)(T directives)
+    private this(T)(T directives, const string[string] moduleMapping)
     {
-        import std.random;
-        import std.range;
-
-        stdLibPaths = resolveStdLibPaths(directives);
+        knownModules = resolveKnownModules(
+            directives,
+            resolveKnownModulePaths(
+                directives,
+                moduleMapping));
     }
 
-    bool isFromStdLib(string path, string header)
+    string searchKnownModules(Cursor cursor)
     {
-        auto headerPath = header in stdLibPaths;
-
-        if (headerPath is null)
-            return false;
-
-        return includeGraph.isReachableThrough(
-            path.asAbsNormPath,
-            *headerPath,
-            mainFilePath);
-    }
-
-    bool isFromStdLib(Cursor cursor, string header)
-    {
-        return isFromStdLib(cursor.file.name, header);
+        auto knownModule = cursor.file.name.asAbsNormPath in knownModules;
+        return knownModule !is null ? *knownModule : null;
     }
 
     IncludeGraph includeGraph()
@@ -215,53 +334,59 @@ class HeaderIndex
         return includeGraph_;
     }
 
-    private string[string] resolveStdLibPaths(T)(T directives) const
+    private struct KnownModule
     {
-        immutable uint[string] stdlib = [
-            "assert.h" : 89,
-            "ctype.h" : 89,
-            "errno.h" : 89,
-            "float.h" : 89,
-            "limits.h" : 89,
-            "locale.h" : 89,
-            "math.h" : 89,
-            "setjmp.h" : 89,
-            "signal.h" : 89,
-            "stdarg.h" : 89,
-            "stddef.h" : 89,
-            "stdio.h" : 89,
-            "stdlib.h" : 89,
-            "string.h" : 89,
-            "time.h" : 89,
-            "iso646.h" : 95,
-            "wctype.h" : 95,
-            "wchar.h" : 95,
-            "complex.h" : 99,
-            "fenv.h" : 99,
-            "inttypes.h" : 99,
-            "tgmath.h" : 99,
-            "stdint.h" : 99,
-            "stdbool.h" : 99,
-            "stdnoreturn.h" : 11,
-            "threads.h" : 11,
-            "uchar.h" : 11,
-            "stdatomic.h" : 11,
-            "stdalign.h" : 11
-        ];
+        string includePath;
+        string moduleName;
+    }
 
-        string[string] paths;
+    private KnownModule[] resolveKnownModulePaths(T)(
+        T directives,
+        const string[string] moduleMapping) const
+    {
+        import std.algorithm;
+        import std.array;
+
+        Set!KnownModule knownModules;
 
         foreach (directive; directives)
         {
-            auto release = directive.spelling in stdlib;
+            auto moduleName = directive.spelling in moduleMapping;
 
-            if (release !is null && directive.tokens[1].spelling != "include_next")
+            if (moduleName !is null)
             {
                 auto absolutePath = directive.includedFile.absolutePath;
-                paths[directive.spelling] = absolutePath;
+                knownModules.add(KnownModule(absolutePath, *moduleName));
             }
         }
 
-        return paths;
+        return knownModules.byKey.array;
+    }
+
+    private string[string] resolveKnownModules(T)(
+        T directives,
+        KnownModule[] moduleDescs)
+    {
+        string[string] knownModules;
+
+        foreach (directive; directives)
+        {
+            auto absolutePath = directive.includedFile.absolutePath;
+
+            foreach (desc; moduleDescs)
+            {
+                bool reachable = includeGraph.isReachableBy(
+                    absolutePath,
+                    desc.includePath);
+
+                if (reachable)
+                {
+                    knownModules[absolutePath] = desc.moduleName;
+                    break;
+                }
+            }
+        }
+
+        return knownModules;
     }
 }

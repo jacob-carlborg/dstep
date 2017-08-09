@@ -56,6 +56,7 @@ unittest
 
     // The file is reachable by itself.
     assert(includeGraph.isReachableBy(file, file));
+    assert(includeGraph.isReachableBy(subfile3, subfile3));
 
     // The file is reachable by its direct includer.
     assert(includeGraph.isReachableBy(subfile2, file));
@@ -74,10 +75,22 @@ unittest
 {
     import std.algorithm;
 
-    auto translationUnit = makeTranslationUnit("test_files/clang-c/Index.h");
+    auto translationUnit = makeTranslationUnit(
+        "test_files/clang-c/Index.h",
+        ["-Wno-missing-declarations", "-Itest_files"]);
+
     auto headerIndex = new HeaderIndex(translationUnit);
 
     auto timeT = translationUnit.cursor.children.filter!(x => x.spelling == "time_t").front;
 
-    assert(headerIndex.isFromStdLib(timeT, "time.h"));
+    assert(headerIndex.searchKnownModules(timeT) == "core.stdc.time");
+}
+
+unittest
+{
+    auto translationUnit = makeTranslationUnit(
+        "test_files/graph/self_including_main.h",
+        ["-Wno-missing-declarations", "-Itest_files"]);
+
+    new HeaderIndex(translationUnit);
 }

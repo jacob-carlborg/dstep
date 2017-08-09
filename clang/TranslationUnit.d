@@ -99,6 +99,17 @@ struct TranslationUnit
         return clang_getNumDiagnostics(cx);
     }
 
+    bool isCompiled()
+    {
+        import std.algorithm;
+
+        alias predicate =
+            x => x.severity != CXDiagnosticSeverity.error &&
+                x.severity != CXDiagnosticSeverity.fatal;
+
+        return diagnosticSet.all!predicate();
+    }
+
     @property DeclarationVisitor declarations ()
     {
         return DeclarationVisitor(clang_getTranslationUnitCursor(cx));

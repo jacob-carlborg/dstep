@@ -45,7 +45,7 @@ class Context
     {
         this.translUnit = translUnit;
         macroIndex = new MacroIndex(translUnit);
-        includeHandler_ = new IncludeHandler(options);
+        includeHandler_ = new IncludeHandler(headerIndex, options);
 
         this.options = options;
 
