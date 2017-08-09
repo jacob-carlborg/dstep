@@ -10,6 +10,8 @@
     "targetPath": "bin",
 
     "buildRequirements": ["silenceWarnings"],
+    "sourcePaths": ["dstep", "clang"],
+    "importPaths": ["."],
     "stringImportPaths": ["resources"],
 
     "preGenerateCommands": [
@@ -30,8 +32,6 @@
             "name": "default",
             "mainSourceFile": "dstep/main.d",
             "targetName": "dstep",
-            "sourcePaths": ["dstep", "clang"],
-            "importPaths": ["dstep", "clang"],
 
             "preBuildCommands-posix": [
                 "(! [ -s linker_flags.txt ] && ./configure) || true"
@@ -55,7 +55,7 @@
             "mainSourceFile": "unittest.d",
             "targetName": "unittest",
             "sourcePaths": ["dstep", "clang", "unit_tests"],
-            "importPaths": ["dstep", "clang"],
+            "excludedSourceFiles": ["dstep/main.d"],
 
             "preBuildCommands-posix": [
                 "(! [ -s linker_flags.txt ] && ./configure) || true"
@@ -70,8 +70,6 @@
         {
             "name": "library",
             "targetType": "library",
-            "sourcePaths": ["dstep", "clang"],
-            "importPaths": ["dstep", "clang"],
             "excludedSourceFiles": ["dstep/main.d"]
         }
     ],

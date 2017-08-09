@@ -5,7 +5,9 @@ d:
   - ldc
 
 before_script: git fetch --unshallow
-script: "dub --config=test"
+script:
+  - "dub --config=test"
+  - cd test_package && dub build
 
 os:
   - linux

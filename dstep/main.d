@@ -14,6 +14,6 @@ else:
  */
 int main (string[] args)
 {
-    import dstep.CommandLine: run;
+    import dstep.driver.CommandLine: run;
     return run(args);
 }
