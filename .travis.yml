@@ -5,18 +5,30 @@ d:
   - ldc
 
 before_script: git fetch --unshallow
-script:
-  - "dub --config=test"
+script: dub --config=test --compiler=${DC}
 
 os:
   - linux
   - osx
 
+env:
+  - LLVM_VERSION=4.0.0
+  - LLVM_VERSION=3.9.1
+  - LLVM_VERSION=3.9.0
+
 matrix:
+  # beta and nightly builds for DMD and LDC
   include:
-    - d: dmd-beta
+    - &entry
+      d: dmd-beta
       os: linux
-    - d: dmd-nightly
-      os: linux
-    - d: ldc-beta
-      os: linux
+      env: LLVM_VERSION=4.0.0
+    - <<: *entry
+      d: dmd-nightly
+    - <<: *entry
+      d: ldc-beta
+
+  # missing binaries from http://releases.llvm.org
+  exclude:
+    - env: LLVM_VERSION=3.9.1
+      os: osx

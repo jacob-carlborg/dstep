@@ -372,13 +372,10 @@ private:
         }
     }
 
-    Clang clang(string version_, string baseUrl, string filename)
-    {
-        return Clang(version_, baseUrl, filename, basePath);
-    }
-
     immutable(Clang[]) getClangs ()
     {
+        import std.process;
+
         version (Posix)
             void unsupported()
             {
@@ -388,30 +385,20 @@ private:
         version (FreeBSD)
         {
             version (D_LP64)
-                return [
-                    clang("3.9.0", "http://releases.llvm.org/3.9.0/", "clang+llvm-3.9.0-amd64-unknown-freebsd10.tar.xz"),
-                    clang("3.9.1", "http://releases.llvm.org/3.9.1/", "clang+llvm-3.9.1-amd64-unknown-freebsd10.tar.xz"),
-                    clang("4.0.0", "http://releases.llvm.org/4.0.0/", "clang+llvm-4.0.0-amd64-unknown-freebsd10.tar.xz")
-                ];
+                enum filename = "clang+llvm-%1s-amd64-unknown-freebsd10.tar.xz";
 
             else
-                return [
-                    clang("3.9.0", "http://releases.llvm.org/3.9.0/", "clang+llvm-3.9.0-i386-unknown-freebsd10.tar.xz"),
-                    clang("3.9.1", "http://releases.llvm.org/3.9.1/", "clang+llvm-3.9.1-i386-unknown-freebsd10.tar.xz"),
-                    clang("4.0.0", "http://releases.llvm.org/4.0.0/", "clang+llvm-4.0.0-i386-unknown-freebsd10.tar.xz")
-                ];
+                enum filename = "clang+llvm-%1s-i386-unknown-freebsd10.tar.xz";
         }
 
         else version (linux)
         {
+            string filename;
+
             if (System.isUbuntu || System.isTravis)
             {
                 version (D_LP64)
-                    return [
-                        clang("3.9.0", "http://releases.llvm.org/3.9.0/", "clang+llvm-3.9.0-x86_64-linux-gnu-ubuntu-14.04.tar.xz"),
-                        clang("3.9.1", "http://releases.llvm.org/3.9.1/", "clang+llvm-3.9.1-x86_64-linux-gnu-ubuntu-14.04.tar.xz"),
-                        clang("4.0.0", "http://releases.llvm.org/4.0.0/", "clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-14.04.tar.xz")
-                    ];
+                    filename = "clang+llvm-%1s-x86_64-linux-gnu-ubuntu-14.04.tar.xz";
                 else
                     unsupported();
             }
@@ -419,11 +406,7 @@ private:
             else if (System.isDebian)
             {
                 version (D_LP64)
-                    return [
-                        clang("3.9.0", "http://releases.llvm.org/3.9.0/", "clang+llvm-3.9.0-x86_64-linux-gnu-debian8.tar.xz"),
-                        clang("3.9.1", "http://releases.llvm.org/3.9.1/", "clang+llvm-3.9.1-x86_64-linux-gnu-debian8.tar.xz"),
-                        clang("4.0.0", "http://releases.llvm.org/4.0.0/", "clang+llvm-4.0.0-x86_64-linux-gnu-debian8.tar.xz")
-                    ];
+                    filename = "clang+llvm-%1s-x86_64-linux-gnu-debian8.tar.xz";
                 else
                     unsupported();
             }
@@ -431,55 +414,40 @@ private:
             else if (System.isFedora)
             {
                 version (D_LP64)
-                    return [
-                        clang("3.9.0", "http://releases.llvm.org/3.9.0/", "clang+llvm-3.9.0-x86_64-fedora23.tar.xz")
-                    ];
+                    filename = "clang+llvm-%1s-x86_64-fedora23.tar.xz";
                 else
-                    return [
-                        clang("3.9.0", "http://releases.llvm.org/3.9.0/", "clang+llvm-3.9.0-i686-fedora23.tar.xz")
-                    ];
+                    filename = "clang+llvm-%1s-i686-fedora23.tar.xz";
             }
 
             else
                 unsupported();
-
-            return null;
         }
 
         else version (OSX)
         {
             version (D_LP64)
-            {
-                return [
-                    clang("3.9.0", "http://releases.llvm.org/3.9.0/", "clang+llvm-3.9.0-x86_64-apple-darwin.tar.xz"),
-                    clang("4.0.0", "http://releases.llvm.org/4.0.0/", "clang+llvm-4.0.0-x86_64-apple-darwin.tar.xz")
-                ];
-            }
+                enum filename = "clang+llvm-%1s-x86_64-apple-darwin.tar.xz";
 
             else
                 static assert(false, "Only 64bit versions of OS X are supported");
         }
 
         else version (Win32)
-        {
-            return [
-                clang("3.9.0", "http://releases.llvm.org/3.9.0/", "LLVM-3.9.0-win32.exe"),
-                clang("3.9.1", "http://releases.llvm.org/3.9.1/", "LLVM-3.9.1-win32.exe"),
-                clang("4.0.0", "http://releases.llvm.org/4.0.0/", "LLVM-4.0.0-win32.exe")
-            ];
-        }
+            enum filename = "LLVM-%1s-win32.exe";
 
         else version (Win64)
-        {
-            return [
-                clang("3.9.0", "http://releases.llvm.org/3.9.0/", "LLVM-3.9.0-win64.exe"),
-                clang("3.9.1", "http://releases.llvm.org/3.9.1/", "LLVM-3.9.1-win64.exe"),
-                clang("4.0.0", "http://releases.llvm.org/4.0.0/", "LLVM-4.0.0-win64.exe")
-            ];
-        }
+            enum filename = "LLVM-%1s-win64.exe";
 
         else
             static assert(false, "Unsupported platform");
+
+        enum defaultLLVMVersion = "4.0.0";
+
+        auto llvmVersion = environment.get("LLVM_VERSION", defaultLLVMVersion);
+        auto baseUrl = format("http://releases.llvm.org/%1s/", llvmVersion);
+        auto filenameWithVersion = format(filename, llvmVersion);
+
+        return [Clang(llvmVersion, baseUrl, filenameWithVersion, basePath)];
     }
 }
 

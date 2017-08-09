@@ -7,10 +7,11 @@ Invoke-WebRequest https://code.dlang.org/files/dub-1.4.0-windows-x86.zip -OutFil
 
 $env:PATH = "c:\dub;$($env:PATH)";
 $env:PATH = "c:\dmd2\windows\bin;$($env:PATH)";
+$env:LLVM_VERSION = $env:CONFIGURATION.split(" ")[1]
 
 $env:compilersetup = "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall";
 
-if ($env:arch -eq "x86") {
+if ($env:PLATFORM -eq "x86") {
   $env:compilersetupargs = "x86";
   $env:archswitch = "--arch=x86_mscoff";
 }
