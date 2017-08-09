@@ -128,7 +128,6 @@ unittest
  *  dstep.driver.Application to do actual work.
  *  Called by main.
  */
-
 int run(string[] args)
 {
     import std.stdio;
