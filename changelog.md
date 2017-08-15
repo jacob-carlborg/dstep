@@ -63,6 +63,7 @@
 * [Issue 140](https://github.com/jacob-carlborg/dstep/issues/140): On enums and scope.
 * [Issue 154](https://github.com/jacob-carlborg/dstep/issues/154): Falling back to blunt pre-processor phase.
 * [Issue 160](https://github.com/jacob-carlborg/dstep/issues/160): Translating typedef of function pointer doesn't take line length into consideration.
+* [Issue 166](https://github.com/jacob-carlborg/dstep/issues/166): macro used in struct declaration not translated properly
 
 ## Version 0.2.1
 ### New/Changed Features
