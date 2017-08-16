@@ -61,7 +61,7 @@ class Context
                 commentIndex_ = new CommentIndex(translUnit);
         }
 
-        typedefIndex_ = new TypedefIndex(translUnit);
+        typedefIndex_ = new TypedefIndex(translUnit, options.isWantedCursorForTypedefs);
 
         if (translator !is null)
             translator_ = translator;
@@ -404,4 +404,3 @@ Cursor[string] collectGlobalTypes(TranslationUnit translUnit)
 
     return result;
 }
-

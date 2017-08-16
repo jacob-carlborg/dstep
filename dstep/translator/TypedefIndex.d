@@ -10,11 +10,25 @@ import clang.c.Index;
 import clang.Cursor;
 import clang.TranslationUnit;
 
+
 class TypedefIndex
 {
+    import std.typecons: Flag, No;
+
     private Cursor[Cursor] typedefs;
 
     this(TranslationUnit translUnit)
+    {
+        this(translUnit, (ref const(Cursor)) => false);
+    }
+
+    this(TranslationUnit translUnit, bool function(ref const(Cursor)) isWantedCursor)
+    {
+        import std.functional: toDelegate;
+        this(translUnit, isWantedCursor.toDelegate);
+    }
+
+    this(TranslationUnit translUnit, bool delegate(ref const(Cursor)) isWantedCursor)
     {
         bool[Cursor] visited;
 
@@ -22,7 +36,7 @@ class TypedefIndex
 
         foreach (cursor; translUnit.cursor.all)
         {
-            if (cursor.file == file)
+            if (cursor.file == file || (isWantedCursor !is null && isWantedCursor(cursor)))
             {
                 visited[cursor] = true;
                 inspect(cursor, visited);

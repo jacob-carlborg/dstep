@@ -25,6 +25,8 @@ enum CollisionAction
 
 struct Options
 {
+    import clang.Cursor: Cursor;
+
     string[] inputFiles;
     string inputFile;
     string outputFile;
@@ -47,6 +49,7 @@ struct Options
     bool printDiagnostics = true;
     CollisionAction collisionAction = CollisionAction.rename;
     const(string)[] globalAttributes;
+    bool delegate(ref const(Cursor)) isWantedCursorForTypedefs;
 
     string toString() const
     {
