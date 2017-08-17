@@ -32,6 +32,7 @@ struct TestRunner
 
             writeln("Testing with ", strip(output.output));
             result += unitTest();
+            result += libraryTest();
             stdout.flush();
         }
 
@@ -97,18 +98,29 @@ struct TestRunner
     {
         writeln("Running unit tests ");
 
-        version (Windows)
-        {
-            version (X86_64)
-                auto result = executeShell("dub test --arch=x86_64");
-            else
-                auto result = executeShell("dub test --arch=x86_mscoff");
-        }
-        else
-        {
-            auto result = executeShell("dub test");
-        }
+        auto result = executeShell(dubShellCommand("test"));
 
+        if (result.status != 0)
+            writeln(result.output);
+
+        return result.status;
+    }
+
+    /**
+       Test that dstep can be used as a library by compiling a dependent
+       dub package
+     */
+    int libraryTest ()
+    {
+        const string[string] env;
+        const config = Config.none;
+        const maxOutput = size_t.max;
+        const workDir = "test_package";
+        const result = executeShell(dubShellCommand("build"),
+                                    env,
+                                    config,
+                                    maxOutput,
+                                    workDir);
         if (result.status != 0)
             writeln(result.output);
 
@@ -119,17 +131,7 @@ struct TestRunner
     {
         try
         {
-            version (Windows)
-            {
-                version (X86_64)
-                    auto result = executeShell("dub build --arch=x86_64");
-                else
-                    auto result = executeShell("dub build --arch=x86_mscoff");
-            }
-            else
-            {
-                auto result = executeShell("dub build");
-            }
+            auto result = executeShell(dubShellCommand("build"));
 
             if (result.status != 0)
             {
@@ -141,6 +143,27 @@ struct TestRunner
         {
             throw new ProcessException("Failed to execute dub");
         }
+    }
+}
+
+
+private string dubShellCommand(string subCommand) @safe pure nothrow
+{
+    return "dub " ~ subCommand ~ dubArch;
+}
+
+private string dubArch() @safe pure nothrow
+{
+    version (Windows)
+    {
+        version (X86_64)
+            return " --arch=x86_64";
+        else
+            return " --arch=x86_mscoff";
+    }
+    else
+    {
+        return "";
     }
 }
 
