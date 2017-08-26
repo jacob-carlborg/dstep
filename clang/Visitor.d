@@ -65,7 +65,7 @@ private:
             auto dParent = Cursor(parent);
             auto r = tmp.dg(dCursor, dParent);
             tmp.returnCode = r;
-            return r ? CXChildVisit_Break : CXChildVisit_Continue;
+            return r ? break_ : continue_;
         }
     }
 
@@ -236,10 +236,10 @@ struct TypedVisitor (CXCursorKind kind)
     }
 }
 
-alias TypedVisitor!(CXCursorKind.CXCursor_ObjCInstanceMethodDecl) ObjCInstanceMethodVisitor;
-alias TypedVisitor!(CXCursorKind.CXCursor_ObjCClassMethodDecl) ObjCClassMethodVisitor;
-alias TypedVisitor!(CXCursorKind.CXCursor_ObjCPropertyDecl) ObjCPropertyVisitor;
-alias TypedVisitor!(CXCursorKind.CXCursor_ObjCProtocolRef) ObjCProtocolVisitor;
+alias TypedVisitor!(CXCursorKind.objCInstanceMethodDecl) ObjCInstanceMethodVisitor;
+alias TypedVisitor!(CXCursorKind.objCClassMethodDecl) ObjCClassMethodVisitor;
+alias TypedVisitor!(CXCursorKind.objCPropertyDecl) ObjCPropertyVisitor;
+alias TypedVisitor!(CXCursorKind.objCProtocolRef) ObjCProtocolVisitor;
 
 struct ParamVisitor
 {
@@ -248,7 +248,7 @@ struct ParamVisitor
     int opApply (int delegate (ref ParamCursor) dg)
     {
         foreach (cursor, parent ; visitor)
-            if (cursor.kind == CXCursorKind.CXCursor_ParmDecl)
+            if (cursor.kind == CXCursorKind.parmDecl)
             {
                 auto paramCursor = ParamCursor(cursor);
 

@@ -140,9 +140,9 @@ class Context
 
     public bool isInsideTypedef(in Cursor cursor)
     {
-        assert(cursor.kind == CXCursorKind.CXCursor_EnumDecl
-            || cursor.kind == CXCursorKind.CXCursor_StructDecl
-            || cursor.kind == CXCursorKind.CXCursor_UnionDecl);
+        assert(cursor.kind == CXCursorKind.enumDecl
+            || cursor.kind == CXCursorKind.structDecl
+            || cursor.kind == CXCursorKind.unionDecl);
 
         if (auto typedef_ = typedefIndex_.typedefParent(cursor))
         {
@@ -279,9 +279,9 @@ string[] cursorScope(Context context, Cursor cursor)
 
         switch (cursor.kind)
         {
-            case CXCursorKind.CXCursor_StructDecl:
-            case CXCursorKind.CXCursor_UnionDecl:
-            case CXCursorKind.CXCursor_EnumDecl:
+            case CXCursorKind.structDecl:
+            case CXCursorKind.unionDecl:
+            case CXCursorKind.enumDecl:
                 cursorScope(context, cursor.lexicalParent, result);
                 spelling = context.spelling(cursor);
                 break;
@@ -318,8 +318,8 @@ bool variablesInParentScope(Cursor cursor)
     bool predicate(Cursor a)
     {
         return (
-            a.kind == CXCursorKind.CXCursor_FieldDecl ||
-            a.kind == CXCursorKind.CXCursor_VarDecl) &&
+            a.kind == CXCursorKind.fieldDecl ||
+            a.kind == CXCursorKind.varDecl) &&
             a.type.undecorated.declaration.canonical == canonical;
     }
 
@@ -340,7 +340,7 @@ bool shouldBeAnonymous(Context context, Cursor cursor)
  */
 bool isGlobal(Cursor cursor)
 {
-    return cursor.semanticParent.kind == CXCursorKind.CXCursor_TranslationUnit;
+    return cursor.semanticParent.kind == CXCursorKind.translationUnit;
 }
 
 /**
@@ -348,7 +348,7 @@ bool isGlobal(Cursor cursor)
  */
 bool isGlobalLexically(Cursor cursor)
 {
-    return cursor.lexicalParent.kind == CXCursorKind.CXCursor_TranslationUnit;
+    return cursor.lexicalParent.kind == CXCursorKind.translationUnit;
 }
 
 /**
@@ -366,20 +366,20 @@ Cursor[string] collectGlobalTypes(TranslationUnit translUnit)
         {
             switch (cursor.kind)
             {
-                case CXCursorKind.CXCursor_TypedefDecl:
+                case CXCursorKind.typedefDecl:
                     result[cursor.spelling] = cursor;
                     break;
 
-                case CXCursorKind.CXCursor_StructDecl:
+                case CXCursorKind.structDecl:
                     result["struct " ~ cursor.spelling] = cursor;
                     break;
 
-                case CXCursorKind.CXCursor_UnionDecl:
+                case CXCursorKind.unionDecl:
                     result["union " ~ cursor.spelling] = cursor;
                     break;
 
 
-                case CXCursorKind.CXCursor_EnumDecl:
+                case CXCursorKind.enumDecl:
                     result["enum " ~ cursor.spelling] = cursor;
                     break;
 

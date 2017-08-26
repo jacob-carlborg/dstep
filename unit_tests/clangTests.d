@@ -169,10 +169,10 @@ const int var = FOO;
 
 C");
 
-  // CXCursor_PreprocessingDirective        = 500,
-  // CXCursor_MacroDefinition               = 501,
-  // CXCursor_MacroExpansion                = 502,
-  // CXCursor_InclusionDirective            = 503,
+  // PreprocessingDirective        = 500,
+  // MacroDefinition               = 501,
+  // MacroExpansion                = 502,
+  // InclusionDirective            = 503,
 
     import std.algorithm.iteration;
     import std.array;
@@ -182,15 +182,15 @@ C");
 
     auto children = translUnit.cursor.childrenInOrder.filter!(a => a.file == main).array;
 
-    assert(children[0].kind == CXCursorKind.CXCursor_InclusionDirective);
-    assert(children[1].kind == CXCursorKind.CXCursor_VarDecl);
-    assert(children[2].kind == CXCursorKind.CXCursor_MacroDefinition);
-    assert(children[3].kind == CXCursorKind.CXCursor_VarDecl);
-    assert(children[4].kind == CXCursorKind.CXCursor_MacroDefinition);
-    assert(children[5].kind == CXCursorKind.CXCursor_VarDecl);
-    assert(children[6].kind == CXCursorKind.CXCursor_InclusionDirective);
-    assert(children[7].kind == CXCursorKind.CXCursor_VarDecl);
-    assert(children[8].kind == CXCursorKind.CXCursor_VarDecl);
-    assert(children[9].kind == CXCursorKind.CXCursor_MacroExpansion);
-    assert(children[10].kind == CXCursorKind.CXCursor_MacroExpansion);
+    assert(children[0].kind == CXCursorKind.inclusionDirective);
+    assert(children[1].kind == CXCursorKind.varDecl);
+    assert(children[2].kind == CXCursorKind.macroDefinition);
+    assert(children[3].kind == CXCursorKind.varDecl);
+    assert(children[4].kind == CXCursorKind.macroDefinition);
+    assert(children[5].kind == CXCursorKind.varDecl);
+    assert(children[6].kind == CXCursorKind.inclusionDirective);
+    assert(children[7].kind == CXCursorKind.varDecl);
+    assert(children[8].kind == CXCursorKind.varDecl);
+    assert(children[9].kind == CXCursorKind.macroExpansion);
+    assert(children[10].kind == CXCursorKind.macroExpansion);
 }

@@ -134,7 +134,7 @@ CXDiagnosticSeverity severity(DiagnosticSet diagnostics)
     alias less = (a, b) => cast(uint) a > cast(uint) b;
 
     if (diagnostics.empty)
-        return CXDiagnosticSeverity.CXDiagnostic_Ignored;
+        return CXDiagnosticSeverity.ignored;
     else
         return diagnostics.map!(diagnostic => diagnostic.severity).minPos!less.front;
 }
@@ -143,6 +143,6 @@ bool hasError(DiagnosticSet diagnostics)
 {
     auto severity = diagnostics.severity;
 
-    return severity == CXDiagnosticSeverity.CXDiagnostic_Error ||
-        severity == CXDiagnosticSeverity.CXDiagnostic_Fatal;
+    return severity == CXDiagnosticSeverity.error ||
+        severity == CXDiagnosticSeverity.fatal;
 }

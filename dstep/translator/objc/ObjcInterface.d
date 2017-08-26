@@ -39,19 +39,19 @@ class ObjcInterface (Data) : Declaration
                 with (CXCursorKind)
                     switch (cursor.kind)
                     {
-                        case CXCursor_ObjCInstanceMethodDecl:
+                        case objCInstanceMethodDecl:
                             translateMethod(cursor.func);
                             break;
 
-                        case CXCursor_ObjCClassMethodDecl:
+                        case objCClassMethodDecl:
                             translateMethod(cursor.func, true);
                             break;
 
-                        case CXCursor_ObjCPropertyDecl:
+                        case objCPropertyDecl:
                             translateProperty(cursor);
                             break;
 
-                        case CXCursor_ObjCIvarDecl:
+                        case objCIvarDecl:
                             translateInstanceVariable(cursor);
                             break;
 
@@ -209,7 +209,7 @@ private:
 
     bool isGetter (FunctionCursor cursor, string name)
     {
-        return cursor.resultType.kind != CXTypeKind.CXType_Void && cursor.parameters.isEmpty;
+        return cursor.resultType.kind != CXTypeKind.void_ && cursor.parameters.isEmpty;
     }
 
     bool isSetter (string name)
@@ -228,7 +228,7 @@ private:
     bool isSetter (FunctionCursor cursor, string name)
     {
         return isSetter(name) &&
-            cursor.resultType.kind == CXTypeKind.CXType_Void &&
+            cursor.resultType.kind == CXTypeKind.void_ &&
             cursor.parameters.length == 1;
     }
 

@@ -63,7 +63,7 @@ void assertTranslatesMacroExpression(
 
     Cursor cursor = children[0];
 
-    assert(cursor.kind == CXCursorKind.CXCursor_MacroDefinition);
+    assert(cursor.kind == CXCursorKind.macroDefinition);
 
     auto tokens = cursor.tokens;
 
@@ -102,7 +102,7 @@ void assertDoesntParseMacroExpression(
 
     Cursor cursor = children[0];
 
-    assert(cursor.kind == CXCursorKind.CXCursor_MacroDefinition);
+    assert(cursor.kind == CXCursorKind.macroDefinition);
 
     auto tokens = cursor.tokens;
 

@@ -14,7 +14,7 @@ import clang.Util;
 
 struct Type
 {
-    static assert(Type.init.kind == CXTypeKind.CXType_Invalid);
+    static assert(Type.init.kind == CXTypeKind.invalid);
 
     mixin CX;
 
@@ -45,7 +45,7 @@ struct Type
 
     static Type makePointer(Type pointee)
     {
-        Type result = Type(CXTypeKind.CXType_Pointer, "");
+        Type result = Type(CXTypeKind.pointer, "");
         result.pointee_ = new Type();
         *result.pointee_ = pointee;
         return result;
@@ -53,7 +53,7 @@ struct Type
 
     static Type makeTypedef(string spelling, Type canonical)
     {
-        Type result = Type(CXTypeKind.CXType_Typedef, spelling);
+        Type result = Type(CXTypeKind.typedef_, spelling);
         result.canonical_ = new Type();
         *result.canonical_ = canonical;
         return result;
@@ -72,10 +72,10 @@ struct Type
     @property bool isArray ()
     {
         return
-            kind == CXTypeKind.CXType_ConstantArray ||
-            kind == CXTypeKind.CXType_IncompleteArray ||
-            kind == CXTypeKind.CXType_VariableArray ||
-            kind == CXTypeKind.CXType_DependentSizedArray;
+            kind == CXTypeKind.constantArray ||
+            kind == CXTypeKind.incompleteArray ||
+            kind == CXTypeKind.variableArray ||
+            kind == CXTypeKind.dependentSizedArray;
     }
 
     /**
@@ -85,7 +85,7 @@ struct Type
     {
         if (isArray)
             return array.elementType.undecorated;
-        else if (kind == CXTypeKind.CXType_Pointer && !pointee.isFunctionType)
+        else if (kind == CXTypeKind.pointer && !pointee.isFunctionType)
             return pointee.undecorated;
         else
             return this;
@@ -93,40 +93,40 @@ struct Type
 
     @property bool isDecorated()
     {
-        return isArray || (kind == CXTypeKind.CXType_Pointer && !pointee.isFunctionType);
+        return isArray || (kind == CXTypeKind.pointer && !pointee.isFunctionType);
     }
 
     @property bool isEnum ()
     {
-        return kind == CXTypeKind.CXType_Enum;
+        return kind == CXTypeKind.enum_;
     }
 
     @property bool isExposed ()
     {
-        return kind != CXTypeKind.CXType_Unexposed;
+        return kind != CXTypeKind.unexposed;
     }
 
     @property bool isFunctionType ()
     {
-        return canonical.kind == CXTypeKind.CXType_FunctionProto;
+        return canonical.kind == CXTypeKind.functionProto;
     }
 
     @property bool isFunctionPointerType ()
     {
-        return kind == CXTypeKind.CXType_Pointer && pointee.isFunctionType;
+        return kind == CXTypeKind.pointer && pointee.isFunctionType;
     }
 
     @property bool isObjCIdType ()
     {
         return isTypedef &&
-            canonical.kind == CXTypeKind.CXType_ObjCObjectPointer &&
+            canonical.kind == CXTypeKind.objCObjectPointer &&
             spelling == "id";
     }
 
     @property bool isObjCClassType ()
     {
         return isTypedef &&
-            canonical.kind == CXTypeKind.CXType_ObjCObjectPointer &&
+            canonical.kind == CXTypeKind.objCObjectPointer &&
             spelling == "Class";
     }
 
@@ -136,8 +136,8 @@ struct Type
             if (isTypedef)
             {
                 auto c = canonical;
-                return c.kind == CXType_Pointer &&
-                    c.pointee.kind == CXType_ObjCSel;
+                return c.kind == pointer &&
+                    c.pointee.kind == objCSel;
             }
 
             else
@@ -151,22 +151,22 @@ struct Type
 
     @property bool isPointer ()
     {
-        return kind == CXTypeKind.CXType_Pointer;
+        return kind == CXTypeKind.pointer;
     }
 
     @property bool isTypedef ()
     {
-        return kind == CXTypeKind.CXType_Typedef;
+        return kind == CXTypeKind.typedef_;
     }
 
     @property bool isValid ()
     {
-        return kind != CXTypeKind.CXType_Invalid;
+        return kind != CXTypeKind.invalid;
     }
 
     @property bool isWideCharType ()
     {
-        return kind == CXTypeKind.CXType_WChar;
+        return kind == CXTypeKind.wChar;
     }
 
     @property Type canonical()
@@ -353,24 +353,24 @@ struct Arguments
     with (CXTypeKind)
         switch (kind)
         {
-            case CXType_Bool:
-            case CXType_Char_U:
-            case CXType_UChar:
-            case CXType_Char16:
-            case CXType_Char32:
-            case CXType_UShort:
-            case CXType_UInt:
-            case CXType_ULong:
-            case CXType_ULongLong:
-            case CXType_UInt128:
-            case CXType_Char_S:
-            case CXType_SChar:
-            case CXType_WChar:
-            case CXType_Short:
-            case CXType_Int:
-            case CXType_Long:
-            case CXType_LongLong:
-            case CXType_Int128:
+            case bool_:
+            case charU:
+            case uChar:
+            case char16:
+            case char32:
+            case uShort:
+            case uInt:
+            case uLong:
+            case uLongLong:
+            case uInt128:
+            case charS:
+            case sChar:
+            case wChar:
+            case short_:
+            case int_:
+            case long_:
+            case longLong:
+            case int128:
                 return true;
 
             default:
@@ -383,13 +383,13 @@ struct Arguments
     with (CXTypeKind)
         switch (kind)
         {
-            case CXType_Char_U: return true;
-            case CXType_UChar: return true;
-            case CXType_UShort: return true;
-            case CXType_UInt: return true;
-            case CXType_ULong: return true;
-            case CXType_ULongLong: return true;
-            case CXType_UInt128: return true;
+            case charU: return true;
+            case uChar: return true;
+            case uShort: return true;
+            case uInt: return true;
+            case uLong: return true;
+            case uLongLong: return true;
+            case uInt128: return true;
 
             default: return false;
         }
@@ -459,15 +459,15 @@ void throwTypeLayoutError(
 {
     final switch (layout)
     {
-        case CXTypeLayoutError.CXTypeLayoutError_Invalid:
+        case CXTypeLayoutError.invalid:
             throw new TypeLayoutErrorInvalid(spelling, file, line);
-        case CXTypeLayoutError.CXTypeLayoutError_Incomplete:
+        case CXTypeLayoutError.incomplete:
             throw new TypeLayoutErrorIncomplete(spelling, file, line);
-        case CXTypeLayoutError.CXTypeLayoutError_Dependent:
+        case CXTypeLayoutError.dependent:
             throw new TypeLayoutErrorDependent(spelling, file, line);
-        case CXTypeLayoutError.CXTypeLayoutError_NotConstantSize:
+        case CXTypeLayoutError.notConstantSize:
             throw new TypeLayoutErrorNotConstantSize(spelling, file, line);
-        case CXTypeLayoutError.CXTypeLayoutError_InvalidFieldName:
+        case CXTypeLayoutError.invalidFieldName:
             throw new TypeLayoutErrorInvalidFieldName(spelling, file, line);
     }
 }

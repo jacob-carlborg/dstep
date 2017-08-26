@@ -51,8 +51,8 @@ struct Cursor
     @property bool isPreprocessor () const
     {
         CXCursorKind kind = clang_getCursorKind(cx);
-        return CXCursorKind.CXCursor_FirstPreprocessing <= kind &&
-            kind <= CXCursorKind.CXCursor_LastPreprocessing;
+        return CXCursorKind.firstPreprocessing <= kind &&
+            kind <= CXCursorKind.lastPreprocessing;
     }
 
     @property SourceLocation location () const
@@ -97,11 +97,11 @@ struct Cursor
     {
         foreach (child; all)
         {
-            if (child.kind == CXCursorKind.CXCursor_TypeRef)
+            if (child.kind == CXCursorKind.typeRef)
                 return child.referenced;
 
             if (child.isDeclaration &&
-                child.kind != CXCursorKind.CXCursor_ParmDecl)
+                child.kind != CXCursorKind.parmDecl)
             {
                 return child;
             }
@@ -301,7 +301,7 @@ struct Cursor
         auto version_ = clangVersion();
 
         if (version_.major == 3 && version_.minor == 7)
-            result["__int64"] = CXCursorKind.CXCursor_MacroDefinition;
+            result["__int64"] = CXCursorKind.macroDefinition;
 
         return result;
     }
@@ -350,7 +350,7 @@ struct Cursor
 
         string stripPrefix(string x)
         {
-            immutable string prefix = "CXCursor_";
+            immutable string prefix = "";
             immutable size_t prefixSize = prefix.length;
             return x.startsWith(prefix) ? x[prefixSize..$] : x;
         }
@@ -460,7 +460,7 @@ struct ObjcCursor
 
     @property Cursor superClass ()
     {
-        foreach (cursor, parent ; TypedVisitor!(CXCursorKind.CXCursor_ObjCSuperClassRef)(cursor))
+        foreach (cursor, parent ; TypedVisitor!(CXCursorKind.objCSuperClassRef)(cursor))
             return cursor;
 
         return Cursor.empty;
@@ -473,9 +473,9 @@ struct ObjcCursor
 
     @property Cursor category ()
     {
-        assert(cursor.kind == CXCursorKind.CXCursor_ObjCCategoryDecl);
+        assert(cursor.kind == CXCursorKind.objCCategoryDecl);
 
-        foreach (c, _ ; TypedVisitor!(CXCursorKind.CXCursor_ObjCClassRef)(cursor))
+        foreach (c, _ ; TypedVisitor!(CXCursorKind.objCClassRef)(cursor))
             return c;
 
         assert(0, "This cursor does not have a class reference.");

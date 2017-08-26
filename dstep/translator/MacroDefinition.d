@@ -1677,7 +1677,7 @@ bool basicSpecifierListToType(ref Type type, Set!string specifiers)
         if (specifiers.length != 1)
             return false;
 
-        type = Type(CXTypeKind.CXType_Void, "void");
+        type = Type(CXTypeKind.void_, "void");
         return true;
     }
 
@@ -1686,7 +1686,7 @@ bool basicSpecifierListToType(ref Type type, Set!string specifiers)
         if (specifiers.length != 1)
             return false;
 
-        type = Type(CXTypeKind.CXType_Bool, "bool");
+        type = Type(CXTypeKind.bool_, "bool");
         return true;
     }
 
@@ -1695,7 +1695,7 @@ bool basicSpecifierListToType(ref Type type, Set!string specifiers)
         if (specifiers.length != 1)
             return false;
 
-        type = Type(CXTypeKind.CXType_Float, "float");
+        type = Type(CXTypeKind.float_, "float");
         return true;
     }
 
@@ -1706,7 +1706,7 @@ bool basicSpecifierListToType(ref Type type, Set!string specifiers)
             if (specifiers.length != 2)
                 return false;
 
-            type = Type(CXTypeKind.CXType_LongDouble, "long double");
+            type = Type(CXTypeKind.longDouble, "long double");
 
             return true;
         }
@@ -1714,7 +1714,7 @@ bool basicSpecifierListToType(ref Type type, Set!string specifiers)
         if (specifiers.length != 1)
             return false;
 
-        type = Type(CXTypeKind.CXType_Double, "double");
+        type = Type(CXTypeKind.double_, "double");
 
         return true;
     }
@@ -1734,21 +1734,21 @@ bool basicSpecifierListToType(ref Type type, Set!string specifiers)
             if (specifiers.length != 2)
                 return false;
 
-            type = Type(CXTypeKind.CXType_SChar, "signed char");
+            type = Type(CXTypeKind.sChar, "signed char");
         }
         else if (specifiers.contains("unsigned"))
         {
             if (specifiers.length != 2)
                 return false;
 
-            type = Type(CXTypeKind.CXType_UChar, "unsigned char");
+            type = Type(CXTypeKind.uChar, "unsigned char");
         }
         else
         {
             if (specifiers.length != 1)
                 return false;
 
-            type = Type(CXTypeKind.CXType_Char_S, "char");
+            type = Type(CXTypeKind.charS, "char");
         }
 
         return true;
@@ -1757,9 +1757,9 @@ bool basicSpecifierListToType(ref Type type, Set!string specifiers)
     if (specifiers.contains("short"))
     {
         if (specifiers.contains("unsigned"))
-            type = Type(CXTypeKind.CXType_UShort, "unsigned short");
+            type = Type(CXTypeKind.uShort, "unsigned short");
         else
-            type = Type(CXTypeKind.CXType_Short, "short");
+            type = Type(CXTypeKind.short_, "short");
 
         return true;
     }
@@ -1767,9 +1767,9 @@ bool basicSpecifierListToType(ref Type type, Set!string specifiers)
     if (specifiers.contains("__llong"))
     {
         if (specifiers.contains("unsigned"))
-            type = Type(CXTypeKind.CXType_ULongLong, "unsigned long long");
+            type = Type(CXTypeKind.uLongLong, "unsigned long long");
         else
-            type = Type(CXTypeKind.CXType_LongLong, "long long");
+            type = Type(CXTypeKind.longLong, "long long");
 
         return true;
     }
@@ -1777,9 +1777,9 @@ bool basicSpecifierListToType(ref Type type, Set!string specifiers)
     if (specifiers.contains("long"))
     {
         if (specifiers.contains("unsigned"))
-            type = Type(CXTypeKind.CXType_ULong, "unsigned long");
+            type = Type(CXTypeKind.uLong, "unsigned long");
         else
-            type = Type(CXTypeKind.CXType_Long, "long");
+            type = Type(CXTypeKind.long_, "long");
 
         return true;
     }
@@ -1787,22 +1787,22 @@ bool basicSpecifierListToType(ref Type type, Set!string specifiers)
     if (specifiers.contains("int"))
     {
         if (specifiers.contains("unsigned"))
-            type = Type(CXTypeKind.CXType_UInt, "unsigned int");
+            type = Type(CXTypeKind.uInt, "unsigned int");
         else
-            type = Type(CXTypeKind.CXType_Int, "int");
+            type = Type(CXTypeKind.int_, "int");
 
         return true;
     }
 
     if (specifiers.contains("unsigned"))
     {
-        type = Type(CXTypeKind.CXType_UInt, "unsigned int");
+        type = Type(CXTypeKind.uInt, "unsigned int");
         return true;
     }
 
     if (specifiers.contains("signed"))
     {
-        type = Type(CXTypeKind.CXType_Int, "int");
+        type = Type(CXTypeKind.int_, "int");
         return true;
     }
 
@@ -2150,7 +2150,7 @@ void translateFunctDirective(
 
 void translateMacroDefinition(Output output, Context context, Cursor cursor)
 {
-    assert(cursor.kind == CXCursorKind.CXCursor_MacroDefinition);
+    assert(cursor.kind == CXCursorKind.macroDefinition);
 
     auto tokens = cursor.tokens;
 

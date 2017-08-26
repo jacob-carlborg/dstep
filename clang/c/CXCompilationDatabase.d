@@ -57,12 +57,12 @@ enum CXCompilationDatabase_Error
     /*
      * \brief No error occurred
      */
-    CXCompilationDatabase_NoError = 0,
+    noError = 0,
 
     /*
      * \brief Database can not be loaded
      */
-    CXCompilationDatabase_CanNotLoadDatabase = 1
+    canNotLoadDatabase = 1
 }
 
 /**

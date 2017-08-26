@@ -22,7 +22,7 @@ import dstep.translator.Type;
 
 string translateRecordTypeKeyword(in Cursor cursor)
 {
-    if (cursor.kind == CXCursorKind.CXCursor_UnionDecl)
+    if (cursor.kind == CXCursorKind.unionDecl)
         return "union";
     else
         return "struct";
@@ -30,7 +30,7 @@ string translateRecordTypeKeyword(in Cursor cursor)
 
 void translatePackedAttribute(Output output, Context context, Cursor cursor)
 {
-    if (auto attribute = cursor.findChild(CXCursorKind.CXCursor_PackedAttr))
+    if (auto attribute = cursor.findChild(CXCursorKind.packedAttr))
         output.singleLine("align (1):");
 }
 
@@ -59,11 +59,11 @@ void translateRecordDef(
             with (CXCursorKind)
                 switch (cursor.kind)
                 {
-                    case CXCursor_FieldDecl:
+                    case fieldDecl:
                         output.flushLocation(cursor);
 
                         auto undecorated =
-                            cursor.type.kind == CXTypeKind.CXType_Elaborated ?
+                            cursor.type.kind == CXTypeKind.elaborated ?
                                 cursor.type.named.undecorated :
                                 cursor.type.undecorated;
 
@@ -80,14 +80,14 @@ void translateRecordDef(
 
                         break;
 
-                    case CXCursor_UnionDecl:
-                    case CXCursor_StructDecl:
+                    case unionDecl:
+                    case structDecl:
                         if (cursor.type.isAnonymous)
                             translateAnonymousRecord(output, context, cursor, parent);
 
                         break;
 
-                    case CXCursor_EnumDecl:
+                    case enumDecl:
                         translateEnum(output, context, cursor);
                         break;
 
@@ -115,8 +115,8 @@ void translateAnonymousRecord(Output output, Context context, Cursor cursor, Cur
 
 bool shouldSkipRecord(Context context, Cursor cursor)
 {
-    if (cursor.kind == CXCursorKind.CXCursor_StructDecl ||
-        cursor.kind == CXCursorKind.CXCursor_UnionDecl)
+    if (cursor.kind == CXCursorKind.structDecl ||
+        cursor.kind == CXCursorKind.unionDecl)
     {
         auto typedefp = context.typedefParent(cursor.canonical);
         auto spelling = typedefp.isValid && cursor.spelling == ""
@@ -131,8 +131,8 @@ bool shouldSkipRecord(Context context, Cursor cursor)
 
 bool shouldSkipRecordDefinition(Context context, Cursor cursor)
 {
-    if (cursor.kind == CXCursorKind.CXCursor_StructDecl ||
-        cursor.kind == CXCursorKind.CXCursor_UnionDecl)
+    if (cursor.kind == CXCursorKind.structDecl ||
+        cursor.kind == CXCursorKind.unionDecl)
     {
         auto typedefp = context.typedefParent(cursor.canonical);
         auto spelling = typedefp.isValid && cursor.spelling == ""

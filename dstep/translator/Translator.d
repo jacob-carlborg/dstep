@@ -145,52 +145,52 @@ class Translator
         {
             switch (cursor.kind)
             {
-                case CXCursor_ObjCInterfaceDecl:
+                case objCInterfaceDecl:
                     output.flushLocation(cursor.extent, false);
                     translateObjCInterfaceDecl(output, cursor, parent);
                     break;
 
-                case CXCursor_ObjCProtocolDecl:
+                case objCProtocolDecl:
                     output.flushLocation(cursor.extent, false);
                     translateObjCProtocolDecl(output, cursor, parent);
                     break;
 
-                case CXCursor_ObjCCategoryDecl:
+                case objCCategoryDecl:
                     output.flushLocation(cursor.extent, false);
                     translateObjCCategoryDecl(output, cursor, parent);
                     break;
 
-                case CXCursor_VarDecl:
+                case varDecl:
                     output.flushLocation(cursor.extent);
                     translateVarDecl(output, cursor, parent);
                     break;
 
-                case CXCursor_FunctionDecl:
+                case functionDecl:
                     translateFunctionDecl(output, cursor, parent);
                     break;
 
-                case CXCursor_TypedefDecl:
+                case typedefDecl:
                     translateTypedefDecl(output, cursor);
                     break;
 
-                case CXCursor_StructDecl:
+                case structDecl:
                     translateRecord(output, context, cursor);
                     break;
 
-                case CXCursor_EnumDecl:
+                case enumDecl:
                     translateEnum(output, context, cursor);
                     break;
 
-                case CXCursor_UnionDecl:
+                case unionDecl:
                     translateRecord(output, context, cursor);
                     break;
 
-                case CXCursor_MacroDefinition:
+                case macroDefinition:
                     output.flushLocation(cursor.extent);
                     translateMacroDefinition(output, cursor, parent);
                     break;
 
-                case CXCursor_MacroExpansion:
+                case macroExpansion:
                     output.flushLocation(cursor.extent);
                     break;
 
@@ -236,7 +236,7 @@ class Translator
 
     void declareRecordForTypedef(Output output, Cursor typedef_)
     {
-        assert(typedef_.kind == CXCursorKind.CXCursor_TypedefDecl);
+        assert(typedef_.kind == CXCursorKind.typedefDecl);
 
         auto underlying = typedef_.underlyingCursor();
 
@@ -244,8 +244,8 @@ class Translator
             return;
 
         if (underlying.isEmpty ||
-            underlying.kind != CXCursorKind.CXCursor_StructDecl &&
-            underlying.kind != CXCursorKind.CXCursor_UnionDecl)
+            underlying.kind != CXCursorKind.structDecl &&
+            underlying.kind != CXCursorKind.unionDecl)
             return;
 
         if (context.alreadyDefined(underlying.canonical))
@@ -259,13 +259,13 @@ class Translator
 
     bool shouldSkipAlias(Cursor typedef_)
     {
-        assert(typedef_.kind == CXCursorKind.CXCursor_TypedefDecl);
+        assert(typedef_.kind == CXCursorKind.typedefDecl);
         return context.options.reduceAliases && typedef_.type.isAliasReducible;
     }
 
     void translateTypedefDecl(Output output, Cursor typedef_)
     {
-        assert(typedef_.kind == CXCursorKind.CXCursor_TypedefDecl);
+        assert(typedef_.kind == CXCursorKind.typedefDecl);
 
         output.flushLocation(typedef_.extent);
 
@@ -483,7 +483,7 @@ void handleInclude (Context context, Type type)
     import std.algorithm.searching;
     import std.path;
 
-    if (type.kind == CXTypeKind.CXType_Typedef
+    if (type.kind == CXTypeKind.typedef_
         && type.spelling == "time_t"
         && type.declaration.path.asNormalizedPath.array.endsWith("sys\\types.h"))
         context.includeHandler.addInclude("time.h");
