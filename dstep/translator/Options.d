@@ -38,6 +38,7 @@ struct Options
     bool singleLineFunctionSignatures = false;
     bool spaceAfterFunctionName = true;
     bool aliasEnumMembers = false;
+    bool renameEnumMembers = false;
     Set!string skipDefinitions;
     Set!string skipSymbols;
     bool printDiagnostics = true;
