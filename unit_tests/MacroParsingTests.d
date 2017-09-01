@@ -97,50 +97,50 @@ unittest
 {
     alias localAssert = assertParsedTypeHasKind;
 
-    localAssert("void", CXTypeKind.CXType_Void);
+    localAssert("void", CXTypeKind.void_);
 
-    localAssert("float", CXTypeKind.CXType_Float);
-    localAssert("double", CXTypeKind.CXType_Double);
-    localAssert("long double", CXTypeKind.CXType_LongDouble);
-    localAssert("bool", CXTypeKind.CXType_Bool);
-    localAssert("_Bool", CXTypeKind.CXType_Bool);
+    localAssert("float", CXTypeKind.float_);
+    localAssert("double", CXTypeKind.double_);
+    localAssert("long double", CXTypeKind.longDouble);
+    localAssert("bool", CXTypeKind.bool_);
+    localAssert("_Bool", CXTypeKind.bool_);
 
-    localAssert("char", CXTypeKind.CXType_Char_S);
-    localAssert("signed char", CXTypeKind.CXType_SChar);
-    localAssert("unsigned char", CXTypeKind.CXType_UChar);
+    localAssert("char", CXTypeKind.charS);
+    localAssert("signed char", CXTypeKind.sChar);
+    localAssert("unsigned char", CXTypeKind.uChar);
 
-    localAssert("short", CXTypeKind.CXType_Short);
-    localAssert("short int", CXTypeKind.CXType_Short);
-    localAssert("signed short", CXTypeKind.CXType_Short);
-    localAssert("signed short int", CXTypeKind.CXType_Short);
-    localAssert("unsigned short", CXTypeKind.CXType_UShort);
-    localAssert("unsigned short int", CXTypeKind.CXType_UShort);
-    localAssert("short unsigned int", CXTypeKind.CXType_UShort);
-    localAssert("short int unsigned", CXTypeKind.CXType_UShort);
+    localAssert("short", CXTypeKind.short_);
+    localAssert("short int", CXTypeKind.short_);
+    localAssert("signed short", CXTypeKind.short_);
+    localAssert("signed short int", CXTypeKind.short_);
+    localAssert("unsigned short", CXTypeKind.uShort);
+    localAssert("unsigned short int", CXTypeKind.uShort);
+    localAssert("short unsigned int", CXTypeKind.uShort);
+    localAssert("short int unsigned", CXTypeKind.uShort);
 
-    localAssert("int", CXTypeKind.CXType_Int);
-    localAssert("signed", CXTypeKind.CXType_Int);
-    localAssert("signed int", CXTypeKind.CXType_Int);
-    localAssert("unsigned", CXTypeKind.CXType_UInt);
-    localAssert("unsigned int", CXTypeKind.CXType_UInt);
+    localAssert("int", CXTypeKind.int_);
+    localAssert("signed", CXTypeKind.int_);
+    localAssert("signed int", CXTypeKind.int_);
+    localAssert("unsigned", CXTypeKind.uInt);
+    localAssert("unsigned int", CXTypeKind.uInt);
 
-    localAssert("long", CXTypeKind.CXType_Long);
-    localAssert("long int", CXTypeKind.CXType_Long);
-    localAssert("signed long", CXTypeKind.CXType_Long);
-    localAssert("signed long int", CXTypeKind.CXType_Long);
-    localAssert("unsigned long", CXTypeKind.CXType_ULong);
-    localAssert("unsigned long int", CXTypeKind.CXType_ULong);
-    localAssert("long unsigned int", CXTypeKind.CXType_ULong);
-    localAssert("int unsigned long", CXTypeKind.CXType_ULong);
+    localAssert("long", CXTypeKind.long_);
+    localAssert("long int", CXTypeKind.long_);
+    localAssert("signed long", CXTypeKind.long_);
+    localAssert("signed long int", CXTypeKind.long_);
+    localAssert("unsigned long", CXTypeKind.uLong);
+    localAssert("unsigned long int", CXTypeKind.uLong);
+    localAssert("long unsigned int", CXTypeKind.uLong);
+    localAssert("int unsigned long", CXTypeKind.uLong);
 
-    localAssert("long long", CXTypeKind.CXType_LongLong);
-    localAssert("long long int", CXTypeKind.CXType_LongLong);
-    localAssert("signed long long", CXTypeKind.CXType_LongLong);
-    localAssert("signed long long int", CXTypeKind.CXType_LongLong);
-    localAssert("unsigned long long", CXTypeKind.CXType_ULongLong);
-    localAssert("unsigned long long int", CXTypeKind.CXType_ULongLong);
-    localAssert("long unsigned int long", CXTypeKind.CXType_ULongLong);
-    localAssert("int long unsigned long", CXTypeKind.CXType_ULongLong);
+    localAssert("long long", CXTypeKind.longLong);
+    localAssert("long long int", CXTypeKind.longLong);
+    localAssert("signed long long", CXTypeKind.longLong);
+    localAssert("signed long long int", CXTypeKind.longLong);
+    localAssert("unsigned long long", CXTypeKind.uLongLong);
+    localAssert("unsigned long long int", CXTypeKind.uLongLong);
+    localAssert("long unsigned int long", CXTypeKind.uLongLong);
+    localAssert("int long unsigned long", CXTypeKind.uLongLong);
 }
 
 // Do not parse invalid types.
@@ -169,20 +169,20 @@ unittest
     Type t0 = parseTypeName("int");
 
     assert(!t0.isConst);
-    assert(t0.kind == CXTypeKind.CXType_Int);
+    assert(t0.kind == CXTypeKind.int_);
 
 
     Type t1 = parseTypeName("const int");
 
     assert(t1.isConst);
-    assert(t1.kind == CXTypeKind.CXType_Int);
+    assert(t1.kind == CXTypeKind.int_);
 
 
     Type t2 = parseTypeName("const int*");
 
     assert(t2.isPointer);
     assert(!t2.isConst);
-    assert(t2.pointee.kind == CXTypeKind.CXType_Int);
+    assert(t2.pointee.kind == CXTypeKind.int_);
     assert(t2.pointee.isConst);
 
 
@@ -192,7 +192,7 @@ unittest
     assert(!t3.isConst);
     assert(t3.pointee.isPointer);
     assert(!t3.pointee.isConst);
-    assert(t3.pointee.pointee.kind == CXTypeKind.CXType_Int);
+    assert(t3.pointee.pointee.kind == CXTypeKind.int_);
     assert(t3.pointee.pointee.isConst);
 
 
@@ -201,7 +201,7 @@ unittest
     assert(t4.isPointer);
     assert(t4.pointee.isPointer);
     assert(t4.pointee.pointee.isPointer);
-    assert(t4.pointee.pointee.pointee.kind == CXTypeKind.CXType_Int);
+    assert(t4.pointee.pointee.pointee.kind == CXTypeKind.int_);
 
 
     Type t5 = parseTypeName("int***");
@@ -209,7 +209,7 @@ unittest
     assert(t5.isPointer);
     assert(t5.pointee.isPointer);
     assert(t5.pointee.pointee.isPointer);
-    assert(t5.pointee.pointee.pointee.kind == CXTypeKind.CXType_Int);
+    assert(t5.pointee.pointee.pointee.kind == CXTypeKind.int_);
 
 
     Type t6 = parseTypeName("int *const *const *const");
@@ -220,7 +220,7 @@ unittest
     assert(t6.pointee.isConst);
     assert(t6.pointee.pointee.isPointer);
     assert(t6.pointee.pointee.isConst);
-    assert(t6.pointee.pointee.pointee.kind == CXTypeKind.CXType_Int);
+    assert(t6.pointee.pointee.pointee.kind == CXTypeKind.int_);
     assert(!t6.pointee.pointee.pointee.isConst);
 
 
@@ -232,7 +232,7 @@ unittest
     assert(t7.pointee.isConst);
     assert(t7.pointee.pointee.isPointer);
     assert(!t7.pointee.pointee.isConst);
-    assert(t7.pointee.pointee.pointee.kind == CXTypeKind.CXType_Int);
+    assert(t7.pointee.pointee.pointee.kind == CXTypeKind.int_);
     assert(t7.pointee.pointee.pointee.isConst);
 
 
@@ -244,7 +244,7 @@ unittest
     assert(!t8.pointee.isConst);
     assert(t8.pointee.pointee.isPointer);
     assert(!t8.pointee.pointee.isConst);
-    assert(t8.pointee.pointee.pointee.kind == CXTypeKind.CXType_Int);
+    assert(t8.pointee.pointee.pointee.kind == CXTypeKind.int_);
     assert(!t8.pointee.pointee.pointee.isConst);
 
 
@@ -256,6 +256,6 @@ unittest
     assert(t9.pointee.isConst);
     assert(t9.pointee.pointee.isPointer);
     assert(!t9.pointee.pointee.isConst);
-    assert(t9.pointee.pointee.pointee.kind == CXTypeKind.CXType_Int);
+    assert(t9.pointee.pointee.pointee.kind == CXTypeKind.int_);
     assert(!t9.pointee.pointee.pointee.isConst);
 }

@@ -35,13 +35,13 @@ body
 
     with (CXTypeKind)
     {
-        if (type.kind == CXType_BlockPointer || type.isFunctionPointerType)
+        if (type.kind == blockPointer || type.isFunctionPointerType)
             result = translateFunctionPointerType(context, cursor, type.pointee.func);
 
         else if (type.isFunctionType)
             result = translateFunctionPointerType(context, cursor, type.canonical.func);
 
-        else if (type.kind == CXType_ObjCObjectPointer && !type.isObjCBuiltinType)
+        else if (type.kind == objCObjectPointer && !type.isObjCBuiltinType)
             result = translateObjCObjectPointerType(context, cursor, type);
 
         else if (type.isWideCharType)
@@ -53,19 +53,19 @@ body
         else
             switch (type.kind)
             {
-                case CXType_Pointer:
+                case pointer:
                     return translatePointer(context, cursor, type, rewriteIdToObjcObject, applyConst);
 
-                case CXType_Typedef:
+                case typedef_:
                     result = translateTypedef(context, type); break;
 
-                case CXType_Record:
-                case CXType_Enum:
+                case record:
+                case enum_:
                     result = context.translateTagSpelling(type.declaration);
                     handleInclude(context, type);
                     break;
 
-                case CXType_ObjCInterface:
+                case objCInterface:
                     result = type.spelling;
 
                     if (result.empty)
@@ -74,8 +74,8 @@ body
                     handleInclude(context, type);
                     break;
 
-                case CXType_ConstantArray:
-                case CXType_IncompleteArray:
+                case constantArray:
+                case incompleteArray:
                     result = translateArray(
                         context,
                         cursor,
@@ -84,14 +84,14 @@ body
                         type.array.numDimensions - 1);
                     break;
 
-                case CXType_Unexposed:
+                case unexposed:
                     result = translateUnexposed(
                         context,
                         type,
                         rewriteIdToObjcObject);
                     break;
 
-                case CXType_Elaborated:
+                case elaborated:
                     result = translateElaborated(
                         context,
                         cursor,
@@ -99,7 +99,7 @@ body
                         rewriteIdToObjcObject);
                     break;
 
-                case CXType_Complex:
+                case complex:
                     result = translateComplex(type);
                     break;
 
@@ -126,7 +126,7 @@ string translateElaborated (Context context, Cursor cursor, Type type, bool rewr
 {
     auto named = type.named();
 
-    if (named.kind == CXTypeKind.CXType_Record || named.kind == CXTypeKind.CXType_Enum)
+    if (named.kind == CXTypeKind.record || named.kind == CXTypeKind.enum_)
     {
         auto result = context.translateTagSpelling(named.declaration);
         handleInclude(context, type);
@@ -258,7 +258,7 @@ string translateTypedef(Context context, Type type)
 string translateUnexposed (Context context, Type type, bool rewriteIdToObjcObject)
 in
 {
-    assert(type.kind == CXTypeKind.CXType_Unexposed);
+    assert(type.kind == CXTypeKind.unexposed);
 }
 body
 {
@@ -274,9 +274,9 @@ string translateComplex (Type type)
 {
     switch (type.element.kind)
     {
-        case CXTypeKind.CXType_Float: return "cfloat";
-        case CXTypeKind.CXType_Double: return "cdouble";
-        case CXTypeKind.CXType_LongDouble: return "creal";
+        case CXTypeKind.float_: return "cfloat";
+        case CXTypeKind.double_: return "cdouble";
+        case CXTypeKind.longDouble: return "creal";
         default: return "<unimplemented>";
     }
 }
@@ -312,8 +312,8 @@ string translateArray (
     size_t dimension = 0)
 in
 {
-    assert(type.kind == CXTypeKind.CXType_ConstantArray
-        || type.kind == CXTypeKind.CXType_IncompleteArray);
+    assert(type.kind == CXTypeKind.constantArray
+        || type.kind == CXTypeKind.incompleteArray);
 }
 body
 {
@@ -322,7 +322,7 @@ body
     auto array = type.array;
     string elementType;
 
-    if (array.elementType.kind == CXTypeKind.CXType_ConstantArray)
+    if (array.elementType.kind == CXTypeKind.constantArray)
     {
         elementType = translateArray(
             context,
@@ -343,30 +343,30 @@ body
     if (array.size >= 0)
     {
         auto children = cursor.filterChildren(
-            CXCursorKind.CXCursor_IntegerLiteral,
-            CXCursorKind.CXCursor_DeclRefExpr);
+            CXCursorKind.integerLiteral,
+            CXCursorKind.declRefExpr);
 
         if (dimension < children.length)
         {
-            if (children[dimension].kind == CXCursorKind.CXCursor_IntegerLiteral)
+            if (children[dimension].kind == CXCursorKind.integerLiteral)
             {
                 auto expansions = context.macroIndex.queryExpansion(children[dimension]);
 
                 if (expansions.length == 1)
                     return format("%s[%s]", elementType, expansions[0].spelling);
             }
-            else if (children[dimension].kind == CXCursorKind.CXCursor_DeclRefExpr)
+            else if (children[dimension].kind == CXCursorKind.declRefExpr)
             {
                 return format("%s[%s]", elementType, children[dimension].spelling);
             }
         }
 
-        if (cursor.semanticParent.kind == CXCursorKind.CXCursor_FunctionDecl && dimension == 0)
+        if (cursor.semanticParent.kind == CXCursorKind.functionDecl && dimension == 0)
             return format("ref %s[%s]", elementType, array.size);
         else
             return format("%s[%s]", elementType, array.size);
     }
-    else if (cursor.semanticParent.kind == CXCursorKind.CXCursor_FunctionDecl)
+    else if (cursor.semanticParent.kind == CXCursorKind.functionDecl)
     {
         return format("%s*", elementType);
     }
@@ -391,7 +391,7 @@ string translatePointer (
     bool applyConst)
 in
 {
-    assert(type.kind == CXTypeKind.CXType_Pointer);
+    assert(type.kind == CXTypeKind.pointer);
 }
 body
 {
@@ -399,7 +399,7 @@ body
     {
         auto pointee = type.pointee;
 
-        while (pointee.kind == CXTypeKind.CXType_Pointer)
+        while (pointee.kind == CXTypeKind.pointer)
             pointee = pointee.pointee;
 
         return pointee.isConst;
@@ -447,7 +447,7 @@ Parameter[] translateParameters (Context context, Cursor cursor, FuncType func)
 
     foreach (child; cursor.all)
     {
-        if (child.kind == CXCursorKind.CXCursor_ParmDecl)
+        if (child.kind == CXCursorKind.parmDecl)
             result.put(translateParameter(context, child));
     }
 
@@ -470,7 +470,7 @@ string translateFunctionPointerType (Context context, Cursor cursor, FuncType fu
 string translateObjCObjectPointerType (Context context, Cursor cursor, Type type)
 in
 {
-    assert(type.kind == CXTypeKind.CXType_ObjCObjectPointer && !type.isObjCBuiltinType);
+    assert(type.kind == CXTypeKind.objCObjectPointer && !type.isObjCBuiltinType);
 }
 body
 {
@@ -490,60 +490,60 @@ string translateType (Context context, CXTypeKind kind, bool rewriteIdToObjcObje
     with (CXTypeKind)
         switch (kind)
         {
-            case CXType_Invalid: return "<unimplemented>";
-            case CXType_Unexposed: return "<unimplemented>";
-            case CXType_Void: return "void";
-            case CXType_Bool: return "bool";
-            case CXType_Char_U: return "<unimplemented>";
-            case CXType_UChar: return "ubyte";
-            case CXType_Char16: return "wchar";
-            case CXType_Char32: return "dchar";
-            case CXType_UShort: return "ushort";
-            case CXType_UInt: return "uint";
+            case invalid: return "<unimplemented>";
+            case unexposed: return "<unimplemented>";
+            case void_: return "void";
+            case bool_: return "bool";
+            case charU: return "<unimplemented>";
+            case uChar: return "ubyte";
+            case char16: return "wchar";
+            case char32: return "dchar";
+            case uShort: return "ushort";
+            case uInt: return "uint";
 
-            case CXType_ULong:
+            case uLong:
                 context.includeHandler.addCompatible();
                 return "c_ulong";
 
-            case CXType_ULongLong: return "ulong";
-            case CXType_UInt128: return "<unimplemented>";
-            case CXType_Char_S: return "char";
-            case CXType_SChar: return "byte";
-            case CXType_WChar: return "wchar";
-            case CXType_Short: return "short";
-            case CXType_Int: return "int";
+            case uLongLong: return "ulong";
+            case uInt128: return "<unimplemented>";
+            case charS: return "char";
+            case sChar: return "byte";
+            case wChar: return "wchar";
+            case short_: return "short";
+            case int_: return "int";
 
-            case CXType_Long:
+            case long_:
                 context.includeHandler.addCompatible();
                 return "c_long";
 
-            case CXType_LongLong: return "long";
-            case CXType_Int128: return "<unimplemented>";
-            case CXType_Float: return "float";
-            case CXType_Double: return "double";
-            case CXType_LongDouble: return "real";
-            case CXType_NullPtr: return "null";
-            case CXType_Overload: return "<unimplemented>";
-            case CXType_Dependent: return "<unimplemented>";
-            case CXType_ObjCId: return rewriteIdToObjcObject ? "ObjcObject" : "id";
-            case CXType_ObjCClass: return "Class";
-            case CXType_ObjCSel: return "SEL";
+            case longLong: return "long";
+            case int128: return "<unimplemented>";
+            case float_: return "float";
+            case double_: return "double";
+            case longDouble: return "real";
+            case nullPtr: return "null";
+            case overload: return "<unimplemented>";
+            case dependent: return "<unimplemented>";
+            case objCId: return rewriteIdToObjcObject ? "ObjcObject" : "id";
+            case objCClass: return "Class";
+            case objCSel: return "SEL";
 
-            case CXType_Pointer:
-            case CXType_BlockPointer:
-            case CXType_LValueReference:
-            case CXType_RValueReference:
-            case CXType_Record:
-            case CXType_Enum:
-            case CXType_Typedef:
-            case CXType_FunctionNoProto:
-            case CXType_FunctionProto:
-            case CXType_Vector:
-            case CXType_IncompleteArray:
-            case CXType_VariableArray:
-            case CXType_DependentSizedArray:
-            case CXType_MemberPointer:
-            case CXType_Elaborated:
+            case pointer:
+            case blockPointer:
+            case lValueReference:
+            case rValueReference:
+            case record:
+            case enum_:
+            case typedef_:
+            case functionNoProto:
+            case functionProto:
+            case vector:
+            case incompleteArray:
+            case variableArray:
+            case dependentSizedArray:
+            case memberPointer:
+            case elaborated:
                 return "<unimplemented>";
 
             default: assert(0, "Unhandled type kind " ~ to!string(kind));

@@ -26,7 +26,7 @@ enum CXErrorCode
     /**
      * \brief No error.
      */
-    CXError_Success = 0,
+    success = 0,
 
     /**
      * \brief A generic error code, no further details are available.
@@ -34,21 +34,21 @@ enum CXErrorCode
      * Errors of this kind can get their own specific error codes in future
      * libclang versions.
      */
-    CXError_Failure = 1,
+    failure = 1,
 
     /**
      * \brief libclang crashed while performing the requested operation.
      */
-    CXError_Crashed = 2,
+    crashed = 2,
 
     /**
      * \brief The function detected that the arguments violate the function
      * contract.
      */
-    CXError_InvalidArguments = 3,
+    invalidArguments = 3,
 
     /**
      * \brief An AST deserialization error has occurred.
      */
-    CXError_ASTReadError = 4
+    astReadError = 4
 }

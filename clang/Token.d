@@ -20,11 +20,11 @@ import clang.Cursor;
 
 enum TokenKind
 {
-    punctuation = CXTokenKind.CXToken_Punctuation,
-    keyword = CXTokenKind.CXToken_Keyword,
-    identifier = CXTokenKind.CXToken_Identifier,
-    literal = CXTokenKind.CXToken_Literal,
-    comment = CXTokenKind.CXToken_Comment,
+    punctuation = CXTokenKind.punctuation,
+    keyword = CXTokenKind.keyword,
+    identifier = CXTokenKind.identifier,
+    literal = CXTokenKind.literal,
+    comment = CXTokenKind.comment,
 }
 
 TokenKind toD(CXTokenKind kind)

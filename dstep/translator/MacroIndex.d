@@ -35,7 +35,7 @@ class MacroIndex
 
         foreach (cursor, parent; translUnit.cursor.all)
         {
-            if (cursor.kind == CXCursorKind.CXCursor_MacroExpansion)
+            if (cursor.kind == CXCursorKind.macroExpansion)
                 expansionsAppender.put(cursor);
 
             if (!cursor.spelling.empty)
@@ -53,13 +53,13 @@ class MacroIndex
 
         switch (cursor.kind)
         {
-            case CXCursorKind.CXCursor_StructDecl:
+            case CXCursorKind.structDecl:
                 return format("struct %s", cursor.spelling);
 
-            case CXCursorKind.CXCursor_UnionDecl:
+            case CXCursorKind.unionDecl:
                 return format("union %s", cursor.spelling);
 
-            case CXCursorKind.CXCursor_EnumDecl:
+            case CXCursorKind.enumDecl:
                 return format("enum %s", cursor.spelling);
 
             default:

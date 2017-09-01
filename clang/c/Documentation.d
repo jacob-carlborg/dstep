@@ -56,19 +56,19 @@ enum CXCommentKind
      * \brief Null comment.  No AST node is constructed at the requested location
      * because there is no text or a syntax error.
      */
-    CXComment_Null = 0,
+    null_ = 0,
 
     /**
      * \brief Plain text.  Inline content.
      */
-    CXComment_Text = 1,
+    text = 1,
 
     /**
      * \brief A command with word-like arguments that is considered inline content.
      *
      * For example: \\c command.
      */
-    CXComment_InlineCommand = 2,
+    inlineCommand = 2,
 
     /**
      * \brief HTML start tag with attributes (name-value pairs).  Considered
@@ -79,7 +79,7 @@ enum CXCommentKind
      * <br> <br /> <a href="http://example.org/">
      * \endverbatim
      */
-    CXComment_HTMLStartTag = 3,
+    htmlStartTag = 3,
 
     /**
      * \brief HTML end tag.  Considered inline content.
@@ -89,13 +89,13 @@ enum CXCommentKind
      * </a>
      * \endverbatim
      */
-    CXComment_HTMLEndTag = 4,
+    htmlEndTag = 4,
 
     /**
      * \brief A paragraph, contains inline comment.  The paragraph itself is
      * block content.
      */
-    CXComment_Paragraph = 5,
+    paragraph = 5,
 
     /**
      * \brief A command that has zero or more word-like arguments (number of
@@ -109,7 +109,7 @@ enum CXCommentKind
      * AST nodes of special kinds that parser knows about (e. g., \\param
      * command) have their own node kinds.
      */
-    CXComment_BlockCommand = 6,
+    blockCommand = 6,
 
     /**
      * \brief A \\param or \\arg command that describes the function parameter
@@ -117,7 +117,7 @@ enum CXCommentKind
      *
      * For example: \\param [in] ParamName description.
      */
-    CXComment_ParamCommand = 7,
+    paramCommand = 7,
 
     /**
      * \brief A \\tparam command that describes a template parameter (name and
@@ -125,7 +125,7 @@ enum CXCommentKind
      *
      * For example: \\tparam T description.
      */
-    CXComment_TParamCommand = 8,
+    tParamCommand = 8,
 
     /**
      * \brief A verbatim block command (e. g., preformatted code).  Verbatim
@@ -137,25 +137,25 @@ enum CXCommentKind
      * aaa
      * \\endverbatim
      */
-    CXComment_VerbatimBlockCommand = 9,
+    verbatimBlockCommand = 9,
 
     /**
      * \brief A line of text that is contained within a
      * CXComment_VerbatimBlockCommand node.
      */
-    CXComment_VerbatimBlockLine = 10,
+    verbatimBlockLine = 10,
 
     /**
      * \brief A verbatim line command.  Verbatim line has an opening command,
      * a single line of text (up to the newline after the opening command) and
      * has no closing command.
      */
-    CXComment_VerbatimLine = 11,
+    verbatimLine = 11,
 
     /**
      * \brief A full comment attached to a declaration, contains block content.
      */
-    CXComment_FullComment = 12
+    fullComment = 12
 }
 
 /**
@@ -167,23 +167,23 @@ enum CXCommentInlineCommandRenderKind
     /**
      * \brief Command argument should be rendered in a normal font.
      */
-    CXCommentInlineCommandRenderKind_Normal = 0,
+    normal = 0,
 
     /**
      * \brief Command argument should be rendered in a bold font.
      */
-    CXCommentInlineCommandRenderKind_Bold = 1,
+    bold = 1,
 
     /**
      * \brief Command argument should be rendered in a monospaced font.
      */
-    CXCommentInlineCommandRenderKind_Monospaced = 2,
+    monospaced = 2,
 
     /**
      * \brief Command argument should be rendered emphasized (typically italic
      * font).
      */
-    CXCommentInlineCommandRenderKind_Emphasized = 3
+    emphasized = 3
 }
 
 /**
@@ -194,17 +194,17 @@ enum CXCommentParamPassDirection
     /**
      * \brief The parameter is an input parameter.
      */
-    CXCommentParamPassDirection_In = 0,
+    in_ = 0,
 
     /**
      * \brief The parameter is an output parameter.
      */
-    CXCommentParamPassDirection_Out = 1,
+    out_ = 1,
 
     /**
      * \brief The parameter is an input and output parameter.
      */
-    CXCommentParamPassDirection_InOut = 2
+    inOut = 2
 }
 
 /**

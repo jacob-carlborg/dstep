@@ -32,11 +32,11 @@ class TypedefIndex
 
     private void inspect(Cursor cursor, bool[Cursor] visited)
     {
-        if (cursor.kind == CXCursorKind.CXCursor_TypedefDecl)
+        if (cursor.kind == CXCursorKind.typedefDecl)
         {
             foreach (child; cursor.all)
             {
-                if (child.kind == CXCursorKind.CXCursor_TypeRef
+                if (child.kind == CXCursorKind.typeRef
                     || child.isDeclaration)
                 {
                     typedefs[child.referenced] = cursor;

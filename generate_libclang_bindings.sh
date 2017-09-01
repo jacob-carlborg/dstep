@@ -22,5 +22,7 @@ pushd "$1"/clang-c > /dev/null
   --skip CXCursorAndRangeVisitorBlock \
   --skip clang_visitChildrenWithBlock \
   --skip clang_findReferencesInFileWithBlock \
-  --skip clang_findIncludesInFileWithBlock
+  --skip clang_findIncludesInFileWithBlock \
+  --rename-enum-members
+
 popd > /dev/null

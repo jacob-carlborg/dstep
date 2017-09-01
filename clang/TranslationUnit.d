@@ -30,7 +30,7 @@ struct TranslationUnit
         string sourceFilename,
         const string[] commandLineArgs = ["-Wno-missing-declarations"],
         CXUnsavedFile[] unsavedFiles = null,
-        uint options = CXTranslationUnit_Flags.CXTranslationUnit_DetailedPreprocessingRecord)
+        uint options = CXTranslationUnit_Flags.detailedPreprocessingRecord)
     {
         string[] arguments = commandLineArgs.dup;
 
@@ -55,7 +55,7 @@ struct TranslationUnit
         string source,
         string[] commandLineArgs = ["-Wno-missing-declarations"],
         CXUnsavedFile[] unsavedFiles = null,
-        uint options = CXTranslationUnit_Flags.CXTranslationUnit_DetailedPreprocessingRecord)
+        uint options = CXTranslationUnit_Flags.detailedPreprocessingRecord)
     {
         import std.file;
 
@@ -163,7 +163,7 @@ struct TranslationUnit
 
         foreach (cursor; cursors)
         {
-            if (cursor.kind == CXCursorKind.CXCursor_InclusionDirective)
+            if (cursor.kind == CXCursorKind.inclusionDirective)
             {
                 auto ptr = cursor.path in stacked;
 

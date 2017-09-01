@@ -213,7 +213,7 @@ private:
 
             with (CXDiagnosticSeverity)
                 if (translate)
-                    translate = !(severity == CXDiagnostic_Error || severity == CXDiagnostic_Fatal);
+                    translate = !(severity == error || severity == fatal);
 
             message.put(diag.format);
             message.put("\n");

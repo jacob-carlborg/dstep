@@ -47,7 +47,7 @@ void generateEnumAliases(Output output, Context context, Cursor cursor, string s
     {
         switch (item.kind)
         {
-            case CXCursorKind.CXCursor_EnumConstantDecl:
+            case CXCursorKind.enumConstantDecl:
                 output.singleLine(
                     fmt,
                     item.spelling,
@@ -372,7 +372,7 @@ void translateEnumDef(Output output, Context context, Cursor cursor)
     output.subscopeStrong(cursor.extent, "%s", spelling) in
     {
         auto members = cursor.children
-            .filter!(cursor => cursor.kind == CXCursorKind.CXCursor_EnumConstantDecl);
+            .filter!(cursor => cursor.kind == CXCursorKind.enumConstantDecl);
 
         size_t length = members.walkLength();
 
