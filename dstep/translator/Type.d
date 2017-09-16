@@ -19,19 +19,19 @@ import dstep.translator.IncludeHandler;
 import dstep.translator.Translator;
 import dstep.translator.Output;
 
-string translateType (Context context, Cursor cursor, bool rewriteIdToObjcObject = true, bool applyConst = true)
+SourceNode translateType (Context context, Cursor cursor, bool rewriteIdToObjcObject = true, bool applyConst = true)
 {
     return translateType(context, cursor, cursor.type, rewriteIdToObjcObject, applyConst);
 }
 
-string translateType (Context context, Cursor cursor, Type type, bool rewriteIdToObjcObject = true, bool applyConst = true)
+SourceNode translateType (Context context, Cursor cursor, Type type, bool rewriteIdToObjcObject = true, bool applyConst = true)
 in
 {
     assert(type.isValid);
 }
 body
 {
-    string result;
+    SourceNode result;
 
     with (CXTypeKind)
     {
@@ -45,10 +45,10 @@ body
             result = translateObjCObjectPointerType(context, cursor, type);
 
         else if (type.isWideCharType)
-            result = "wchar";
+            result = makeSourceNode("wchar");
 
         else if (type.isObjCIdType)
-            result = rewriteIdToObjcObject ? "ObjcObject" : "id";
+            result = makeSourceNode(rewriteIdToObjcObject ? "ObjcObject" : "id");
 
         else
             switch (type.kind)
@@ -57,19 +57,20 @@ body
                     return translatePointer(context, cursor, type, rewriteIdToObjcObject, applyConst);
 
                 case typedef_:
-                    result = translateTypedef(context, type); break;
+                    result = translateTypedef(context, type).makeSourceNode();
+                    break;
 
                 case record:
                 case enum_:
-                    result = context.translateTagSpelling(type.declaration);
+                    result = makeSourceNode(context.translateTagSpelling(type.declaration));
                     handleInclude(context, type);
                     break;
 
                 case objCInterface:
-                    result = type.spelling;
-
-                    if (result.empty)
-                        result = context.getAnonymousName(type.declaration);
+                    if (type.spelling.empty)
+                        result = makeSourceNode(context.getAnonymousName(type.declaration));
+                    else
+                        result = makeSourceNode(type.spelling);
 
                     handleInclude(context, type);
                     break;
@@ -100,12 +101,15 @@ body
                     break;
 
                 case complex:
-                    result = translateComplex(type);
+                    result = translateComplex(type).makeSourceNode();
                     break;
 
                 default:
-                    result = translateType(context, type.kind,
-                                           rewriteIdToObjcObject);
+                    result = translateType(
+                        context,
+                        type.kind,
+                        rewriteIdToObjcObject)
+                        .makeSourceNode();
             }
     }
 
@@ -116,13 +120,13 @@ body
     else
     {
         if (applyConst && type.isConst)
-            result = "const " ~ result;
+            result = result.prefixWith("const ");
     }
 
     return result;
 }
 
-string translateElaborated (Context context, Cursor cursor, Type type, bool rewriteIdToObjcObject = true, bool applyConst = true)
+SourceNode translateElaborated (Context context, Cursor cursor, Type type, bool rewriteIdToObjcObject = true, bool applyConst = true)
 {
     auto named = type.named();
 
@@ -130,7 +134,7 @@ string translateElaborated (Context context, Cursor cursor, Type type, bool rewr
     {
         auto result = context.translateTagSpelling(named.declaration);
         handleInclude(context, type);
-        return result;
+        return result.makeSourceNode();
     }
     else
     {
@@ -255,7 +259,7 @@ string translateTypedef(Context context, Type type)
     return type.spelling;
 }
 
-string translateUnexposed (Context context, Type type, bool rewriteIdToObjcObject)
+SourceNode translateUnexposed (Context context, Type type, bool rewriteIdToObjcObject)
 in
 {
     assert(type.kind == CXTypeKind.unexposed);
@@ -267,7 +271,8 @@ body
     if (declaration.isValid)
         return translateType(context, declaration, rewriteIdToObjcObject);
     else
-        return translateType(context, type.kind, rewriteIdToObjcObject);
+        return translateType(context, type.kind, rewriteIdToObjcObject)
+            .makeSourceNode();
 }
 
 string translateComplex (Type type)
@@ -281,7 +286,7 @@ string translateComplex (Type type)
     }
 }
 
-string translateArrayElement(
+SourceNode translateArrayElement(
     Context context,
     Cursor cursor,
     ArrayType array,
@@ -291,7 +296,7 @@ string translateArrayElement(
 
     bool isConst = array.elementType.isConst;
 
-    auto spelling = translateType(
+    auto type = translateType(
         context,
         cursor,
         array.elementType,
@@ -299,12 +304,12 @@ string translateArrayElement(
         !isConst);
 
     if (isConst)
-        return format("const(%s)", spelling);
+        return type.wrapWith("const(", ")");
     else
-        return spelling;
+        return type;
 }
 
-string translateArray (
+SourceNode translateArray (
     Context context,
     Cursor cursor,
     Type type,
@@ -320,7 +325,7 @@ body
     import std.format : format;
 
     auto array = type.array;
-    string elementType;
+    SourceNode elementType;
 
     if (array.elementType.kind == CXTypeKind.constantArray)
     {
@@ -353,22 +358,22 @@ body
                 auto expansions = context.macroIndex.queryExpansion(children[dimension]);
 
                 if (expansions.length == 1)
-                    return format("%s[%s]", elementType, expansions[0].spelling);
+                    return elementType.suffixWith(format("[%s]", expansions[0].spelling));
             }
             else if (children[dimension].kind == CXCursorKind.declRefExpr)
             {
-                return format("%s[%s]", elementType, children[dimension].spelling);
+                return elementType.suffixWith(format("[%s]", children[dimension].spelling));
             }
         }
 
         if (cursor.semanticParent.kind == CXCursorKind.functionDecl && dimension == 0)
-            return format("ref %s[%s]", elementType, array.size);
+            return elementType.wrapWith("ref ", format("[%s]", array.size));
         else
-            return format("%s[%s]", elementType, array.size);
+            return elementType.suffixWith(format("[%s]", array.size));
     }
     else if (cursor.semanticParent.kind == CXCursorKind.functionDecl)
     {
-        return format("%s*", elementType);
+        return elementType.suffixWith("*");
     }
     else
     {
@@ -379,11 +384,11 @@ body
         // against declaration in header. As it is not possible in D
         // to define static array with ABI of dynamic one, only way is to
         // abandon the size information
-        return format("%s[]", elementType);
+        return elementType.suffixWith("[]");
     }
 }
 
-string translatePointer (
+SourceNode translatePointer (
     Context context,
     Cursor cursor,
     Type type,
@@ -416,12 +421,12 @@ body
         if (applyConst && valueTypeIsConst(type))
         {
             if (type.isConst)
-                result = "const " ~ result ~ '*';
+                result = result.wrapWith("const ", "*");
             else
-                result = "const(" ~ result ~ ")*";
+                result = result.wrapWith("const(", ")*");
         }
         else
-            result = result ~ '*';
+            result = result.suffixWith("*");
     }
 
     return result;
@@ -454,20 +459,25 @@ Parameter[] translateParameters (Context context, Cursor cursor, FuncType func)
     return result.data;
 }
 
-string translateFunctionPointerType (Context context, Cursor cursor, FuncType func)
+SourceNode translateFunctionPointerType (Context context, Cursor cursor, FuncType func)
 {
     auto params = translateParameters(context, cursor, func);
     auto result = translateType(context, cursor, func.resultType);
-
-    Output output = new Output();
     auto spacer = context.options.spaceAfterFunctionName ? " " : "";
-    translateFunction(output, result, "function",
-                      params, func.isVariadic, "", spacer);
+    auto multiline = cursor.extent.isMultiline &&
+        !context.options.singleLineFunctionSignatures;
 
-    return output.data();
+    return translateFunction(
+        result,
+        "function",
+        params,
+        func.isVariadic,
+        "",
+        spacer,
+        multiline);
 }
 
-string translateObjCObjectPointerType (Context context, Cursor cursor, Type type)
+SourceNode translateObjCObjectPointerType (Context context, Cursor cursor, Type type)
 in
 {
     assert(type.kind == CXTypeKind.objCObjectPointer && !type.isObjCBuiltinType);
@@ -477,7 +487,7 @@ body
     auto pointee = type.pointee;
 
     if (pointee.spelling == "Protocol")
-        return "Protocol*";
+        return "Protocol*".makeSourceNode();
 
     else
         return translateType(context, cursor, pointee);

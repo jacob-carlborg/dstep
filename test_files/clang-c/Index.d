@@ -406,7 +406,6 @@ CXSourceLocation clang_getLocation (
     CXFile file,
     uint line,
     uint column);
-
 /**
  * \brief Retrieves the source location associated with a given character offset
  * in a particular translation unit.
@@ -3586,7 +3585,10 @@ enum CXChildVisitResult
  * The visitor should return one of the \c CXChildVisitResult values
  * to direct clang_visitCursorChildren().
  */
-alias CXCursorVisitor = CXChildVisitResult function (CXCursor cursor, CXCursor parent, CXClientData client_data);
+alias CXCursorVisitor = CXChildVisitResult function (
+    CXCursor cursor,
+    CXCursor parent,
+    CXClientData client_data);
 
 /**
  * \brief Visit the children of a particular cursor.
@@ -3614,7 +3616,6 @@ uint clang_visitChildren (
     CXCursor parent,
     CXCursorVisitor visitor,
     CXClientData client_data);
-
 /**
  * \brief Visitor invoked for each cursor found by a traversal.
  *
@@ -5084,7 +5085,11 @@ void clang_toggleCrashRecovery (uint isEnabled);
  * array is sorted in order of immediate inclusion.  For example,
  * the first element refers to the location that included 'included_file'.
  */
-alias CXInclusionVisitor = void function (CXFile included_file, CXSourceLocation* inclusion_stack, uint include_len, CXClientData client_data);
+alias CXInclusionVisitor = void function (
+    CXFile included_file,
+    CXSourceLocation* inclusion_stack,
+    uint include_len,
+    CXClientData client_data);
 
 /**
  * \brief Visit the set of preprocessor inclusions in a translation unit.
@@ -5573,14 +5578,22 @@ struct IndexerCallbacks
     /**
      * \brief Called at the end of indexing; passes the complete diagnostic set.
      */
-    void function (CXClientData client_data, CXDiagnosticSet, void* reserved) diagnostic;
+    void function (
+        CXClientData client_data,
+        CXDiagnosticSet,
+        void* reserved) diagnostic;
 
-    CXIdxClientFile function (CXClientData client_data, CXFile mainFile, void* reserved) enteredMainFile;
+    CXIdxClientFile function (
+        CXClientData client_data,
+        CXFile mainFile,
+        void* reserved) enteredMainFile;
 
     /**
      * \brief Called when a file gets \#included/\#imported.
      */
-    CXIdxClientFile function (CXClientData client_data, const(CXIdxIncludedFileInfo)*) ppIncludedFile;
+    CXIdxClientFile function (
+        CXClientData client_data,
+        const(CXIdxIncludedFileInfo)*) ppIncludedFile;
 
     /**
      * \brief Called when a AST file (PCH or module) gets imported.
@@ -5590,19 +5603,27 @@ struct IndexerCallbacks
      * file is not already indexed, to initiate a new indexing job specific to
      * the AST file.
      */
-    CXIdxClientASTFile function (CXClientData client_data, const(CXIdxImportedASTFileInfo)*) importedASTFile;
+    CXIdxClientASTFile function (
+        CXClientData client_data,
+        const(CXIdxImportedASTFileInfo)*) importedASTFile;
 
     /**
      * \brief Called at the beginning of indexing a translation unit.
      */
-    CXIdxClientContainer function (CXClientData client_data, void* reserved) startedTranslationUnit;
+    CXIdxClientContainer function (
+        CXClientData client_data,
+        void* reserved) startedTranslationUnit;
 
-    void function (CXClientData client_data, const(CXIdxDeclInfo)*) indexDeclaration;
+    void function (
+        CXClientData client_data,
+        const(CXIdxDeclInfo)*) indexDeclaration;
 
     /**
      * \brief Called to index a reference of an entity.
      */
-    void function (CXClientData client_data, const(CXIdxEntityRefInfo)*) indexEntityReference;
+    void function (
+        CXClientData client_data,
+        const(CXIdxEntityRefInfo)*) indexEntityReference;
 }
 
 int clang_index_isEntityObjCContainerKind (CXIdxEntityKind);
@@ -5827,7 +5848,9 @@ CXSourceLocation clang_indexLoc_getCXSourceLocation (CXIdxLoc loc);
  * The visitor should return one of the \c CXVisitorResult values
  * to direct \c clang_Type_visitFields.
  */
-alias CXFieldVisitor = CXVisitorResult function (CXCursor C, CXClientData client_data);
+alias CXFieldVisitor = CXVisitorResult function (
+    CXCursor C,
+    CXClientData client_data);
 
 /**
  * \brief Visit the fields of a particular type.

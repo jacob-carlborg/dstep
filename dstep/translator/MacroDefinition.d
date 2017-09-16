@@ -718,7 +718,7 @@ class SizeofType : Expression
     {
         import std.format : format;
 
-        return format("%s.sizeof", translateType(context, type));
+        return format("%s.sizeof", translateType(context, type).makeString());
     }
 
     override ExprType guessExprType()
@@ -745,7 +745,7 @@ class CastExpr : Expression
 
         return format(
             "cast(%s) %s",
-            translateType(context, type),
+            translateType(context, type).makeString(),
             subexpr.debraced.translate(context, params, imports));
     }
 
@@ -894,7 +894,7 @@ class CondExpr : Expression
 
 class Expression
 {
-    protected static string translateType(Context context, Type type)
+    protected static SourceNode translateType(Context context, Type type)
     {
         return dstep.translator.Type.translateType(context, Cursor.init, type);
     }

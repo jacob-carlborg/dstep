@@ -8,6 +8,7 @@ module dstep.translator.Output;
 
 import std.array;
 import std.typecons;
+import std.variant;
 
 import clang.Cursor;
 import clang.SourceLocation;
@@ -18,6 +19,166 @@ import dstep.translator.CommentIndex;
 import dstep.translator.Context;
 import dstep.translator.IncludeHandler;
 import dstep.translator.Type;
+
+struct SourceLeaf
+{
+    string spelling;
+    SourceRange extent;
+}
+
+SourceLeaf makeSourceLeaf(
+    string spelling,
+    SourceRange extent = SourceRange.empty)
+{
+    SourceLeaf result;
+    result.spelling = spelling;
+    result.extent = extent;
+    return result;
+}
+
+struct SourceNode
+{
+    alias Child = Algebraic!(SourceNode*, SourceLeaf);
+    string prefix;
+    string suffix;
+    string separator;
+    Child[] children;
+    SourceRange extent;
+}
+
+SourceNode makeSourceNode(
+    string prefix,
+    string[] children,
+    string separator,
+    string suffix,
+    SourceRange extent = SourceRange.empty)
+{
+    import std.algorithm;
+    SourceNode node;
+    node.prefix = prefix;
+    node.suffix = suffix;
+    node.separator = separator;
+    node.children = children.map!(x => SourceNode.Child(SourceLeaf(x))).array;
+    node.extent = extent;
+    return node;
+}
+
+SourceNode makeSourceNode(SourceLeaf leaf)
+{
+    SourceNode node;
+    node.prefix = leaf.spelling;
+    node.extent = leaf.extent;
+    return node;
+}
+
+SourceNode makeSourceNode(
+    string spelling,
+    SourceRange extent = SourceRange.empty)
+{
+    SourceNode node;
+    node.prefix = spelling;
+    node.extent = extent;
+    return node;
+}
+
+SourceNode suffixWith(SourceNode node, string suffix)
+{
+    SourceNode result = node;
+    result.suffix = result.suffix ~ suffix;
+    return result;
+}
+
+SourceNode prefixWith(SourceNode node, string prefix)
+{
+    SourceNode result = node;
+    result.prefix = prefix ~ result.prefix;
+    return result;
+}
+
+SourceNode wrapWith(SourceNode node, string prefix, string suffix)
+{
+    SourceNode result = node;
+    result.prefix = prefix ~ result.prefix;
+    result.suffix = result.suffix ~ suffix;
+    return result;
+}
+
+SourceNode flatten(in SourceNode node)
+{
+    void flatten(ref Appender!(char[]) output, in SourceNode node)
+    {
+
+        output.put(node.prefix);
+
+        foreach (index, child; node.children)
+        {
+            if (child.type() == typeid(SourceLeaf))
+                output ~= child.get!(SourceLeaf).spelling;
+            else
+                flatten(output, *child.get!(SourceNode*));
+
+            if (index + 1 != node.children.length)
+                output.put(node.separator ~ " ");
+        }
+
+        output.put(node.suffix);
+    }
+
+    Appender!(char[]) output;
+    flatten(output, node);
+    return output.data.idup.makeSourceNode();
+}
+
+string makeString(in SourceNode node)
+{
+    import std.range;
+    auto flattened = node.flatten();
+    assert(flattened.children.empty);
+    assert(flattened.suffix.empty);
+    return flattened.prefix;
+}
+
+void adaptiveSourceNode(Output output, in SourceNode node)
+{
+    auto format = node.prefix ~ "%@" ~ node.separator ~ "%@" ~ node.suffix;
+
+    output.adaptiveLine(node.extent, format) in
+    {
+        foreach (child; node.children)
+        {
+            if (child.type() == typeid(SourceLeaf))
+            {
+                auto leaf = child.get!(SourceLeaf);
+                output.adaptiveLine(leaf.extent, leaf.spelling);
+            }
+            else
+                adaptiveSourceNode(output, *child.get!(SourceNode*));
+        }
+    };
+}
+
+unittest
+{
+    SourceNode node = makeSourceNode(
+        "prefix(", [], ",", ");");
+
+    assert(makeString(node) == "prefix();");
+}
+
+unittest
+{
+    SourceNode node = makeSourceNode(
+        "prefix(", ["a", "b"], ",", ");");
+
+    assert(makeString(node) == "prefix(a, b);");
+}
+
+unittest
+{
+    SourceNode node = makeSourceNode("prefix(a, b);");
+
+    assert(makeString(node) == "prefix(a, b);");
+}
 
 class Output
 {
@@ -341,7 +502,7 @@ class Output
 
         return Indent(
             this,
-            adaptiveLine(fmt, args),
+            adaptiveLineImpl(fmt, args),
             end.line,
             end.column,
             end.offset);
@@ -558,6 +719,7 @@ D"[0 .. $ - 1]);
         {
             if (lastestLine + 1 < comment.line ||
                 (stack.back != Entity.singleLine &&
+                stack.back != Entity.adaptiveLine &&
                 stack.back != Entity.comment))
                 buffer.put('\n');
 
@@ -1094,7 +1256,7 @@ class ClassData : StructData
         auto mangledName = name;
 
         foreach (param ; func.parameters)
-            mangledName ~= "_" ~ translateType(context, param);
+            mangledName ~= translateType(context, param).prefixWith("_").makeString();
 
         return mangledName;
     }
