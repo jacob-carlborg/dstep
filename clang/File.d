@@ -20,8 +20,12 @@ struct File
 
     string absolutePath()
     {
+        import std.conv;
         import std.path;
-        return std.path.absolutePath(name);
+        return name
+            .asAbsolutePath()
+            .asNormalizedPath()
+            .to!string();
     }
 
     string toString()

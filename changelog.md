@@ -56,6 +56,7 @@
 * [Issue 114](https://github.com/jacob-carlborg/dstep/issues/114): Crash on recursive typedef.
 * [Issue 116](https://github.com/jacob-carlborg/dstep/issues/116): Option --space-after-function-name doesn't work with function pointer syntax.
 * [Issue 117](https://github.com/jacob-carlborg/dstep/issues/117): fatal error: 'limits.h' file not found.
+* [Issue 123](https://github.com/jacob-carlborg/dstep/issues/123): Missing import for usage of `#define` constant.
 * [Issue 137](https://github.com/jacob-carlborg/dstep/issues/137): struct member expansion.
 * [Issue 138](https://github.com/jacob-carlborg/dstep/issues/138): Repeated declarations cause problems.
 * [Issue 140](https://github.com/jacob-carlborg/dstep/issues/140): On enums and scope.

@@ -36,7 +36,6 @@ class Context
     private Output globalScope_ = null;
     private Cursor[string] typeNames_;
     private string[Cursor] translatedSpellings;
-    public MacroDefinition[string] macroDefinitions;
 
     Options options;
 
@@ -127,7 +126,6 @@ class Context
 
     public HeaderIndex headerIndex()
     {
-        // construction of HeaderIndex is costly, avoid if possible
         if (headerIndex_ is null)
             headerIndex_ = new HeaderIndex(this.translUnit);
 
