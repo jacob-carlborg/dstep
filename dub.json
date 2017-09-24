@@ -54,7 +54,8 @@
             "name": "unittest",
             "mainSourceFile": "unittest.d",
             "targetName": "unittest",
-            "sourcePaths": ["dstep", "clang", "unit_tests"],
+            "sourceFiles": ["unit_tests/Common.d", "unit_tests/issues/Issue141.d"],
+            "sourcePaths": ["dstep", "clang"],
             "excludedSourceFiles": ["dstep/main.d"],
 
             "preBuildCommands-posix": [

@@ -204,6 +204,7 @@ struct ExprType
         unspecified,
         specified,
         generic,
+        sizeOf
     }
 
     bool lvalue = false;
@@ -265,11 +266,14 @@ struct ExprType
 }
 
 immutable UnspecifiedExprType = ExprType(ExprType.Kind.unspecified);
+immutable SizeOfExprType = ExprType(ExprType.Kind.sizeOf);
 
 string asParamType(ExprType type)
 {
     if (type.isSpecified)
         return type.isLValue ? "auto ref " ~ type.spelling : type.spelling;
+    else if (type.kind == ExprType.Kind.sizeOf)
+        return "size_t";
     else
         return "auto ref T" ~ type.spelling;
 }
@@ -289,6 +293,7 @@ string asReturnType(ExprType type)
         case ExprType.Kind.unspecified: return "auto";
         case ExprType.Kind.specified: return type.spelling;
         case ExprType.Kind.generic: return "auto";
+        case ExprType.Kind.sizeOf: return "size_t";
     }
 }
 
@@ -540,6 +545,11 @@ class CallExpr : Expression
         return ExprType(ExprType.kind.unspecified);
     }
 
+    /*override void guessParamTypes(ref ExprType[string] params, ExprType type)
+    {
+
+    }*/
+
     override string toString()
     {
         import std.format : format;
@@ -652,12 +662,21 @@ class UnaryExpr : Expression
     string operator;
     bool postfix = false;
 
+    bool canHoistSizeOf(Context context)
+    {
+        return context.options.hoistSizeofInMacros
+            && typeid(subexpr.debraced) == typeid(Identifier);
+    }
+
     override string translate(Context context, Set!string params, ref Set!string imports)
     {
         import std.format : format;
 
         if (operator == "sizeof")
-            return format("%s.sizeof", subexpr.braced.translate(context, params, imports));
+            return format(
+                "%s%s",
+                subexpr.braced.translate(context, params, imports),
+                canHoistSizeOf(context) ? "" : ".sizeof");
         else if (postfix)
             return format("%s%s", subexpr.translate(context, params, imports), operator);
         else
@@ -675,7 +694,7 @@ class UnaryExpr : Expression
     override void guessParamTypes(ref ExprType[string] params, ExprType type)
     {
         if (operator == "sizeof")
-            subexpr.guessParamTypes(params, UnspecifiedExprType);
+            subexpr.guessParamTypes(params, SizeOfExprType);
         else if (operator == "++" || operator == "--")
             subexpr.guessParamTypes(params, type.asLValue);
         else
@@ -2113,6 +2132,11 @@ void translateFunctDirective(
 
         definition.expr.guessParamTypes(types, returnType);
 
+        import std.stdio;
+        writeln(definition.expr);
+        writeln(types);
+        writeln();
+
         auto typeList = translateDirectiveTypeList(definition.params, types);
 
         if (typeList != "")
@@ -2146,6 +2170,8 @@ void translateFunctDirective(
 
         output.singleLine("return %s;", translated);
     };
+
+
 }
 
 void translateMacroDefinition(Output output, Context context, Cursor cursor)
