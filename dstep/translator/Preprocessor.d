@@ -14,7 +14,7 @@ import clang.SourceRange;
 import clang.Token;
 import clang.TranslationUnit;
 
-public import dstep.translator.MacroDefinition;
+public import dstep.translator.MacroDefinitionParser;
 
 class ConditionalDirective : Directive
 {

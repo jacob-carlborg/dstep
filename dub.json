@@ -54,9 +54,8 @@
             "name": "unittest",
             "mainSourceFile": "unittest.d",
             "targetName": "unittest",
-            "sourceFiles": ["unit_tests/Common.d", "unit_tests/issues/Issue141.d"],
-            "sourcePaths": ["dstep", "clang"],
-            "excludedSourceFiles": ["dstep/main.d"],
+            "sourcePaths": ["dstep", "clang", "unit_tests"],
+            "excludedSourceFiles": ["dstep/main.d", "unit_tests/issues/Issue141.d"],
 
             "preBuildCommands-posix": [
                 "(! [ -s linker_flags.txt ] && ./configure) || true"

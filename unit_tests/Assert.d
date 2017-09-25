@@ -16,6 +16,7 @@ import dstep.translator.CommentIndex;
 import dstep.translator.Context;
 import dstep.translator.IncludeHandler;
 import dstep.translator.MacroDefinition;
+import dstep.translator.MacroDefinitionParser;
 import dstep.translator.Output;
 import dstep.translator.Translator;
 import dstep.translator.Type;
@@ -116,7 +117,7 @@ Type parseTypeName(string source)
 {
     Cursor[string] table;
     auto tokens = tokenize(source);
-    return dstep.translator.MacroDefinition.parseTypeName(tokens, table);
+    return dstep.translator.MacroDefinitionParser.parseTypeName(tokens, table);
 }
 
 void assertParsedTypeHasKind(

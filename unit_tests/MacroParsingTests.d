@@ -13,6 +13,7 @@ import clang.Type;
 
 import dstep.translator.Context;
 import dstep.translator.MacroDefinition;
+import dstep.translator.MacroDefinitionParser;
 
 alias parse = parseMacroDefinition;
 
@@ -20,7 +21,7 @@ Type parseTypeName(string source)
 {
     Cursor[string] table;
     auto tokens = tokenize(source);
-    return dstep.translator.MacroDefinition.parseTypeName(tokens, table);
+    return dstep.translator.MacroDefinitionParser.parseTypeName(tokens, table);
 }
 
 
