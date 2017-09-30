@@ -324,7 +324,7 @@ class Identifier : Expression
         return ExprType(ExprType.kind.unspecified);
     }
 
-    override void guessParamTypes(ref ExprType[string] params, ExprType type)
+    override void guessParamTypes(Context context, ref ExprType[string] params, ExprType type)
     {
         auto param = spelling in params;
 
@@ -545,10 +545,10 @@ class CallExpr : Expression
         return ExprType(ExprType.kind.unspecified);
     }
 
-    /*override void guessParamTypes(ref ExprType[string] params, ExprType type)
+    override void guessParamTypes(Context context, ref ExprType[string] params, ExprType type)
     {
 
-    }*/
+    }
 
     override string toString()
     {
@@ -643,9 +643,9 @@ class SubExpr : Expression
         return subexpr.guessExprType();
     }
 
-    override void guessParamTypes(ref ExprType[string] params, ExprType type)
+    override void guessParamTypes(Context context, ref ExprType[string] params, ExprType type)
     {
-        subexpr.guessParamTypes(params, type);
+        subexpr.guessParamTypes(context, params, type);
     }
 
     override string toString()
@@ -673,14 +673,20 @@ class UnaryExpr : Expression
         import std.format : format;
 
         if (operator == "sizeof")
+        {
             return format(
                 "%s%s",
                 subexpr.braced.translate(context, params, imports),
                 canHoistSizeOf(context) ? "" : ".sizeof");
+        }
         else if (postfix)
+        {
             return format("%s%s", subexpr.translate(context, params, imports), operator);
+        }
         else
+        {
             return format("%s%s", operator, subexpr.translate(context, params, imports));
+        }
     }
 
     override ExprType guessExprType()
@@ -691,14 +697,23 @@ class UnaryExpr : Expression
             return subexpr.guessExprType();
     }
 
-    override void guessParamTypes(ref ExprType[string] params, ExprType type)
+    override void guessParamTypes(Context context, ref ExprType[string] params, ExprType type)
     {
         if (operator == "sizeof")
-            subexpr.guessParamTypes(params, UnspecifiedExprType);
+        {
+            if (canHoistSizeOf(context))
+                subexpr.guessParamTypes(context, params, SizeOfExprType);
+            else
+                subexpr.guessParamTypes(context, params, UnspecifiedExprType);
+        }
         else if (operator == "++" || operator == "--")
-            subexpr.guessParamTypes(params, type.asLValue);
+        {
+            subexpr.guessParamTypes(context, params, type.asLValue);
+        }
         else
-            subexpr.guessParamTypes(params, type);
+        {
+            subexpr.guessParamTypes(context, params, type);
+        }
     }
 
     override string toString()
@@ -773,9 +788,9 @@ class CastExpr : Expression
         return UnspecifiedExprType;
     }
 
-    override void guessParamTypes(ref ExprType[string] params, ExprType type)
+    override void guessParamTypes(Context context, ref ExprType[string] params, ExprType type)
     {
-        subexpr.guessParamTypes(params, UnspecifiedExprType);
+        subexpr.guessParamTypes(context, params, UnspecifiedExprType);
     }
 
     override string toString()
@@ -811,10 +826,10 @@ class BinaryExpr : Expression
         return strictCommonType(left.guessExprType(), right.guessExprType());
     }
 
-    override void guessParamTypes(ref ExprType[string] params, ExprType type)
+    override void guessParamTypes(Context context, ref ExprType[string] params, ExprType type)
     {
-        left.guessParamTypes(params, UnspecifiedExprType);
-        right.guessParamTypes(params, UnspecifiedExprType);
+        left.guessParamTypes(context, params, UnspecifiedExprType);
+        right.guessParamTypes(context, params, UnspecifiedExprType);
     }
 
     override string toString()
@@ -887,11 +902,11 @@ class CondExpr : Expression
         return strictCommonType(left.guessExprType(), right.guessExprType());
     }
 
-    override void guessParamTypes(ref ExprType[string] params, ExprType type)
+    override void guessParamTypes(Context context, ref ExprType[string] params, ExprType type)
     {
-        expr.guessParamTypes(params, type);
-        left.guessParamTypes(params, type);
-        right.guessParamTypes(params, type);
+        expr.guessParamTypes(context, params, type);
+        left.guessParamTypes(context, params, type);
+        right.guessParamTypes(context, params, type);
     }
 
     override string toString()
@@ -938,7 +953,7 @@ class Expression
         return ExprType(ExprType.kind.generic);
     }
 
-    void guessParamTypes(ref ExprType[string] params, ExprType type)
+    void guessParamTypes(Context context, ref ExprType[string] params, ExprType type)
     { }
 
     override string toString()

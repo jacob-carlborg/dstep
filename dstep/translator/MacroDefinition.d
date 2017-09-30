@@ -280,6 +280,7 @@ FunctDirective translateFunctDirective(
         function_.paramTypes[param] = ExprType(ExprType.kind.unspecified);
 
     definition.expr.guessParamTypes(
+        context,
         function_.paramTypes,
         function_.returnType);
 
