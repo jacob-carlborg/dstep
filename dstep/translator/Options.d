@@ -33,6 +33,7 @@ struct Options
     bool keepUntranslatable = false;
     bool reduceAliases = true;
     bool translateMacros = true;
+    bool hoistSizeofInMacros = false;
     bool portableWCharT = true;
     bool zeroParamIsVararg = false;
     bool singleLineFunctionSignatures = false;
