@@ -72,6 +72,16 @@ extern (D) auto _IOR(T0, T1)(auto ref T0 type, auto ref T1 nr, size_t size)
 {
     return _IOC(_IOC_READ, type, nr, (_IOC_TYPECHECK(size)));
 }
+
+struct foo_staus_t
+{
+}
+
+enum FE_READ_STATUS = _IOR('o', 69, foo_status_t.sizeof);
+enum FE_READ_BER = _IOR('o', 70, __u32.sizeof);
+enum FE_READ_SIGNAL_STRENGTH = _IOR('o', 71, __u16.sizeof);
+enum FE_READ_SNR = _IOR('o', 72, __u16.sizeof);
+enum FE_READ_UNCORRECTED_BLOCKS = _IOR('o', 73, __u32.sizeof);
 D",
     options);
 

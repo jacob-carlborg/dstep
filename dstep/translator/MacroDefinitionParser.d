@@ -525,19 +525,53 @@ class IndexExpr : Expression
 
 class CallExpr : Expression
 {
+    import dstep.translator.MacroDefinition;
+
     Expression expr;
     Expression[] args;
 
     override string translate(Context context, Set!string params, ref Set!string imports)
     {
+        import std.array;
         import std.algorithm.iteration : map;
         import std.format : format;
+        import std.range : enumerate;
         import std.string : join;
 
-        return format(
-            "%s(%s)",
-            expr.translate(context, params, imports),
-            args.map!(a => a.translate(context, params, imports)).join(", "));
+        auto function_ = expr.translate(context, params, imports);
+        string[] argumentList;
+
+        if (context.options.hoistSizeofInMacros)
+        {
+            auto directive = obtainFuncDirective(context);
+
+            string translate(size_t index, Expression argument)
+            {
+                auto identifier = cast (Identifier) argument.debraced;
+
+                if (identifier !is null)
+                {
+                    auto paramName = directive.paramNames[index];
+                    auto paramType = directive.paramTypes[paramName];
+
+                    if (paramType.kind == ExprType.Kind.sizeOf &&
+                        identifier.spelling !in params)
+                        return format("%s.sizeof", identifier.spelling);
+                }
+
+                return argument.translate(context, params, imports);
+            }
+
+            argumentList = enumerate(args)
+                .map!(a => translate(a[0], a[1])).array;
+        }
+        else
+        {
+            argumentList = args
+                .map!(a => a.translate(context, params, imports)).array;
+        }
+
+        return format("%s(%s)", function_, argumentList.join(", "));
     }
 
     override ExprType guessExprType()
@@ -547,7 +581,41 @@ class CallExpr : Expression
 
     override void guessParamTypes(Context context, ref ExprType[string] params, ExprType type)
     {
+        if (context.options.hoistSizeofInMacros
+            && typeid(expr.debraced) == typeid(Identifier))
+        {
+            auto function_ = cast (Identifier) expr.debraced;
+            auto cursorPtr =  function_.spelling in context.macroIndex.globalCursors();
 
+            if (cursorPtr !is null && cursorPtr.kind == CXCursorKind.macroDefinition)
+            {
+                auto directive = translateFunctDirective(context, *cursorPtr);
+
+                if (directive !is null)
+                {
+                    foreach (index, arg; args)
+                    {
+                        auto identifier = cast (Identifier) arg.debraced;
+
+                        if (identifier !is null)
+                        {
+                            auto paramName = directive.paramNames[index];
+                            auto paramType = directive.paramTypes[paramName];
+                            params[identifier.spelling] = paramType;
+                        }
+                        else
+                        {
+                            arg.guessParamTypes(context, params, type);
+                        }
+                    }
+
+                    import std.stdio;
+                    writeln("directive: ", directive);
+                    writeln("params: ", params);
+                    writeln();
+                }
+            }
+        }
     }
 
     override string toString()
@@ -555,6 +623,21 @@ class CallExpr : Expression
         import std.format : format;
 
         return format("CallExpr(expr = %s, args = %s)", expr, args);
+    }
+
+    private FunctDirective obtainFuncDirective(Context context)
+    {
+        auto function_ = cast (Identifier) expr.debraced;
+
+        if (function_ !is null)
+        {
+            auto cursorPtr =  function_.spelling in context.macroIndex.globalCursors();
+
+            if (cursorPtr !is null && cursorPtr.kind == CXCursorKind.macroDefinition)
+                return translateFunctDirective(context, *cursorPtr);
+        }
+
+        return null;
     }
 }
 

@@ -158,6 +158,20 @@ class FunctDirective
     ExprType returnType;
     ExprType[string] paramTypes;
     Expression expression;
+
+    override string toString()
+    {
+        import std.format : format;
+
+        return format(
+            "FunctDirective(spelling = %s, paramNames = %s, " ~
+            "returnType = %s, paramTypes = %s, expression = %s)",
+            spelling,
+            paramNames,
+            returnType,
+            paramTypes,
+            expression);
+    }
 }
 
 bool translateFunctDirectiveAlias(
