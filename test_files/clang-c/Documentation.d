@@ -12,10 +12,10 @@
 |*                                                                            *|
 \*===----------------------------------------------------------------------===*/
 
-module clang.c.Documentation;
+module clang.c.documentation;
 
-public import clang.c.CXString;
-public import clang.c.Index;
+public import clang.c.cx_string;
+public import clang.c.index;
 
 extern (C):
 

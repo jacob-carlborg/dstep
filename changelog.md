@@ -32,6 +32,7 @@
 * Bump the minimum requirement of libclang to 3.9.0
 * Automatically generate the libclang bindings using DStep
 * Add a switch `--rename-enum-members`, which enables stripping of superfluous prefixes from enum members.
+* Add a switch `--normalize-modules`, which enables changing the names of modules to the D conforming form.
 
 ### Bugs Fixed
 

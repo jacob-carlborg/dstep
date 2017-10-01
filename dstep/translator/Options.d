@@ -8,6 +8,8 @@ module dstep.translator.Options;
 
 import clang.Util;
 
+import dstep.translator.ConvertCase;
+
 enum Language
 {
     c,
@@ -30,6 +32,7 @@ struct Options
     string packageName;
     bool enableComments = true;
     bool publicSubmodules = false;
+    bool normalizeModules = false;
     bool keepUntranslatable = false;
     bool reduceAliases = true;
     bool translateMacros = true;
@@ -60,12 +63,70 @@ struct Options
     }
 }
 
-string fullModuleName(string packageName, string path)
+string fullModuleName(string packageName, string path, bool normalize = true)
 {
+    import std.algorithm;
     import std.path : baseName, stripExtension;
-    import std.format : format;
+    import std.range;
+    import std.uni;
+    import std.utf;
 
-    string moduleName = stripExtension(baseName(path));
-    return format("%s.%s", packageName, moduleName);
+    dchar replace(dchar c)
+    {
+        if (c == '_' || c.isWhite)
+            return '_';
+        else if (c.isPunctuation)
+            return '.';
+        else
+            return c;
+    }
+
+    bool discard(dchar c)
+    {
+        return c.isAlphaNum || c == '_' || c == '.';
+    }
+
+    bool equivalent(dchar a, dchar b)
+    {
+        return (a == '.' || a == '_') && (b == '.' || b == '_');
+    }
+
+    auto moduleBaseName = stripExtension(baseName(path));
+    auto moduleName = moduleBaseName.map!replace.filter!discard.uniq!equivalent;
+
+
+    if (normalize)
+    {
+        auto segments = moduleName.split!(x => x == '.');
+        auto normalized = segments.map!(x => x.toUTF8.toSnakeCase).join('.');
+        return only(packageName, normalized).join('.');
+    }
+    else
+    {
+        return only(packageName, moduleName.toUTF8).join('.');
+    }
 }
 
+unittest
+{
+    assert(fullModuleName("pkg", "foo") == "pkg.foo");
+    assert(fullModuleName("pkg", "Foo") == "pkg.foo");
+    assert(fullModuleName("pkg", "Foo.ext") == "pkg.foo");
+
+    assert(fullModuleName("pkg", "Foo-bar.ext") == "pkg.foo.bar");
+    assert(fullModuleName("pkg", "Foo_bar.ext") == "pkg.foo_bar");
+    assert(fullModuleName("pkg", "Foo@bar.ext") == "pkg.foo.bar");
+    assert(fullModuleName("pkg", "Foo~bar.ext") == "pkg.foo.bar");
+    assert(fullModuleName("pkg", "Foo bar.ext") == "pkg.foo_bar");
+
+    assert(fullModuleName("pkg", "Foo__bar.ext") == "pkg.foo_bar");
+    assert(fullModuleName("pkg", "Foo..bar.ext") == "pkg.foo.bar");
+    assert(fullModuleName("pkg", "Foo#$%#$%#bar.ext") == "pkg.foo.bar");
+    assert(fullModuleName("pkg", "Foo_#$%#$%#bar.ext") == "pkg.foo_bar");
+
+    assert(fullModuleName("pkg", "FooBarBaz.ext") == "pkg.foo_bar_baz");
+    assert(fullModuleName("pkg", "FooBar.BazQux.ext") == "pkg.foo_bar.baz_qux");
+
+    assert(fullModuleName("pkg", "FooBarBaz.ext", false) == "pkg.FooBarBaz");
+    assert(fullModuleName("pkg", "FooBar.BazQux.ext", false) == "pkg.FooBar.BazQux");
+}

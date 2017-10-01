@@ -11,7 +11,7 @@
 |*                                                                            *|
 \*===----------------------------------------------------------------------===*/
 
-module clang.c.CXErrorCode;
+module clang.c.cx_error_code;
 
 extern (C):
 

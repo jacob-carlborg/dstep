@@ -13,13 +13,13 @@
 |*                                                                            *|
 \*===----------------------------------------------------------------------===*/
 
-module clang.c.Index;
+module clang.c.index;
 
 import core.stdc.config;
 import core.stdc.time;
 
-public import clang.c.CXErrorCode;
-public import clang.c.CXString;
+public import clang.c.cx_error_code;
+public import clang.c.cx_string;
 
 extern (C):
 

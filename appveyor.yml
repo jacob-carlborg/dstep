@@ -8,7 +8,7 @@ configuration:
   - LLVM 3.9.0
 
 environment:
-  DVersion: 2.071.0
+  DVersion: 2.076.0
   DC: dmd
 
 skip_tags: true

@@ -115,8 +115,11 @@ class IncludeHandler
                 x => x != options.inputFile);
 
             foreach (file; inputFiles)
-                submodules[file] =
-                    fullModuleName(options.packageName, file);
+            {
+                auto packageName = options.packageName;
+                auto normalize = options.normalizeModules;
+                submodules[file] = fullModuleName(packageName, file, normalize);
+            }
         }
     }
 

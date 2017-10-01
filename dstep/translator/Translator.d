@@ -331,7 +331,8 @@ private:
         {
             output.singleLine("module %s;", fullModuleName(
                 context.options.packageName,
-                context.options.outputFile));
+                context.options.outputFile,
+                context.options.normalizeModules));
 
             output.separator();
         }
