@@ -230,7 +230,7 @@ class Translator
         output.flushLocation(cursor.extent);
 
         immutable auto name = translateIdentifier(cursor.spelling);
-        translateFunction(output, context, cursor.func, name);
+        output.adaptiveSourceNode(translateFunction(context, cursor.func, name));
         output.append(";");
     }
 
@@ -279,15 +279,20 @@ class Translator
                 (underlying.spelling != typedef_.spelling &&
                 underlying.spelling != ""))
             {
-                version (D1)
-                    enum fmt = "alias %2$s %1$s;";
-                else
-                    enum fmt = "alias %1$s = %2$s;";
+                auto canonical = typedef_.type.canonical;
+                auto spelling = typedef_.spelling;
+                auto type = translateType(context, typedef_, canonical);
 
-                output.singleLine(
-                    fmt,
-                    typedef_.spelling,
-                    translateType(context, typedef_, typedef_.type.canonical));
+                version (D1)
+                {
+                    output.adaptiveSourceNode(
+                        type.wrapWith("alias ", " " ~ spelling ~ ";"));
+                }
+                else
+                {
+                    output.adaptiveSourceNode(
+                        type.wrapWith("alias " ~ spelling ~ " = ", ";"));
+                }
 
                 context.markAsDefined(typedef_);
             }
@@ -352,8 +357,7 @@ private:
     }
 }
 
-void translateFunction (
-    Output output,
+SourceNode translateFunction (
     Context context,
     FunctionCursor func,
     string name,
@@ -390,8 +394,7 @@ void translateFunction (
         !context.options.singleLineFunctionSignatures;
     auto spacer = context.options.spaceAfterFunctionName ? " " : "";
 
-    translateFunction(
-        output,
+    return translateFunction(
         resultType,
         name,
         params,
@@ -403,14 +406,13 @@ void translateFunction (
 
 package struct Parameter
 {
-    string type;
+    SourceNode type;
     string name;
     bool isConst;
 }
 
-package void translateFunction (
-    Output output,
-    string result,
+package SourceNode translateFunction (
+    SourceNode resultType,
     string name,
     Parameter[] parameters,
     bool variadic,
@@ -436,7 +438,7 @@ package void translateFunction (
             if (param.isConst)
                 p ~= "const(";
 
-            p ~= param.type;
+            p ~= param.type.makeString();
 
             if (param.isConst)
                 p ~= ')';
@@ -451,24 +453,22 @@ package void translateFunction (
     if (variadic)
         params ~= "...";
 
-    if (multiline)
-        output.adaptiveLine("%s%s %s%s(%@,%@)", prefix, result, name, spacer) in {
-            foreach (param; params)
-                output.adaptiveLine(param);
-        };
-    else
-        output.singleLine("%s%s %s%s(%s)", prefix, result, name, spacer, params.join(", "));
+    auto result = makeSourceNode(
+        format("%s%s %s%s(", prefix, resultType.makeString(), name, spacer),
+        params,
+        ",",
+        ")");
+
+    return multiline ? result : result.flatten();
 }
 
 void translateVariable (Output output, Context context, Cursor cursor, string prefix = "")
 {
-    if (!context.alreadyDefined(cursor.canonical)) {
-        output.singleLine(
-            "%s%s %s;",
-            prefix,
-            translateType(context, cursor, cursor.type),
-            translateIdentifier(cursor.spelling));
-
+    if (!context.alreadyDefined(cursor.canonical))
+    {
+        auto type = translateType(context, cursor, cursor.type);
+        auto identifier = translateIdentifier(cursor.spelling);
+        output.adaptiveSourceNode(type.wrapWith(prefix, " " ~ identifier ~ ";"));
         context.markAsDefined(cursor.canonical);
     }
 }

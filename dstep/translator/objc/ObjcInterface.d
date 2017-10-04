@@ -121,7 +121,7 @@ private:
         {
             Output output = new Output();
 
-            translateFunction(output, translator.context, func, name, classMethod),
+            output.adaptiveSourceNode(translateFunction(translator.context, func, name, classMethod));
             output.append(" ");
             writeSelector(output, func.spelling);
             output.append(";");
@@ -157,7 +157,7 @@ private:
         output.singleLine(
             "@property %s%s %s () ",
             classMethod ? "static " : "",
-            translateType(translator.context, cursor, type),
+            translateType(translator.context, cursor, type).makeString(),
             dName);
 
         writeSelector(output, name);
@@ -179,7 +179,7 @@ private:
             "@property %svoid %s (%s",
             classMethod ? "static " : "",
             translateIdentifier(name),
-            translateType(translator.context, cursor, type));
+            translateType(translator.context, cursor, type).makeString());
 
         if (parameterName.length)
             output.append(" %s", parameterName);

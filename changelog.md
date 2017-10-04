@@ -61,6 +61,7 @@
 * [Issue 138](https://github.com/jacob-carlborg/dstep/issues/138): Repeated declarations cause problems.
 * [Issue 140](https://github.com/jacob-carlborg/dstep/issues/140): On enums and scope.
 * [Issue 154](https://github.com/jacob-carlborg/dstep/issues/154): Falling back to blunt pre-processor phase.
+* [Issue 160](https://github.com/jacob-carlborg/dstep/issues/160): Translating typedef of function pointer doesn't take line length into consideration.
 
 ## Version 0.2.1
 ### New/Changed Features
