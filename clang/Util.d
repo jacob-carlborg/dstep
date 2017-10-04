@@ -117,8 +117,20 @@ Version clangVersion()
 
 alias Set(T) = void[0][T];
 
-void add(T)(ref void[0][T] set, T value) {
-    set[value] = (void[0]).init;
+void add(T)(ref void[0][T] self, T value) {
+    self[value] = (void[0]).init;
+}
+
+void add(T)(ref void[0][T] self, void[0][T] set) {
+    foreach (key; set.byKey) {
+        self.add(key);
+    }
+}
+
+Set!T clone(T)(ref void[0][T] self) {
+    Set!T result;
+    result.add(self);
+    return result;
 }
 
 bool contains(T)(inout(void[0][T]) set, T value) {

@@ -182,10 +182,3 @@ unittest
         "test_files/variables.d",
         "test_files/variables.h");
 }
-
-unittest
-{
-    assertTranslatesCFile(
-        "test_files/use_limits.d",
-        "test_files/use_limits.h");
-}

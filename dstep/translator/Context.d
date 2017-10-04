@@ -19,6 +19,7 @@ import dstep.translator.Options;
 import dstep.translator.Output;
 import dstep.translator.Translator;
 import dstep.translator.TypedefIndex;
+import dstep.translator.HeaderIndex;
 
 class Context
 {
@@ -30,11 +31,11 @@ class Context
     private IncludeHandler includeHandler_;
     private CommentIndex commentIndex_ = null;
     private TypedefIndex typedefIndex_ = null;
+    private HeaderIndex headerIndex_ = null;
     private Translator translator_ = null;
     private Output globalScope_ = null;
     private Cursor[string] typeNames_;
     private string[Cursor] translatedSpellings;
-    public MacroDefinition[string] macroDefinitions;
 
     Options options;
 
@@ -121,6 +122,14 @@ class Context
     public TypedefIndex typedefIndex()
     {
         return typedefIndex_;
+    }
+
+    public HeaderIndex headerIndex()
+    {
+        if (headerIndex_ is null)
+            headerIndex_ = new HeaderIndex(this.translUnit);
+
+        return headerIndex_;
     }
 
     public bool alreadyDefined(in Cursor cursor)

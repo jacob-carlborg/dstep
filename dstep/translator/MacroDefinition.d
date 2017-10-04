@@ -300,6 +300,26 @@ ExprType strictCommonType(ExprType a, ExprType b)
         return ExprType(ExprType.kind.unspecified);
 }
 
+string translateTypeLimitsConstant(Context context, string spelling)
+{
+    auto cursor = spelling in context.macroIndex.globalCursors;
+
+    if (cursor !is null &&
+        cursor.kind == CXCursorKind.macroDefinition &&
+        context.headerIndex.isFromStdLib(*cursor, "limits.h"))
+    {
+        context.includeHandler.addInclude("limits.h");
+        return spelling;
+    }
+
+    return null;
+}
+
+string translateKnownConstant(Context context, string spelling)
+{
+    return translateTypeLimitsConstant(context, spelling);
+}
+
 class Identifier : Expression
 {
     this (string spelling)
@@ -311,7 +331,12 @@ class Identifier : Expression
 
     override string translate(Context context, Set!string params, ref Set!string imports)
     {
-        return spelling;
+        auto translated = translateKnownConstant(context, spelling);
+
+        if (translated !is null)
+            return translated;
+        else
+            return spelling;
     }
 
     override ExprType guessExprType()
@@ -2165,7 +2190,5 @@ void translateMacroDefinition(Output output, Context context, Cursor cursor)
             else
                 translateFunctDirective(output, context, definition);
         }
-
-        context.macroDefinitions[definition.spelling] = definition;
     }
 }

@@ -18,6 +18,16 @@ struct File
         return toD(clang_getFileName(cx));
     }
 
+    string absolutePath()
+    {
+        import std.conv;
+        import std.path;
+        return name
+            .asAbsolutePath()
+            .asNormalizedPath()
+            .to!string();
+    }
+
     string toString()
     {
         return name;
