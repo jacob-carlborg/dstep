@@ -9,6 +9,7 @@ module dstep.translator.MacroDefinition;
 import std.array : Appender;
 import std.traits;
 import std.meta;
+import std.variant;
 
 import clang.c.Index;
 import clang.Cursor;
@@ -19,182 +20,387 @@ import clang.Token;
 import clang.Type;
 
 import dstep.translator.Context;
+import dstep.translator.MacroParser;
 import dstep.translator.Output;
 import dstep.translator.Type;
 
-enum bool isStringValue(alias T) =
-    is(typeof(T) : const char[]) &&
-    !isAggregateType!(typeof(T)) &&
-    !isStaticArray!(typeof(T));
-
-/**
- * The accept family of functions parse tokens. In the case of successful parsing,
- * the function advances the beginning of the tokens to the next token and returns true.
- *
- * The parsing is successful, if the first token in tokens is of the specified kind
- * and its spelling matches one of the strings passed as Args.
- * It assigns the spelling of the token to the spelling parameter.
- */
-bool accept(Args...)(ref Token[] tokens, ref string spelling, TokenKind kind)
-    if (Args.length > 0 && allSatisfy!(isStringValue, Args))
+void dumpAST(Expression expression, ref Appender!string result, size_t indent)
 {
-    if (!tokens.empty && tokens.front.kind == kind)
-    {
-        foreach (arg; Args)
-        {
-            if (tokens.front.spelling == arg)
-            {
-                tokens = tokens[1 .. $];
-                spelling = arg;
-                return true;
-            }
-        }
-    }
+    import std.format;
+    import std.array : replicate;
 
-    return false;
+    result.put(" ".replicate(indent));
+    result.put(expression.toString());
 }
 
-bool accept(ref Token[] tokens, ref string spelling, TokenKind kind)
+Expression debraced(Expression expression)
 {
-    if (!tokens.empty && tokens.front.kind == kind)
-    {
-        spelling = tokens.front.spelling;
-        tokens = tokens[1 .. $];
-        return true;
-    }
+    if (!expression.hasValue)
+        return expression;
 
-    return false;
+    auto subExpr = expression.peek!SubExpr();
+
+    return subExpr !is null ? subExpr.subexpr : expression;
 }
 
-bool accept(Args...)(ref Token[] tokens, TokenKind kind)
-    if (allSatisfy!(isStringValue, Args))
+Expression braced(Expression expression)
 {
-    if (!tokens.empty && tokens.front.kind == kind)
-    {
-        foreach (arg; Args)
-        {
-            if (tokens.front.spelling == arg)
-            {
-                tokens = tokens[1 .. $];
-                return true;
-            }
-        }
-    }
+    if (!expression.hasValue)
+        return expression;
 
-    return false;
+    if (auto subExpr = expression.peek!Identifier())
+        return expression;
+    else if (auto subExpr = expression.peek!Literal())
+        return expression;
+    else if (auto subExpr = expression.peek!SubExpr())
+        return expression;
+    else
+        return Expression(new SubExpr(expression));
 }
 
-bool accept(Args...)(ref Token[] tokens, ref string spelling)
-    if (Args.length > 0 && allSatisfy!(isStringValue, Args))
+string translate(Expression expression, Context context, Set!string params, ref Set!string imports)
 {
-    if (!tokens.empty)
-    {
-        foreach (arg; Args)
-        {
-            if (tokens.front.spelling == arg)
-            {
-                tokens = tokens[1 .. $];
-                spelling = arg;
-                return true;
-            }
-        }
-    }
+    import std.format : format;
 
-    return false;
-}
-
-bool acceptPunctuation(Args...)(ref Token[] tokens, ref string spelling)
-    if (allSatisfy!(isStringValue, Args))
-{
-    return accept!(Args)(tokens, spelling, TokenKind.punctuation);
-}
-
-bool acceptPunctuation(Args...)(ref Token[] tokens)
-    if (allSatisfy!(isStringValue, Args))
-{
-    return accept!(Args)(tokens, TokenKind.punctuation);
-}
-
-bool acceptIdentifier(ref Token[] tokens, ref string spelling)
-{
-    return accept(tokens, spelling, TokenKind.identifier);
-}
-
-bool acceptLiteral(ref Token[] tokens, ref string spelling)
-{
-    return accept(tokens, spelling, TokenKind.literal);
-}
-
-bool acceptKeyword(ref Token[] tokens, ref string spelling)
-{
-    return accept(tokens, spelling, TokenKind.keyword);
-}
-
-bool acceptStringLiteral(ref Token[] tokens, ref string spelling)
-{
-    import std.string : startsWith, endsWith;
-
-    if (!tokens.empty && tokens.front.kind == TokenKind.literal)
-    {
-        spelling = tokens.front.spelling;
-
-        if (!spelling.startsWith(`"`) || !spelling.endsWith(`"`))
-            return false;
-
-        tokens = tokens[1 .. $];
-        return true;
-    }
-
-    return false;
-}
-
-Expression parseLeftAssoc(ResultExpr, alias parseChild, Ops...)(
-    ref Token[] tokens,
-    Cursor[string] table,
-    bool defined) if (allSatisfy!(isStringValue, Ops))
-{
-    import std.traits;
-    import std.range;
-
-    auto local = tokens;
-
-    ReturnType!parseChild[] exprs = [ parseChild(local, table, defined) ];
-    string[] ops = [];
-
-    if (exprs[0] is null)
+    if (!expression.hasValue)
         return null;
 
-    string op;
-    while (accept!(Ops)(local, op, TokenKind.punctuation))
+    string translateBinaryOperator(T)(T operator)
     {
-        exprs ~= parseChild(local, table, defined);
-
-        if (exprs[$ - 1] is null)
-            return null;
-
-        ops ~= op;
+        return format(
+            "%s %s %s",
+            operator.left.translate(context, params, imports),
+            operator.operator,
+            operator.right.translate(context, params, imports));
     }
 
-    tokens = local;
+    return expression.visit!(
+        delegate string(Identifier identifier)
+        {
+            auto translated = translateKnownConstant(
+                context,
+                identifier.spelling);
 
-    if (exprs.length == 1)
-        return exprs[0];
+            if (translated !is null)
+                return translated;
+            else
+                return identifier.spelling;
+        },
+        delegate string(Literal literal)
+        {
+            return literal.spelling;
+        },
+        delegate string(StringLiteral stringLiteral)
+        {
+            return stringLiteral.spelling;
+        },
+        delegate string(StringifyExpr stringifyExpr)
+        {
+            imports.add("std.conv : to");
+            return format("to!string(%s)", stringifyExpr.spelling);
+        },
+        delegate string(StringConcat stringConcat)
+        {
+            import std.algorithm.iteration : map;
+            import std.array : join;
 
-    ResultExpr result = new ResultExpr;
-    result.left = exprs[0];
-    result.right = exprs[1];
-    result.operator = ops[0];
+            return stringConcat.substrings
+                .map!(a => a.translate(context, params, imports)).join(" ~ ");
+        },
+        delegate string(TokenConcat tokenConcat)
+        {
+            import std.algorithm.iteration : map;
+            import std.array : join;
 
-    foreach (expr, fop; zip(exprs[2 .. $], ops[1 .. $]))
+            string stringify(Expression subexpr)
+            {
+                auto identifier = subexpr.peek!Identifier;
+
+                if (identifier !is null && params.contains(identifier.spelling))
+                {
+                    import std.format : format;
+
+                    imports.add("std.conv : to");
+
+                    return format("to!string(%s)", identifier.spelling);
+                }
+                else
+                {
+                    auto translated = subexpr.translate(
+                        context,
+                        params,
+                        imports);
+
+                    return format(`"%s"`, translated);
+                }
+            }
+
+            return tokenConcat.subexprs.map!stringify.join(" ~ ");
+        },
+        delegate string(IndexExpr indexExpr)
+        {
+            return format(
+                "%s[%s]",
+                indexExpr.subexpr.translate(context, params, imports),
+                indexExpr.index.translate(context, params, imports));
+        },
+        delegate string(CallExpr callExpr)
+        {
+            import std.algorithm.iteration : map;
+            import std.string : join;
+
+            alias translate = a => a.translate(context, params, imports);
+
+            return format(
+                "%s(%s)",
+                callExpr.expr.translate(context, params, imports),
+                callExpr.args.map!translate.join(", "));
+        },
+        delegate string(DotExpr dotExpr)
+        {
+            return format(
+                "%s.%s",
+                dotExpr.subexpr.translate(context, params, imports),
+                dotExpr.identifier);
+        },
+        delegate string(ArrowExpr arrowExpr)
+        {
+            return format(
+                "%s.%s",
+                arrowExpr.subexpr.translate(context, params, imports),
+                arrowExpr.identifier);
+        },
+        delegate string(SubExpr subExpr)
+        {
+            auto surplus = subExpr.subexpr.peek!Identifier !is null
+                || subExpr.subexpr.peek!DotExpr !is null;
+
+            string translated = subExpr.subexpr.translate(
+                context,
+                params,
+                imports);
+
+            return surplus ? translated : "(" ~ translated ~ ")";
+        },
+        delegate string(UnaryExpr unaryExpr)
+        {
+            if (unaryExpr.operator == "sizeof")
+                return format(
+                    "%s.sizeof",
+                    unaryExpr.subexpr.braced.translate(context, params, imports));
+            else if (unaryExpr.postfix)
+                return format(
+                    "%s%s",
+                    unaryExpr.subexpr.translate(context, params, imports),
+                    unaryExpr.operator);
+            else
+                return format(
+                    "%s%s",
+                    unaryExpr.operator,
+                    unaryExpr.subexpr.translate(context, params, imports));
+        },
+        delegate string(DefinedExpr literal)
+        {
+            return "";
+        },
+        delegate string(SizeofType sizeofType)
+        {
+            return format(
+                "%s.sizeof",
+                translateType(context, Cursor.init, sizeofType.type).makeString());
+        },
+        delegate string(CastExpr castExpr)
+        {
+            return format(
+                "cast(%s) %s",
+                translateType(context, Cursor.init, castExpr.type).makeString(),
+                castExpr.subexpr.debraced.translate(context, params, imports));
+        },
+        translateBinaryOperator!MulExpr,
+        translateBinaryOperator!AddExpr,
+        translateBinaryOperator!SftExpr,
+        translateBinaryOperator!RelExpr,
+        translateBinaryOperator!EqlExpr,
+        translateBinaryOperator!AndExpr,
+        translateBinaryOperator!XorExpr,
+        translateBinaryOperator!OrExpr,
+        translateBinaryOperator!LogicalAndExpr,
+        translateBinaryOperator!LogicalOrExpr,
+        delegate string(CondExpr condExpr)
+        {
+            return format(
+                "%s ? %s : %s",
+                condExpr.expr.translate(context, params, imports),
+                condExpr.left.translate(context, params, imports),
+                condExpr.right.translate(context, params, imports));
+        });
+}
+
+ExprType guessExprType(Expression expression)
+{
+    import std.format : format;
+
+    if (!expression.hasValue)
+        return ExprType(ExprType.kind.unspecified);
+
+    ExprType guessBinaryOperator(T)(T operator)
     {
-        ResultExpr parent = new ResultExpr;
-        parent.left = result;
-        parent.right = expr;
-        parent.operator = fop;
-        result = parent;
+        return strictCommonType(
+            operator.left.guessExprType(),
+            operator.right.guessExprType());
     }
 
-    return result;
+    return expression.visit!(
+        delegate ExprType(Identifier identifier)
+        {
+            return ExprType(ExprType.kind.unspecified);
+        },
+        delegate ExprType(Literal literal)
+        {
+            return ExprType("int");
+        },
+        delegate ExprType(StringLiteral stringLiteral)
+        {
+            return ExprType("string");
+        },
+        delegate ExprType(StringifyExpr stringifyExpr)
+        {
+            return ExprType("string");
+        },
+        delegate ExprType(StringConcat stringConcat)
+        {
+            return ExprType("string");
+        },
+        delegate ExprType(TokenConcat tokenConcat)
+        {
+            return ExprType("string");
+        },
+        delegate ExprType(IndexExpr indexExpr)
+        {
+            return ExprType(ExprType.kind.unspecified);
+        },
+        delegate ExprType(CallExpr callExpr)
+        {
+            return ExprType(ExprType.kind.unspecified);
+        },
+        delegate ExprType(DotExpr dotExpr)
+        {
+            return ExprType(ExprType.kind.unspecified);
+        },
+        delegate ExprType(ArrowExpr arrowExpr)
+        {
+            return ExprType(ExprType.kind.unspecified);
+        },
+        delegate ExprType(SubExpr subExpr)
+        {
+            return subExpr.subexpr.guessExprType();
+        },
+        delegate ExprType(UnaryExpr unaryExpr)
+        {
+            if (unaryExpr.operator == "sizeof")
+                return ExprType("size_t");
+            else
+                return unaryExpr.subexpr.guessExprType();
+        },
+        delegate ExprType(DefinedExpr literal)
+        {
+            return ExprType("int");
+        },
+        delegate ExprType(SizeofType sizeofType)
+        {
+            return ExprType("size_t");
+        },
+        delegate ExprType(CastExpr castExpr)
+        {
+            return UnspecifiedExprType;
+        },
+        guessBinaryOperator!MulExpr,
+        guessBinaryOperator!AddExpr,
+        guessBinaryOperator!SftExpr,
+        guessBinaryOperator!RelExpr,
+        guessBinaryOperator!EqlExpr,
+        guessBinaryOperator!AndExpr,
+        guessBinaryOperator!XorExpr,
+        guessBinaryOperator!OrExpr,
+        guessBinaryOperator!LogicalAndExpr,
+        guessBinaryOperator!LogicalOrExpr,
+        delegate ExprType(CondExpr condExpr)
+        {
+            return strictCommonType(
+                condExpr.left.guessExprType(),
+                condExpr.right.guessExprType());
+        });
+}
+
+void guessParamTypes(Expression expression, ref ExprType[string] params, ExprType type)
+{
+    import std.format : format;
+
+    if (!expression.hasValue)
+        return;
+
+    void noop(T)(T operator)
+    {
+    }
+
+    void guessBinaryOperator(T)(T operator)
+    {
+        operator.left.guessParamTypes(params, UnspecifiedExprType);
+        operator.right.guessParamTypes(params, UnspecifiedExprType);
+    }
+
+    return expression.visit!(
+        delegate void(Identifier identifier)
+        {
+            auto param = identifier.spelling in params;
+
+            if (param !is null && param.isUnspecified)
+                *param = type;
+        },
+        noop!Literal,
+        noop!StringLiteral,
+        noop!StringifyExpr,
+        noop!StringConcat,
+        noop!TokenConcat,
+        noop!IndexExpr,
+        noop!CallExpr,
+        noop!DotExpr,
+        noop!ArrowExpr,
+        delegate void(SubExpr subExpr)
+        {
+            subExpr.subexpr.guessParamTypes(params, type);
+        },
+        delegate void(UnaryExpr unaryExpr)
+        {
+            if (unaryExpr.operator == "sizeof")
+                unaryExpr.subexpr.guessParamTypes(params, UnspecifiedExprType);
+            else if (unaryExpr.operator == "++" || unaryExpr.operator == "--")
+                unaryExpr.subexpr.guessParamTypes(params, type.asLValue);
+            else
+                unaryExpr.subexpr.guessParamTypes(params, type);
+        },
+        noop!DefinedExpr,
+        noop!SizeofType,
+        delegate void(CastExpr castExpr)
+        {
+            castExpr.subexpr.guessParamTypes(params, UnspecifiedExprType);
+        },
+        guessBinaryOperator!MulExpr,
+        guessBinaryOperator!AddExpr,
+        guessBinaryOperator!SftExpr,
+        guessBinaryOperator!RelExpr,
+        guessBinaryOperator!EqlExpr,
+        guessBinaryOperator!AndExpr,
+        guessBinaryOperator!XorExpr,
+        guessBinaryOperator!OrExpr,
+        guessBinaryOperator!LogicalAndExpr,
+        guessBinaryOperator!LogicalOrExpr,
+        delegate void(CondExpr condExpr)
+        {
+            condExpr.expr.guessParamTypes(params, type);
+            condExpr.left.guessParamTypes(params, type);
+            condExpr.right.guessParamTypes(params, type);
+        });
 }
 
 struct ExprType
@@ -320,647 +526,7 @@ string translateKnownConstant(Context context, string spelling)
     return translateTypeLimitsConstant(context, spelling);
 }
 
-class Identifier : Expression
-{
-    this (string spelling)
-    {
-        this.spelling = spelling;
-    }
 
-    string spelling;
-
-    override string translate(Context context, Set!string params, ref Set!string imports)
-    {
-        auto translated = translateKnownConstant(context, spelling);
-
-        if (translated !is null)
-            return translated;
-        else
-            return spelling;
-    }
-
-    override ExprType guessExprType()
-    {
-        return ExprType(ExprType.kind.unspecified);
-    }
-
-    override void guessParamTypes(ref ExprType[string] params, ExprType type)
-    {
-        auto param = spelling in params;
-
-        if (param !is null && param.isUnspecified)
-            *param = type;
-    }
-
-    override Expression braced()
-    {
-        return this;
-    }
-
-    override string toString()
-    {
-        import std.format : format;
-
-        return format("Identifier(spelling = %s)", spelling);
-    }
-}
-
-class Literal : Expression
-{
-    this (string spelling)
-    {
-        this.spelling = spelling;
-    }
-
-    string spelling;
-
-    override string translate(Context context, Set!string params, ref Set!string imports)
-    {
-        return spelling;
-    }
-
-    override ExprType guessExprType()
-    {
-        return ExprType("int");
-    }
-
-    override Expression braced()
-    {
-        return this;
-    }
-
-    override string toString()
-    {
-        import std.format : format;
-
-        return format("Literal(spelling = %s)", spelling);
-    }
-}
-
-class StringLiteral : Literal
-{
-    this (string spelling)
-    {
-        super(spelling);
-    }
-}
-
-class StringifyExpr : Expression
-{
-    string spelling;
-
-    this (string spelling)
-    {
-        this.spelling = spelling;
-    }
-
-    override string translate(Context context, Set!string params, ref Set!string imports)
-    {
-        import std.format : format;
-
-        imports.add("std.conv : to");
-
-        return format("to!string(%s)", spelling);
-    }
-
-    override ExprType guessExprType()
-    {
-        return ExprType("string");
-    }
-
-    override string toString()
-    {
-        import std.format : format;
-
-        return format("StringifyExpr(spelling = %s)", spelling);
-    }
-}
-
-class StringConcat : Expression
-{
-    Expression[] substrings;
-
-    this (Expression[] substrings)
-    {
-        this.substrings = substrings;
-    }
-
-    override string translate(Context context, Set!string params, ref Set!string imports)
-    {
-        import std.algorithm.iteration : map;
-        import std.array : join;
-
-        return substrings.map!(a => a.translate(context, params, imports)).join(" ~ ");
-    }
-
-    override ExprType guessExprType()
-    {
-        return ExprType("string");
-    }
-
-    override string toString()
-    {
-        import std.format : format;
-
-        return format("StringConcat(substrings = %s)", substrings);
-    }
-}
-
-class TokenConcat : Expression
-{
-    Expression[] subexprs;
-
-    this (Expression[] subexprs)
-    {
-        this.subexprs = subexprs;
-    }
-
-    override string translate(Context context, Set!string params, ref Set!string imports)
-    {
-        import std.algorithm.iteration : map;
-        import std.array : join;
-        import std.format : format;
-
-        string stringify(Expression subexpr)
-        {
-            auto identifier = cast(Identifier) subexpr;
-
-            if (identifier && params.contains(identifier.spelling))
-            {
-                import std.format : format;
-
-                imports.add("std.conv : to");
-
-                return format("to!string(%s)", identifier.spelling);
-            }
-            else
-            {
-                return format(`"%s"`, subexpr.translate(context, params, imports));
-            }
-        }
-
-        return subexprs.map!stringify.join(" ~ ");
-    }
-
-    override ExprType guessExprType()
-    {
-        return ExprType("string");
-    }
-
-    override string toString()
-    {
-        import std.format : format;
-
-        return format("TokenConcat(subexprs = %s)", subexprs);
-    }
-}
-
-class IndexExpr : Expression
-{
-    Expression subexpr;
-    Expression index;
-
-    override string translate(Context context, Set!string params, ref Set!string imports)
-    {
-        import std.format : format;
-
-        return format(
-            "%s[%s]",
-            subexpr.translate(context, params, imports),
-            index.translate(context, params, imports));
-    }
-
-    override ExprType guessExprType()
-    {
-        return ExprType(ExprType.kind.unspecified);
-    }
-
-    override string toString()
-    {
-        import std.format : format;
-
-        return format("IndexExpr(subexpr = %s, index = %s)", subexpr, index);
-    }
-}
-
-class CallExpr : Expression
-{
-    Expression expr;
-    Expression[] args;
-
-    override string translate(Context context, Set!string params, ref Set!string imports)
-    {
-        import std.algorithm.iteration : map;
-        import std.format : format;
-        import std.string : join;
-
-        return format(
-            "%s(%s)",
-            expr.translate(context, params, imports),
-            args.map!(a => a.translate(context, params, imports)).join(", "));
-    }
-
-    override ExprType guessExprType()
-    {
-        return ExprType(ExprType.kind.unspecified);
-    }
-
-    override string toString()
-    {
-        import std.format : format;
-
-        return format("CallExpr(expr = %s, args = %s)", expr, args);
-    }
-}
-
-class DotExpr : Expression
-{
-    Expression subexpr;
-    string identifier;
-
-    override string translate(Context context, Set!string params, ref Set!string imports)
-    {
-        import std.format : format;
-        import std.string : join;
-
-        return format(
-            "%s.%s",
-            subexpr.translate(context, params, imports),
-            identifier);
-    }
-
-    override ExprType guessExprType()
-    {
-        return ExprType(ExprType.kind.unspecified);
-    }
-
-    override string toString()
-    {
-        import std.format : format;
-
-        return format(
-            "DotExpr(subexpr = %s, identifier = %s)",
-            subexpr,
-            identifier);
-    }
-}
-
-class ArrowExpr : DotExpr
-{
-    override string toString()
-    {
-        import std.format : format;
-
-        return format(
-            "ArrowExpr(subexpr = %s, identifier = %s)",
-            subexpr,
-            identifier);
-    }
-}
-
-class SubExpr : Expression
-{
-    Expression subexpr;
-
-    this (Expression subexpr)
-    {
-        this.subexpr = subexpr;
-    }
-
-    override string translate(Context context, Set!string params, ref Set!string imports)
-    {
-        import std.format : format;
-
-        if (surplus)
-            return format("%s", subexpr.translate(context, params, imports));
-        else
-            return format("(%s)", subexpr.translate(context, params, imports));
-    }
-
-    bool surplus() const
-    {
-        auto id = typeid(subexpr);
-        return id == typeid(Identifier) || id == typeid(DotExpr);
-    }
-
-    override Expression debraced()
-    {
-        return subexpr.debraced;
-    }
-
-    override Expression braced()
-    {
-        return this;
-    }
-
-    override ExprType guessExprType()
-    {
-        return subexpr.guessExprType();
-    }
-
-    override void guessParamTypes(ref ExprType[string] params, ExprType type)
-    {
-        subexpr.guessParamTypes(params, type);
-    }
-
-    override string toString()
-    {
-        import std.format : format;
-
-        return format("SubExpr(subexpr = %s)", subexpr);
-    }
-}
-
-class UnaryExpr : Expression
-{
-    Expression subexpr;
-    string operator;
-    bool postfix = false;
-
-    override string translate(Context context, Set!string params, ref Set!string imports)
-    {
-        import std.format : format;
-
-        if (operator == "sizeof")
-            return format("%s.sizeof", subexpr.braced.translate(context, params, imports));
-        else if (postfix)
-            return format("%s%s", subexpr.translate(context, params, imports), operator);
-        else
-            return format("%s%s", operator, subexpr.translate(context, params, imports));
-    }
-
-    override ExprType guessExprType()
-    {
-        if (operator == "sizeof")
-            return ExprType("size_t");
-        else
-            return subexpr.guessExprType();
-    }
-
-    override void guessParamTypes(ref ExprType[string] params, ExprType type)
-    {
-        if (operator == "sizeof")
-            subexpr.guessParamTypes(params, UnspecifiedExprType);
-        else if (operator == "++" || operator == "--")
-            subexpr.guessParamTypes(params, type.asLValue);
-        else
-            subexpr.guessParamTypes(params, type);
-    }
-
-    override string toString()
-    {
-        import std.format : format;
-
-        return format(
-            "UnaryExpr(subexpr = %s, operator = %s)",
-            subexpr,
-            operator);
-    }
-}
-
-class DefinedExpr : Expression
-{
-    string identifier;
-
-    override ExprType guessExprType()
-    {
-        return ExprType("int");
-    }
-
-    override string toString()
-    {
-        import std.format : format;
-
-        return format("DefinedExpr(identifier = %s)", identifier);
-    }
-}
-
-class SizeofType : Expression
-{
-    Type type;
-
-    override string translate(Context context, Set!string params, ref Set!string imports)
-    {
-        import std.format : format;
-
-        return format("%s.sizeof", translateType(context, type).makeString());
-    }
-
-    override ExprType guessExprType()
-    {
-        return ExprType("size_t");
-    }
-
-    override string toString()
-    {
-        import std.format : format;
-
-        return format("SizeofType(type = %s)", type);
-    }
-}
-
-class CastExpr : Expression
-{
-    Type type;
-    Expression subexpr;
-
-    override string translate(Context context, Set!string params, ref Set!string imports)
-    {
-        import std.format : format;
-
-        return format(
-            "cast(%s) %s",
-            translateType(context, type).makeString(),
-            subexpr.debraced.translate(context, params, imports));
-    }
-
-    override ExprType guessExprType()
-    {
-        return UnspecifiedExprType;
-    }
-
-    override void guessParamTypes(ref ExprType[string] params, ExprType type)
-    {
-        subexpr.guessParamTypes(params, UnspecifiedExprType);
-    }
-
-    override string toString()
-    {
-        import std.format : format;
-
-        return format(
-            "CastExpr(typename = %s, subexpr = %s)",
-            type,
-            subexpr);
-    }
-}
-
-class BinaryExpr : Expression
-{
-    Expression left;
-    Expression right;
-    string operator;
-
-    override string translate(Context context, Set!string params, ref Set!string imports)
-    {
-        import std.format : format;
-
-        return format(
-            "%s %s %s",
-            left.translate(context, params, imports),
-            operator,
-            right.translate(context, params, imports));
-    }
-
-    override ExprType guessExprType()
-    {
-        return strictCommonType(left.guessExprType(), right.guessExprType());
-    }
-
-    override void guessParamTypes(ref ExprType[string] params, ExprType type)
-    {
-        left.guessParamTypes(params, UnspecifiedExprType);
-        right.guessParamTypes(params, UnspecifiedExprType);
-    }
-
-    override string toString()
-    {
-        import std.format : format;
-        import std.range : retro;
-        import std.algorithm.searching : findSplit;
-        import std.array : array;
-
-        auto rname = findSplit(this.classinfo.name.retro, ".")[0].array;
-
-        return format(
-            "%s(left = %s, right = %s, operator = %s)",
-            rname.retro,
-            left,
-            right,
-            operator);
-    }
-}
-
-class MulExpr : BinaryExpr
-{ }
-
-class AddExpr : BinaryExpr
-{ }
-
-class SftExpr : BinaryExpr
-{ }
-
-class RelExpr : BinaryExpr
-{ }
-
-class EqlExpr : BinaryExpr
-{ }
-
-class AndExpr : BinaryExpr
-{ }
-
-class XorExpr : BinaryExpr
-{ }
-
-class OrExpr : BinaryExpr
-{ }
-
-class LogicalAndExpr : BinaryExpr
-{ }
-
-class LogicalOrExpr : BinaryExpr
-{ }
-
-class CondExpr : Expression
-{
-    Expression expr;
-    Expression left;
-    Expression right;
-
-    override string translate(Context context, Set!string params, ref Set!string imports)
-    {
-        import std.format : format;
-
-        return format(
-            "%s ? %s : %s",
-            expr.translate(context, params, imports),
-            left.translate(context, params, imports),
-            right.translate(context, params, imports));
-    }
-
-    override ExprType guessExprType()
-    {
-        return strictCommonType(left.guessExprType(), right.guessExprType());
-    }
-
-    override void guessParamTypes(ref ExprType[string] params, ExprType type)
-    {
-        expr.guessParamTypes(params, type);
-        left.guessParamTypes(params, type);
-        right.guessParamTypes(params, type);
-    }
-
-    override string toString()
-    {
-        import std.format : format;
-        import std.range : retro;
-        import std.algorithm.searching : findSplit;
-        import std.array : array;
-
-        auto rname = findSplit(this.classinfo.name.retro, ".")[0].array;
-
-        return format(
-            "CondExpr(expr = %s, left = %s, right = %s)",
-            expr,
-            left,
-            right);
-    }
-}
-
-class Expression
-{
-    protected static SourceNode translateType(Context context, Type type)
-    {
-        return dstep.translator.Type.translateType(context, Cursor.init, type);
-    }
-
-    string translate(Context context, Set!string params, ref Set!string imports)
-    {
-        return "<" ~ toString ~ ">";
-    }
-
-    Expression debraced()
-    {
-        return this;
-    }
-
-    Expression braced()
-    {
-        return new SubExpr(this);
-    }
-
-    ExprType guessExprType()
-    {
-        return ExprType(ExprType.kind.generic);
-    }
-
-    void guessParamTypes(ref ExprType[string] params, ExprType type)
-    { }
-
-    override string toString()
-    {
-        return "";
-    }
-
-    void dumpAST(ref Appender!string result, size_t indent)
-    {
-        import std.format;
-        import std.array : replicate;
-
-        result.put(" ".replicate(indent));
-        result.put(toString());
-    }
-}
 
 enum DirectiveKind
 {
@@ -1035,7 +601,7 @@ class MacroDefinition : Directive
         else
             formattedWrite(result, "MacroDefinition %s(%s)", spelling, join(params, ", "));
 
-        if (expr !is null)
+        if (expr.hasValue)
             expr.dumpAST(result, indent + 4);
     }
 
@@ -1047,943 +613,7 @@ class MacroDefinition : Directive
     }
 }
 
-Expression parseStringConcat(ref Token[] tokens)
-{
-    import std.array;
 
-    auto local = tokens;
-
-    Expression[] substrings;
-
-    while (true)
-    {
-        string spelling;
-
-        if (acceptStringLiteral(local, spelling))
-        {
-            substrings ~= new StringLiteral(spelling);
-        }
-        else if (accept!("#")(local, TokenKind.punctuation))
-        {
-            if (!accept(local, spelling, TokenKind.identifier))
-                return null;
-
-            substrings ~= new StringifyExpr(spelling);
-        }
-        else
-        {
-            break;
-        }
-    }
-
-    if (substrings.length == 0)
-        return null;
-
-    tokens = local;
-
-    if (substrings.length == 1)
-        return substrings.front;
-
-    return new StringConcat(substrings);
-}
-
-Expression parseTokenConcat(ref Token[] tokens)
-{
-    Expression parseSubexpr(ref Token[] tokens)
-    {
-        string spelling;
-
-        if (acceptIdentifier(tokens, spelling))
-            return new Identifier(spelling);
-
-        if (acceptLiteral(tokens, spelling))
-            return new Literal(spelling);
-
-        return null;
-    }
-
-    auto local = tokens;
-
-    Expression[] subexprs;
-
-    if (auto first = parseSubexpr(local))
-    {
-        if (!acceptPunctuation!("##")(local))
-            return null;
-
-        if (auto expr = parseSubexpr(local))
-        {
-            subexprs ~= first;
-            subexprs ~= expr;
-
-            tokens = local;
-
-            while (acceptPunctuation!("##")(local))
-            {
-                expr = parseSubexpr(local);
-
-                if (expr)
-                {
-                    subexprs ~= expr;
-                    tokens = local;
-                }
-                else
-                {
-                    break;
-                }
-            }
-
-            return new TokenConcat(subexprs);
-        }
-    }
-
-    return null;
-}
-
-Expression parsePrimaryExpr(ref Token[] tokens, Cursor[string] table, bool defined)
-{
-    string spelling;
-
-    if (accept(tokens, spelling, TokenKind.identifier))
-        return new Identifier(spelling);
-
-    auto local = tokens;
-
-    auto substrings = parseStringConcat(local);
-
-    if (substrings !is null)
-    {
-        tokens = local;
-        return substrings;
-    }
-
-    if (accept(local, spelling, TokenKind.literal))
-    {
-        tokens = local;
-        return new Literal(spelling);
-    }
-
-    if (!accept!("(")(local, TokenKind.punctuation))
-        return null;
-
-    auto subexpr = parseExpr(local, table, defined);
-
-    if (subexpr is null)
-        return null;
-
-    if (!accept!(")")(local, TokenKind.punctuation))
-        return null;
-
-    tokens = local;
-
-    return new SubExpr(subexpr);
-}
-
-Expression[] parseArgsList(ref Token[] tokens, Cursor[string] table, bool defined)
-{
-    auto local = tokens;
-
-    Expression[] exprs = [ parseSftExpr(local, table, defined) ];
-
-    if (exprs[0] is null)
-        return null;
-
-    while (true)
-    {
-        if (acceptPunctuation!(",")(local))
-        {
-            Expression expr = parseSftExpr(local, table, defined);
-
-            if (expr is null)
-                break;
-
-            exprs ~= expr;
-        }
-        else
-        {
-            break;
-        }
-    }
-
-    tokens = local;
-
-    return exprs;
-}
-
-Expression parsePostfixExpr(ref Token[] tokens, Cursor[string] table, bool defined)
-{
-    auto local = tokens;
-
-    Expression expr = parsePrimaryExpr(local, table, defined);
-
-    if (expr is null)
-        return null;
-
-    string spelling;
-
-    while (true)
-    {
-        if (acceptPunctuation!("[")(local))
-        {
-            auto index = parseExpr(local, table, defined);
-
-            if (index is null)
-                break;
-
-            if (!acceptPunctuation!("]")(local))
-                break;
-
-            IndexExpr subexpr = new IndexExpr;
-            subexpr.subexpr = expr;
-            subexpr.index = index;
-            expr = subexpr;
-        }
-        else if (acceptPunctuation!("(")(local))
-        {
-            if (acceptPunctuation!(")")(local))
-            {
-                CallExpr subexpr = new CallExpr;
-                subexpr.expr = expr;
-                subexpr.args = [];
-                expr = subexpr;
-            }
-            else
-            {
-                auto args = parseArgsList(local, table, defined);
-
-                if (args is null)
-                    break;
-
-                if (!acceptPunctuation!(")")(local))
-                    break;
-
-                CallExpr subexpr = new CallExpr;
-                subexpr.expr = expr;
-                subexpr.args = args;
-                expr = subexpr;
-            }
-        }
-        else if (acceptPunctuation!(".")(local) && acceptIdentifier(local, spelling))
-        {
-            DotExpr subexpr = new DotExpr;
-            subexpr.subexpr = expr;
-            subexpr.identifier = spelling;
-            expr = subexpr;
-        }
-        else if (acceptPunctuation!("->")(local) && acceptIdentifier(local, spelling))
-        {
-            ArrowExpr subexpr = new ArrowExpr;
-            subexpr.subexpr = expr;
-            subexpr.identifier = spelling;
-            expr = subexpr;
-        }
-        else if (acceptPunctuation!("++", "--")(local, spelling))
-        {
-            UnaryExpr subexpr = new UnaryExpr;
-            subexpr.subexpr = expr;
-            subexpr.operator = spelling;
-            subexpr.postfix = true;
-            expr = subexpr;
-        }
-        else
-        {
-            break;
-        }
-    }
-
-    tokens = local;
-
-    return expr;
-}
-
-Expression parseSizeofType(ref Token[] tokens, Cursor[string] table)
-{
-    auto local = tokens;
-
-    if (acceptPunctuation!("(")(local))
-    {
-        Type type = parseTypeName(local, table);
-
-        if (type.isValid && acceptPunctuation!(")")(local))
-        {
-            SizeofType expr = new SizeofType;
-            expr.type = type;
-            tokens = local;
-            return expr;
-        }
-    }
-
-    return null;
-}
-
-Expression parseDefinedExpr(ref Token[] tokens)
-{
-    auto local = tokens;
-
-    if (accept!("defined")(local, TokenKind.identifier))
-    {
-        string spelling;
-
-        if (acceptIdentifier(local, spelling))
-        {
-            auto expr = new DefinedExpr;
-            expr.identifier = spelling;
-            tokens = local;
-            return expr;
-        }
-
-        if (acceptPunctuation!("(")(local) &&
-            acceptIdentifier(local, spelling) &&
-            acceptPunctuation!(")")(local))
-        {
-            auto expr = new DefinedExpr;
-            expr.identifier = spelling;
-            tokens = local;
-            return expr;
-        }
-    }
-
-    return null;
-}
-
-Expression parseUnaryExpr(ref Token[] tokens, Cursor[string] table, bool defined)
-{
-    auto local = tokens;
-
-    string spelling;
-
-    if (accept!("++", "--")(local, spelling, TokenKind.punctuation))
-    {
-        Expression subexpr = parseUnaryExpr(local, table, defined);
-
-        if (subexpr !is null)
-        {
-            UnaryExpr expr = new UnaryExpr;
-            expr.subexpr = subexpr;
-            expr.operator = spelling;
-            tokens = local;
-            return expr;
-        }
-    }
-
-    if (accept!("&", "*", "+", "-", "~", "!")(local, spelling, TokenKind.punctuation))
-    {
-        Expression subexpr = parseCastExpr(local, table, defined);
-
-        if (subexpr !is null)
-        {
-            UnaryExpr expr = new UnaryExpr;
-            expr.subexpr = subexpr;
-            expr.operator = spelling;
-            tokens = local;
-            return expr;
-        }
-    }
-
-    if (accept!("sizeof")(local, spelling, TokenKind.keyword))
-    {
-        if (auto expr = parseSizeofType(local, table))
-        {
-            tokens = local;
-            return expr;
-        }
-
-        Expression subexpr = parseUnaryExpr(local, table, defined);
-
-        if (subexpr !is null)
-        {
-            UnaryExpr expr = new UnaryExpr;
-            expr.subexpr = subexpr;
-            expr.operator = spelling;
-            tokens = local;
-            return expr;
-        }
-    }
-
-    if (defined)
-    {
-        auto expr = parseDefinedExpr(local);
-
-        if (expr)
-        {
-            tokens = local;
-            return expr;
-        }
-    }
-
-    return parsePostfixExpr(tokens, table, defined);
-}
-
-Expression parseCastExpr(ref Token[] tokens, Cursor[string] table, bool defined)
-{
-    auto local = tokens;
-
-    if (!accept!("(")(local, TokenKind.punctuation))
-        return parseUnaryExpr(tokens, table, defined);
-
-    Type type = parseTypeName(local, table);
-
-    if (!type.isValid)
-        return parseUnaryExpr(tokens, table, defined);
-
-    if (!accept!(")")(local, TokenKind.punctuation))
-        return parseUnaryExpr(tokens, table, defined);
-
-    auto subexpr = parseCastExpr(local, table, defined);
-
-    if (subexpr is null)
-        return parseUnaryExpr(tokens, table, defined);
-
-    tokens = local;
-
-    CastExpr result = new CastExpr;
-    result.type = type;
-    result.subexpr = subexpr;
-
-    return result;
-}
-
-alias parseMulExpr = parseLeftAssoc!(MulExpr, parseCastExpr, "*", "/", "%");
-alias parseAddExpr = parseLeftAssoc!(AddExpr, parseMulExpr, "+", "-");
-alias parseSftExpr = parseLeftAssoc!(SftExpr, parseAddExpr, "<<", ">>");
-alias parseRelExpr = parseLeftAssoc!(RelExpr, parseSftExpr, "<", ">", "<=", ">=");
-alias parseEqlExpr = parseLeftAssoc!(EqlExpr, parseRelExpr, "==", "!=");
-alias parseAndExpr = parseLeftAssoc!(AndExpr, parseEqlExpr, "&");
-alias parseXorExpr = parseLeftAssoc!(XorExpr, parseAndExpr, "^");
-alias parseOrExpr = parseLeftAssoc!(OrExpr, parseXorExpr, "|");
-alias parseLogicalAndExpr = parseLeftAssoc!(LogicalAndExpr, parseOrExpr, "&&");
-alias parseLogicalOrExpr = parseLeftAssoc!(LogicalOrExpr, parseLogicalAndExpr, "||");
-
-Expression parseCondExpr(ref Token[] tokens, Cursor[string] table, bool defined)
-{
-    auto local = tokens;
-
-    Expression expr = parseLogicalOrExpr(local, table, defined);
-
-    if (expr is null)
-        return null;
-
-    tokens = local;
-
-    if (acceptPunctuation!("?")(local))
-    {
-        Expression left = parseExpr(local, table, defined);
-
-        if (left !is null && acceptPunctuation!(":")(local))
-        {
-            Expression right = parseCondExpr(local, table, defined);
-
-            if (right !is null)
-            {
-                CondExpr supexpr = new CondExpr;
-                supexpr.expr = expr;
-                supexpr.left = left;
-                supexpr.right = right;
-                expr = supexpr;
-
-                tokens = local;
-            }
-        }
-    }
-
-    return expr;
-}
-
-bool parseBasicSpecifier(ref Token[] tokens, ref string spelling, Cursor[string] table)
-{
-    import std.meta : AliasSeq;
-
-    alias specifiers = AliasSeq!(
-        "void",
-        "char",
-        "short",
-        "int",
-        "long",
-        "float",
-        "double",
-        "signed",
-        "unsigned",
-        // "__complex__", TBD
-        // "_Complex", TBD
-        "bool",
-        "_Bool");
-
-    return accept!(specifiers)(tokens, spelling);
-}
-
-bool parseRecordSpecifier(ref Token[] tokens, ref Type type, Cursor[string] table)
-{
-    auto local = tokens;
-    string spelling;
-    string keywordType;
-
-    if (accept!("struct", "union")(local, keywordType, TokenKind.keyword) &&
-        acceptIdentifier(local, spelling))
-    {
-        if (auto ptr = (keywordType ~ " " ~ spelling in table))
-        {
-            type = ptr.type;
-            tokens = local;
-            return true;
-        }
-    }
-
-    return false;
-}
-
-bool parseEnumSpecifier(ref Token[] tokens, ref Type type, Cursor[string] table)
-{
-    auto local = tokens;
-    string spelling;
-
-    if (acceptIdentifier(local, spelling))
-    {
-        if (auto ptr = ("enum " ~ spelling in table))
-        {
-            type = ptr.type;
-            tokens = local;
-            return true;
-        }
-    }
-
-    return false;
-}
-
-bool parseTypedefName(ref Token[] tokens, ref Type type, Cursor[string] table)
-{
-    auto local = tokens;
-    string spelling;
-
-    if (acceptIdentifier(local, spelling))
-    {
-        if (auto ptr = (spelling in table))
-        {
-            type = Type.makeTypedef(spelling, ptr.type.canonical);
-
-            tokens = local;
-
-            return true;
-        }
-    }
-
-    return false;
-}
-
-bool parseComplexSpecifier(ref Token[] tokens, ref Type type, Cursor[string] table)
-{
-    return parseRecordSpecifier(tokens, type, table) ||
-        parseEnumSpecifier(tokens, type, table) ||
-        parseTypedefName(tokens, type, table);
-}
-
-bool parseTypeQualifier(ref Token[] tokens, ref string spelling)
-{
-    import std.meta : AliasSeq;
-
-    alias qualifiers = AliasSeq!(
-        "const",
-        "volatile",
-        "_Atomic");
-
-    return accept!(qualifiers)(tokens, spelling);
-}
-
-bool parseSpecifierQualifierList(
-    ref Token[] tokens,
-    ref Type type,
-    Cursor[string] table)
-{
-    auto local = tokens;
-
-    Set!string specifiers;
-    Set!string qualifiers;
-
-    while (true)
-    {
-        string spelling;
-
-        if (parseBasicSpecifier(local, spelling, table))
-        {
-            if (type.isValid)
-                return false;
-
-            if (specifiers.contains(spelling))
-            {
-                if (spelling == "long")
-                {
-                    if (specifiers.contains("__llong"))
-                        return false;
-                    else
-                        spelling = "__llong";
-                }
-                else
-                {
-                    return false;
-                }
-            }
-
-            specifiers.add(spelling);
-        }
-        else if (parseComplexSpecifier(local, type, table))
-        {
-            if (specifiers.length != 0)
-                return false;
-        }
-        else if (parseTypeQualifier(local, spelling))
-        {
-            if (qualifiers.contains(spelling))
-                return false;
-
-            qualifiers.add(spelling);
-        }
-        else
-        {
-            break;
-        }
-    }
-
-    if (specifiers.length != 0)
-    {
-        if(!basicSpecifierListToType(type, specifiers))
-            return false;
-    }
-
-    if (qualifiers.contains("const"))
-        type.isConst = true;
-
-    if (qualifiers.contains("volatile"))
-        type.isVolatile = true;
-
-    tokens = local;
-
-    return true;
-}
-
-bool parseQualifierList(
-    ref Token[] tokens,
-    ref Type type)
-{
-    auto local = tokens;
-
-    Set!string qualifiers;
-
-    while (true)
-    {
-        string spelling;
-
-        if (parseTypeQualifier(local, spelling))
-        {
-            if (qualifiers.contains(spelling))
-                return false;
-
-            qualifiers.add(spelling);
-        }
-        else
-        {
-            break;
-        }
-    }
-
-    if (qualifiers.contains("const"))
-        type.isConst = true;
-
-    if (qualifiers.contains("volatile"))
-        type.isVolatile = true;
-
-    tokens = local;
-
-    return true;
-}
-
-bool basicSpecifierListToType(ref Type type, Set!string specifiers)
-{
-    if (specifiers.contains("void"))
-    {
-        if (specifiers.length != 1)
-            return false;
-
-        type = Type(CXTypeKind.void_, "void");
-        return true;
-    }
-
-    if (specifiers.contains("bool") || specifiers.contains("_Bool"))
-    {
-        if (specifiers.length != 1)
-            return false;
-
-        type = Type(CXTypeKind.bool_, "bool");
-        return true;
-    }
-
-    if (specifiers.contains("float"))
-    {
-        if (specifiers.length != 1)
-            return false;
-
-        type = Type(CXTypeKind.float_, "float");
-        return true;
-    }
-
-    if (specifiers.contains("double"))
-    {
-        if (specifiers.contains("long"))
-        {
-            if (specifiers.length != 2)
-                return false;
-
-            type = Type(CXTypeKind.longDouble, "long double");
-
-            return true;
-        }
-
-        if (specifiers.length != 1)
-            return false;
-
-        type = Type(CXTypeKind.double_, "double");
-
-        return true;
-    }
-
-    if ((specifiers.contains("signed") && specifiers.contains("unsigned")) ||
-        (specifiers.contains("char") && specifiers.contains("short")) ||
-        (specifiers.contains("char") && specifiers.contains("long")) ||
-        (specifiers.contains("char") && specifiers.contains("__llong")) ||
-        (specifiers.contains("short") && specifiers.contains("long")) ||
-        (specifiers.contains("short") && specifiers.contains("__llong")))
-        return false;
-
-    if (specifiers.contains("char"))
-    {
-        if (specifiers.contains("signed"))
-        {
-            if (specifiers.length != 2)
-                return false;
-
-            type = Type(CXTypeKind.sChar, "signed char");
-        }
-        else if (specifiers.contains("unsigned"))
-        {
-            if (specifiers.length != 2)
-                return false;
-
-            type = Type(CXTypeKind.uChar, "unsigned char");
-        }
-        else
-        {
-            if (specifiers.length != 1)
-                return false;
-
-            type = Type(CXTypeKind.charS, "char");
-        }
-
-        return true;
-    }
-
-    if (specifiers.contains("short"))
-    {
-        if (specifiers.contains("unsigned"))
-            type = Type(CXTypeKind.uShort, "unsigned short");
-        else
-            type = Type(CXTypeKind.short_, "short");
-
-        return true;
-    }
-
-    if (specifiers.contains("__llong"))
-    {
-        if (specifiers.contains("unsigned"))
-            type = Type(CXTypeKind.uLongLong, "unsigned long long");
-        else
-            type = Type(CXTypeKind.longLong, "long long");
-
-        return true;
-    }
-
-    if (specifiers.contains("long"))
-    {
-        if (specifiers.contains("unsigned"))
-            type = Type(CXTypeKind.uLong, "unsigned long");
-        else
-            type = Type(CXTypeKind.long_, "long");
-
-        return true;
-    }
-
-    if (specifiers.contains("int"))
-    {
-        if (specifiers.contains("unsigned"))
-            type = Type(CXTypeKind.uInt, "unsigned int");
-        else
-            type = Type(CXTypeKind.int_, "int");
-
-        return true;
-    }
-
-    if (specifiers.contains("unsigned"))
-    {
-        type = Type(CXTypeKind.uInt, "unsigned int");
-        return true;
-    }
-
-    if (specifiers.contains("signed"))
-    {
-        type = Type(CXTypeKind.int_, "int");
-        return true;
-    }
-
-    return false;
-}
-
-bool parsePointer(ref Token[] tokens, ref Type type)
-{
-    if (acceptPunctuation!("*")(tokens))
-    {
-        type = Type.makePointer(type);
-
-        if (!parsePointer(tokens, type))
-        {
-            if (parseQualifierList(tokens, type))
-                parsePointer(tokens, type);
-        }
-
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-}
-
-bool parseAbstractDeclarator(ref Token[] tokens, ref Type type, Cursor[string] table)
-{
-    return parsePointer(tokens, type);
-}
-
-Type parseTypeName(ref Token[] tokens, Cursor[string] table)
-{
-    auto local = tokens;
-
-    Type type;
-
-    if (!parseSpecifierQualifierList(local, type, table))
-        return type;
-
-    parseAbstractDeclarator(local, type, table);
-
-    tokens = local;
-
-    return type;
-}
-
-Expression parseExpr(ref Token[] tokens, Cursor[string] table, bool defined)
-{
-    if (auto expr = parseTokenConcat(tokens))
-        return expr;
-
-    if (auto expr = parseCondExpr(tokens, table, defined))
-        return expr;
-
-    return null;
-}
-
-Expression parseExpr(ref Token[] tokens, bool defined)
-{
-    Cursor[string] table;
-
-    return parseCondExpr(tokens, table, defined);
-}
-
-string[] parseMacroParams(ref Token[] tokens)
-{
-    auto local = tokens;
-
-    string[] params;
-
-    string param;
-
-    if (!accept(local, param, TokenKind.identifier))
-        return [];
-
-    params ~= param;
-
-    while (accept!(",")(local, TokenKind.punctuation))
-    {
-        if (!accept(local, param, TokenKind.identifier))
-            return null;
-
-        params ~= param;
-    }
-
-    tokens = local;
-
-    return params;
-}
-
-MacroDefinition parseMacroDefinition(
-    ref Token[] tokens,
-    Cursor[string] table,
-    bool defined = false)
-{
-    auto local = tokens;
-
-    if (!accept!("#")(local, TokenKind.punctuation))
-        return null;
-
-    if (!accept!("define")(local, TokenKind.identifier))
-        return null;
-
-    MacroDefinition result = parsePartialMacroDefinition(local, table, defined);
-
-    if (result !is null)
-        tokens = local;
-
-    return result;
-}
-
-MacroDefinition parsePartialMacroDefinition(
-    ref Token[] tokens,
-    Cursor[string] table,
-    bool defined = false)
-{
-    auto local = tokens;
-
-    MacroDefinition result = new MacroDefinition;
-
-    if (!accept(local, result.spelling, TokenKind.identifier))
-        return null;
-
-    // Functional macros mustn't contain space before parentheses of parameter list.
-    bool space =
-        tokens.length > 2 &&
-        tokens[0].extent.end.offset == tokens[1].extent.start.offset;
-
-    if (space && accept!("(")(local, TokenKind.punctuation))
-    {
-        if (!accept!(")")(local, TokenKind.punctuation))
-        {
-            result.params = parseMacroParams(local);
-
-            if (!accept!(")")(local, TokenKind.punctuation))
-                return null;
-        }
-    }
-    else
-    {
-        result.constant = true;
-    }
-
-    result.expr = parseExpr(local, table, defined);
-
-    if (!local.empty)
-    {
-        return null;
-    }
-    else
-    {
-        tokens = local;
-        return result;
-    }
-}
 
 void translateConstDirective(
     Output output,
@@ -2071,12 +701,12 @@ bool translateFunctAlias(
     import std.algorithm.comparison : equal;
     import std.algorithm.iteration : map;
 
-    CallExpr expr = cast(CallExpr) definition.expr;
+    CallExpr* expr = definition.expr.peek!CallExpr;
     Set!string imports;
 
     if (expr !is null)
     {
-        Identifier ident = cast(Identifier) expr.expr;
+        Identifier* ident = expr.expr.peek!Identifier;
 
         if (ident.spelling == "assert")
         {
@@ -2183,12 +813,78 @@ void translateMacroDefinition(Output output, Context context, Cursor cursor)
 
     if (definition !is null)
     {
-        if (definition.expr !is null)
+        if (definition.expr.hasValue)
         {
             if (definition.constant)
                 translateConstDirective(output, context, definition);
             else
                 translateFunctDirective(output, context, definition);
         }
+    }
+}
+
+MacroDefinition parseMacroDefinition(
+    ref Token[] tokens,
+    Cursor[string] table,
+    bool defined = false)
+{
+    auto local = tokens;
+
+    if (!accept!("#")(local, TokenKind.punctuation))
+        return null;
+
+    if (!accept!("define")(local, TokenKind.identifier))
+        return null;
+
+    MacroDefinition result = parsePartialMacroDefinition(local, table, defined);
+
+    if (result !is null)
+        tokens = local;
+
+    return result;
+}
+
+MacroDefinition parsePartialMacroDefinition(
+    ref Token[] tokens,
+    Cursor[string] table,
+    bool defined = false)
+{
+    auto local = tokens;
+
+    MacroDefinition result = new MacroDefinition;
+
+    if (!accept(local, result.spelling, TokenKind.identifier))
+        return null;
+
+    // Functional macros mustn't contain space before parentheses of parameter list.
+    bool space =
+        tokens.length > 2 &&
+        tokens[0].extent.end.offset == tokens[1].extent.start.offset;
+
+    if (space && accept!("(")(local, TokenKind.punctuation))
+    {
+        if (!accept!(")")(local, TokenKind.punctuation))
+        {
+            result.params = parseMacroParams(local);
+
+            if (!accept!(")")(local, TokenKind.punctuation))
+                return null;
+        }
+    }
+    else
+    {
+        result.constant = true;
+    }
+
+    result.expr = parseExpr(local, table, defined);
+
+    if (!local.empty)
+    {
+        return null;
+    }
+    else
+    {
+        tokens = local;
+        return result;
     }
 }
