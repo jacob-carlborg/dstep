@@ -98,12 +98,12 @@ class MacroIndex
 
         static bool checkIfndef(ConditionalDirective directives, string identifier)
         {
-            auto negation = cast (UnaryExpr) directives.condition;
+            auto negation = directives.condition.peek!UnaryExpr;
 
-            if (negation && negation.operator == "!")
+            if (negation !is null && negation.operator == "!")
             {
-                auto defined = cast (DefinedExpr) negation.subexpr;
-                return defined && defined.identifier == identifier;
+                auto defined = negation.subexpr.peek!DefinedExpr;
+                return defined !is null && defined.identifier == identifier;
             }
 
             return false;

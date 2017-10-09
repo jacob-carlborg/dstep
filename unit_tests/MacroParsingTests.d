@@ -13,6 +13,7 @@ import clang.Type;
 
 import dstep.translator.Context;
 import dstep.translator.MacroDefinition;
+import dstep.translator.MacroParser;
 
 alias parse = parseMacroDefinition;
 
@@ -20,10 +21,8 @@ Type parseTypeName(string source)
 {
     Cursor[string] table;
     auto tokens = tokenize(source);
-    return dstep.translator.MacroDefinition.parseTypeName(tokens, table);
+    return dstep.translator.MacroParser.parseTypeName(tokens, table);
 }
-
-
 
 unittest
 {
@@ -51,38 +50,38 @@ unittest
 
     auto a = parse("#define FOO 1");
     assert(a !is null);
-    assert(typeid(a.expr) == typeid(Literal));
-    assert((cast(Literal) a.expr).spelling == "1");
+    assert(a.expr.type == typeid(Literal));
+    assert((a.expr.get!Literal).spelling == "1");
 
     auto b = parse("#define FOO(p) #p");
     assert(b !is null);
-    assert(typeid(b.expr) == typeid(StringifyExpr));
-    assert((cast(StringifyExpr) b.expr).spelling == "p");
+    assert(b.expr.type == typeid(StringifyExpr));
+    assert(b.expr.get!StringifyExpr.spelling == "p");
 
     auto c = parse(`#define STRINGIZE(major, minor) #major"."#minor`);
     assert(c !is null);
-    assert(c.expr !is null);
-    assert(cast(StringConcat) c.expr !is null);
-    auto cSubstrings = (cast(StringConcat) c.expr).substrings;
+    assert(c.expr.hasValue);
+    assert(c.expr.peek!StringConcat !is null);
+    auto cSubstrings = (c.expr.get!StringConcat).substrings;
     assert(cSubstrings.length == 3);
-    assert(cast(StringifyExpr) cSubstrings[0] !is null);
-    assert(cast(StringLiteral) cSubstrings[1] !is null);
-    assert(cast(StringifyExpr) cSubstrings[2] !is null);
-    assert((cast(StringifyExpr) cSubstrings[0]).spelling == "major");
-    assert((cast(StringLiteral) cSubstrings[1]).spelling == `"."`);
-    assert((cast(StringifyExpr) cSubstrings[2]).spelling == "minor");
+    assert(cSubstrings[0].peek!StringifyExpr !is null);
+    assert(cSubstrings[1].peek!StringLiteral !is null);
+    assert(cSubstrings[2].peek!StringifyExpr !is null);
+    assert(cSubstrings[0].get!StringifyExpr.spelling == "major");
+    assert(cSubstrings[1].get!StringLiteral.spelling == `"."`);
+    assert(cSubstrings[2].get!StringifyExpr.spelling == "minor");
 
     auto d = parse(`#define VERSION ENCODE(MAJOR, MINOR)`);
-    assert(d !is null && d.expr !is null && cast(CallExpr) d.expr !is null);
-    auto dCallExpr = cast(CallExpr) d.expr;
+    assert(d !is null && d.expr.hasValue && d.expr.peek!CallExpr !is null);
+    auto dCallExpr = d.expr.get!CallExpr;
     assert(dCallExpr.args.length == 2);
-    assert((cast(Identifier) dCallExpr.args[0]) !is null);
-    assert((cast(Identifier) dCallExpr.args[0]).spelling == "MAJOR");
-    assert((cast(Identifier) dCallExpr.args[1]) !is null);
-    assert((cast(Identifier) dCallExpr.args[1]).spelling == "MINOR");
+    assert(dCallExpr.args[0].peek!Identifier !is null);
+    assert(dCallExpr.args[0].peek!Identifier.spelling == "MAJOR");
+    assert(dCallExpr.args[1].peek!Identifier !is null);
+    assert(dCallExpr.args[1].peek!Identifier.spelling == "MINOR");
 
     auto e = parse(`#define VERSION ENCODE(MAJOR, MINOR)(PATCH)`);
-    assert(d !is null && d.expr !is null && cast(CallExpr) d.expr !is null);
+    assert(d !is null && d.expr.hasValue && d.expr.peek!CallExpr !is null);
 }
 
 // Test collection of type names.

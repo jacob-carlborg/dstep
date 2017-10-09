@@ -15,6 +15,7 @@ import clang.Token;
 import clang.TranslationUnit;
 
 public import dstep.translator.MacroDefinition;
+public import dstep.translator.MacroParser;
 
 class ConditionalDirective : Directive
 {
@@ -219,11 +220,11 @@ struct DirectiveRange
         {
             auto expr = parseExpr(tokens, true);
 
-            if (expr && tokens.empty)
+            if (expr.hasValue && tokens.empty)
                 return expr;
         }
 
-        return null;
+        return Expression.init;
     }
 
     Expression parseIfdef(Token[] tokens)
@@ -234,13 +235,13 @@ struct DirectiveRange
             acceptDirective!"ifdef"(tokens) &&
             acceptIdentifier(tokens, spelling))
         {
-            auto expr = new DefinedExpr();
+            auto expr = DefinedExpr();
             expr.identifier = spelling;
 
-            return expr;
+            return Expression(expr);
         }
 
-        return null;
+        return Expression.init;
     }
 
     Expression parseIfndef(Token[] tokens)
@@ -251,17 +252,17 @@ struct DirectiveRange
             acceptDirective!"ifndef"(tokens) &&
             acceptIdentifier(tokens, spelling))
         {
-            auto defined = new DefinedExpr();
+            auto defined = DefinedExpr();
             defined.identifier = spelling;
 
             auto expr = new UnaryExpr();
             expr.subexpr = defined;
             expr.operator = "!";
 
-            return expr;
+            return Expression(expr);
         }
 
-        return null;
+        return Expression.init;
     }
 
     Expression parseElif(Token[] tokens)
@@ -270,40 +271,46 @@ struct DirectiveRange
         {
             auto expr = parseExpr(tokens, true);
 
-            if (expr && tokens.empty)
+            if (expr.hasValue && tokens.empty)
                 return expr;
         }
 
-        return null;
+        return Expression.init;
     }
 
     Expression parseIfCombined(ref DirectiveKind kind, Token[] tokens)
     {
-        if (auto expr = parseIf(tokens))
+        Expression expr;
+
+        expr = parseIf(tokens);
+        if (expr.hasValue)
         {
             kind = DirectiveKind.if_;
             return expr;
         }
 
-        if (auto expr = parseIfdef(tokens))
+        expr = parseIfdef(tokens);
+        if (expr.hasValue)
         {
             kind = DirectiveKind.ifdef;
             return expr;
         }
 
-        if (auto expr = parseIfndef(tokens))
+        expr = parseIfndef(tokens);
+        if (expr.hasValue)
         {
             kind = DirectiveKind.ifndef;
             return expr;
         }
 
-        if (auto expr = parseElif(tokens))
+        expr = parseElif(tokens);
+        if (expr.hasValue)
         {
             kind = DirectiveKind.elif;
             return expr;
         }
 
-        return null;
+        return Expression.init;
     }
 
     bool parseElse(ref DirectiveKind kind, Token[] tokens)
@@ -322,7 +329,9 @@ struct DirectiveRange
     {
         DirectiveKind kind;
 
-        if (auto expr = parseIfCombined(kind, tokens))
+        auto expr = parseIfCombined(kind, tokens);
+
+        if (expr.hasValue)
         {
             auto directive = new ConditionalDirective;
             directive.kind = kind;
@@ -674,12 +683,12 @@ unittest
 
     assert(cond0);
 
-    auto unary0 = cast(UnaryExpr) cond0.condition;
+    auto unary0 = cond0.condition.peek!UnaryExpr;
 
     assert(unary0);
     assert(unary0.operator == "!");
 
-    auto defined0 = cast(DefinedExpr) unary0.subexpr;
+    auto defined0 = unary0.subexpr.peek!DefinedExpr;
 
     assert(defined0);
     assert(defined0.identifier == "FOO");
@@ -696,7 +705,7 @@ unittest
     auto cond1 = cast(ConditionalDirective) case1[0];
 
     assert(cond1);
-    assert(cond1.condition);
+    assert(cond1.condition.hasValue);
 
 
     auto case2 = directives(`
@@ -710,7 +719,7 @@ unittest
     auto cond2 = cast(ConditionalDirective) case2[0];
 
     assert(cond2);
-    assert(cond2.condition);
+    assert(cond2.condition.hasValue);
 }
 
 // Test parsing of multi-branch directives.
@@ -743,9 +752,9 @@ unittest
     assert(cond1);
     assert(cond2);
 
-    auto id0 = cast(Identifier) cond0.condition;
-    auto id1 = cast(Identifier) cond1.condition;
-    auto id2 = cast(Identifier) cond2.condition;
+    auto id0 = cond0.condition.peek!Identifier;
+    auto id1 = cond1.condition.peek!Identifier;
+    auto id2 = cond2.condition.peek!Identifier;
 
     assert(id0);
     assert(id0.spelling == "FOO");
@@ -777,7 +786,7 @@ unittest
 
     assert(cond1);
 
-    auto expr = cast(DefinedExpr) cond1.condition;
+    auto expr = cond1.condition.peek!DefinedExpr;
 
     assert(expr);
     assert(expr.identifier == "FOO");

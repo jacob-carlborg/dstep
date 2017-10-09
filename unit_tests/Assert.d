@@ -16,6 +16,7 @@ import dstep.translator.CommentIndex;
 import dstep.translator.Context;
 import dstep.translator.IncludeHandler;
 import dstep.translator.MacroDefinition;
+import dstep.translator.MacroParser;
 import dstep.translator.Output;
 import dstep.translator.Translator;
 import dstep.translator.Type;
@@ -76,7 +77,7 @@ void assertTranslatesMacroExpression(
 
     if (definition !is null)
     {
-        if (definition.expr !is null)
+        if (definition.expr.hasValue)
             actual = definition.expr.debraced.translate(context, params, imports);
     }
 
@@ -116,7 +117,7 @@ Type parseTypeName(string source)
 {
     Cursor[string] table;
     auto tokens = tokenize(source);
-    return dstep.translator.MacroDefinition.parseTypeName(tokens, table);
+    return dstep.translator.MacroParser.parseTypeName(tokens, table);
 }
 
 void assertParsedTypeHasKind(
