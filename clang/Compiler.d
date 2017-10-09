@@ -52,6 +52,13 @@ struct Compiler
         return [virtualPath];
     }
 
+    string[] extraIncludeFlags ()
+    {
+        import std.algorithm;
+        import std.array;
+        return extraIncludePaths.map!(x => "-I" ~ x).array;
+    }
+
     CXUnsavedFile[] extraHeaders ()
     {
         import std.algorithm : map;
