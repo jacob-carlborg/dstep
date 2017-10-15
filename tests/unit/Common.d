@@ -25,6 +25,7 @@ import dstep.translator.CommentIndex;
 import dstep.translator.Context;
 import dstep.translator.IncludeHandler;
 import dstep.translator.MacroDefinition;
+import dstep.translator.MacroParser;
 import dstep.translator.Options;
 import dstep.translator.Output;
 import dstep.translator.Translator;

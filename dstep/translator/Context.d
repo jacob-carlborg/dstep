@@ -8,8 +8,9 @@ module dstep.translator.Context;
 
 import clang.c.Index;
 import clang.Cursor;
-import clang.TranslationUnit;
+import clang.Index;
 import clang.SourceRange;
+import clang.TranslationUnit;
 
 import dstep.translator.CommentIndex;
 import dstep.translator.IncludeHandler;
@@ -72,6 +73,19 @@ class Context
         typeNames_ = collectGlobalTypes(translUnit);
 
         source = translUnit.source;
+    }
+
+    static Context fromString(string source, Options options = Options.init)
+    {
+        import clang.Compiler;
+
+        auto translationUnit = TranslationUnit.parseString(
+            Index(false, false),
+            source,
+            internalIncludeFlags(),
+            internalHeaders());
+
+        return new Context(translationUnit, options);
     }
 
     public string getAnonymousName (Cursor cursor)

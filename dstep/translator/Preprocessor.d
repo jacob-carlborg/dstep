@@ -10,12 +10,54 @@ import std.array;
 
 import clang.Cursor;
 import clang.Index;
+import clang.SourceLocation;
 import clang.SourceRange;
 import clang.Token;
 import clang.TranslationUnit;
 
 public import dstep.translator.MacroDefinition;
 public import dstep.translator.MacroParser;
+
+enum DirectiveKind
+{
+    elif,
+    else_,
+    endif,
+    error,
+    define,
+    if_,
+    ifdef,
+    ifndef,
+    include,
+    line,
+    undef,
+    pragmaOnce,
+}
+
+bool isIf(DirectiveKind kind)
+{
+    return kind == DirectiveKind.if_ ||
+        kind == DirectiveKind.ifdef ||
+        kind == DirectiveKind.ifndef;
+}
+
+class Directive
+{
+    Token[] tokens;
+    SourceRange extent;
+    DirectiveKind kind;
+
+    @property SourceLocation location()
+    {
+        return extent.start;
+    }
+
+    override string toString()
+    {
+        import std.format : format;
+        return format("Directive(kind = %s)", kind);
+    }
+}
 
 class ConditionalDirective : Directive
 {
@@ -26,6 +68,17 @@ class ConditionalDirective : Directive
 
 class PragmaDirective : Directive
 {
+}
+
+class DefineDirective : Directive
+{
+    MacroDefinition macroDefinition;
+    alias macroDefinition this;
+
+    this (MacroDefinition macroDefinition)
+    {
+        this.macroDefinition = macroDefinition;
+    }
 }
 
 class UndefDirective : Directive
@@ -355,10 +408,21 @@ struct DirectiveRange
 
     private Directive parseDefine(Token[] tokens, Cursor[string] table)
     {
-        auto directive = parseMacroDefinition(tokens, table, true);
+        auto local = tokens;
+
+        if (!accept!("#")(local, TokenKind.punctuation))
+            return null;
+
+        if (!accept!("define")(local, TokenKind.identifier))
+            return null;
+
+        MacroDefinition result = parsePartialMacroDefinition(local, table, true);
+
+        if (result !is null)
+            tokens = local;
 
         if (tokens.empty)
-            return directive;
+            return new DefineDirective(result);
 
         return null;
     }
@@ -648,11 +712,11 @@ unittest
     auto x0 = directives(`#define FOO`);
 
     assert(x0.length == 1);
-    assert(cast(MacroDefinition) x0[0]);
+    assert(cast(DefineDirective) x0[0]);
 
-    auto foo = cast(MacroDefinition) x0[0];
+    auto foo = cast(DefineDirective) x0[0];
 
-    assert(foo.spelling == "FOO");
+    assert(foo.macroDefinition.spelling == "FOO");
 }
 
 unittest

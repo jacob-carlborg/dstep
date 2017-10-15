@@ -23,6 +23,7 @@ import dstep.translator.Context;
 import dstep.translator.MacroParser;
 import dstep.translator.Output;
 import dstep.translator.Type;
+import dstep.translator.TypeInference;
 
 void dumpAST(Expression expression, ref Appender!string result, size_t indent)
 {
@@ -66,6 +67,56 @@ void resolveMacroDependency(Context context, string spelling)
         return context.includeHandler.resolveDependency(*cursor);
 }
 
+string translate(CallExpr expression, Context context, Set!string params, ref Set!string imports)
+{
+    import std.algorithm;
+    import std.format;
+    import std.range;
+    import std.string;
+
+    auto spelling = expression.expr.spelling;
+
+    alias fmap = a => a.debraced.translate(context, params, imports);
+
+    if (spelling !is null)
+    {
+        context.resolveMacroDependency(spelling);
+
+        auto definition = spelling in context.translator.typedMacroDefinitions;
+
+        if (definition !is null)
+        {
+            string[] typeArguments, valueArguments;
+
+            auto arguments = zip(
+                definition.signature.params,
+                expression.args.map!fmap);
+
+            foreach (type, argument; arguments) {
+                if (auto defined = type.peek!Meta)
+                    typeArguments ~= argument;
+                else
+                    valueArguments ~= argument;
+            }
+
+            string typesList = typeArguments.length <= 1
+                ? typeArguments.join(", ")
+                : "(" ~ typeArguments.join(", ") ~ ")";
+
+            string argumentList = "(" ~ valueArguments.join(", ") ~ ")";
+
+            string exclamation = typesList.empty ? "" : "!";
+
+            return spelling ~ exclamation ~ typesList ~ argumentList;
+        }
+    }
+
+    return format(
+        "%s(%s)",
+        expression.expr.translate(context, params, imports),
+        expression.args.map!fmap.join(", "));
+}
+
 string translate(Expression expression, Context context, Set!string params, ref Set!string imports)
 {
     import std.format : format;
@@ -87,6 +138,13 @@ string translate(Expression expression, Context context, Set!string params, ref 
         {
             context.resolveMacroDependency(identifier.spelling);
             return identifier.spelling;
+        },
+        delegate string(TypeIdentifier identifier)
+        {
+            auto spelling = translateType(context, Cursor.init, identifier.type)
+                .makeString();
+            context.resolveMacroDependency(spelling);
+            return spelling;
         },
         delegate string(Literal literal)
         {
@@ -148,15 +206,7 @@ string translate(Expression expression, Context context, Set!string params, ref 
         },
         delegate string(CallExpr callExpr)
         {
-            import std.algorithm.iteration : map;
-            import std.string : join;
-
-            alias translate = a => a.translate(context, params, imports);
-
-            return format(
-                "%s(%s)",
-                callExpr.expr.translate(context, params, imports),
-                callExpr.args.map!translate.join(", "));
+            return callExpr.translate(context, params, imports);
         },
         delegate string(DotExpr dotExpr)
         {
@@ -238,102 +288,6 @@ string translate(Expression expression, Context context, Set!string params, ref 
         });
 }
 
-ExprType guessExprType(Expression expression)
-{
-    import std.format : format;
-
-    if (!expression.hasValue)
-        return ExprType(ExprType.kind.unspecified);
-
-    ExprType guessBinaryOperator(T)(T operator)
-    {
-        return strictCommonType(
-            operator.left.guessExprType(),
-            operator.right.guessExprType());
-    }
-
-    return expression.visit!(
-        delegate ExprType(Identifier identifier)
-        {
-            return ExprType(ExprType.kind.unspecified);
-        },
-        delegate ExprType(Literal literal)
-        {
-            return ExprType("int");
-        },
-        delegate ExprType(StringLiteral stringLiteral)
-        {
-            return ExprType("string");
-        },
-        delegate ExprType(StringifyExpr stringifyExpr)
-        {
-            return ExprType("string");
-        },
-        delegate ExprType(StringConcat stringConcat)
-        {
-            return ExprType("string");
-        },
-        delegate ExprType(TokenConcat tokenConcat)
-        {
-            return ExprType("string");
-        },
-        delegate ExprType(IndexExpr indexExpr)
-        {
-            return ExprType(ExprType.kind.unspecified);
-        },
-        delegate ExprType(CallExpr callExpr)
-        {
-            return ExprType(ExprType.kind.unspecified);
-        },
-        delegate ExprType(DotExpr dotExpr)
-        {
-            return ExprType(ExprType.kind.unspecified);
-        },
-        delegate ExprType(ArrowExpr arrowExpr)
-        {
-            return ExprType(ExprType.kind.unspecified);
-        },
-        delegate ExprType(SubExpr subExpr)
-        {
-            return subExpr.subexpr.guessExprType();
-        },
-        delegate ExprType(UnaryExpr unaryExpr)
-        {
-            if (unaryExpr.operator == "sizeof")
-                return ExprType("size_t");
-            else
-                return unaryExpr.subexpr.guessExprType();
-        },
-        delegate ExprType(DefinedExpr literal)
-        {
-            return ExprType("int");
-        },
-        delegate ExprType(SizeofType sizeofType)
-        {
-            return ExprType("size_t");
-        },
-        delegate ExprType(CastExpr castExpr)
-        {
-            return UnspecifiedExprType;
-        },
-        guessBinaryOperator!MulExpr,
-        guessBinaryOperator!AddExpr,
-        guessBinaryOperator!SftExpr,
-        guessBinaryOperator!RelExpr,
-        guessBinaryOperator!EqlExpr,
-        guessBinaryOperator!AndExpr,
-        guessBinaryOperator!XorExpr,
-        guessBinaryOperator!OrExpr,
-        guessBinaryOperator!LogicalAndExpr,
-        guessBinaryOperator!LogicalOrExpr,
-        delegate ExprType(CondExpr condExpr)
-        {
-            return strictCommonType(
-                condExpr.left.guessExprType(),
-                condExpr.right.guessExprType());
-        });
-}
-
 void guessParamTypes(Expression expression, ref ExprType[string] params, ExprType type)
 {
     import std.format : format;
@@ -341,9 +295,7 @@ void guessParamTypes(Expression expression, ref ExprType[string] params, ExprTyp
     if (!expression.hasValue)
         return;
 
-    void noop(T)(T operator)
-    {
-    }
+    void pass(T)(T operator) { }
 
     void guessBinaryOperator(T)(T operator)
     {
@@ -359,15 +311,6 @@ void guessParamTypes(Expression expression, ref ExprType[string] params, ExprTyp
             if (param !is null && param.isUnspecified)
                 *param = type;
         },
-        noop!Literal,
-        noop!StringLiteral,
-        noop!StringifyExpr,
-        noop!StringConcat,
-        noop!TokenConcat,
-        noop!IndexExpr,
-        noop!CallExpr,
-        noop!DotExpr,
-        noop!ArrowExpr,
         delegate void(SubExpr subExpr)
         {
             subExpr.subexpr.guessParamTypes(params, type);
@@ -381,8 +324,6 @@ void guessParamTypes(Expression expression, ref ExprType[string] params, ExprTyp
             else
                 unaryExpr.subexpr.guessParamTypes(params, type);
         },
-        noop!DefinedExpr,
-        noop!SizeofType,
         delegate void(CastExpr castExpr)
         {
             castExpr.subexpr.guessParamTypes(params, UnspecifiedExprType);
@@ -402,7 +343,8 @@ void guessParamTypes(Expression expression, ref ExprType[string] params, ExprTyp
             condExpr.expr.guessParamTypes(params, type);
             condExpr.left.guessParamTypes(params, type);
             condExpr.right.guessParamTypes(params, type);
-        });
+        },
+        pass);
 }
 
 struct ExprType
@@ -508,91 +450,6 @@ ExprType strictCommonType(ExprType a, ExprType b)
         return ExprType(ExprType.kind.unspecified);
 }
 
-enum DirectiveKind
-{
-    elif,
-    else_,
-    endif,
-    error,
-    define,
-    if_,
-    ifdef,
-    ifndef,
-    include,
-    line,
-    undef,
-    pragmaOnce,
-}
-
-bool isIf(DirectiveKind kind)
-{
-    return kind == DirectiveKind.if_ ||
-        kind == DirectiveKind.ifdef ||
-        kind == DirectiveKind.ifndef;
-}
-
-class Directive
-{
-    Token[] tokens;
-    SourceRange extent;
-    DirectiveKind kind;
-
-    @property SourceLocation location()
-    {
-        return extent.start;
-    }
-
-    override string toString()
-    {
-        import std.format : format;
-        return format("Directive(kind = %s)", kind);
-    }
-}
-
-class MacroDefinition : Directive
-{
-    string spelling;
-    string[] params;
-    bool constant;
-    Expression expr;
-
-    override string toString()
-    {
-        import std.format : format;
-
-        return format(
-            "MacroDefinition(spelling = %s, params = %s, constant = %s, expr = %s)",
-            spelling,
-            params,
-            constant,
-            expr);
-    }
-
-    void dumpAST(ref Appender!string result, size_t indent)
-    {
-        import std.format;
-        import std.array : replicate;
-        import std.string : join;
-
-        result.put(" ".replicate(indent));
-
-        if (constant)
-            formattedWrite(result, "MacroDefinition %s", spelling);
-        else
-            formattedWrite(result, "MacroDefinition %s(%s)", spelling, join(params, ", "));
-
-        if (expr.hasValue)
-            expr.dumpAST(result, indent + 4);
-    }
-
-    string dumpAST()
-    {
-        auto result = Appender!string();
-        dumpAST(result, 0);
-        return result.data;
-    }
-}
-
 void translateConstDirective(
     Output output,
     Context context,
@@ -611,76 +468,16 @@ void translateConstDirective(
         directive.expr.debraced.translate(context, params, imports));
 }
 
-string translateDirectiveParamList(string[] params, ExprType[string] types)
-{
-    import std.algorithm.iteration : map;
-    import std.format : format;
-    import std.array : join;
-
-    return params.map!(a => format("%s %s", types[a].asParamType(), a)).join(", ");
-}
-
-string translateDirectiveTypeList(string[] params, ref ExprType[string] types)
-{
-    import std.algorithm.iteration : filter;
-    import std.algorithm.searching : count;
-    import std.format : format;
-    import std.array : appender, join;
-
-    bool canBeGeneric(ExprType type)
-    {
-        return type.isGeneric || type.isUnspecified;
-    }
-
-    auto filtered = params.filter!(a => canBeGeneric(types[a]));
-
-    if (count(filtered) > 1)
-    {
-        size_t index = 0;
-        foreach (param; filtered)
-        {
-            types[param].spelling = format("%s%d", types[param].spelling, index);
-            ++index;
-        }
-    }
-
-    auto result = appender!string;
-    Set!ExprType appended;
-
-    if (!filtered.empty)
-    {
-        auto type = types[filtered.front];
-        result.put(asPlainType(type));
-        appended.add(type.decayed);
-        filtered.popFront();
-    }
-
-    foreach (param; filtered)
-    {
-        auto type = types[param];
-
-        if (!appended.contains(type.decayed))
-        {
-            result.put(", ");
-            result.put(asPlainType(type));
-            appended.add(type.decayed);
-        }
-    }
-
-    return result.data;
-}
-
 bool translateFunctAlias(
     Output output,
     Context context,
-    MacroDefinition definition,
-    Set!string params)
+    MacroDefinition definition)
 {
     import std.algorithm.comparison : equal;
     import std.algorithm.iteration : map;
 
     CallExpr* expr = definition.expr.peek!CallExpr;
-    Set!string imports;
+    Set!string imports, params;
 
     if (expr !is null)
     {
@@ -721,148 +518,118 @@ bool translateFunctAlias(
     return false;
 }
 
-void translateFunctDirective(
+string spelling(CallExpr expression)
+{
+    auto identifier = expression.expr.debraced.peek!Identifier();
+    return identifier is null ? null : identifier.spelling;
+}
+
+string spelling(Expression expression)
+{
+    auto debraced = expression.debraced();
+
+    if (!debraced.hasValue)
+        return null;
+
+    auto identifier = debraced.peek!Identifier();
+
+    if (identifier is null)
+        return null;
+
+    return identifier.spelling;
+}
+
+void translateMacroDefinitionConstant(
     Output output,
     Context context,
-    MacroDefinition definition)
+    TypedMacroDefinition definition)
 {
-    import std.format : format;
-    import std.array : join;
+    Set!string params, imports;
 
-    Set!string params;
+    version (D1)
+        enum formatString = "const %s = %s;";
+    else
+        enum formatString = "enum %s = %s;";
 
-    if (translateFunctAlias(output, context, definition, params))
-        return;
-
-    ExprType returnType = definition.expr.guessExprType();
-    string typeStrings = "", paramStrings = "";
-
-    if (definition.params.length != 0)
-    {
-        ExprType[string] types;
-
-        foreach (param; definition.params)
-            types[param] = ExprType(ExprType.kind.unspecified);
-
-        definition.expr.guessParamTypes(types, returnType);
-
-        auto typeList = translateDirectiveTypeList(definition.params, types);
-
-        if (typeList != "")
-            typeStrings = format("(%s)", typeList);
-
-        paramStrings = translateDirectiveParamList(definition.params, types);
-
-        foreach (param; types.byKey)
-            params.add(param);
-    }
-
-    Set!string imports;
-
-    auto translated = definition.expr.debraced.translate(context, params, imports);
-
-    output.subscopeStrong(
-        "%s%s %s%s(%s)",
-        "extern (D) ",
-        returnType.asReturnType(),
-        definition.spelling,
-        typeStrings,
-        paramStrings) in {
-
-        if (imports.length != 0)
-        {
-            foreach (item; imports.byKey)
-                output.singleLine("import %s;", item);
-
-            output.separator;
-        }
-
-        output.singleLine("return %s;", translated);
-    };
+    output.singleLine(
+        formatString,
+        definition.definition.spelling,
+        definition.definition.expr.debraced.translate(context, params, imports));
 }
 
-void translateMacroDefinition(Output output, Context context, Cursor cursor)
+void translateMacroDefinition(
+    Output output,
+    Context context,
+    TypedMacroDefinition definition)
 {
-    assert(cursor.kind == CXCursorKind.macroDefinition);
+    import std.algorithm;
+    import std.conv;
+    import std.range;
 
-    auto tokens = cursor.tokens;
-
-    auto definition = parsePartialMacroDefinition(tokens, context.typeNames);
-
-    if (definition !is null)
+    if (definition.constant)
     {
-        if (definition.expr.hasValue)
-        {
-            if (definition.constant)
-                translateConstDirective(output, context, definition);
+        translateMacroDefinitionConstant(output, context, definition);
+    }
+    else if (!translateFunctAlias(output, context, definition))
+    {
+        string[] typeParams, paramTypes, variables;
+
+        auto params = zip(
+            definition.signature.params,
+            definition.params,
+            iota(definition.params.length));
+
+        auto numTypes = definition.signature.params
+            .count!(x => x.peek!Generic !is null);
+
+        foreach (type, name, index; params) {
+            if (auto defined = type.peek!Defined)
+            {
+                variables ~= defined.spelling ~ " " ~ name;
+            }
+            else if (type.peek!Generic)
+            {
+                paramTypes ~= numTypes == 1 ? "T" : "T" ~ index.to!string();
+                variables ~= "auto ref " ~ paramTypes.back ~ " " ~ name;
+            }
             else
-                translateFunctDirective(output, context, definition);
+            {
+                typeParams ~= name;
+            }
         }
+
+        auto types = typeParams ~ paramTypes;
+
+        Set!string imports;
+
+        auto translated = definition.expr.debraced
+            .translate(context, setFromList(definition.params), imports);
+
+        auto resultType = definition.signature.result;
+
+        output.subscopeStrong(
+            "extern (D) %s %s%s(%s)",
+            resultType.peek!Defined ? resultType.get!Defined.spelling : "auto",
+            definition.spelling,
+            types.empty ? "" : "(" ~ types.join(", ") ~ ")",
+            variables.join(", "))
+        in {
+            if (imports.length != 0)
+            {
+                foreach (item; imports.byKey)
+                    output.singleLine("import %s;", item);
+
+                output.separator;
+            }
+
+            output.singleLine("return %s;", translated);
+        };
     }
 }
 
-MacroDefinition parseMacroDefinition(
-    ref Token[] tokens,
-    Cursor[string] table,
-    bool defined = false)
+string translateMacroDefinition(Context context, TypedMacroDefinition definition)
 {
-    auto local = tokens;
-
-    if (!accept!("#")(local, TokenKind.punctuation))
-        return null;
-
-    if (!accept!("define")(local, TokenKind.identifier))
-        return null;
-
-    MacroDefinition result = parsePartialMacroDefinition(local, table, defined);
-
-    if (result !is null)
-        tokens = local;
-
-    return result;
-}
-
-MacroDefinition parsePartialMacroDefinition(
-    ref Token[] tokens,
-    Cursor[string] table,
-    bool defined = false)
-{
-    auto local = tokens;
-
-    MacroDefinition result = new MacroDefinition;
-
-    if (!accept(local, result.spelling, TokenKind.identifier))
-        return null;
-
-    // Functional macros mustn't contain space before parentheses of parameter list.
-    bool space =
-        tokens.length > 2 &&
-        tokens[0].extent.end.offset == tokens[1].extent.start.offset;
-
-    if (space && accept!("(")(local, TokenKind.punctuation))
-    {
-        if (!accept!(")")(local, TokenKind.punctuation))
-        {
-            result.params = parseMacroParams(local);
-
-            if (!accept!(")")(local, TokenKind.punctuation))
-                return null;
-        }
-    }
-    else
-    {
-        result.constant = true;
-    }
-
-    result.expr = parseExpr(local, table, defined);
-
-    if (!local.empty)
-    {
-        return null;
-    }
-    else
-    {
-        tokens = local;
-        return result;
-    }
+    Output output = new Output();
+    translateMacroDefinition(output, context, definition);
+    return output.data;
 }

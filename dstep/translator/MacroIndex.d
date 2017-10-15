@@ -25,7 +25,7 @@ class MacroIndex
     private bool delegate (Cursor, Cursor) lessOp;
     private Cursor[] expansions;
     private Cursor[string] globalCursors_;
-    private Directive[] directives;
+    public Directive[] directives;
 
     this(TranslationUnit translUnit)
     {
@@ -117,7 +117,7 @@ class MacroIndex
             else if (2 <= directives.length)
             {
                 auto ifndef = cast (ConditionalDirective) directives[0];
-                auto define = cast (MacroDefinition) directives[1];
+                auto define = cast (DefineDirective) directives[1];
                 auto endif = directives[$ - 1];
 
                 if (ifndef && define &&

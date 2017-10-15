@@ -6,15 +6,19 @@
  */
 module dstep.translator.MacroParser;
 
+import std.array;
 import std.meta;
 import std.traits;
 import std.variant;
+import std.stdio;
 
 import clang.c.Index;
 import clang.Cursor;
 import clang.Token;
 import clang.Type;
 import clang.Util;
+import clang.SourceLocation;
+import clang.SourceRange;
 
 enum bool isStringValue(alias T) =
     is(typeof(T) : const char[]) &&
@@ -195,17 +199,17 @@ struct Identifier
 {
     string spelling;
 
-    this (string spelling)
-    {
-        this.spelling = spelling;
-    }
-
     string toString()
     {
         import std.format : format;
 
         return format("Identifier(spelling = %s)", spelling);
     }
+}
+
+struct TypeIdentifier
+{
+    Type type;
 }
 
 struct Literal
@@ -501,6 +505,7 @@ class CondExpr
 
 alias Expression = Algebraic!(
     Identifier,
+    TypeIdentifier,
     Literal,
     StringLiteral,
     StringifyExpr,
@@ -627,6 +632,11 @@ Expression parsePrimaryExpr(ref Token[] tokens, Cursor[string] table, bool defin
 {
     string spelling;
 
+    auto type = parseTypeName(tokens, table);
+
+    if (type.isValid)
+        return Expression(TypeIdentifier(type));
+
     if (accept(tokens, spelling, TokenKind.identifier))
         return Expression(Identifier(spelling));
 
@@ -662,11 +672,34 @@ Expression parsePrimaryExpr(ref Token[] tokens, Cursor[string] table, bool defin
     return Expression(new SubExpr(subexpr));
 }
 
+Expression parseArg(ref Token[] tokens, Cursor[string] table, bool defined)
+{
+    auto local = tokens;
+
+    auto expression = parseSftExpr(local, table, defined);
+
+    if (expression.hasValue)
+    {
+        tokens = local;
+        return expression;
+    }
+
+    auto type = parseTypeName(local, table);
+
+    if (type.isValid)
+    {
+        tokens = local;
+        expression = TypeIdentifier(type);
+    }
+
+    return expression;
+}
+
 Expression[] parseArgsList(ref Token[] tokens, Cursor[string] table, bool defined)
 {
     auto local = tokens;
 
-    Expression[] exprs = [ parseSftExpr(local, table, defined) ];
+    Expression[] exprs = [ parseArg(local, table, defined) ];
 
     if (!exprs[0].hasValue)
         return null;
@@ -675,7 +708,7 @@ Expression[] parseArgsList(ref Token[] tokens, Cursor[string] table, bool define
     {
         if (acceptPunctuation!(",")(local))
         {
-            Expression expr = parseSftExpr(local, table, defined);
+            Expression expr = parseArg(local, table, defined);
 
             if (!expr.hasValue)
                 break;
@@ -1406,4 +1439,139 @@ string[] parseMacroParams(ref Token[] tokens)
     tokens = local;
 
     return params;
+}
+
+class MacroDefinition
+{
+    Cursor cursor;
+    string spelling;
+    string[] params;
+    bool constant;
+    Expression expr;
+
+    override string toString()
+    {
+        import std.format : format;
+
+        return format(
+            "MacroDefinition(spelling = %s, params = %s, constant = %s, expr = %s)",
+            spelling,
+            params,
+            constant,
+            expr);
+    }
+
+    void dumpAST(ref Appender!string result, size_t indent)
+    {
+        import std.format;
+        import std.array : replicate;
+        import std.string : join;
+
+        result.put(" ".replicate(indent));
+
+        if (constant)
+            formattedWrite(result, "MacroDefinition %s", spelling);
+        else
+            formattedWrite(result, "MacroDefinition %s(%s)", spelling, join(params, ", "));
+    }
+
+    string dumpAST()
+    {
+        auto result = Appender!string();
+        dumpAST(result, 0);
+        return result.data;
+    }
+}
+
+MacroDefinition parseMacroDefinition(
+    ref Token[] tokens,
+    Cursor[string] table,
+    bool defined = false)
+{
+    auto local = tokens;
+
+    if (!accept!("#")(local, TokenKind.punctuation))
+        return null;
+
+    if (!accept!("define")(local, TokenKind.identifier))
+        return null;
+
+    MacroDefinition result = parsePartialMacroDefinition(local, table, defined);
+
+    if (result !is null)
+        tokens = local;
+
+    return result;
+}
+
+MacroDefinition parsePartialMacroDefinition(
+    ref Token[] tokens,
+    Cursor[string] table,
+    bool defined = false)
+{
+    auto local = tokens;
+
+    MacroDefinition result = new MacroDefinition;
+
+    if (!accept(local, result.spelling, TokenKind.identifier))
+        return null;
+
+    // Functional macros mustn't contain space before parentheses of parameter list.
+    bool space =
+        tokens.length > 2 &&
+        tokens[0].extent.end.offset == tokens[1].extent.start.offset;
+
+    if (space && accept!("(")(local, TokenKind.punctuation))
+    {
+        if (!accept!(")")(local, TokenKind.punctuation))
+        {
+            result.params = parseMacroParams(local);
+
+            if (!accept!(")")(local, TokenKind.punctuation))
+                return null;
+        }
+    }
+    else
+    {
+        result.constant = true;
+    }
+
+    result.expr = parseExpr(local, table, defined);
+
+    if (!local.empty)
+    {
+        return null;
+    }
+    else
+    {
+        tokens = local;
+        return result;
+    }
+}
+
+MacroDefinition[] parseMacroDefinitions(Range)(
+    Range cursors,
+    Cursor[string] types)
+{
+    import std.algorithm;
+    import std.array;
+
+    alias predicate = (Cursor cursor) =>
+        cursor.kind == CXCursorKind.macroDefinition;
+    auto definitions = cursors.filter!predicate();
+
+    auto macroDefinitions = appender!(MacroDefinition[]);
+
+    foreach (definition; definitions) {
+        auto tokens = definition.tokens;
+        auto parsed = parsePartialMacroDefinition(tokens, types);
+
+        if (parsed !is null && parsed.expr.hasValue)
+        {
+            parsed.cursor = definition;
+            macroDefinitions.put(parsed);
+        }
+    }
+
+    return macroDefinitions.data;
 }

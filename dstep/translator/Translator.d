@@ -31,6 +31,7 @@ import dstep.translator.Output;
 import dstep.translator.MacroDefinition;
 import dstep.translator.Record;
 import dstep.translator.Type;
+import dstep.translator.TypeInference;
 
 public import dstep.translator.Options;
 
@@ -55,6 +56,7 @@ class Translator
         string[string] deferredDeclarations;
     }
 
+    TypedMacroDefinition[string] typedMacroDefinitions;
     Context context;
 
     this (TranslationUnit translationUnit, Options options = Options.init)
@@ -76,6 +78,7 @@ class Translator
     Output translateCursors()
     {
         Output result = new Output(context.commentIndex);
+        typedMacroDefinitions = inferMacroSignatures(context);
 
         bool first = true;
 
@@ -303,10 +306,11 @@ class Translator
     {
         if (context.options.translateMacros)
         {
-            dstep.translator.MacroDefinition.translateMacroDefinition(
-                output,
-                context,
-                cursor);
+            if (auto definition = cursor.spelling in typedMacroDefinitions)
+            {
+                dstep.translator.MacroDefinition
+                    .translateMacroDefinition(output, context, *definition);
+            }
         }
     }
 
