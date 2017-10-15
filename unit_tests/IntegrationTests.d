@@ -38,6 +38,12 @@ unittest
         ["--public-submodules", "--package", "modules"]);
 
     assertRunsDStepCFiles([
+        TestFile("test_files/module/main0NotNormalized.d", "test_files/module/main0NotNormalized.h"),
+        TestFile("test_files/module/include.d", "test_files/module/include.h"),
+        TestFile("test_files/module/unused.d", "test_files/module/unused.h")],
+        ["--public-submodules", "--package", "modules"]);
+
+    assertRunsDStepCFiles([
         TestFile("test_files/clang-c/BuildSystem.d", "test_files/clang-c/BuildSystem.h"),
         TestFile("test_files/clang-c/CXCompilationDatabase.d", "test_files/clang-c/CXCompilationDatabase.h"),
         TestFile("test_files/clang-c/CXErrorCode.d", "test_files/clang-c/CXErrorCode.h"),
@@ -45,7 +51,7 @@ unittest
         TestFile("test_files/clang-c/Documentation.d", "test_files/clang-c/Documentation.h"),
         TestFile("test_files/clang-c/Index.d", "test_files/clang-c/Index.h"),
         TestFile("test_files/clang-c/Platform.d", "test_files/clang-c/Platform.h")],
-        ["-Itest_files", "--public-submodules", "--package", "clang.c"]);
+        ["-Itest_files", "--public-submodules", "--normalize-modules", "--package", "clang.c"]);
 
     assertRunsDStepObjCFile(
         "test_files/objc/methods.d",

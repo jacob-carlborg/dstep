@@ -11,9 +11,9 @@
 |*                                                                            *|
 \*===----------------------------------------------------------------------===*/
 
-module clang.c.BuildSystem;
+module clang.c.build_system;
 
-public import clang.c.CXErrorCode;
+public import clang.c.cx_error_code;
 
 extern (C):
 

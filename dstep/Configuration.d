@@ -49,6 +49,10 @@ struct Configuration
     @("public-submodules", "Use public imports for submodules [default].")
     bool publicSubmodules = false;
 
+    // rename modules to D conforming form
+    @("normalize-modules", "Rename modules to D conforming form [default].")
+    bool normalizeModules = false;
+
     /// enable reduction of primitive type aliases
     @("reduce-aliases", "Reduce primitive type aliases [default].")
     bool reduceAliases = true;
@@ -122,6 +126,7 @@ struct Configuration
         options.enableComments = enableComments;
         options.packageName = packageName;
         options.publicSubmodules = publicSubmodules;
+        options.normalizeModules = normalizeModules;
         options.reduceAliases = reduceAliases;
         options.translateMacros = translateMacros;
         options.aliasEnumMembers = aliasEnumMembers;

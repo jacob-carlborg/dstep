@@ -12,9 +12,9 @@
 |*                                                                            *|
 \*===----------------------------------------------------------------------===*/
 
-module clang.c.CXCompilationDatabase;
+module clang.c.cx_compilation_database;
 
-public import clang.c.CXString;
+public import clang.c.cx_string;
 
 extern (C):
 

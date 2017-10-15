@@ -11,6 +11,7 @@ import clang.Cursor;
 import clang.Visitor;
 import clang.Util;
 
+import dstep.translator.ConvertCase;
 import dstep.translator.Context;
 import dstep.translator.Declaration;
 import dstep.translator.Output;
@@ -58,131 +59,6 @@ void generateEnumAliases(Output output, Context context, Cursor cursor, string s
                 break;
         }
     }
-}
-
-auto splitSpelling(string spelling)
-{
-    import std.algorithm;
-    import std.ascii;
-    import std.range;
-
-    struct Range
-    {
-        private string spelling;
-        private string next;
-        private bool capitals;
-
-        this(string spelling)
-        {
-            this.spelling = spelling.stripLeft('_');
-            capitals = !spelling.canFind!isLower;
-            popFront();
-        }
-
-        bool empty() const
-        {
-            return next.empty;
-        }
-
-        string front() const
-        {
-            return next;
-        }
-
-        void popFront()
-        {
-            if (spelling.empty)
-            {
-                next = spelling;
-            }
-            else
-            {
-                size_t end = capitals
-                    ? spelling[1 .. $].countUntil!(a => a == '_')
-                    : spelling[1 .. $].countUntil!(a => !a.isLower);
-
-                end = end == -1 ? spelling.length : end + 1;
-                next = spelling[0 .. end];
-                spelling = spelling[end .. $].stripLeft('_');
-            }
-        }
-    }
-
-    return Range(spelling);
-}
-
-unittest
-{
-    import std.array;
-
-    assert(splitSpelling("").array == []);
-    assert(splitSpelling("__").array == []);
-    assert(splitSpelling("x").array == ["x"]);
-    assert(splitSpelling("X").array == ["X"]);
-    assert(splitSpelling("xxx").array == ["xxx"]);
-    assert(splitSpelling("xxxXxx").array == ["xxx", "Xxx"]);
-    assert(splitSpelling("xxxXxxYyy").array == ["xxx", "Xxx", "Yyy"]);
-    assert(splitSpelling("xxxXxxYYY").array == ["xxx", "Xxx", "Y", "Y", "Y"]);
-    assert(splitSpelling("xxx_Xxx__YYY").array == ["xxx", "Xxx", "Y", "Y", "Y"]);
-    assert(splitSpelling("__xxx_Xxx__YYY__").array == ["xxx", "Xxx", "Y", "Y", "Y"]);
-    assert(splitSpelling("YYY").array == ["YYY"]);
-    assert(splitSpelling("Y_Y__XXY").array == ["Y", "Y", "XXY"]);
-    assert(splitSpelling("__Y_Y__XXY__").array == ["Y", "Y", "XXY"]);
-}
-
-string toCamelCase(string spelling)
-{
-    import std.algorithm;
-    import std.array;
-    import std.ascii;
-    import std.math;
-
-    auto split = spelling.splitSpelling();
-
-    if (split.empty)
-    {
-        return string.init;
-    }
-    else
-    {
-        char[] camelCase(string x)
-        {
-            return (cast(char) x[0].toUpper) ~
-                x[1 .. $].map!(x => cast(char) x.toLower).array;
-        }
-
-        char[] front;
-
-        while (split.front.length == 1)
-        {
-            front ~= cast(char) split.front.front.toLower;
-            split.popFront();
-        }
-
-        if (front.empty)
-        {
-            front = split.front.map!(x => cast(char) x.toLower).array;
-            split.popFront();
-        }
-
-        return (front ~ split.map!camelCase.join).idup;
-    }
-}
-
-unittest
-{
-    import std.array;
-
-    assert("".toCamelCase() == "");
-    assert("x".toCamelCase() == "x");
-    assert("X".toCamelCase() == "x");
-    assert("xy".toCamelCase() == "xy");
-    assert("xy_zw".toCamelCase() == "xyZw");
-    assert("xy_zw".toCamelCase() == "xyZw");
-    assert("xyZw".toCamelCase() == "xyZw");
-    assert("XY_ZW".toCamelCase() == "xyZw");
-    assert("XXXy_ZW".toCamelCase() == "xxXyZW");
-    assert("XXy_ZW".toCamelCase() == "xXyZW");
 }
 
 auto renameEnumMembers(MemberRange)(string enumSpelling, MemberRange memberSpellings)
