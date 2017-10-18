@@ -58,6 +58,14 @@ Expression braced(Expression expression)
         return Expression(new SubExpr(expression));
 }
 
+void resolveMacroDependency(Context context, string spelling)
+{
+    auto cursor = spelling in context.macroIndex.globalCursors();
+
+    if (cursor !is null)
+        return context.includeHandler.resolveDependency(*cursor);
+}
+
 string translate(Expression expression, Context context, Set!string params, ref Set!string imports)
 {
     import std.format : format;
@@ -77,14 +85,8 @@ string translate(Expression expression, Context context, Set!string params, ref 
     return expression.visit!(
         delegate string(Identifier identifier)
         {
-            auto translated = translateKnownConstant(
-                context,
-                identifier.spelling);
-
-            if (translated !is null)
-                return translated;
-            else
-                return identifier.spelling;
+            context.resolveMacroDependency(identifier.spelling);
+            return identifier.spelling;
         },
         delegate string(Literal literal)
         {
@@ -506,28 +508,6 @@ ExprType strictCommonType(ExprType a, ExprType b)
         return ExprType(ExprType.kind.unspecified);
 }
 
-string translateTypeLimitsConstant(Context context, string spelling)
-{
-    auto cursor = spelling in context.macroIndex.globalCursors;
-
-    if (cursor !is null &&
-        cursor.kind == CXCursorKind.macroDefinition &&
-        context.headerIndex.isFromStdLib(*cursor, "limits.h"))
-    {
-        context.includeHandler.addInclude("limits.h");
-        return spelling;
-    }
-
-    return null;
-}
-
-string translateKnownConstant(Context context, string spelling)
-{
-    return translateTypeLimitsConstant(context, spelling);
-}
-
-
-
 enum DirectiveKind
 {
     elif,
@@ -612,8 +592,6 @@ class MacroDefinition : Directive
         return result.data;
     }
 }
-
-
 
 void translateConstDirective(
     Output output,

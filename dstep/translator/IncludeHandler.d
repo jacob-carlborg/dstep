@@ -12,6 +12,7 @@ import clang.c.Index;
 import clang.Cursor;
 import clang.Util;
 
+import dstep.translator.HeaderIndex;
 import dstep.translator.Options;
 import dstep.translator.Output;
 
@@ -21,6 +22,7 @@ class IncludeHandler
     private string[string] submodules;
     private bool[string] includes;
     private bool[string] imports;
+    private HeaderIndex headerIndex;
     immutable static string[string] knownIncludes;
 
     shared static this ()
@@ -102,11 +104,12 @@ class IncludeHandler
         ];
     }
 
-    this (Options options)
+    this (HeaderIndex headerIndex, Options options)
     {
         import std.format;
         import std.algorithm : filter;
 
+        this.headerIndex = headerIndex;
         this.options = options;
 
         if (options.packageName != "")
@@ -179,6 +182,14 @@ class IncludeHandler
             importsBlock(output, unhandled.keys);
 
         output.finalize();
+    }
+
+    void resolveDependency(in Cursor cursor)
+    {
+        auto module_ = headerIndex.searchKnownModules(cursor);
+
+        if (module_ !is null)
+            addImport(module_);
     }
 
 private:
