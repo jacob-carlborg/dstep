@@ -72,7 +72,7 @@ struct ExpressionContext
     Context context;
     Set!string params;
     Set!string* imports;
-    Cursor[] scope_;
+    Cursor scope_;
     alias context this;
 
     @disable this();
@@ -100,6 +100,34 @@ struct ExpressionContext
         result.params = params;
         return result;
     }
+}
+
+string translate(Identifier identifier, ExpressionContext context)
+{
+    context.resolveMacroDependency(identifier.spelling);
+
+    auto constant = identifier.spelling in context.constNames();
+
+    if (constant !is null)
+    {
+        if (constant.kind == CXCursorKind.enumConstantDecl)
+        {
+            auto typedefParent = context.typedefParent(constant.lexicalParent);
+            auto lexicalParent = constant.lexicalParent;
+
+            auto scopeName = typedefParent
+                ? typedefParent.spelling
+                : lexicalParent.spelling;
+
+            auto scopePrefix = lexicalParent != context.scope_
+                ? scopeName ~ "."
+                : "";
+
+            return scopePrefix ~ context.translateSpelling(*constant);
+        }
+    }
+
+    return identifier.spelling;
 }
 
 string translate(CallExpr expression, ExpressionContext context)
@@ -171,8 +199,7 @@ string translate(Expression expression, ExpressionContext context)
     return expression.visit!(
         delegate string(Identifier identifier)
         {
-            context.resolveMacroDependency(identifier.spelling);
-            return identifier.spelling;
+            return identifier.translate(context);
         },
         delegate string(TypeIdentifier identifier)
         {

@@ -1415,6 +1415,24 @@ Expression parseExpr(ref Token[] tokens, bool defined)
     return parseCondExpr(tokens, table, defined);
 }
 
+Expression parseEnumMember(Token[] tokens, Cursor[string] table)
+{
+    string member;
+
+    if (!acceptIdentifier(tokens, member))
+        return Expression.init;
+
+    if (!acceptPunctuation!("=")(tokens, member))
+        return Expression.init;
+
+    auto expression = parseExpr(tokens, table, false);
+
+    if (tokens.empty)
+        return expression;
+    else
+        return Expression.init;
+}
+
 string[] parseMacroParams(ref Token[] tokens)
 {
     auto local = tokens;

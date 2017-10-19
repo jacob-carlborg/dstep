@@ -36,6 +36,7 @@ class Context
     private Translator translator_ = null;
     private Output globalScope_ = null;
     private Cursor[string] typeNames_;
+    private Cursor[string] constNames_;
     private string[Cursor] translatedSpellings;
 
     Options options;
@@ -70,8 +71,7 @@ class Context
             translator_ = new Translator(translUnit, options);
 
         globalScope_ = new Output();
-        typeNames_ = collectGlobalTypes(translUnit);
-
+        collectGlobalNames(translUnit, typeNames_, constNames_);
         source = translUnit.source;
     }
 
@@ -128,9 +128,14 @@ class Context
         return commentIndex_;
     }
 
-    @property public Cursor[string] typeNames()
+    public Cursor[string] typeNames()
     {
         return typeNames_;
+    }
+
+    public Cursor[string] constNames()
+    {
+        return constNames_;
     }
 
     public TypedefIndex typedefIndex()
@@ -198,6 +203,11 @@ class Context
             translatedSpellings[cursor] = spelling;
             return spelling;
         }
+    }
+
+    public void defineSpellingTranslation(in Cursor cursor, string spelling)
+    {
+        translatedSpellings[cursor] = spelling;
     }
 
     private void printCollisionWarning(
@@ -381,29 +391,21 @@ bool isGlobalLexically(Cursor cursor)
  * The type names are required for the parsing of C code (e.g. macro definition bodies),
  * as C grammar isn't context free.
  */
-Cursor[string] collectGlobalTypes(TranslationUnit translUnit)
+void collectGlobalNames(
+    TranslationUnit translUnit,
+    ref Cursor[string] types,
+    ref Cursor[string] consts)
 {
-    void collectGlobalTypes(ref Cursor[string] result, Cursor parent)
+    void collectEnumMembers(
+        Cursor parent,
+        ref Cursor[string] consts)
     {
-        foreach (cursor, _; parent.all)
+        foreach (cursor; parent.all)
         {
             switch (cursor.kind)
             {
-                case CXCursorKind.typedefDecl:
-                    result[cursor.spelling] = cursor;
-                    break;
-
-                case CXCursorKind.structDecl:
-                    result["struct " ~ cursor.spelling] = cursor;
-                    break;
-
-                case CXCursorKind.unionDecl:
-                    result["union " ~ cursor.spelling] = cursor;
-                    break;
-
-
-                case CXCursorKind.enumDecl:
-                    result["enum " ~ cursor.spelling] = cursor;
+                case CXCursorKind.enumConstantDecl:
+                    consts[cursor.spelling] = cursor;
                     break;
 
                 default:
@@ -412,9 +414,37 @@ Cursor[string] collectGlobalTypes(TranslationUnit translUnit)
         }
     }
 
-    Cursor[string] result;
+    void collectGlobalTypes(
+        Cursor parent,
+        ref Cursor[string] types,
+        ref Cursor[string] consts)
+    {
+        foreach (cursor, _; parent.all)
+        {
+            switch (cursor.kind)
+            {
+                case CXCursorKind.typedefDecl:
+                    types[cursor.spelling] = cursor;
+                    break;
 
-    collectGlobalTypes(result, translUnit.cursor);
+                case CXCursorKind.structDecl:
+                    types["struct " ~ cursor.spelling] = cursor;
+                    break;
 
-    return result;
+                case CXCursorKind.unionDecl:
+                    types["union " ~ cursor.spelling] = cursor;
+                    break;
+
+                case CXCursorKind.enumDecl:
+                    types["enum " ~ cursor.spelling] = cursor;
+                    collectEnumMembers(cursor, consts);
+                    break;
+
+                default:
+                    break;
+            }
+        }
+    }
+
+    collectGlobalTypes(translUnit.cursor, types, consts);
 }

@@ -364,11 +364,12 @@ void assertCollectsTypeNames(string[] expected, string source, string file = __F
     import std.format : format;
 
     auto translUnit = makeTranslationUnit(source);
-    auto names = collectGlobalTypes(translUnit);
+    Cursor[string] types, consts;
+    collectGlobalNames(translUnit, types, consts);
 
     foreach (name; expected)
     {
-        if ((name in names) is null)
+        if ((name in types) is null)
             throw new AssertError(format("`%s` was not found.", name), file, line);
     }
 }
