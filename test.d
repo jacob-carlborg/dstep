@@ -115,7 +115,7 @@ struct TestRunner
         const string[string] env;
         const config = Config.none;
         const maxOutput = size_t.max;
-        const workDir = "test_package";
+        const workDir = "tests/functional/test_package";
         const result = executeShell(dubShellCommand("build"),
                                     env,
                                     config,

@@ -44,13 +44,13 @@ static IncludeGraph makeIncludeGraph(string sourceFilename)
 
 unittest
 {
-    const string file = "test_files/graph/file.h".asAbsNormPath();
-    const string subfile1 = "test_files/graph/subfile1.h".asAbsNormPath();
-    const string subfile2 = "test_files/graph/subfile2.h".asAbsNormPath();
-    const string subfile3 = "test_files/graph/subfile3.h".asAbsNormPath();
-    const string subsubfile1 = "test_files/graph/subsubfile1.h".asAbsNormPath();
-    const string subsubfile2 = "test_files/graph/subsubfile2.h".asAbsNormPath();
-    const string subsubfile3 = "test_files/graph/subsubfile3.h".asAbsNormPath();
+    const string file = "tests/functional/graph/file.h".asAbsNormPath();
+    const string subfile1 = "tests/functional/graph/subfile1.h".asAbsNormPath();
+    const string subfile2 = "tests/functional/graph/subfile2.h".asAbsNormPath();
+    const string subfile3 = "tests/functional/graph/subfile3.h".asAbsNormPath();
+    const string subsubfile1 = "tests/functional/graph/subsubfile1.h".asAbsNormPath();
+    const string subsubfile2 = "tests/functional/graph/subsubfile2.h".asAbsNormPath();
+    const string subsubfile3 = "tests/functional/graph/subsubfile3.h".asAbsNormPath();
 
     auto includeGraph = makeIncludeGraph(file);
 
@@ -76,9 +76,8 @@ unittest
     import std.algorithm;
 
     auto translationUnit = makeTranslationUnit(
-        "test_files/clang-c/Index.h",
-        ["-Wno-missing-declarations", "-Itest_files"]);
-
+        "tests/functional/clang-c/Index.h",
+        ["-Wno-missing-declarations", "-Itests/functional"]);
     auto headerIndex = new HeaderIndex(translationUnit);
 
     auto timeT = translationUnit.cursor.children.filter!(x => x.spelling == "time_t").front;
@@ -89,8 +88,8 @@ unittest
 unittest
 {
     auto translationUnit = makeTranslationUnit(
-        "test_files/graph/self_including_main.h",
-        ["-Wno-missing-declarations", "-Itest_files"]);
+        "tests/functional/graph/self_including_main.h",
+        ["-Wno-missing-declarations", "-Itests/functional"]);
 
     new HeaderIndex(translationUnit);
 }

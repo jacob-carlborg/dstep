@@ -4,12 +4,12 @@ authors "Atila Neves"
 copyright "Copyright © 2017, Atila Neves"
 license "boost"
 targetType "executable"
-dependency "dstep" path=".."
+dependency "dstep" path="../../.."
 subConfiguration "dstep" "library"
-importPaths ".."
+importPaths "../../.."
 // actual projects would probably just have
 // `libs "clang"` but since this will run under dstep's CI
 // we copy the linker flags here
-lflags "@../linker_flags.txt" platform="posix"
-lflags "/LIBPATH:.." "libclang.lib" "Ole32.lib" platform="windows-x86"
-lflags "/LIBPATH:.." "libclang.lib" "Ole32.lib" platform="windows-x86_64"
+lflags "@../../../linker_flags.txt" platform="posix"
+lflags "/LIBPATH:../../.." "libclang.lib" "Ole32.lib" platform="windows-x86"
+lflags "/LIBPATH:../../.." "libclang.lib" "Ole32.lib" platform="windows-x86_64"
