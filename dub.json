@@ -46,7 +46,7 @@
             "name": "test",
             "mainSourceFile": "test.d",
             "targetName": "test",
-            "sourceFiles": [ "unit_tests/HttpClient.d" ],
+            "sourceFiles": [ "tests/unit/HttpClient.d" ],
             "excludedSourceFiles": ["dstep/*", "clang/*"],
         },
 
@@ -54,7 +54,7 @@
             "name": "unittest",
             "mainSourceFile": "unittest.d",
             "targetName": "unittest",
-            "sourcePaths": ["dstep", "clang", "unit_tests"],
+            "sourcePaths": ["dstep", "clang", "tests/unit"],
             "excludedSourceFiles": ["dstep/main.d"],
 
             "preBuildCommands-posix": [

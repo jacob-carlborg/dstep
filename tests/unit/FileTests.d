@@ -10,8 +10,8 @@ import dstep.translator.Translator;
 unittest
 {
     assertTranslatesObjCFile(
-        "test_files/objc/categories.d",
-        "test_files/objc/categories.h");
+        "tests/functional/objc/categories.d",
+        "tests/functional/objc/categories.h");
 }
 
 version (OSX)
@@ -19,72 +19,72 @@ version (OSX)
     unittest
     {
         assertTranslatesObjCFile(
-            "test_files/objc/cgfloat.d",
-            "test_files/objc/cgfloat.h");
+            "tests/functional/objc/cgfloat.d",
+            "tests/functional/objc/cgfloat.h");
     }
 }
 
 unittest
 {
     assertTranslatesObjCFile(
-        "test_files/objc/classes.d",
-        "test_files/objc/classes.h");
+        "tests/functional/objc/classes.d",
+        "tests/functional/objc/classes.h");
 }
 
 unittest
 {
     assertTranslatesObjCFile(
-        "test_files/objc/methods.d",
-        "test_files/objc/methods.h");
+        "tests/functional/objc/methods.d",
+        "tests/functional/objc/methods.h");
 }
 
 unittest
 {
     assertTranslatesObjCFile(
-        "test_files/objc/primitives.d",
-        "test_files/objc/primitives.h");
+        "tests/functional/objc/primitives.d",
+        "tests/functional/objc/primitives.h");
 }
 
 unittest
 {
     assertTranslatesObjCFile(
-        "test_files/objc/properties.d",
-        "test_files/objc/properties.h");
+        "tests/functional/objc/properties.d",
+        "tests/functional/objc/properties.h");
 }
 
 unittest
 {
     assertTranslatesObjCFile(
-        "test_files/objc/protocols.d",
-        "test_files/objc/protocols.h");
+        "tests/functional/objc/protocols.d",
+        "tests/functional/objc/protocols.h");
 }
 
 unittest
 {
     assertTranslatesObjCFile(
-        "test_files/objc/time_h_issue.d",
-        "test_files/objc/time_h_issue.h");
+        "tests/functional/objc/time_h_issue.d",
+        "tests/functional/objc/time_h_issue.h");
 }
 
 unittest
 {
     assertTranslatesCFile(
-        "test_files/aggregate.d",
-        "test_files/aggregate.h");
+        "tests/functional/aggregate.d",
+        "tests/functional/aggregate.h");
 }
 
 unittest
 {
     assertTranslatesCFile(
-        "test_files/arrays.d",
-        "test_files/arrays.h");
+        "tests/functional/arrays.d",
+        "tests/functional/arrays.h");
 }
 
 unittest
 {
     assertTranslatesCFile(
-        "test_files/comments.d",
-        "test_files/comments.h");
+        "tests/functional/comments.d",
+        "tests/functional/comments.h");
 }
 
 unittest
@@ -93,44 +93,44 @@ unittest
     options.enableComments = false;
 
     assertTranslatesCFile(
-        "test_files/const.d",
-        "test_files/const.h",
+        "tests/functional/const.d",
+        "tests/functional/const.h",
         options);
 }
 
 unittest
 {
     assertTranslatesCFile(
-        "test_files/enums.d",
-        "test_files/enums.h");
+        "tests/functional/enums.d",
+        "tests/functional/enums.h");
 }
 
 unittest
 {
     assertTranslatesCFile(
-        "test_files/function_pointers.d",
-        "test_files/function_pointers.h");
+        "tests/functional/function_pointers.d",
+        "tests/functional/function_pointers.h");
 }
 
 unittest
 {
     assertTranslatesCFile(
-        "test_files/functions.d",
-        "test_files/functions.h");
+        "tests/functional/functions.d",
+        "tests/functional/functions.h");
 }
 
 unittest
 {
     assertTranslatesCFile(
-        "test_files/include.d",
-        "test_files/include.h");
+        "tests/functional/include.d",
+        "tests/functional/include.h");
 }
 
 unittest
 {
     assertTranslatesCFile(
-        "test_files/preprocessor.d",
-        "test_files/preprocessor.h");
+        "tests/functional/preprocessor.d",
+        "tests/functional/preprocessor.h");
 }
 
 unittest
@@ -139,16 +139,16 @@ unittest
     options.enableComments = false;
 
     assertTranslatesCFile(
-        "test_files/primitives.d",
-        "test_files/primitives.h",
+        "tests/functional/primitives.d",
+        "tests/functional/primitives.h",
         options);
 }
 
 unittest
 {
     assertTranslatesCFile(
-        "test_files/structs.d",
-        "test_files/structs.h");
+        "tests/functional/structs.d",
+        "tests/functional/structs.h");
 }
 
 unittest
@@ -157,28 +157,28 @@ unittest
     options.reduceAliases = false;
 
     assertTranslatesCFile(
-        "test_files/typedef.d",
-        "test_files/typedef.h",
+        "tests/functional/typedef.d",
+        "tests/functional/typedef.h",
         options);
 }
 
 unittest
 {
     assertTranslatesCFile(
-        "test_files/typedef_struct.d",
-        "test_files/typedef_struct.h");
+        "tests/functional/typedef_struct.d",
+        "tests/functional/typedef_struct.h");
 }
 
 unittest
 {
     assertTranslatesCFile(
-        "test_files/unions.d",
-        "test_files/unions.h");
+        "tests/functional/unions.d",
+        "tests/functional/unions.h");
 }
 
 unittest
 {
     assertTranslatesCFile(
-        "test_files/variables.d",
-        "test_files/variables.h");
+        "tests/functional/variables.d",
+        "tests/functional/variables.h");
 }

@@ -50,22 +50,22 @@ unittest
 
     auto translUnit = TranslationUnit.parse(
         index,
-        "test_files/include/file.h",
+        "tests/functional/include/file.h",
         []);
 
     auto locations = translUnit.includeLocations;
 
     assert(locations.length == 10);
     assert(locations[0].path == "");
-    assert(locations[1].path == "test_files/include/file.h");
-    assert(locations[2].path == "test_files/include/subfile1.h");
-    assert(locations[3].path == "test_files/include/file.h");
-    assert(locations[4].path == "test_files/include/subfile2.h");
-    assert(locations[5].path == "test_files/include/subsubfile1.h");
-    assert(locations[6].path == "test_files/include/subfile2.h");
-    assert(locations[7].path == "test_files/include/file.h");
-    assert(locations[8].path == "test_files/include/subfile3.h");
-    assert(locations[9].path == "test_files/include/file.h");
+    assert(locations[1].path == "tests/functional/include/file.h");
+    assert(locations[2].path == "tests/functional/include/subfile1.h");
+    assert(locations[3].path == "tests/functional/include/file.h");
+    assert(locations[4].path == "tests/functional/include/subfile2.h");
+    assert(locations[5].path == "tests/functional/include/subsubfile1.h");
+    assert(locations[6].path == "tests/functional/include/subfile2.h");
+    assert(locations[7].path == "tests/functional/include/file.h");
+    assert(locations[8].path == "tests/functional/include/subfile3.h");
+    assert(locations[9].path == "tests/functional/include/file.h");
 
     assert(locations[7].offset == 50);
 }
@@ -77,14 +77,14 @@ unittest
 
     auto translUnit = TranslationUnit.parse(
         index,
-        "test_files/include/subfile1.h",
+        "tests/functional/include/subfile1.h",
         []);
 
     auto locations = translUnit.includeLocations;
 
     assert(locations.length == 2);
     assert(locations[0].path == "");
-    assert(locations[1].path == "test_files/include/subfile1.h");
+    assert(locations[1].path == "tests/functional/include/subfile1.h");
 }
 
 // Test TranslationUnit.relativeLocationAccessor.
@@ -94,50 +94,50 @@ unittest
 
     auto translUnit = TranslationUnit.parse(
         index,
-        "test_files/include/file.h",
+        "tests/functional/include/file.h",
         []);
 
     auto query = translUnit.relativeLocationAccessor;
 
     assert(
-        query(translUnit.location("test_files/include/file.h", 0)) ==
-        query(translUnit.location("test_files/include/file.h", 0)));
+        query(translUnit.location("tests/functional/include/file.h", 0)) ==
+        query(translUnit.location("tests/functional/include/file.h", 0)));
 
     assert(
-        query(translUnit.location("test_files/include/file.h", 0)) <
-        query(translUnit.location("test_files/include/file.h", 27)));
+        query(translUnit.location("tests/functional/include/file.h", 0)) <
+        query(translUnit.location("tests/functional/include/file.h", 27)));
 
     assert(
-        query(translUnit.location("test_files/include/file.h", 0)) <
-        query(translUnit.location("test_files/include/file.h", 1)));
+        query(translUnit.location("tests/functional/include/file.h", 0)) <
+        query(translUnit.location("tests/functional/include/file.h", 1)));
 
     assert(
-        query(translUnit.location("test_files/include/file.h", 0)) <
-        query(translUnit.location("test_files/include/subfile1.h", 1)));
+        query(translUnit.location("tests/functional/include/file.h", 0)) <
+        query(translUnit.location("tests/functional/include/subfile1.h", 1)));
 
     assert(
-        query(translUnit.location("test_files/include/subfile1.h", 13)) <
-        query(translUnit.location("test_files/include/subfile1.h", 14)));
+        query(translUnit.location("tests/functional/include/subfile1.h", 13)) <
+        query(translUnit.location("tests/functional/include/subfile1.h", 14)));
 
     assert(
-        query(translUnit.location("test_files/include/subfile1.h", 13)) <
-        query(translUnit.location("test_files/include/subsubfile1.h", 10)));
+        query(translUnit.location("tests/functional/include/subfile1.h", 13)) <
+        query(translUnit.location("tests/functional/include/subsubfile1.h", 10)));
 
     assert(
-        query(translUnit.location("test_files/include/file.h", 53)) <
-        query(translUnit.location("test_files/include/file.h", 79)));
+        query(translUnit.location("tests/functional/include/file.h", 53)) <
+        query(translUnit.location("tests/functional/include/file.h", 79)));
 
     assert(
-        query(translUnit.location("test_files/include/file.h", 78)) <
-        query(translUnit.location("test_files/include/file.h", 79)));
+        query(translUnit.location("tests/functional/include/file.h", 78)) <
+        query(translUnit.location("tests/functional/include/file.h", 79)));
 
     assert(
-        query(translUnit.location("test_files/include/subfile3.h", 1)) <
-        query(translUnit.location("test_files/include/file.h", 76)));
+        query(translUnit.location("tests/functional/include/subfile3.h", 1)) <
+        query(translUnit.location("tests/functional/include/file.h", 76)));
 
     assert(
-        query(translUnit.location("test_files/include/subfile3.h", 1)) >
-        query(translUnit.location("test_files/include/file.h", 75)));
+        query(translUnit.location("tests/functional/include/subfile3.h", 1)) >
+        query(translUnit.location("tests/functional/include/file.h", 75)));
 }
 
 // Test TranslationUnit.allInOrder.
