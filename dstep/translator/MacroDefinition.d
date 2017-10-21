@@ -67,7 +67,42 @@ void resolveMacroDependency(Context context, string spelling)
         return context.includeHandler.resolveDependency(*cursor);
 }
 
-string translate(CallExpr expression, Context context, Set!string params, ref Set!string imports)
+struct ExpressionContext
+{
+    Context context;
+    Set!string params;
+    Set!string* imports;
+    Cursor[] scope_;
+    alias context this;
+
+    @disable this();
+
+    private this (int x) { }
+
+    static ExpressionContext make()
+    {
+        struct AA { Set!string aa; }
+        auto result = ExpressionContext(0);
+        result.imports = &(new AA()).aa;
+        return result;
+    }
+
+    static ExpressionContext make(Context context)
+    {
+        auto result = ExpressionContext.make();
+        result.context = context;
+        return result;
+    }
+
+    static ExpressionContext make(Context context, Set!string params)
+    {
+        auto result = ExpressionContext.make(context);
+        result.params = params;
+        return result;
+    }
+}
+
+string translate(CallExpr expression, ExpressionContext context)
 {
     import std.algorithm;
     import std.format;
@@ -76,7 +111,7 @@ string translate(CallExpr expression, Context context, Set!string params, ref Se
 
     auto spelling = expression.expr.spelling;
 
-    alias fmap = a => a.debraced.translate(context, params, imports);
+    alias fmap = a => a.debraced.translate(context);
 
     if (spelling !is null)
     {
@@ -113,11 +148,11 @@ string translate(CallExpr expression, Context context, Set!string params, ref Se
 
     return format(
         "%s(%s)",
-        expression.expr.translate(context, params, imports),
+        expression.expr.translate(context),
         expression.args.map!fmap.join(", "));
 }
 
-string translate(Expression expression, Context context, Set!string params, ref Set!string imports)
+string translate(Expression expression, ExpressionContext context)
 {
     import std.format : format;
 
@@ -128,9 +163,9 @@ string translate(Expression expression, Context context, Set!string params, ref 
     {
         return format(
             "%s %s %s",
-            operator.left.translate(context, params, imports),
+            operator.left.translate(context),
             operator.operator,
-            operator.right.translate(context, params, imports));
+            operator.right.translate(context));
     }
 
     return expression.visit!(
@@ -156,7 +191,7 @@ string translate(Expression expression, Context context, Set!string params, ref 
         },
         delegate string(StringifyExpr stringifyExpr)
         {
-            imports.add("std.conv : to");
+            (*context.imports).add("std.conv : to");
             return format("to!string(%s)", stringifyExpr.spelling);
         },
         delegate string(StringConcat stringConcat)
@@ -165,7 +200,7 @@ string translate(Expression expression, Context context, Set!string params, ref 
             import std.array : join;
 
             return stringConcat.substrings
-                .map!(a => a.translate(context, params, imports)).join(" ~ ");
+                .map!(a => a.translate(context)).join(" ~ ");
         },
         delegate string(TokenConcat tokenConcat)
         {
@@ -176,20 +211,18 @@ string translate(Expression expression, Context context, Set!string params, ref 
             {
                 auto identifier = subexpr.peek!Identifier;
 
-                if (identifier !is null && params.contains(identifier.spelling))
+                if (identifier !is null &&
+                    context.params.contains(identifier.spelling))
                 {
                     import std.format : format;
 
-                    imports.add("std.conv : to");
+                    (*context.imports).add("std.conv : to");
 
                     return format("to!string(%s)", identifier.spelling);
                 }
                 else
                 {
-                    auto translated = subexpr.translate(
-                        context,
-                        params,
-                        imports);
+                    auto translated = subexpr.translate(context);
 
                     return format(`"%s"`, translated);
                 }
@@ -201,25 +234,25 @@ string translate(Expression expression, Context context, Set!string params, ref 
         {
             return format(
                 "%s[%s]",
-                indexExpr.subexpr.translate(context, params, imports),
-                indexExpr.index.translate(context, params, imports));
+                indexExpr.subexpr.translate(context),
+                indexExpr.index.translate(context));
         },
         delegate string(CallExpr callExpr)
         {
-            return callExpr.translate(context, params, imports);
+            return callExpr.translate(context);
         },
         delegate string(DotExpr dotExpr)
         {
             return format(
                 "%s.%s",
-                dotExpr.subexpr.translate(context, params, imports),
+                dotExpr.subexpr.translate(context),
                 dotExpr.identifier);
         },
         delegate string(ArrowExpr arrowExpr)
         {
             return format(
                 "%s.%s",
-                arrowExpr.subexpr.translate(context, params, imports),
+                arrowExpr.subexpr.translate(context),
                 arrowExpr.identifier);
         },
         delegate string(SubExpr subExpr)
@@ -227,10 +260,7 @@ string translate(Expression expression, Context context, Set!string params, ref 
             auto surplus = subExpr.subexpr.peek!Identifier !is null
                 || subExpr.subexpr.peek!DotExpr !is null;
 
-            string translated = subExpr.subexpr.translate(
-                context,
-                params,
-                imports);
+            string translated = subExpr.subexpr.translate(context);
 
             return surplus ? translated : "(" ~ translated ~ ")";
         },
@@ -239,17 +269,17 @@ string translate(Expression expression, Context context, Set!string params, ref 
             if (unaryExpr.operator == "sizeof")
                 return format(
                     "%s.sizeof",
-                    unaryExpr.subexpr.braced.translate(context, params, imports));
+                    unaryExpr.subexpr.braced.translate(context));
             else if (unaryExpr.postfix)
                 return format(
                     "%s%s",
-                    unaryExpr.subexpr.translate(context, params, imports),
+                    unaryExpr.subexpr.translate(context),
                     unaryExpr.operator);
             else
                 return format(
                     "%s%s",
                     unaryExpr.operator,
-                    unaryExpr.subexpr.translate(context, params, imports));
+                    unaryExpr.subexpr.translate(context));
         },
         delegate string(DefinedExpr literal)
         {
@@ -266,7 +296,7 @@ string translate(Expression expression, Context context, Set!string params, ref 
             return format(
                 "cast(%s) %s",
                 translateType(context, Cursor.init, castExpr.type).makeString(),
-                castExpr.subexpr.debraced.translate(context, params, imports));
+                castExpr.subexpr.debraced.translate(context));
         },
         translateBinaryOperator!MulExpr,
         translateBinaryOperator!AddExpr,
@@ -282,9 +312,9 @@ string translate(Expression expression, Context context, Set!string params, ref 
         {
             return format(
                 "%s ? %s : %s",
-                condExpr.expr.translate(context, params, imports),
-                condExpr.left.translate(context, params, imports),
-                condExpr.right.translate(context, params, imports));
+                condExpr.expr.translate(context),
+                condExpr.left.translate(context),
+                condExpr.right.translate(context));
         });
 }
 
@@ -450,24 +480,6 @@ ExprType strictCommonType(ExprType a, ExprType b)
         return ExprType(ExprType.kind.unspecified);
 }
 
-void translateConstDirective(
-    Output output,
-    Context context,
-    MacroDefinition directive)
-{
-    Set!string params, imports;
-
-    version (D1)
-        enum fmt = "const %s = %s;";
-    else
-        enum fmt = "enum %s = %s;";
-
-    output.singleLine(
-        fmt,
-        directive.spelling,
-        directive.expr.debraced.translate(context, params, imports));
-}
-
 bool translateFunctAlias(
     Output output,
     Context context,
@@ -477,7 +489,7 @@ bool translateFunctAlias(
     import std.algorithm.iteration : map;
 
     CallExpr* expr = definition.expr.peek!CallExpr;
-    Set!string imports, params;
+    auto expressionContext = ExpressionContext.make(context);
 
     if (expr !is null)
     {
@@ -503,7 +515,8 @@ bool translateFunctAlias(
         }
 
         if (ident !is null &&
-            equal(definition.params, expr.args.map!(a => a.translate(context, params, imports))))
+            equal(definition.params, expr.args
+                .map!(a => a.translate(expressionContext))))
         {
             version (D1)
                 enum fmt = "alias %2$s %1$s;";
@@ -544,7 +557,7 @@ void translateMacroDefinitionConstant(
     Context context,
     TypedMacroDefinition definition)
 {
-    Set!string params, imports;
+    auto expressionContext = ExpressionContext.make(context);
 
     version (D1)
         enum formatString = "const %s = %s;";
@@ -554,7 +567,7 @@ void translateMacroDefinitionConstant(
     output.singleLine(
         formatString,
         definition.definition.spelling,
-        definition.definition.expr.debraced.translate(context, params, imports));
+        definition.definition.expr.debraced.translate(expressionContext));
 }
 
 void translateMacroDefinition(
@@ -600,10 +613,11 @@ void translateMacroDefinition(
 
         auto types = typeParams ~ paramTypes;
 
-        Set!string imports;
+        auto expressionContext = ExpressionContext.make(
+            context,
+            setFromList(definition.params));
 
-        auto translated = definition.expr.debraced
-            .translate(context, setFromList(definition.params), imports);
+        auto translated = definition.expr.debraced.translate(expressionContext);
 
         auto resultType = definition.signature.result;
 
@@ -614,9 +628,9 @@ void translateMacroDefinition(
             types.empty ? "" : "(" ~ types.join(", ") ~ ")",
             variables.join(", "))
         in {
-            if (imports.length != 0)
+            if (expressionContext.imports.length != 0)
             {
-                foreach (item; imports.byKey)
+                foreach (item; expressionContext.imports.byKey)
                     output.singleLine("import %s;", item);
 
                 output.separator;

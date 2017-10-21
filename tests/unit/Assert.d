@@ -74,15 +74,14 @@ void assertTranslatesMacroExpression(
 
     auto definition = parsePartialMacroDefinition(tokens, context.typeNames);
 
-    Set!string imports;
-    Set!string params;
+    auto expressionContext = ExpressionContext.make(context);
 
     string actual = null;
 
     if (definition !is null)
     {
         if (definition.expr.hasValue)
-            actual = definition.expr.debraced.translate(context, params, imports);
+            actual = definition.expr.debraced.translate(expressionContext);
     }
 
     assertEq(expected, actual, false, file, line);
