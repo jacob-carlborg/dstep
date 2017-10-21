@@ -13,6 +13,7 @@ cwd=$(pwd)
 pushd "$1"/clang-c > /dev/null
 "$cwd"/bin/dstep ./*.h \
   -I"$cwd/$1" \
+  -I"$1" \
   -Iresources \
   --public-submodules \
   --package clang.c \
