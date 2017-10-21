@@ -1,6 +1,6 @@
 *.h
-!test_files/**/*.h
-!test_files/*.h
+!tests/functional/**/*.h
+!tests/functional/*.h
 !resources/*.h
 *.deps
 *.a
