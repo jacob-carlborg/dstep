@@ -337,6 +337,16 @@ struct Cursor
         return Cursor(clang_getCanonicalCursor(cast(CXCursor) cx));
     }
 
+    int bitFieldWidth() const
+    {
+        return clang_getFieldDeclBitWidth(cast(CXCursor) cx);
+    }
+
+    bool isBitField() const
+    {
+        return clang_Cursor_isBitField(cast(CXCursor) cx) != 0;
+    }
+
     Cursor opCast(T)() const if (is(T == Cursor))
     {
         return this;

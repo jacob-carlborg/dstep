@@ -33,6 +33,7 @@
 * Automatically generate the libclang bindings using DStep
 * Add a switch `--rename-enum-members`, which enables stripping of superfluous prefixes from enum members.
 * Add a switch `--normalize-modules`, which enables changing the names of modules to the D conforming form.
+* Add support for bit fields.
 
 ### Bugs Fixed
 

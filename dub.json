@@ -23,7 +23,7 @@
         "unittest": {
             "buildRequirements" : [ "allowWarnings" ],
             "buildOptions" : ["unittests", "debugMode", "debugInfo"]
-        },
+        }
     },
 
     "configurations": [
