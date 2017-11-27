@@ -9,65 +9,6 @@ import dstep.translator.Translator;
 
 unittest
 {
-    assertTranslatesObjCFile(
-        "tests/functional/objc/categories.d",
-        "tests/functional/objc/categories.h");
-}
-
-version (OSX)
-{
-    unittest
-    {
-        assertTranslatesObjCFile(
-            "tests/functional/objc/cgfloat.d",
-            "tests/functional/objc/cgfloat.h");
-    }
-}
-
-unittest
-{
-    assertTranslatesObjCFile(
-        "tests/functional/objc/classes.d",
-        "tests/functional/objc/classes.h");
-}
-
-unittest
-{
-    assertTranslatesObjCFile(
-        "tests/functional/objc/methods.d",
-        "tests/functional/objc/methods.h");
-}
-
-unittest
-{
-    assertTranslatesObjCFile(
-        "tests/functional/objc/primitives.d",
-        "tests/functional/objc/primitives.h");
-}
-
-unittest
-{
-    assertTranslatesObjCFile(
-        "tests/functional/objc/properties.d",
-        "tests/functional/objc/properties.h");
-}
-
-unittest
-{
-    assertTranslatesObjCFile(
-        "tests/functional/objc/protocols.d",
-        "tests/functional/objc/protocols.h");
-}
-
-unittest
-{
-    assertTranslatesObjCFile(
-        "tests/functional/objc/time_h_issue.d",
-        "tests/functional/objc/time_h_issue.h");
-}
-
-unittest
-{
     assertTranslatesCFile(
         "tests/functional/aggregate.d",
         "tests/functional/aggregate.h");
