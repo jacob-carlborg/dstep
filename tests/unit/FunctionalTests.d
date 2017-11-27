@@ -53,10 +53,6 @@ unittest
         TestFile("tests/functional/clang-c/Platform.d", "tests/functional/clang-c/Platform.h")],
         ["-Itests/functional", "--public-submodules", "--normalize-modules", "--package", "clang.c"]);
 
-    assertRunsDStepObjCFile(
-        "tests/functional/objc/methods.d",
-        "tests/functional/objc/methods.h");
-
     assertRunsDStepCFiles(
         [TestFile("tests/functional/multiThreadTest1.d", "tests/functional/multiThreadTest1.h"),
          TestFile("tests/functional/multiThreadTest2.d", "tests/functional/multiThreadTest2.h")]);
@@ -136,4 +132,12 @@ unittest
 unittest
 {
     assertIssuesWarning("tests/functional/collision.h");
+}
+
+unittest
+{
+    assertRunsDStepObjCFile(
+        "tests/functional/objc/methods.d",
+        "tests/functional/objc/methods.h"
+    );
 }
