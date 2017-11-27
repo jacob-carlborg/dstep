@@ -14,35 +14,59 @@ unittest
 {
     assertRunsDStepCFile(
         "tests/functional/aggregate.d",
-        "tests/functional/aggregate.h");
+        "tests/functional/aggregate.h"
+    );
+}
 
+unittest
+{
     assertRunsDStepCFile(
         "tests/functional/comments_enabled.d",
-        "tests/functional/comments_enabled.h");
+        "tests/functional/comments_enabled.h"
+    );
+}
 
+unittest
+{
     assertRunsDStepCFile(
         "tests/functional/comments_disabled.d",
         "tests/functional/comments_disabled.h",
-        ["--comments=false"]);
+        ["--comments=false"]
+    );
+}
 
+unittest
+{
     assertRunsDStepCFiles([
         TestFile("tests/functional/module/main0.d", "tests/functional/module/main0.h"),
         TestFile("tests/functional/module/include.d", "tests/functional/module/include.h"),
         TestFile("tests/functional/module/unused.d", "tests/functional/module/unused.h")],
-        ["--package", "modules"]);
+        ["--package", "modules"]
+    );
+}
 
+unittest
+{
     assertRunsDStepCFiles([
         TestFile("tests/functional/module/main0_public.d", "tests/functional/module/main0_public.h"),
         TestFile("tests/functional/module/include.d", "tests/functional/module/include.h"),
         TestFile("tests/functional/module/unused.d", "tests/functional/module/unused.h")],
-        ["--public-submodules", "--package", "modules"]);
+        ["--public-submodules", "--package", "modules"]
+    );
+}
 
+unittest
+{
     assertRunsDStepCFiles([
         TestFile("tests/functional/module/main0NotNormalized.d", "tests/functional/module/main0NotNormalized.h"),
         TestFile("tests/functional/module/include.d", "tests/functional/module/include.h"),
         TestFile("tests/functional/module/unused.d", "tests/functional/module/unused.h")],
-        ["--public-submodules", "--package", "modules"]);
+        ["--public-submodules", "--package", "modules"]
+    );
+}
 
+unittest
+{
     assertRunsDStepCFiles([
         TestFile("tests/functional/clang-c/BuildSystem.d", "tests/functional/clang-c/BuildSystem.h"),
         TestFile("tests/functional/clang-c/CXCompilationDatabase.d", "tests/functional/clang-c/CXCompilationDatabase.h"),
@@ -51,11 +75,16 @@ unittest
         TestFile("tests/functional/clang-c/Documentation.d", "tests/functional/clang-c/Documentation.h"),
         TestFile("tests/functional/clang-c/Index.d", "tests/functional/clang-c/Index.h"),
         TestFile("tests/functional/clang-c/Platform.d", "tests/functional/clang-c/Platform.h")],
-        ["-Itests/functional", "--public-submodules", "--normalize-modules", "--package", "clang.c"]);
+        ["-Itests/functional", "--public-submodules", "--normalize-modules", "--package", "clang.c"]
+    );
+}
 
+unittest
+{
     assertRunsDStepCFiles(
         [TestFile("tests/functional/multiThreadTest1.d", "tests/functional/multiThreadTest1.h"),
-         TestFile("tests/functional/multiThreadTest2.d", "tests/functional/multiThreadTest2.h")]);
+         TestFile("tests/functional/multiThreadTest2.d", "tests/functional/multiThreadTest2.h")]
+    );
 }
 
 // DStep should exit with non-zero status when an input file doesn't exist.
