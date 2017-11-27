@@ -9,10 +9,12 @@ module dstep.translator.Type;
 import std.conv;
 import std.string;
 import std.range;
+import std.typecons: Nullable;
 
 import clang.c.Index;
 import clang.Cursor;
 import clang.Type;
+import clang.Token: Token;
 
 import dstep.translator.Context;
 import dstep.translator.IncludeHandler;
@@ -351,10 +353,23 @@ body
             CXCursorKind.integerLiteral,
             CXCursorKind.declRefExpr);
 
+        auto maybeRef(T)(auto ref T value) {
+            return cursor.semanticParent.kind == CXCursorKind.functionDecl && dimension == 0
+                ? elementType.wrapWith("ref ", format("[%s]", value))
+                : elementType.suffixWith(format("[%s]", value));
+        }
+
         if (dimension < children.length)
         {
             if (children[dimension].kind == CXCursorKind.integerLiteral)
             {
+                auto token = tokenInsideSquareBrackets(cursor, dimension);
+
+                if (!token.isNull)
+                {
+                    return maybeRef(token.spelling);
+                }
+
                 auto expansions = context.macroIndex.queryExpansion(children[dimension]);
 
                 if (expansions.length == 1)
@@ -366,10 +381,7 @@ body
             }
         }
 
-        if (cursor.semanticParent.kind == CXCursorKind.functionDecl && dimension == 0)
-            return elementType.wrapWith("ref ", format("[%s]", array.size));
-        else
-            return elementType.suffixWith(format("[%s]", array.size));
+        return maybeRef(array.size);
     }
     else if (cursor.semanticParent.kind == CXCursorKind.functionDecl)
     {
@@ -386,6 +398,35 @@ body
         // abandon the size information
         return elementType.suffixWith("[]");
     }
+}
+
+// find the token for a (possibly multidimensioned) array for a certain dimension,
+// e.g. int foo[1][2][3] will find the "3" for dimension 0 due to the differences
+// in array declarations between D and C
+private Nullable!Token tokenInsideSquareBrackets(Cursor cursor, in size_t dimension)
+{
+    import std.algorithm: find;
+    import std.range: retro;
+    import clang.Token: TokenKind;
+
+    auto fromNextBracket(R)(R tokens)
+    {
+        return tokens.find!(a => a.kind == TokenKind.punctuation && a.spelling == "]");
+    }
+
+    auto tokens = cursor.tokens.retro.find!(_ => true);
+
+    // dimension + 1 since dimension is 0-indexed and we need to find at least one
+    foreach(_; 0 .. dimension + 1)
+    {
+        tokens = fromNextBracket(tokens);
+        if (tokens.empty) return typeof(return).init;
+        tokens.popFront;
+    }
+
+    return tokens.empty
+        ? typeof(return).init
+        : typeof(return)(tokens.front);
 }
 
 SourceNode translatePointer (

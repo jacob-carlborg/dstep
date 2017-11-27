@@ -72,8 +72,6 @@ class MacroIndex
         import std.array;
         import std.algorithm.searching;
 
-        SourceRange extent = cursor.extent;
-
         auto expansionsSorted = expansions.assumeSorted!((a, b) => lessOp(a, b));
 
         auto equal = expansionsSorted.equalRange(cursor);
@@ -86,11 +84,12 @@ class MacroIndex
 
         result ~= until
             !(itr => itr.file != cursor.file ||
-            itr.location.offset >= extent.end.offset)
+            itr.location.offset >= cursor.extent.end.offset)
             (greater, OpenRight.yes);
 
         return result.data;
     }
+
 
     Tuple!(bool, SourceLocation) includeGuardLocation()
     {
