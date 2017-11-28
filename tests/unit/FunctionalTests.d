@@ -21,6 +21,32 @@ unittest
 unittest
 {
     assertRunsDStepCFile(
+        "tests/functional/arrays.d",
+        "tests/functional/arrays.h"
+    );
+}
+
+unittest
+{
+    assertRunsDStepCFile(
+        "tests/functional/comments.d",
+        "tests/functional/comments.h"
+    );
+}
+
+
+unittest
+{
+    assertRunsDStepCFile(
+        "tests/functional/comments_disabled.d",
+        "tests/functional/comments_disabled.h",
+        ["--comments=false"]
+    );
+}
+
+unittest
+{
+    assertRunsDStepCFile(
         "tests/functional/comments_enabled.d",
         "tests/functional/comments_enabled.h"
     );
@@ -29,9 +55,99 @@ unittest
 unittest
 {
     assertRunsDStepCFile(
-        "tests/functional/comments_disabled.d",
-        "tests/functional/comments_disabled.h",
+        "tests/functional/const.d",
+        "tests/functional/const.h",
         ["--comments=false"]
+    );
+}
+
+unittest
+{
+    assertRunsDStepCFile(
+        "tests/functional/enums.d",
+        "tests/functional/enums.h"
+    );
+}
+
+unittest
+{
+    assertRunsDStepCFile(
+        "tests/functional/function_pointers.d",
+        "tests/functional/function_pointers.h"
+    );
+}
+
+unittest
+{
+    assertRunsDStepCFile(
+        "tests/functional/functions.d",
+        "tests/functional/functions.h"
+    );
+}
+
+unittest
+{
+    assertRunsDStepCFile(
+        "tests/functional/include.d",
+        "tests/functional/include.h"
+    );
+}
+
+unittest
+{
+    assertRunsDStepCFile(
+        "tests/functional/preprocessor.d",
+        "tests/functional/preprocessor.h"
+    );
+}
+
+unittest
+{
+    assertRunsDStepCFile(
+        "tests/functional/primitives.d",
+        "tests/functional/primitives.h",
+        ["--comments=false"]
+    );
+}
+
+unittest
+{
+    assertRunsDStepCFile(
+        "tests/functional/structs.d",
+        "tests/functional/structs.h"
+    );
+}
+
+unittest
+{
+    assertRunsDStepCFile(
+        "tests/functional/typedef.d",
+        "tests/functional/typedef.h",
+        ["--reduce-aliases=false"]
+    );
+}
+
+unittest
+{
+    assertRunsDStepCFile(
+        "tests/functional/typedef_struct.d",
+        "tests/functional/typedef_struct.h"
+    );
+}
+
+unittest
+{
+    assertRunsDStepCFile(
+        "tests/functional/unions.d",
+        "tests/functional/unions.h"
+    );
+}
+
+unittest
+{
+    assertRunsDStepCFile(
+        "tests/functional/variables.d",
+        "tests/functional/variables.h"
     );
 }
 
@@ -163,6 +279,7 @@ unittest
     assertIssuesWarning("tests/functional/collision.h");
 }
 
+// Objective-C tests
 unittest
 {
     assertRunsDStepObjCFile(
