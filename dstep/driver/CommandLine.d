@@ -89,7 +89,8 @@ auto parseCommandLine(string[] args)
 
 unittest
 {
-    import std.algorithm.searching : find, empty;
+    import std.algorithm.searching : find;
+    import std.range.primitives : empty;
     import std.meta : AliasSeq;
 
     Configuration config;

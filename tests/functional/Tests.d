@@ -4,11 +4,35 @@
  * Version: Initial created: Apr 08, 2016
  * License: $(LINK2 http://www.boost.org/LICENSE_1_0.txt, Boost Software License 1.0)
  */
-import Common;
+import tests.support.Assertions;
 
 import std.algorithm : canFind;
 import std.process : executeShell;
 import std.typecons;
+
+void printClangVersion()
+{
+    import std.file : exists;
+    import std.process : execute;
+    import std.stdio : writeln;
+    import std.string : strip;
+
+    version (Windows)
+        enum dstepPath = "bin/dstep.exe";
+    else version (Posix)
+        enum dstepPath = "bin/dstep";
+
+    if (!exists(dstepPath))
+        return;
+
+    auto output = execute([dstepPath, "--clang-version"]);
+    writeln("Testing with ", output.output.strip);
+}
+
+shared static this()
+{
+    printClangVersion();
+}
 
 unittest
 {
@@ -255,15 +279,6 @@ unittest
     assert(result.output.canFind("Usage: dstep [options] <input>"));
 }
 
-// Test `--objective-c` option.
-unittest
-{
-    assertRunsDStep(
-        [TestFile("tests/functional/objc/primitives.d", "tests/functional/objc/primitives.h")],
-        ["--objective-c", "-Iresources"],
-        false);
-}
-
 // Test `--global-import` option.
 unittest
 {
@@ -279,6 +294,8 @@ unittest
     assertIssuesWarning("tests/functional/collision.h");
 }
 
+version (OSX):
+
 // Objective-C tests
 unittest
 {
@@ -288,7 +305,16 @@ unittest
     );
 }
 
-version (OSX) unittest
+// Test `--objective-c` option.
+unittest
+{
+    assertRunsDStep(
+        [TestFile("tests/functional/objc/primitives.d", "tests/functional/objc/primitives.h")],
+        ["--objective-c", "-Iresources"],
+        false);
+}
+
+unittest
 {
     assertRunsDStepObjCFile(
         "tests/functional/objc/cgfloat.d",
