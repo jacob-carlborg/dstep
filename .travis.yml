@@ -5,7 +5,7 @@ d:
   - ldc
 
 before_script: git fetch --unshallow
-script: dub --config=test --compiler=${DC}
+script: dub test --compiler=${DC}
 
 os:
   - linux

@@ -6,30 +6,39 @@ import std.file;
 import std.path;
 import std.algorithm;
 import std.string;
-import std.exception;
+import std.traits : ReturnType;
 
-int main ()
+void main ()
 {
-    return TestRunner().run;
+    TestRunner().run();
+}
+
+private:
+
+/**
+ * The available test groups.
+ *
+ * The tests will be run in the order specified here.
+ */
+enum TestGroup
+{
+    unit = "unit",
+    library = "library",
+    functional = "functional"
 }
 
 struct TestRunner
 {
-    private string wd;
-
-    int run ()
+    void run ()
     {
-        int result = 0;
+        import std.traits : EnumMembers;
+
         activate();
 
-        auto output = execute(["./bin/dstep", "--clang-version"]);
+        foreach (test ; EnumMembers!TestGroup)
+            runTest!(test);
 
-        writeln("Testing with ", strip(output.output));
-        result += unitTest();
-        result += libraryTest();
         stdout.flush();
-
-        return result;
     }
 
     string workingDirectory ()
@@ -67,80 +76,88 @@ struct TestRunner
         }
         else
             execute(["./configure", "--llvm-path", "clangs/clang/lib"]);
-
-        build();
-        writeln(" [DONE]");
-    }
-
-    int unitTest ()
-    {
-        writeln("Running unit tests ");
-
-        auto result = executeShell(dubShellCommand("test"));
-
-        if (result.status != 0)
-            writeln(result.output);
-
-        return result.status;
     }
 
     /**
-       Test that dstep can be used as a library by compiling a dependent
-       dub package
+     * Run a single group of tests, i.e. functional, library or unit test.
+     *
+     * Params:
+     *  testGroup = the test group to run
+     *
+     * Returns: the exist code of the test run
      */
-    int libraryTest ()
+    void runTest (TestGroup testGroup)() @safe
     {
-        const string[string] env;
-        const config = Config.none;
-        const maxOutput = size_t.max;
-        const workDir = "tests/functional/test_package";
-        const result = executeShell(dubShellCommand("build"),
-                                    env,
-                                    config,
-                                    maxOutput,
-                                    workDir);
-        if (result.status != 0)
-            writeln(result.output);
+        import std.string : capitalize;
 
-        return result.status;
+        enum beforeFunction = "before" ~ testGroup.capitalize;
+
+        static if (is(typeof(mixin(beforeFunction))))
+            mixin(beforeFunction ~ "();");
+
+        writefln("Running %s tests ", testGroup);
+        const command = dubShellCommand("--config=test-" ~ testGroup);
+        executeCommand(command);
     }
 
-    void build ()
+    void beforeFunctional() @safe
     {
-        try
-        {
-            auto result = executeShell(dubShellCommand("build"));
+        if (dstepBuilt)
+            return;
 
-            if (result.status != 0)
-            {
-                writeln(result.output);
-                throw new Exception("Failed to build DStep");
-            }
-        }
-        catch(ProcessException)
-        {
-            throw new ProcessException("Failed to execute dub");
-        }
+        writeln("Building DStep");
+        const command = dubShellCommand("build", "--build=debug");
+        executeCommand(command);
     }
 }
 
+@safe:
 
-private string dubShellCommand(string subCommand) @safe pure nothrow
+bool dstepBuilt()
 {
-    return "dub " ~ subCommand ~ dubArch;
+    import std.file : exists;
+
+    version (Windows)
+        enum dstepPath = "bin/dstep.exe";
+    else version (Posix)
+        enum dstepPath = "bin/dstep";
+
+    return exists(dstepPath);
 }
 
-private string dubArch() @safe pure nothrow
+void executeCommand(const string[] args ...)
+{
+    import std.process : spawnProcess, wait;
+    import std.array : join;
+
+    if (spawnProcess(args).wait() != 0)
+        throw new Exception("Failed to execute command: " ~ args.join(' '));
+}
+
+string[] dubShellCommand(string[] subCommands ...)
+{
+    return ["dub", "--verror"] ~ subCommands ~ dubArch;
+}
+
+string dubArch()
 {
     version (Windows)
     {
+        import std.process : environment;
+        import std.string : split;
+
         version (X86_64)
-            return " --arch=x86_64";
+            enum defaultArchitecture = "x86_64";
         else
-            return " --arch=x86_mscoff";
+            enum defaultArchitecture = "x86_mscoff";
+
+        const architecture = environment
+            .get("DUB_ARCH", defaultArchitecture)
+            .split(" ")[$ - 1];
+
+        return "--arch=" ~ architecture;
+
     }
     else
-    {
         return "";
-    }
 }

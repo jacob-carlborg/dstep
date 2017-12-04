@@ -76,6 +76,13 @@
         },
 
         {
+            "name": "unittest",
+            "targetName": "wrapper",
+            "targetPath": "bin/test",
+            "mainSourceFile": "test.d"
+        },
+
+        {
             "name": "library",
             "targetType": "library",
             "sourcePaths": ["dstep", "clang"],

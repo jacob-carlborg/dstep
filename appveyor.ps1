@@ -42,8 +42,10 @@ function Invoke-CmdScript {
 
 Invoke-CmdScript $env:compilersetup $env:compilersetupargs;
 
+dub tools/download_llvm.d
+
 echo "Running tests...";
-dub --config=test $env:archswitch;
+dub test $env:archswitch;
 
 if ($LastExitCode -ne 0) {
   $host.SetShouldExit(-1)
