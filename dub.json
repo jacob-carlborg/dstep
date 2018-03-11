@@ -17,6 +17,12 @@
 
     "lflags-osx": ["-macosx_version_min", "10.7", "-lcrt1.o"],
 
+	"buildTypes": {
+		"release": {
+			"buildOptions": ["optimize", "inline"]
+		}
+	},
+
     "configurations": [
         {
             "name": "default",
