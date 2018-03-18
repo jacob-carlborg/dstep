@@ -34,32 +34,145 @@ void translatePackedAttribute(Output output, Context context, Cursor cursor)
         output.singleLine("align (1):");
 }
 
+struct BitField
+{
+    string type;
+    string field;
+    uint width;
+}
+
+BitField[] translateBitFields(
+    Context context,
+    Cursor[] cursors)
+{
+    void pad(ref BitField[] bitFields, uint totalWidth)
+    {
+        uint padding = 0;
+
+        for (uint size = 8; size <= 64; size *= 2)
+        {
+            if (totalWidth <= size)
+            {
+                padding = size - totalWidth;
+                break;
+            }
+        }
+
+        if (padding != 0)
+            bitFields ~= BitField("uint", "", padding);
+    }
+
+    BitField[] bitFields;
+    uint totalWidth = 0;
+
+    foreach (cursor; cursors)
+    {
+        auto width = cursor.bitFieldWidth();
+
+        if (width == 0)
+        {
+            pad(bitFields, totalWidth);
+            totalWidth = 0;
+        }
+        else
+        {
+            bitFields ~= BitField(
+                translateType(context, cursor).makeString(),
+                cursor.spelling(),
+                width);
+
+            totalWidth += width;
+        }
+    }
+
+    pad(bitFields, totalWidth);
+
+    return bitFields;
+}
+
+void translateBitFields(
+    Output output,
+    Context context,
+    Cursor[] cursors)
+{
+    import std.range;
+
+    auto bitFields = translateBitFields(context, cursors);
+
+    if (bitFields.length == 1)
+    {
+        auto bitField = bitFields.front;
+
+        output.singleLine(
+            `mixin(bitfields!(%s, "%s", %s));`,
+            bitField.type,
+            bitField.field,
+            bitField.width);
+    }
+    else
+    {
+        output.multiLine("mixin(bitfields!(") in {
+            foreach (index, bitField; enumerate(bitFields))
+            {
+                output.singleLine(
+                    `%s, "%s", %s%s`,
+                    bitField.type,
+                    bitField.field,
+                    bitField.width,
+                    index + 1 == bitFields.length ? "));" : ",");
+            }
+        };
+    }
+}
+
 void translateRecordDef(
     Output output,
     Context context,
     Cursor cursor,
     bool keepUnnamed = false)
 {
+    import std.algorithm;
+    import std.array;
+    import std.format;
+
     context.markAsDefined(cursor);
 
     auto canonical = cursor.canonical;
-
-    import std.format;
 
     auto spelling = keepUnnamed ? "" : context.translateTagSpelling(cursor);
     spelling = spelling == "" ? spelling : " " ~ spelling;
     auto type = translateRecordTypeKeyword(cursor);
 
     output.subscopeStrong(cursor.extent, "%s%s", type, spelling) in {
+        alias predicate = (a, b) =>
+            a == b ||
+            a.isBitField() &&
+            b.isBitField();
+
+        auto declarations = cursor.children
+            .filter!(cursor => cursor.isDeclaration)();
+
+        if (declarations.any!(cursor => cursor.isBitField()))
+            output.singleLine("import std.bitmanip : bitfields;");
 
         translatePackedAttribute(output, context, cursor);
 
-        foreach (cursor, parent; cursor.declarations)
+        foreach (chunk; declarations.chunkBy!predicate())
         {
-            with (CXCursorKind)
+            auto cursor = chunk.front;
+
+            if (cursor.isBitField)
+            {
+                version (D1)
+                    { /* do nothing */ }
+                else
+                    translateBitFields(output, context, chunk.array);
+            }
+            else
+            {
                 switch (cursor.kind)
                 {
-                    case fieldDecl:
+                    case CXCursorKind.fieldDecl:
                         output.flushLocation(cursor);
 
                         auto undecorated =
@@ -80,19 +193,20 @@ void translateRecordDef(
 
                         break;
 
-                    case unionDecl:
-                    case structDecl:
+                    case CXCursorKind.unionDecl:
+                    case CXCursorKind.structDecl:
                         if (cursor.type.isAnonymous)
-                            translateAnonymousRecord(output, context, cursor, parent);
+                            translateAnonymousRecord(output, context, cursor);
 
                         break;
 
-                    case enumDecl:
+                    case CXCursorKind.enumDecl:
                         translateEnum(output, context, cursor);
                         break;
 
                     default: break;
                 }
+            }
         }
     };
 }
@@ -107,7 +221,7 @@ void translateRecordDecl(Output output, Context context, Cursor cursor)
     output.singleLine(cursor.extent, "%s%s;", type, spelling);
 }
 
-void translateAnonymousRecord(Output output, Context context, Cursor cursor, Cursor parent)
+void translateAnonymousRecord(Output output, Context context, Cursor cursor)
 {
     if (!variablesInParentScope(cursor))
         translateRecordDef(output, context, cursor, true);

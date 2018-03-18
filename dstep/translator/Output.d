@@ -107,7 +107,6 @@ SourceNode flatten(in SourceNode node)
 {
     void flatten(ref Appender!(char[]) output, in SourceNode node)
     {
-
         output.put(node.prefix);
 
         foreach (index, child; node.children)
