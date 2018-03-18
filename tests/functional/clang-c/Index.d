@@ -224,7 +224,7 @@ enum CXGlobalOptFlags
     /**
      * \brief Used to indicate that no special CXIndex options are needed.
      */
-    CXGlobalOpt_None = 0,
+    CXGlobalOpt_None = 0x0,
 
     /**
      * \brief Used to indicate that threads that libclang creates for indexing
@@ -233,7 +233,7 @@ enum CXGlobalOptFlags
      * Affects #clang_indexSourceFile, #clang_indexTranslationUnit,
      * #clang_parseTranslationUnit, #clang_saveTranslationUnit.
      */
-    CXGlobalOpt_ThreadBackgroundPriorityForIndexing = 1,
+    CXGlobalOpt_ThreadBackgroundPriorityForIndexing = 0x1,
 
     /**
      * \brief Used to indicate that threads that libclang creates for editing
@@ -242,13 +242,13 @@ enum CXGlobalOptFlags
      * Affects #clang_reparseTranslationUnit, #clang_codeCompleteAt,
      * #clang_annotateTokens
      */
-    CXGlobalOpt_ThreadBackgroundPriorityForEditing = 2,
+    CXGlobalOpt_ThreadBackgroundPriorityForEditing = 0x2,
 
     /**
      * \brief Used to indicate that all threads that libclang creates should use
      * background priority.
      */
-    CXGlobalOpt_ThreadBackgroundPriorityForAll = 3
+    CXGlobalOpt_ThreadBackgroundPriorityForAll = CXGlobalOpt_ThreadBackgroundPriorityForIndexing | CXGlobalOpt_ThreadBackgroundPriorityForEditing
 }
 
 /**
@@ -821,7 +821,7 @@ enum CXDiagnosticDisplayOptions
      *
      * This option corresponds to the clang flag \c -fshow-source-location.
      */
-    CXDiagnostic_DisplaySourceLocation = 1,
+    CXDiagnostic_DisplaySourceLocation = 0x01,
 
     /**
      * \brief If displaying the source-location information of the
@@ -829,7 +829,7 @@ enum CXDiagnosticDisplayOptions
      *
      * This option corresponds to the clang flag \c -fshow-column.
      */
-    CXDiagnostic_DisplayColumn = 2,
+    CXDiagnostic_DisplayColumn = 0x02,
 
     /**
      * \brief If displaying the source-location information of the
@@ -839,7 +839,7 @@ enum CXDiagnosticDisplayOptions
      * This option corresponds to the clang flag
      * \c -fdiagnostics-print-source-range-info.
      */
-    CXDiagnostic_DisplaySourceRanges = 4,
+    CXDiagnostic_DisplaySourceRanges = 0x04,
 
     /**
      * \brief Display the option name associated with this diagnostic, if any.
@@ -848,7 +848,7 @@ enum CXDiagnosticDisplayOptions
      * after the diagnostic text. This option corresponds to the clang flag
      * \c -fdiagnostics-show-option.
      */
-    CXDiagnostic_DisplayOption = 8,
+    CXDiagnostic_DisplayOption = 0x08,
 
     /**
      * \brief Display the category number associated with this diagnostic, if any.
@@ -857,7 +857,7 @@ enum CXDiagnosticDisplayOptions
      * This option corresponds to the clang flag
      * \c -fdiagnostics-show-category=id.
      */
-    CXDiagnostic_DisplayCategoryId = 16,
+    CXDiagnostic_DisplayCategoryId = 0x10,
 
     /**
      * \brief Display the category name associated with this diagnostic, if any.
@@ -866,7 +866,7 @@ enum CXDiagnosticDisplayOptions
      * This option corresponds to the clang flag
      * \c -fdiagnostics-show-category=name.
      */
-    CXDiagnostic_DisplayCategoryName = 32
+    CXDiagnostic_DisplayCategoryName = 0x20
 }
 
 /**
@@ -1118,7 +1118,7 @@ enum CXTranslationUnit_Flags
      * \brief Used to indicate that no special translation-unit options are
      * needed.
      */
-    CXTranslationUnit_None = 0,
+    CXTranslationUnit_None = 0x0,
 
     /**
      * \brief Used to indicate that the parser should construct a "detailed"
@@ -1130,7 +1130,7 @@ enum CXTranslationUnit_Flags
      * applications that require more detailed information about the
      * behavior of the preprocessor.
      */
-    CXTranslationUnit_DetailedPreprocessingRecord = 1,
+    CXTranslationUnit_DetailedPreprocessingRecord = 0x01,
 
     /**
      * \brief Used to indicate that the translation unit is incomplete.
@@ -1143,7 +1143,7 @@ enum CXTranslationUnit_Flags
      * C++. This option is typically used when parsing a header with the
      * intent of producing a precompiled header.
      */
-    CXTranslationUnit_Incomplete = 2,
+    CXTranslationUnit_Incomplete = 0x02,
 
     /**
      * \brief Used to indicate that the translation unit should be built with an
@@ -1159,7 +1159,7 @@ enum CXTranslationUnit_Flags
      * clang_reparseTranslationUnit() will re-use the implicit
      * precompiled header to improve parsing performance.
      */
-    CXTranslationUnit_PrecompiledPreamble = 4,
+    CXTranslationUnit_PrecompiledPreamble = 0x04,
 
     /**
      * \brief Used to indicate that the translation unit should cache some
@@ -1169,7 +1169,7 @@ enum CXTranslationUnit_Flags
      * introduces some overhead to reparsing but improves the performance of
      * code-completion operations.
      */
-    CXTranslationUnit_CacheCompletionResults = 8,
+    CXTranslationUnit_CacheCompletionResults = 0x08,
 
     /**
      * \brief Used to indicate that the translation unit will be serialized with
@@ -1178,7 +1178,7 @@ enum CXTranslationUnit_Flags
      * This option is typically used when parsing a header with the intent of
      * producing a precompiled header.
      */
-    CXTranslationUnit_ForSerialization = 16,
+    CXTranslationUnit_ForSerialization = 0x10,
 
     /**
      * \brief DEPRECATED: Enabled chained precompiled preambles in C++.
@@ -1186,7 +1186,7 @@ enum CXTranslationUnit_Flags
      * Note: this is a *temporary* option that is available only while
      * we are testing C++ precompiled preamble support. It is deprecated.
      */
-    CXTranslationUnit_CXXChainedPCH = 32,
+    CXTranslationUnit_CXXChainedPCH = 0x20,
 
     /**
      * \brief Used to indicate that function/method bodies should be skipped while
@@ -1195,14 +1195,14 @@ enum CXTranslationUnit_Flags
      * This option can be used to search for declarations/definitions while
      * ignoring the usages.
      */
-    CXTranslationUnit_SkipFunctionBodies = 64,
+    CXTranslationUnit_SkipFunctionBodies = 0x40,
 
     /**
      * \brief Used to indicate that brief documentation comments should be
      * included into the set of code completions returned from this translation
      * unit.
      */
-    CXTranslationUnit_IncludeBriefCommentsInCodeCompletion = 128,
+    CXTranslationUnit_IncludeBriefCommentsInCodeCompletion = 0x80,
 
     /**
      * \brief Used to indicate that the precompiled preamble should be created on
@@ -1210,7 +1210,7 @@ enum CXTranslationUnit_Flags
      * trades runtime on the first parse (serializing the preamble takes time) for
      * reduced runtime on the second parse (can now reuse the preamble).
      */
-    CXTranslationUnit_CreatePreambleOnFirstParse = 256
+    CXTranslationUnit_CreatePreambleOnFirstParse = 0x100
 }
 
 /**
@@ -1323,7 +1323,7 @@ enum CXSaveTranslationUnit_Flags
     /**
      * \brief Used to indicate that no special saving options are needed.
      */
-    CXSaveTranslationUnit_None = 0
+    CXSaveTranslationUnit_None = 0x0
 }
 
 /**
@@ -1418,7 +1418,7 @@ enum CXReparse_Flags
     /**
      * \brief Used to indicate that no special reparsing options are needed.
      */
-    CXReparse_None = 0
+    CXReparse_None = 0x0
 }
 
 /**
@@ -1497,11 +1497,11 @@ enum CXTUResourceUsageKind
     CXTUResourceUsage_PreprocessingRecord = 12,
     CXTUResourceUsage_SourceManager_DataStructures = 13,
     CXTUResourceUsage_Preprocessor_HeaderSearch = 14,
-    CXTUResourceUsage_MEMORY_IN_BYTES_BEGIN = 1,
-    CXTUResourceUsage_MEMORY_IN_BYTES_END = 14,
+    CXTUResourceUsage_MEMORY_IN_BYTES_BEGIN = CXTUResourceUsage_AST,
+    CXTUResourceUsage_MEMORY_IN_BYTES_END = CXTUResourceUsage_Preprocessor_HeaderSearch,
 
-    CXTUResourceUsage_First = 1,
-    CXTUResourceUsage_Last = 14
+    CXTUResourceUsage_First = CXTUResourceUsage_AST,
+    CXTUResourceUsage_Last = CXTUResourceUsage_Preprocessor_HeaderSearch
 }
 
 /**
@@ -1643,8 +1643,8 @@ enum CXCursorKind
     /** \brief An access specifier. */
     CXCursor_CXXAccessSpecifier = 39,
 
-    CXCursor_FirstDecl = 1,
-    CXCursor_LastDecl = 39,
+    CXCursor_FirstDecl = CXCursor_UnexposedDecl,
+    CXCursor_LastDecl = CXCursor_CXXAccessSpecifier,
 
     /* References */
     CXCursor_FirstRef = 40, /* Decl references */
@@ -1743,7 +1743,7 @@ enum CXCursorKind
      */
     CXCursor_VariableRef = 50,
 
-    CXCursor_LastRef = 50,
+    CXCursor_LastRef = CXCursor_VariableRef,
 
     /* Error conditions */
     CXCursor_FirstInvalid = 70,
@@ -1751,7 +1751,7 @@ enum CXCursorKind
     CXCursor_NoDeclFound = 71,
     CXCursor_NotImplemented = 72,
     CXCursor_InvalidCode = 73,
-    CXCursor_LastInvalid = 73,
+    CXCursor_LastInvalid = CXCursor_InvalidCode,
 
     /* Expressions */
     CXCursor_FirstExpr = 100,
@@ -2015,7 +2015,7 @@ enum CXCursorKind
      */
     CXCursor_OMPArraySectionExpr = 147,
 
-    CXCursor_LastExpr = 147,
+    CXCursor_LastExpr = CXCursor_OMPArraySectionExpr,
 
     /* Statements */
     CXCursor_FirstStmt = 200,
@@ -2101,7 +2101,7 @@ enum CXCursorKind
     /** \brief A GCC inline assembly statement extension.
      */
     CXCursor_GCCAsmStmt = 215,
-    CXCursor_AsmStmt = 215,
+    CXCursor_AsmStmt = CXCursor_GCCAsmStmt,
 
     /** \brief Objective-C's overall \@try-\@catch-\@finally statement.
      */
@@ -2286,7 +2286,7 @@ enum CXCursorKind
     */
     CXCursor_OMPDistributeDirective = 260,
 
-    CXCursor_LastStmt = 260,
+    CXCursor_LastStmt = CXCursor_OMPDistributeDirective,
 
     /**
      * \brief Cursor that represents the translation unit itself.
@@ -2323,16 +2323,16 @@ enum CXCursorKind
     CXCursor_VisibilityAttr = 417,
     CXCursor_DLLExport = 418,
     CXCursor_DLLImport = 419,
-    CXCursor_LastAttr = 419,
+    CXCursor_LastAttr = CXCursor_DLLImport,
 
     /* Preprocessing */
     CXCursor_PreprocessingDirective = 500,
     CXCursor_MacroDefinition = 501,
     CXCursor_MacroExpansion = 502,
-    CXCursor_MacroInstantiation = 502,
+    CXCursor_MacroInstantiation = CXCursor_MacroExpansion,
     CXCursor_InclusionDirective = 503,
-    CXCursor_FirstPreprocessing = 500,
-    CXCursor_LastPreprocessing = 503,
+    CXCursor_FirstPreprocessing = CXCursor_PreprocessingDirective,
+    CXCursor_LastPreprocessing = CXCursor_InclusionDirective,
 
     /* Extra Declarations */
     /**
@@ -2340,8 +2340,8 @@ enum CXCursorKind
      */
     CXCursor_ModuleImportDecl = 600,
     CXCursor_TypeAliasTemplateDecl = 601,
-    CXCursor_FirstExtraDecl = 600,
-    CXCursor_LastExtraDecl = 601,
+    CXCursor_FirstExtraDecl = CXCursor_ModuleImportDecl,
+    CXCursor_LastExtraDecl = CXCursor_TypeAliasTemplateDecl,
 
     /**
      * \brief A code completion overload candidate.
@@ -2913,8 +2913,8 @@ enum CXTypeKind
     CXType_ObjCId = 27,
     CXType_ObjCClass = 28,
     CXType_ObjCSel = 29,
-    CXType_FirstBuiltin = 2,
-    CXType_LastBuiltin = 29,
+    CXType_FirstBuiltin = CXType_Void,
+    CXType_LastBuiltin = CXType_ObjCSel,
 
     CXType_Complex = 100,
     CXType_Pointer = 101,
@@ -3839,19 +3839,19 @@ CXType clang_Cursor_getReceiverType (CXCursor C);
  */
 enum CXObjCPropertyAttrKind
 {
-    CXObjCPropertyAttr_noattr = 0,
-    CXObjCPropertyAttr_readonly = 1,
-    CXObjCPropertyAttr_getter = 2,
-    CXObjCPropertyAttr_assign = 4,
-    CXObjCPropertyAttr_readwrite = 8,
-    CXObjCPropertyAttr_retain = 16,
-    CXObjCPropertyAttr_copy = 32,
-    CXObjCPropertyAttr_nonatomic = 64,
-    CXObjCPropertyAttr_setter = 128,
-    CXObjCPropertyAttr_atomic = 256,
-    CXObjCPropertyAttr_weak = 512,
-    CXObjCPropertyAttr_strong = 1024,
-    CXObjCPropertyAttr_unsafe_unretained = 2048
+    CXObjCPropertyAttr_noattr = 0x00,
+    CXObjCPropertyAttr_readonly = 0x01,
+    CXObjCPropertyAttr_getter = 0x02,
+    CXObjCPropertyAttr_assign = 0x04,
+    CXObjCPropertyAttr_readwrite = 0x08,
+    CXObjCPropertyAttr_retain = 0x10,
+    CXObjCPropertyAttr_copy = 0x20,
+    CXObjCPropertyAttr_nonatomic = 0x40,
+    CXObjCPropertyAttr_setter = 0x80,
+    CXObjCPropertyAttr_atomic = 0x100,
+    CXObjCPropertyAttr_weak = 0x200,
+    CXObjCPropertyAttr_strong = 0x400,
+    CXObjCPropertyAttr_unsafe_unretained = 0x800
 }
 
 /**
@@ -3869,13 +3869,13 @@ uint clang_Cursor_getObjCPropertyAttributes (CXCursor C, uint reserved);
  */
 enum CXObjCDeclQualifierKind
 {
-    CXObjCDeclQualifier_None = 0,
-    CXObjCDeclQualifier_In = 1,
-    CXObjCDeclQualifier_Inout = 2,
-    CXObjCDeclQualifier_Out = 4,
-    CXObjCDeclQualifier_Bycopy = 8,
-    CXObjCDeclQualifier_Byref = 16,
-    CXObjCDeclQualifier_Oneway = 32
+    CXObjCDeclQualifier_None = 0x0,
+    CXObjCDeclQualifier_In = 0x1,
+    CXObjCDeclQualifier_Inout = 0x2,
+    CXObjCDeclQualifier_Out = 0x4,
+    CXObjCDeclQualifier_Bycopy = 0x8,
+    CXObjCDeclQualifier_Byref = 0x10,
+    CXObjCDeclQualifier_Oneway = 0x20
 }
 
 /**
@@ -4140,13 +4140,13 @@ enum CXNameRefFlags
      * \brief Include the nested-name-specifier, e.g. Foo:: in x.Foo::y, in the
      * range.
      */
-    CXNameRange_WantQualifier = 1,
+    CXNameRange_WantQualifier = 0x1,
 
     /**
      * \brief Include the explicit template arguments, e.g. \<int> in x.f<int>,
      * in the range.
      */
-    CXNameRange_WantTemplateArgs = 2,
+    CXNameRange_WantTemplateArgs = 0x2,
 
     /**
      * \brief If the name is non-contiguous, return the full spanning range.
@@ -4158,7 +4158,7 @@ enum CXNameRefFlags
      * return some_vector[1]; // C++
      * \endcode
      */
-    CXNameRange_WantSinglePiece = 4
+    CXNameRange_WantSinglePiece = 0x4
 }
 
 /**
@@ -4730,19 +4730,19 @@ enum CXCodeComplete_Flags
      * \brief Whether to include macros within the set of code
      * completions returned.
      */
-    CXCodeComplete_IncludeMacros = 1,
+    CXCodeComplete_IncludeMacros = 0x01,
 
     /**
      * \brief Whether to include code patterns for language constructs
      * within the set of code completions, e.g., for loops.
      */
-    CXCodeComplete_IncludeCodePatterns = 2,
+    CXCodeComplete_IncludeCodePatterns = 0x02,
 
     /**
      * \brief Whether to include brief documentation within the set of code
      * completions returned.
      */
-    CXCodeComplete_IncludeBriefComments = 4
+    CXCodeComplete_IncludeBriefComments = 0x04
 }
 
 /**
@@ -4762,119 +4762,119 @@ enum CXCompletionContext
     /**
      * \brief Completions for any possible type should be included in the results.
      */
-    CXCompletionContext_AnyType = 1,
+    CXCompletionContext_AnyType = 1 << 0,
 
     /**
      * \brief Completions for any possible value (variables, function calls, etc.)
      * should be included in the results.
      */
-    CXCompletionContext_AnyValue = 2,
+    CXCompletionContext_AnyValue = 1 << 1,
     /**
      * \brief Completions for values that resolve to an Objective-C object should
      * be included in the results.
      */
-    CXCompletionContext_ObjCObjectValue = 4,
+    CXCompletionContext_ObjCObjectValue = 1 << 2,
     /**
      * \brief Completions for values that resolve to an Objective-C selector
      * should be included in the results.
      */
-    CXCompletionContext_ObjCSelectorValue = 8,
+    CXCompletionContext_ObjCSelectorValue = 1 << 3,
     /**
      * \brief Completions for values that resolve to a C++ class type should be
      * included in the results.
      */
-    CXCompletionContext_CXXClassTypeValue = 16,
+    CXCompletionContext_CXXClassTypeValue = 1 << 4,
 
     /**
      * \brief Completions for fields of the member being accessed using the dot
      * operator should be included in the results.
      */
-    CXCompletionContext_DotMemberAccess = 32,
+    CXCompletionContext_DotMemberAccess = 1 << 5,
     /**
      * \brief Completions for fields of the member being accessed using the arrow
      * operator should be included in the results.
      */
-    CXCompletionContext_ArrowMemberAccess = 64,
+    CXCompletionContext_ArrowMemberAccess = 1 << 6,
     /**
      * \brief Completions for properties of the Objective-C object being accessed
      * using the dot operator should be included in the results.
      */
-    CXCompletionContext_ObjCPropertyAccess = 128,
+    CXCompletionContext_ObjCPropertyAccess = 1 << 7,
 
     /**
      * \brief Completions for enum tags should be included in the results.
      */
-    CXCompletionContext_EnumTag = 256,
+    CXCompletionContext_EnumTag = 1 << 8,
     /**
      * \brief Completions for union tags should be included in the results.
      */
-    CXCompletionContext_UnionTag = 512,
+    CXCompletionContext_UnionTag = 1 << 9,
     /**
      * \brief Completions for struct tags should be included in the results.
      */
-    CXCompletionContext_StructTag = 1024,
+    CXCompletionContext_StructTag = 1 << 10,
 
     /**
      * \brief Completions for C++ class names should be included in the results.
      */
-    CXCompletionContext_ClassTag = 2048,
+    CXCompletionContext_ClassTag = 1 << 11,
     /**
      * \brief Completions for C++ namespaces and namespace aliases should be
      * included in the results.
      */
-    CXCompletionContext_Namespace = 4096,
+    CXCompletionContext_Namespace = 1 << 12,
     /**
      * \brief Completions for C++ nested name specifiers should be included in
      * the results.
      */
-    CXCompletionContext_NestedNameSpecifier = 8192,
+    CXCompletionContext_NestedNameSpecifier = 1 << 13,
 
     /**
      * \brief Completions for Objective-C interfaces (classes) should be included
      * in the results.
      */
-    CXCompletionContext_ObjCInterface = 16384,
+    CXCompletionContext_ObjCInterface = 1 << 14,
     /**
      * \brief Completions for Objective-C protocols should be included in
      * the results.
      */
-    CXCompletionContext_ObjCProtocol = 32768,
+    CXCompletionContext_ObjCProtocol = 1 << 15,
     /**
      * \brief Completions for Objective-C categories should be included in
      * the results.
      */
-    CXCompletionContext_ObjCCategory = 65536,
+    CXCompletionContext_ObjCCategory = 1 << 16,
     /**
      * \brief Completions for Objective-C instance messages should be included
      * in the results.
      */
-    CXCompletionContext_ObjCInstanceMessage = 131072,
+    CXCompletionContext_ObjCInstanceMessage = 1 << 17,
     /**
      * \brief Completions for Objective-C class messages should be included in
      * the results.
      */
-    CXCompletionContext_ObjCClassMessage = 262144,
+    CXCompletionContext_ObjCClassMessage = 1 << 18,
     /**
      * \brief Completions for Objective-C selector names should be included in
      * the results.
      */
-    CXCompletionContext_ObjCSelectorName = 524288,
+    CXCompletionContext_ObjCSelectorName = 1 << 19,
 
     /**
      * \brief Completions for preprocessor macro names should be included in
      * the results.
      */
-    CXCompletionContext_MacroName = 1048576,
+    CXCompletionContext_MacroName = 1 << 20,
 
     /**
      * \brief Natural language completions should be included in the results.
      */
-    CXCompletionContext_NaturalLanguage = 2097152,
+    CXCompletionContext_NaturalLanguage = 1 << 21,
 
     /**
      * \brief The current context is unknown, so set all contexts.
      */
-    CXCompletionContext_Unknown = 4194303
+    CXCompletionContext_Unknown = (1 << 22) - 1
 }
 
 /**
@@ -5422,7 +5422,7 @@ struct CXIdxIBOutletCollectionAttrInfo
 
 enum CXIdxDeclInfoFlags
 {
-    CXIdxDeclFlag_Skipped = 1
+    CXIdxDeclFlag_Skipped = 0x1
 }
 
 struct CXIdxDeclInfo
@@ -5700,38 +5700,38 @@ enum CXIndexOptFlags
     /**
      * \brief Used to indicate that no special indexing options are needed.
      */
-    CXIndexOpt_None = 0,
+    CXIndexOpt_None = 0x0,
 
     /**
      * \brief Used to indicate that IndexerCallbacks#indexEntityReference should
      * be invoked for only one reference of an entity per source file that does
      * not also include a declaration/definition of the entity.
      */
-    CXIndexOpt_SuppressRedundantRefs = 1,
+    CXIndexOpt_SuppressRedundantRefs = 0x1,
 
     /**
      * \brief Function-local symbols should be indexed. If this is not set
      * function-local symbols will be ignored.
      */
-    CXIndexOpt_IndexFunctionLocalSymbols = 2,
+    CXIndexOpt_IndexFunctionLocalSymbols = 0x2,
 
     /**
      * \brief Implicit function/class template instantiations should be indexed.
      * If this is not set, implicit instantiations will be ignored.
      */
-    CXIndexOpt_IndexImplicitTemplateInstantiations = 4,
+    CXIndexOpt_IndexImplicitTemplateInstantiations = 0x4,
 
     /**
      * \brief Suppress all compiler warnings when parsing for indexing.
      */
-    CXIndexOpt_SuppressWarnings = 8,
+    CXIndexOpt_SuppressWarnings = 0x8,
 
     /**
      * \brief Skip a function/method body that was already parsed during an
      * indexing session associated with a \c CXIndexAction object.
      * Bodies in system headers are always skipped.
      */
-    CXIndexOpt_SkipParsedBodiesInSession = 16
+    CXIndexOpt_SkipParsedBodiesInSession = 0x10
 }
 
 /**

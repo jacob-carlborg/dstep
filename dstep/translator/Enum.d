@@ -11,6 +11,8 @@ import clang.Cursor;
 import clang.Visitor;
 import clang.Util;
 
+import dstep.translator.MacroParser;
+import dstep.translator.MacroDefinition;
 import dstep.translator.ConvertCase;
 import dstep.translator.Context;
 import dstep.translator.Declaration;
@@ -25,13 +27,27 @@ void translateEnumConstantDecl(
     string spelling,
     bool last)
 {
-    import std.format : format;
+    import std.conv;
+    import std.format;
+    import std.stdio;
+
+    context.defineSpellingTranslation(cursor, spelling);
+
+    auto expression = parseEnumMember(cursor.tokens, context.typeNames());
+
+    auto expressionContext = ExpressionContext.make(context);
+
+    expressionContext.scope_ = cursor.lexicalParent;
+
+    auto translated = expression.hasValue
+        ? expression.debraced.translate(expressionContext)
+        : cursor.enum_.value.to!string();
 
     output.singleLine(
         cursor.extent,
         "%s = %s%s",
         spelling,
-        cursor.enum_.value,
+        translated,
         last ? "" : ",");
 }
 
