@@ -77,3 +77,16 @@ private:
         return virtualPath_ = buildPath(root, uniform(1, 10_000_000).to!string);
     }
 }
+
+string[] internalIncludeFlags()
+{
+    import std.algorithm;
+    import std.array;
+
+    return Compiler.init.extraIncludePaths.map!(path => "-I" ~ path).array();
+}
+
+CXUnsavedFile[] internalHeaders()
+{
+    return Compiler.init.extraHeaders();
+}

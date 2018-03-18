@@ -72,14 +72,14 @@ unittest
     assertTranslates(q"C
 #include <sys/ioctl.h>
 
-#define FOO _IOR('o', 61, 61)
+#define FOO _IOR('o', 61, int)
 C",
 q"D
 import core.sys.posix.sys.ioctl;
 
 extern (C):
 
-enum FOO = _IOR('o', 61, 61);
+enum FOO = _IOR!int('o', 61);
 D");
 
 }

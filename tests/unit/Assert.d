@@ -20,6 +20,7 @@ import dstep.translator.MacroParser;
 import dstep.translator.Output;
 import dstep.translator.Translator;
 import dstep.translator.Type;
+import dstep.translator.TypeInference;
 
 void assertTranslatesMacroDefinition(
     string source,
@@ -39,7 +40,10 @@ void assertTranslatesMacroDefinition(
     if (children.length != 1)
         throw new AssertError("Assertion failure", file, line);
 
-    translateMacroDefinition(output, context, children[0]);
+    auto definitions = inferMacroSignatures(context);
+
+    if (auto definition = children[0].spelling in definitions)
+        translateMacroDefinition(output, context, *definition);
 
     assertEq(expected, output.data, false, file, line);
 }
@@ -70,15 +74,14 @@ void assertTranslatesMacroExpression(
 
     auto definition = parsePartialMacroDefinition(tokens, context.typeNames);
 
-    Set!string imports;
-    Set!string params;
+    auto expressionContext = ExpressionContext.make(context);
 
     string actual = null;
 
     if (definition !is null)
     {
         if (definition.expr.hasValue)
-            actual = definition.expr.debraced.translate(context, params, imports);
+            actual = definition.expr.debraced.translate(expressionContext);
     }
 
     assertEq(expected, actual, false, file, line);
