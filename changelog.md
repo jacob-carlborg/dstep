@@ -62,7 +62,10 @@
 * [Issue 137](https://github.com/jacob-carlborg/dstep/issues/137): struct member expansion.
 * [Issue 138](https://github.com/jacob-carlborg/dstep/issues/138): Repeated declarations cause problems.
 * [Issue 140](https://github.com/jacob-carlborg/dstep/issues/140): On enums and scope.
+* [Issue 141](https://github.com/jacob-carlborg/dstep/issues/141): Use of _IO, _IOR, etc.
 * [Issue 154](https://github.com/jacob-carlborg/dstep/issues/154): Falling back to blunt pre-processor phase.
+* [Issue 157](https://github.com/jacob-carlborg/dstep/issues/157): Keep enum members when used as enum values.
+* [Issue 158](https://github.com/jacob-carlborg/dstep/issues/158): Keep literals for enum values.
 * [Issue 160](https://github.com/jacob-carlborg/dstep/issues/160): Translating typedef of function pointer doesn't take line length into consideration.
 * [Issue 166](https://github.com/jacob-carlborg/dstep/issues/166): macro used in struct declaration not translated properly
 
