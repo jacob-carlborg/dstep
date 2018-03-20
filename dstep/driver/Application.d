@@ -40,57 +40,34 @@ class Application
     public void run ()
     {
         import std.exception : enforce;
+        import std.range;
 
         enforce!DStepException(config.inputFiles.length > 0,
             "dstep: error: must supply at least one input file\n");
 
         enforceInputFilesExist(config);
 
-        // when only one input file is supplied, -o argument is
-        // interpreted as file path, otherwise as base directory path
-        bool singleFileInput = config.inputFiles.length == 1;
+        auto translationUnits = makeTranslationUnits(config);
 
-        Task!(
-            startParsingFile,
-            Configuration,
-            string,
-            string)*[] conversionTasks;
+        enforceTranslationUnitsCompiled(translationUnits);
 
-        conversionTasks.length = config.inputFiles.length;
+        auto inputFiles = config.inputFiles;
+        auto outputFiles = makeOutputFiles(config);
 
-        // parallel generation of D modules for each of input files
-        foreach (size_t index, fileName; config.inputFiles)
+        foreach (tuple; zip(inputFiles, outputFiles, translationUnits).parallel(1))
         {
-            string outputFilename;
+            string outputDirectory = Path.dirName(tuple[1]);
 
-            if (singleFileInput)
-            {
-                if (config.output.length)
-                    outputFilename = config.output;
-                else
-                    outputFilename = defaultOutputFilename(fileName, false);
-            }
-            else
-            {
-                outputFilename = Path.buildPath(config.output,
-                    defaultOutputFilename(fileName, false));
-            }
+            if (!exists(outputDirectory))
+                mkdirRecurse(outputDirectory);
 
-            string outputDir = Path.dirName(outputFilename);
+            Options options = this.config.toOptions(tuple[0], tuple[1]);
 
-            if (!exists(outputDir))
-                mkdirRecurse(outputDir);
-
-            conversionTasks[index] = task!startParsingFile(
-                config,
-                fileName,
-                outputFilename);
-
-            conversionTasks[index].executeInNewThread();
+            auto translator = new Translator(tuple[2], options);
+            translator.translate;
         }
 
-        foreach (conversionTask; conversionTasks)
-            conversionTask.yieldForce();
+        taskPool.finish(true);
     }
 
     static void enforceInputFilesExist(const Configuration config)
@@ -110,96 +87,7 @@ class Application
         }
     }
 
-    static void startParsingFile (const Configuration config, string fileName,
-        string outputFilename)
-    {
-        ParseFile(config, fileName, outputFilename)
-            .startConversion();
-    }
-
-    static string defaultOutputFilename (string inputFile, bool useBaseName = true)
-    {
-        if (useBaseName)
-            return Path.setExtension(Path.baseName(inputFile), "d");
-
-        return Path.setExtension(inputFile, "d");
-    }
-}
-
-private struct ParseFile
-{
-    private
-    {
-        string inputFile;
-        string outputFile;
-        Index index;
-        TranslationUnit translationUnit;
-        DiagnosticVisitor diagnostics;
-
-        const Configuration config;
-        Compiler compiler;
-    }
-
-    this (
-        const Configuration config,
-        string inputFile,
-        string outputFile)
-    {
-        this.config = config;
-        this.inputFile = inputFile;
-        this.outputFile = outputFile;
-    }
-
-    void startConversion ()
-    {
-        import std.algorithm.iteration : map;
-        import std.array;
-
-        index = Index(false, false);
-
-        auto include_flags = compiler
-            .extraIncludePaths.map!(e => "-I" ~ e).array();
-        translationUnit = TranslationUnit.parse(
-            index,
-            inputFile,
-            config.clangParams ~ include_flags,
-            compiler.extraHeaders);
-
-        diagnostics = translationUnit.diagnostics;
-
-        enforceCompiled();
-
-        if (exists(inputFile))
-        {
-            import std.algorithm : map;
-            import std.array : array;
-
-            Options options = this.config.toOptions(inputFile, outputFile);
-
-            auto translator = new Translator(translationUnit, options);
-            translator.translate;
-        }
-    }
-
-    ~this ()
-    {
-        clean();
-    }
-
-private:
-
-    void clean ()
-    {
-        translationUnit.dispose;
-        index.dispose;
-    }
-
-    bool anyErrors ()
-    {
-        return diagnostics.length > 0;
-    }
-
-    void enforceCompiled ()
+    void enforceTranslationUnitsCompiled(TranslationUnit[] translationUnits)
     {
         import std.array : Appender;
         import std.exception : enforce;
@@ -207,18 +95,76 @@ private:
         bool translate = true;
         auto message = Appender!string();
 
-        foreach (diag ; diagnostics)
+        foreach (translationUnit; translationUnits)
         {
-            auto severity = diag.severity;
+            foreach (diagnostics ; translationUnit.diagnostics)
+            {
+                auto severity = diagnostics.severity;
 
-            with (CXDiagnosticSeverity)
-                if (translate)
-                    translate = !(severity == error || severity == fatal);
+                with (CXDiagnosticSeverity)
+                    if (translate)
+                        translate = !(severity == error || severity == fatal);
 
-            message.put(diag.format);
-            message.put("\n");
+                message.put(diagnostics.format);
+                message.put("\n");
+            }
         }
 
         enforce!DStepException(translate, message.data);
+    }
+
+    static string makeDefaultOutputFile(string inputFile, bool useBaseName = true)
+    {
+        if (useBaseName)
+            return Path.setExtension(Path.baseName(inputFile), "d");
+
+        return Path.setExtension(inputFile, "d");
+    }
+
+    static string[] makeOutputFiles(Configuration config)
+    {
+        import std.algorithm;
+        import std.array;
+        import std.range;
+
+        auto inputFiles = config.inputFiles;
+
+        // when only one input file is supplied, -o argument is
+        // interpreted as file path, otherwise as base directory path
+        if (inputFiles.length == 1)
+        {
+            return [config.output.empty
+                ? makeDefaultOutputFile(inputFiles.front, false)
+                : config.output];
+        }
+        else
+        {
+            alias fmap = file => Path.buildPath(
+                config.output,
+                makeDefaultOutputFile(file, false));
+
+            return inputFiles.map!fmap.array;
+        }
+    }
+
+    static TranslationUnit[] makeTranslationUnits(Configuration config)
+    {
+        import std.parallelism;
+
+        Index translationIndex = Index(false, false);
+        Compiler compiler;
+
+        auto translationUnits = new TranslationUnit[config.inputFiles.length];
+
+        foreach (index, ref unit; translationUnits.parallel(1))
+        {
+            unit = TranslationUnit.parse(
+                translationIndex,
+                config.inputFiles[index],
+                config.clangParams ~ compiler.extraIncludeFlags,
+                compiler.extraHeaders);
+        }
+
+        return translationUnits;
     }
 }

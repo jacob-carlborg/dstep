@@ -652,13 +652,13 @@ auto testRunDStep(
     if (sourcePaths.length == 1)
     {
         outputPaths ~= buildPath(outputDir,
-            Application.defaultOutputFilename(sourcePaths[0], false));
+            Application.makeDefaultOutputFile(sourcePaths[0], false));
     }
     else
     {
         foreach (sourcePath; sourcePaths)
             outputPaths ~= buildPath(outputDir,
-                Application.defaultOutputFilename(sourcePath, false));
+                Application.makeDefaultOutputFile(sourcePath, false));
     }
 
     auto localCommand = ["./bin/dstep"] ~ sourcePaths ~ arguments;

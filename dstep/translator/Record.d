@@ -45,7 +45,7 @@ BitField[] translateBitFields(
     Context context,
     Cursor[] cursors)
 {
-    void pad(ref BitField[] bitFields, uint totalWidth)
+    static void pad(ref BitField[] bitFields, uint totalWidth)
     {
         uint padding = 0;
 
