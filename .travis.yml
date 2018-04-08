@@ -12,9 +12,11 @@ os:
   - osx
 
 env:
-  - LLVM_VERSION=4.0.0
-  - LLVM_VERSION=3.9.1
-  - LLVM_VERSION=3.9.0
+  global: MACOSX_DEPLOYMENT_TARGET=10.9
+  matrix:
+    - LLVM_VERSION=4.0.0
+    - LLVM_VERSION=3.9.1
+    - LLVM_VERSION=3.9.0
 
 matrix:
   include:

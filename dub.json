@@ -15,8 +15,6 @@
     "preGenerateCommands-posix": ["$PACKAGE_DIR/tools/generate_version.sh"],
     "preGenerateCommands-windows": ["$PACKAGE_DIR/tools/generate_version.bat"],
 
-    "lflags-osx": ["-macosx_version_min", "10.7", "-lcrt1.o"],
-
     "buildTypes": {
         "release": {
             "buildOptions": ["optimize", "inline"],
