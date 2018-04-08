@@ -51,6 +51,7 @@ class IncludeHandler
             "_uint32_t" : "core.stdc.stdint",
             "_uint64_t" : "core.stdc.stdint",
             "stdio" : "core.stdc.stdio",
+            "_stdio" : "core.stdc.stdio",
             "corecrt_wstdio" : "core.stdc.stdio",
             "stdlib" : "core.stdc.stdlib",
             "string" : "core.stdc.string",
