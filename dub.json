@@ -17,11 +17,13 @@
 
     "lflags-osx": ["-macosx_version_min", "10.7", "-lcrt1.o"],
 
-	"buildTypes": {
-		"release": {
-			"buildOptions": ["optimize", "inline"]
-		}
-	},
+    "buildTypes": {
+        "release": {
+            "buildOptions": ["optimize", "inline"],
+            "dflags-osx-ldc": ["-flto=full"],
+            "lflags-osx-ldc": ["-dead_strip"]
+        }
+    },
 
     "configurations": [
         {
