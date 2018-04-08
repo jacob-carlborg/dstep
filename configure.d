@@ -162,7 +162,8 @@ static:
         ] ~ standardPaths;
 
         immutable additionalLibPaths = [
-            "/opt/local/lib"
+            "/opt/local/lib",
+            "/usr/local/opt/ncurses/lib" // the brew ncurses formula is a keg-only
         ] ~ standardPaths;
 
         enum additionalLib = LibraryName("ncurses", "libncurses.a");
