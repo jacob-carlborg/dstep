@@ -685,8 +685,10 @@ D"[0 .. $ - 1]);
 
     private void writeComment(in CommentIndex.Comment comment)
     {
-        import std.string;
+        import std.algorithm;
+        import std.ascii;
         import std.format;
+        import std.string;
 
         auto lines = lineSplitter!(KeepTerminator.yes)(comment.content);
 
@@ -702,8 +704,15 @@ D"[0 .. $ - 1]);
 
             foreach (line; lines)
             {
-                indent();
-                buffer.put(line[indentAmount .. $]);
+                if (line.all!isWhite)
+                {
+                    buffer.put("\n");
+                }
+                else
+                {
+                    indent();
+                    buffer.put(line[indentAmount .. $]);
+                }
             }
         }
     }
