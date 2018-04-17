@@ -68,6 +68,7 @@
 * [Issue 158](https://github.com/jacob-carlborg/dstep/issues/158): Keep literals for enum values.
 * [Issue 160](https://github.com/jacob-carlborg/dstep/issues/160): Translating typedef of function pointer doesn't take line length into consideration.
 * [Issue 166](https://github.com/jacob-carlborg/dstep/issues/166): macro used in struct declaration not translated properly
+* [Issue 192](https://github.com/jacob-carlborg/dstep/issues/192): Fail to convert nuklear
 
 ## Version 0.2.1
 ### New/Changed Features
