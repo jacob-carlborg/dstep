@@ -143,9 +143,9 @@ class IncludeHandler
         }
     }
 
-    void addImport (string imp)
+    void addImport (string import_)
     {
-        imports[imp] = true;
+        imports[import_] = true;
     }
 
     void addCompatible ()
@@ -172,10 +172,10 @@ class IncludeHandler
                 unhandled.add(format(`/+ #include "%s" +/`, entry));
         }
 
-        auto extra = imports.byKey.map!(e => toImport(e)).array;
+        foreach (entry; imports.byKey)
+            standard.add(toImport(entry));
 
         importsBlock(output, standard.keys);
-        importsBlock(output, extra.array);
         importsBlock(output, package_.keys);
 
         if (options.keepUntranslatable)
