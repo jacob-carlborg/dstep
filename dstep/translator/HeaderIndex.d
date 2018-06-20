@@ -75,7 +75,7 @@ class IncludeGraph
 
         foreach (header, closure; transitiveClosure())
         {
-            foreach (closureHeader; closure)
+            foreach (closureHeader; closure.byKey)
                 indirectInclusions.add(Inclusion(header, closureHeader));
         }
     }
@@ -192,12 +192,12 @@ class IncludeGraph
         return sorted;
     }
 
-    private size_t[][] transitiveClosure()
+    private Set!size_t[] transitiveClosure()
     {
         import std.range;
 
         auto sorted = topologicalSort();
-        auto closure = new size_t[][sorted.length];
+        auto closure = new Set!size_t[sorted.length];
 
         auto includedTo = new size_t[][headers_.length];
 
@@ -206,12 +206,13 @@ class IncludeGraph
 
         foreach (header; sorted)
         {
-            closure[header] ~= header;
+            closure[header].add(header);
 
-            foreach (transitiveHeader; closure[header])
+            foreach (transitiveHeader; closure[header].byKey)
             {
-                foreach (includedHeader; includedTo[header])
-                    closure[includedHeader] ~= transitiveHeader;
+                foreach (includedHeader; includedTo[header]) {
+                    closure[includedHeader].add(transitiveHeader);
+                }
             }
         }
 
@@ -310,6 +311,7 @@ class HeaderIndex
         auto directives = translationUnit.cursor.children.filter!predicate;
 
         includeGraph_ = new IncludeGraph(directives);
+
         mainFilePath = translationUnit.spelling.asAbsNormPath;
         this(directives, moduleMapping);
     }
