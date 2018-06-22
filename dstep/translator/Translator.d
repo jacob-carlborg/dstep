@@ -494,6 +494,8 @@ void handleInclude (Context context, Type type)
         context.includeHandler.addInclude("time.h");
     else
         context.includeHandler.addInclude(type.declaration.path);
+
+    context.includeHandler.resolveDependency(type.declaration);
 }
 
 bool isDKeyword (string str)
