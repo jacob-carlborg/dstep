@@ -149,18 +149,11 @@ void assertFileExists(
 }
 
 version (Posix)
-    private extern (C) char* mkdtemp(char*);
+    import core.sys.posix.stdlib : mkdtemp;
 else
 {
-    struct GUID
-    {
-        uint Data1;
-        ushort Data2;
-        ushort Data3;
-        ubyte[8] Data4;
-    }
-
-    private extern (Windows) uint CoCreateGuid(GUID* pguid);
+    import core.sys.windows.objbase : CoCreateGuid;
+    import core.sys.windows.basetyps : GUID;
 }
 
 string namedTempDir(string prefix)
