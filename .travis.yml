@@ -4,8 +4,11 @@ d:
   - dmd
   - ldc
 
-before_script: git fetch --unshallow
-script: dub test --compiler=${DC}
+install: ./tools/download_llvm.d
+before_script:
+  - git fetch --unshallow
+  - ./configure --llvm-path tmp/clang
+script: dub test --verror --compiler=${DC}
 
 os:
   - linux
