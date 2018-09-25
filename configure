@@ -4,4 +4,4 @@
 
 set -e
 
-dub configure.d "$@"
+dub --verror --single configure.d -- "$@"
