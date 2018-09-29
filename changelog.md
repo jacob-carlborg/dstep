@@ -71,6 +71,7 @@
 * [Issue 192](https://github.com/jacob-carlborg/dstep/issues/192): Fail to convert nuklear
 * [Issue 199](https://github.com/jacob-carlborg/dstep/issues/199): `#define` of types results in incorrect output
 * [Issue 202](https://github.com/jacob-carlborg/dstep/issues/202): Invalid translation of C struct with typedef to D.
+* [Issue 203](https://github.com/jacob-carlborg/dstep/issues/203): Octal constants not handled correctly
 
 ## Version 0.2.1
 ### New/Changed Features

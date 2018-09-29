@@ -100,6 +100,37 @@ struct ExpressionContext
         result.params = params;
         return result;
     }
+
+    void elevateImports()
+    {
+        assert(imports != null);
+
+        foreach (item; imports.byKey)
+            context.includeHandler.addImport(item);
+    }
+}
+
+string translate(Literal literal, ExpressionContext context)
+{
+    import std.algorithm;
+    import std.ascii;
+    import std.range;
+
+    alias pred = (dchar x) => (x == 'u' || x == 'U' || x == 'L');
+    auto integer = literal.spelling.stripRight!pred;
+    auto uinteger = integer.stripLeft!(x => x == '+' || x == '-');
+
+    if (uinteger.length > 1 &&
+        uinteger.all!isDigit &&
+        uinteger.front == '0')
+    {
+        (*context.imports).add("std.conv : octal");
+        auto suffix = literal.spelling[integer.length .. $];
+        auto core = uinteger[0 .. $ - 1].stripLeft('0') ~ uinteger[$ - 1];
+        return "octal!" ~ core ~ suffix;
+    }
+
+    return literal.spelling;
 }
 
 string translate(Identifier identifier, ExpressionContext context)
@@ -210,7 +241,7 @@ string translate(Expression expression, ExpressionContext context)
         },
         delegate string(Literal literal)
         {
-            return literal.spelling;
+            return literal.translate(context);
         },
         delegate string(StringLiteral stringLiteral)
         {
@@ -608,6 +639,8 @@ void translateMacroDefinitionAliasOrConst(
         formatString,
         definition.definition.spelling,
         debraced.translate(expressionContext));
+
+    expressionContext.elevateImports();
 }
 
 void translateMacroDefinition(
