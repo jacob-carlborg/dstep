@@ -491,12 +491,9 @@ void handleInclude (Context context, Type type)
     import std.algorithm.searching;
     import std.path;
 
-    if (type.kind == CXTypeKind.typedef_
-        && type.spelling == "time_t"
-        && type.declaration.path.asNormalizedPath.array.endsWith("sys\\types.h"))
-        context.includeHandler.addInclude("time.h");
-    else
+    if (!context.includeHandler.resolveDependency(type.declaration)) {
         context.includeHandler.addInclude(type.declaration.path);
+    }
 }
 
 bool isDKeyword (string str)

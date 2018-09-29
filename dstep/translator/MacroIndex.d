@@ -37,8 +37,7 @@ class MacroIndex
         {
             if (cursor.kind == CXCursorKind.macroExpansion)
                 expansionsAppender.put(cursor);
-
-            if (!cursor.spelling.empty)
+            else if (!cursor.spelling.empty)
                 globalCursors_[extendedSpelling(cursor)] = cursor;
         }
 
