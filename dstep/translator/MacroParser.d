@@ -1464,7 +1464,7 @@ class MacroDefinition
     Cursor cursor;
     string spelling;
     string[] params;
-    bool constant;
+    bool aliasOrConst;
     Expression expr;
 
     override string toString()
@@ -1472,10 +1472,10 @@ class MacroDefinition
         import std.format : format;
 
         return format(
-            "MacroDefinition(spelling = %s, params = %s, constant = %s, expr = %s)",
+            "MacroDefinition(spelling = %s, params = %s, aliasOrConst = %s, expr = %s)",
             spelling,
             params,
-            constant,
+            aliasOrConst,
             expr);
     }
 
@@ -1487,7 +1487,7 @@ class MacroDefinition
 
         result.put(" ".replicate(indent));
 
-        if (constant)
+        if (aliasOrConst)
             formattedWrite(result, "MacroDefinition %s", spelling);
         else
             formattedWrite(result, "MacroDefinition %s(%s)", spelling, join(params, ", "));
@@ -1551,7 +1551,7 @@ MacroDefinition parsePartialMacroDefinition(
     }
     else
     {
-        result.constant = true;
+        result.aliasOrConst = true;
     }
 
     result.expr = parseExpr(local, table, defined);

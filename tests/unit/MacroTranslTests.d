@@ -764,3 +764,28 @@ enum FOO = 0;
 D",
 translateMacrosTrue);
 }
+
+// If the identifier is known to be a type translate is as an alias.
+unittest
+{
+    assertTranslates(q"C
+typedef unsigned long long uint64_type;
+#define __le64 uint64_type
+C", q"D
+extern (C):
+
+alias uint64_type = ulong;
+alias __le64 = uint64_type;
+D");
+
+    assertTranslates(q"C
+#define __le32 unsigned
+#define __le64 unsigned long long
+C", q"D
+extern (C):
+
+alias __le32 = uint;
+alias __le64 = ulong;
+D");
+}
+

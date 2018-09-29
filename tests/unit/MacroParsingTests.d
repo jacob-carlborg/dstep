@@ -32,18 +32,18 @@ unittest
     auto y = parse("#define FOO");
     assert(y !is null);
     assert(y.spelling == "FOO");
-    assert(y.constant == true);
+    assert(y.aliasOrConst == true);
 
     auto z = parse("#define FOO()");
     assert(z !is null);
     assert(z.spelling == "FOO");
-    assert(z.constant == false);
+    assert(z.aliasOrConst == false);
     assert(z.params == []);
 
     auto w = parse("#define FOO(a, b)");
     assert(w !is null);
     assert(w.spelling == "FOO");
-    assert(w.constant == false);
+    assert(w.aliasOrConst == false);
     assert(w.params.length == 2);
     assert(w.params[0] == "a");
     assert(w.params[1] == "b");

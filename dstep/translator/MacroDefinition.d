@@ -579,22 +579,35 @@ string spelling(Expression expression)
     return identifier.spelling;
 }
 
-void translateMacroDefinitionConstant(
+void translateMacroDefinitionAliasOrConst(
     Output output,
     Context context,
     TypedMacroDefinition definition)
 {
     auto expressionContext = ExpressionContext.make(context);
 
-    version (D1)
-        enum formatString = "const %s = %s;";
+    string formatString;
+    auto debraced = definition.definition.expr.debraced;
+
+    if (debraced.peek!TypeIdentifier)
+    {
+        version (D1)
+            formatString = "alias %2$s %1$s;";
+        else
+            formatString = "alias %s = %s;";
+    }
     else
-        enum formatString = "enum %s = %s;";
+    {
+        version (D1)
+            formatString = "const %s = %s;";
+        else
+            formatString = "enum %s = %s;";
+    }
 
     output.singleLine(
         formatString,
         definition.definition.spelling,
-        definition.definition.expr.debraced.translate(expressionContext));
+        debraced.translate(expressionContext));
 }
 
 void translateMacroDefinition(
@@ -606,9 +619,9 @@ void translateMacroDefinition(
     import std.conv;
     import std.range;
 
-    if (definition.constant)
+    if (definition.aliasOrConst)
     {
-        translateMacroDefinitionConstant(output, context, definition);
+        translateMacroDefinitionAliasOrConst(output, context, definition);
     }
     else if (!translateFunctAlias(output, context, definition))
     {
