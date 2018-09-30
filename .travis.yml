@@ -24,9 +24,12 @@ matrix:
       os: linux
       env: LLVM_VERSION=4.0.0
     - <<: *entry
-      d: dmd-nightly
-    - <<: *entry
       d: ldc-beta
+    - <<: *entry
+      d: dmd-nightly
+  allow_failures:
+    - <<: *entry
+      d: dmd-nightly
 
   # missing binaries from http://releases.llvm.org
   exclude:
