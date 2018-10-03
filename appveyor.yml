@@ -4,8 +4,6 @@ platform:
 
 configuration:
   - LLVM 4.0.0
-  - LLVM 3.9.1
-  - LLVM 3.9.0
 
 environment:
   DVersion: stable
