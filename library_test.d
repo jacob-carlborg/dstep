@@ -39,7 +39,12 @@ string dubArch()
         return " --arch=x86_64";
 
     else version (Win32)
-        return " --arch=x86_mscoff";
+    {
+        version (DigitalMars)
+            return " --arch=x86_mscoff";
+        else
+            return " --arch=x86";
+    }
 
     else
         return "";

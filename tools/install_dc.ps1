@@ -55,9 +55,9 @@ function ResolveLatestLDC
     $version = Get-LatestLDCVersion('LATEST_BETA')
   }
 
-  $bin_path = "/ldc2-$version-windows-x64/bin"
+  $bin_path = "/ldc2-$version-windows-$env:PLATFORM/bin"
   $url = 'https://github.com/ldc-developers/ldc/releases/download/' `
-    + "v$version/ldc2-$version-windows-x64.7z"
+    + "v$version/ldc2-$version-windows-$env:PLATFORM.7z"
 
   $env:PATH += ";$bin_path"
 

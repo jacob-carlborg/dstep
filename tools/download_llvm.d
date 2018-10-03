@@ -13,7 +13,8 @@ enum Architecture
     bit64 = 64,
     bit32 = 32,
     x86_64 = bit64,
-    x86_mscoff = bit32
+    x86 = bit32,
+    x86_mscoff = bit32,
 }
 
 enum Platform

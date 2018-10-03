@@ -15,7 +15,14 @@ environment:
 init:
   - ps: $env:LLVM_VERSION = $env:CONFIGURATION.split(" ")[1]
   - ps: |
-      $env:arch = if ($env:PLATFORM -eq 'x86') { 'x86_mscoff' } else { 'x86_64' }
+      $env:arch = if ($env:PLATFORM -eq 'x86')
+      {
+        if ($env:d -eq 'dmd') { 'x86_mscoff' } else { 'x86' }
+      }
+      else
+      {
+        'x86_64'
+      }
 
 install:
   - ps: tools/install_dc.ps1

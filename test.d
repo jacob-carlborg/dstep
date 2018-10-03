@@ -100,17 +100,25 @@ string[] dubShellCommand(string[] subCommands ...)
     return ["dub", "--verror"] ~ subCommands ~ dubArch;
 }
 
+string defaultArchitecture()
+{
+    version (X86_64)
+        return "x86_64";
+    else
+    {
+        version (DigitalMars)
+            return "x86_mscoff";
+        else
+            return "x86";
+    }
+}
+
 string dubArch()
 {
     version (Windows)
     {
         import std.process : environment;
         import std.string : split;
-
-        version (X86_64)
-            enum defaultArchitecture = "x86_64";
-        else
-            enum defaultArchitecture = "x86_mscoff";
 
         const architecture = environment
             .get("DUB_ARCH", defaultArchitecture)
