@@ -49,6 +49,9 @@ class Context
         macroIndex = new MacroIndex(translUnit);
         includeHandler_ = new IncludeHandler(headerIndex, options);
 
+        foreach (item; options.globalImports)
+            includeHandler_.addImport(item);
+
         this.options = options;
 
         if (options.enableComments)
