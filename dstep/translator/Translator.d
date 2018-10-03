@@ -278,7 +278,10 @@ class Translator
         {
             declareRecordForTypedef(output, typedef_);
 
-            if (underlying.isEmpty ||
+            auto typedefp = context.typedefParent(underlying);
+
+            if (typedef_ != typedefp ||
+                underlying.isEmpty ||
                 (underlying.spelling != typedef_.spelling &&
                 underlying.spelling != ""))
             {

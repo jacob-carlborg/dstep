@@ -53,8 +53,11 @@ class TypedefIndex
                 if (child.kind == CXCursorKind.typeRef
                     || child.isDeclaration)
                 {
-                    typedefs[child.referenced] = cursor;
-                    typedefs[child.referenced.canonical] = cursor;
+                    if (child.referenced !in typedefs)
+                    {
+                        typedefs[child.referenced] = cursor;
+                        typedefs[child.referenced.canonical] = cursor;
+                    }
                 }
             }
         }
