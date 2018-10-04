@@ -49,6 +49,7 @@ struct Options
     bool printDiagnostics = true;
     CollisionAction collisionAction = CollisionAction.rename;
     const(string)[] globalAttributes;
+    const(string)[] globalImports;
     bool delegate(ref const(Cursor)) isWantedCursorForTypedefs;
 
     string toString() const

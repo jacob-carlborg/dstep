@@ -105,6 +105,10 @@ struct Configuration
     @("global-attribute", "Add <attribute> as a global attribute.")
     string[] globalAttributes;
 
+    /// add global imports
+    @("global-import", "Add <import> as a global import.")
+    string[] globalImports;
+
     Options toOptions(string inputFile, string outputFile) const
     {
         Options options = toOptions();
@@ -140,6 +144,7 @@ struct Configuration
         options.printDiagnostics = printDiagnostics;
         options.collisionAction = collisionAction;
         options.globalAttributes = globalAttributes;
+        options.globalImports = globalImports;
 
         return options;
     }

@@ -123,6 +123,15 @@ unittest
         false);
 }
 
+// Test `--global-import` option.
+unittest
+{
+    assertRunsDStep(
+        [TestFile("tests/functional/globalImports.d", "tests/functional/globalImports.h")],
+        ["--global-import", "fstImport", "--global-import", "sndImport"],
+        false);
+}
+
 // DStep should issue a warning when it detects a name collision.
 unittest
 {
