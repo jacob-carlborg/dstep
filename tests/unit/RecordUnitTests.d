@@ -523,3 +523,27 @@ alias bar_t = bar_s;
 D");
 
 }
+
+// Translate multiple typedefs at once.
+unittest
+{
+    assertTranslates(q"C
+typedef struct
+{
+} A, B, *PB, **PPB;
+C",
+q"D
+extern (C):
+
+struct A
+{
+}
+
+alias B = A;
+alias PB = A*;
+alias PPB = A**;
+D");
+
+}
+
+
