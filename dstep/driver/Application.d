@@ -113,19 +113,13 @@ class Application
         enforce!DStepException(translate, message.data);
     }
 
-    static string makeDefaultOutputFile(string inputFile, bool useBaseName = true)
-    {
-        if (useBaseName)
-            return Path.setExtension(Path.baseName(inputFile), "d");
-
-        return Path.setExtension(inputFile, "d");
-    }
-
     static string[] makeOutputFiles(Configuration config)
     {
         import std.algorithm;
         import std.array;
         import std.range;
+
+        import dstep.driver.Util : makeDefaultOutputFile;
 
         auto inputFiles = config.inputFiles;
 

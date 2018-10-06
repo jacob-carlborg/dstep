@@ -152,21 +152,14 @@ auto setFromList(T)(T[] list)
 version (Posix)
 {
     private extern (C) int mkstemps(char*, int);
-    private extern (C) char* mkdtemp(char*);
     private extern (C) int close(int);
 }
 else
 {
-    struct GUID {
-        uint Data1;
-        ushort Data2;
-        ushort Data3;
-        ubyte[8] Data4;
-    }
+    import core.sys.windows.objbase : CoCreateGuid;
+    import core.sys.windows.basetyps : GUID;
 
-    private extern (Windows) uint CoCreateGuid(GUID* pguid);
-
-    private string createGUID()
+    string createGUID()
     {
         char toHex(uint x)
         {
@@ -203,28 +196,6 @@ class NamedTempFileException : object.Exception
     }
 }
 
-class NamedTempDirException : object.Exception
-{
-    immutable string path;
-
-    this (string path, string file = __FILE__, size_t line = __LINE__)
-    {
-        this.path = path;
-        super(
-            format("Cannot create temporary directory \"%s\".", path),
-            file,
-            line);
-    }
-}
-
-private void randstr (char[] slice)
-{
-    import std.random;
-
-    foreach (i; 0 .. slice.length)
-        slice[i] = uniform!("[]")('A', 'Z');
-}
-
 File namedTempFile(string prefix, string suffix)
 {
     import std.file;
@@ -233,6 +204,14 @@ File namedTempFile(string prefix, string suffix)
 
     version (Posix)
     {
+        static void randstr (char[] slice)
+        {
+            import std.random;
+
+            foreach (i; 0 .. slice.length)
+                slice[i] = uniform!("[]")('A', 'Z');
+        }
+
         string name = format("%sXXXXXXXXXXXXXXXX%s\0", prefix, suffix);
         char[] path = buildPath(tempDir(), name).dup;
         const size_t termAnd6XSize = 7;
@@ -257,45 +236,6 @@ File namedTempFile(string prefix, string suffix)
         string name = format("%s%s%s", prefix, createGUID(), suffix);
         string path = buildPath(tempDir(), name);
         return File(path, "wb+");
-    }
-}
-
-string namedTempDir(string prefix)
-{
-    import std.file;
-    import std.path;
-    import std.format;
-
-    version (Posix)
-    {
-        string name = format("%sXXXXXXXXXXXXXXXX\0", prefix);
-        char[] path = buildPath(tempDir(), name).dup;
-        const size_t termAnd6XSize = 7;
-
-        immutable size_t begin = path.length - name.length + prefix.length;
-
-        randstr(path[begin .. $ - termAnd6XSize]);
-
-        char* result = mkdtemp(path.ptr);
-
-        path = path[0..$-1];
-
-        if (result == null)
-            throw new NamedTempDirException(path.idup);
-
-        return path.idup;
-    }
-    else
-    {
-        string name = prefix ~ createGUID();
-        string path = buildPath(tempDir(), name);
-
-        try
-            mkdirRecurse(path);
-        catch (FileException)
-            throw new NamedTempDirException(path);
-
-        return path;
     }
 }
 

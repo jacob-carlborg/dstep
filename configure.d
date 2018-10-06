@@ -1,7 +1,3 @@
-/+ dub.sdl:
-    name "configure"
-    targetPath "bin"
-+/
 /**
  * This file implements a configuration script that will setup the correct flags
  * to link with libclang.
@@ -62,8 +58,8 @@ struct Options
     /// Indicates if help/usage information was requested.
     bool help = false;
 
-    /// The specified path to the LLVM/Clang library path.
-    string llvmLibPath;
+    /// The specified path to the LLVM/Clang root directory.
+    string llvmPath;
 
     /**
      * The specified path to the location of additional libraries, like
@@ -80,6 +76,12 @@ struct Options
      * be statically linked.
      */
     bool staticallyLinkBinary = false;
+
+    /// The path to the LLVM/Clang library directory.
+    string llvmLibPath ()
+    {
+        return llvmPath.empty ? "" : buildPath(llvmPath, "lib");
+    }
 }
 
 /// This struct contains the name and filename of a library.
@@ -156,7 +158,8 @@ static:
         ] ~ standardPaths;
 
         immutable additionalLibPaths = [
-            "/opt/local/lib"
+            "/opt/local/lib",
+            "/usr/local/opt/ncurses/lib" // the brew ncurses formula is a keg-only
         ] ~ standardPaths;
 
         enum additionalLib = LibraryName("ncurses", "libncurses.a");
@@ -635,7 +638,7 @@ Options parseArguments(string[] args)
 
     auto defaultGetoptArgs = tuple(
         args,
-        "llvm-path", "The path to where the LLVM/Clang libraries are located.", &options.llvmLibPath,
+        "llvm-path", "The path to the LLVM/Clang root directory.", &options.llvmPath,
         // "ncurses-lib-path", "The path to the ncurses library.", &options.ncursesLibPath,
         "statically-link-clang", "Statically link libclang. Defaults to no.", &options.staticallyLinkClang,
         "statically-link-binary", "Completely statically link the binary. Defaults to no.", &options.staticallyLinkBinary

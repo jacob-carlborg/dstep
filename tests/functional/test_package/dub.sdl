@@ -11,5 +11,6 @@ importPaths "../../.."
 // `libs "clang"` but since this will run under dstep's CI
 // we copy the linker flags here
 lflags "@../../../linker_flags.txt" platform="posix"
+lflags "/LIBPATH:../../../tmp/clang/lib" platform="windows"
 lflags "/LIBPATH:../../.." "libclang.lib" "Ole32.lib" platform="windows-x86"
 lflags "/LIBPATH:../../.." "libclang.lib" "Ole32.lib" platform="windows-x86_64"

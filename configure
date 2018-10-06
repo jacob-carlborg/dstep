@@ -1,7 +1,5 @@
 #!/bin/sh
 
-# This wrapper script is necessary due to https://github.com/dlang/dub/issues/910
-
 set -e
 
-dub configure.d "$@"
+rdmd configure.d "$@"

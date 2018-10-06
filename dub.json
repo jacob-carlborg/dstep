@@ -10,65 +10,91 @@
     "targetPath": "bin",
 
     "buildRequirements": ["silenceWarnings"],
-    "sourcePaths": ["dstep", "clang"],
-    "importPaths": ["."],
     "stringImportPaths": ["resources"],
 
     "preGenerateCommands-posix": ["$PACKAGE_DIR/tools/generate_version.sh"],
     "preGenerateCommands-windows": ["$PACKAGE_DIR/tools/generate_version.bat"],
 
-    "lflags-osx": ["-macosx_version_min", "10.7", "-lcrt1.o"],
-
     "buildTypes": {
-        "unittest": {
-            "buildRequirements" : [ "allowWarnings" ],
-            "buildOptions" : ["unittests", "debugMode", "debugInfo"]
+        "release": {
+            "buildOptions": ["optimize", "inline"],
+            "dflags-osx-ldc": ["-flto=full"],
+            "lflags-osx-ldc": ["-dead_strip"]
         }
     },
 
     "configurations": [
         {
             "name": "default",
-            "mainSourceFile": "dstep/main.d",
             "targetName": "dstep",
+            "mainSourceFile": "dstep/main.d",
+            "sourcePaths": ["dstep", "clang"],
+            "importPaths": ["."],
 
             "preBuildCommands-posix": [
                 "(! [ -s linker_flags.txt ] && ./configure) || true"
             ],
 
+            "lflags-windows": ["/LIBPATH:$PACKAGE_DIR/tmp/clang/lib"],
             "lflags-windows-x86": ["/LIBPATH:C:\\PROGRA~2\\LLVM\\lib", "libclang.lib", "Ole32.lib"],
             "lflags-windows-x86_64": ["/LIBPATH:C:\\PROGRA~1\\LLVM\\lib", "libclang.lib", "Ole32.lib"],
             "lflags-posix": ["@linker_flags.txt"]
         },
 
         {
-            "name": "test",
-            "mainSourceFile": "test.d",
-            "targetName": "test",
-            "sourceFiles": [ "tests/unit/HttpClient.d" ],
-            "excludedSourceFiles": ["dstep/*", "clang/*"],
+            "name": "test-functional",
+            "targetName": "functional",
+            "targetType": "executable",
+            "targetPath": "bin/test",
+            "sourcePaths": ["tests/support"],
+            "sourceFiles": ["tests/functional/Tests.d", "dstep/driver/Util.d"],
+            "buildOptions": ["unittests", "debugMode", "debugInfo"],
+            "dflags": ["-main"],
+
+            "libs-windows": ["ole32"]
+        },
+
+        {
+            "name": "test-unit",
+            "targetName": "unit",
+            "targetType": "executable",
+            "targetPath": "bin/test",
+            "sourcePaths": ["dstep", "clang", "tests/unit", "tests/support"],
+            "excludedSourceFiles": ["dstep/main.d"],
+            "dflags": ["-main"],
+            "buildOptions" : ["unittests", "debugMode", "debugInfo"],
+
+            "preBuildCommands-posix": [
+                "(! [ -s linker_flags.txt ] && ./configure) || true"
+            ],
+
+            "lflags-windows": ["/LIBPATH:$PACKAGE_DIR/tmp/clang/lib"],
+            "lflags-windows-x86": ["/LIBPATH:C:\\PROGRA~2\\LLVM\\lib", "libclang.lib", "Ole32.lib"],
+            "lflags-windows-x86_64": ["/LIBPATH:C:\\PROGRA~1\\LLVM\\lib", "libclang.lib", "Ole32.lib"],
+
+            "lflags-posix": ["@linker_flags.txt"]
+        },
+
+        {
+            "name": "test-library",
+            "targetName": "library",
+            "targetType": "executable",
+            "targetPath": "bin/test",
+            "mainSourceFile": "library_test.d"
         },
 
         {
             "name": "unittest",
-            "mainSourceFile": "unittest.d",
-            "targetName": "unittest",
-            "sourcePaths": ["dstep", "clang", "tests/unit"],
-            "excludedSourceFiles": ["dstep/main.d"],
-
-            "preBuildCommands-posix": [
-                "(! [ -s linker_flags.txt ] && ./configure) || true"
-            ],
-
-            "lflags-windows-x86": ["/LIBPATH:C:\\PROGRA~2\\LLVM\\lib", "libclang.lib", "Ole32.lib"],
-            "lflags-windows-x86_64": ["/LIBPATH:C:\\PROGRA~1\\LLVM\\lib", "libclang.lib", "Ole32.lib"],
-
-            "lflags-posix": ["@linker_flags.txt"]
+            "targetName": "wrapper",
+            "targetPath": "bin/test",
+            "mainSourceFile": "test.d"
         },
 
         {
             "name": "library",
             "targetType": "library",
+            "sourcePaths": ["dstep", "clang"],
+            "importPaths": ["."],
             "excludedSourceFiles": ["dstep/main.d"]
         }
     ],

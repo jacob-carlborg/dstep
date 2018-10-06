@@ -4,20 +4,60 @@ platform:
 
 configuration:
   - LLVM 4.0.0
-  - LLVM 3.9.1
-  - LLVM 3.9.0
 
 environment:
-  DVersion: 2.076.0
-  DC: dmd
+  DVersion: stable
 
-skip_tags: true
+  matrix:
+    - d: dmd
+    - d: ldc
+
+init:
+  - ps: $env:LLVM_VERSION = $env:CONFIGURATION.split(" ")[1]
+  - ps: |
+      $env:arch = if ($env:PLATFORM -eq 'x86')
+      {
+        if ($env:d -eq 'dmd') { 'x86_mscoff' } else { 'x86' }
+      }
+      else
+      {
+        'x86_64'
+      }
 
 install:
-  - echo dummy install script - dont remove me
+  - ps: tools/install_dc.ps1
+  - ps: dub tools/download_llvm.d --arch=$env:arch
+  - cp tmp/clang/bin/libclang.dll .
 
 build_script:
   - echo dummy build script - dont remove me
 
+before_test:
+  - echo dummy test script - dont remove me
+
 test_script:
-  - powershell -NoProfile -File appveyor.ps1 < NUL
+  - ps: |
+      if ($env:APPVEYOR_REPO_TAG -eq 'true')
+      {
+        tools/build_release.ps1
+      }
+      else
+      {
+        dub test --verror --arch=$env:arch --compiler=$env:DC
+      }
+
+artifacts:
+  - path: dstep*.7z
+
+deploy:
+  description: ''
+  provider: GitHub
+  auth_token:
+    secure: 75htvSwus8XM6rUYfMqHMyEzHfqd8vmVjZ3bhg8OyFf2kGlMEFt5GmLVa3Pc9hhu
+  artifact: /dstep.+\.7z/
+  draft: true
+  on:
+    branch: master
+    appveyor_repo_tag: true
+    configuration: LLVM 4.0.0
+    d: ldc
