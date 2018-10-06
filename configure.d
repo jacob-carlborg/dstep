@@ -1,7 +1,3 @@
-/+ dub.sdl:
-    name "configure"
-    targetPath "bin"
-+/
 /**
  * This file implements a configuration script that will setup the correct flags
  * to link with libclang.
