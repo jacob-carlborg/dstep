@@ -3,7 +3,8 @@ platform:
   - x86
 
 configuration:
-  - LLVM 4.0.0
+  - LLVM 7.0.0
+  - LLVM 6.0.0
 
 environment:
   DVersion: stable
@@ -59,5 +60,5 @@ deploy:
   on:
     branch: master
     appveyor_repo_tag: true
-    configuration: LLVM 4.0.0
+    configuration: LLVM 7.0.0
     d: ldc

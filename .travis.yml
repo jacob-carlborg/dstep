@@ -17,9 +17,9 @@ os:
 env:
   global: MACOSX_DEPLOYMENT_TARGET=10.9
   matrix:
-    - LLVM_VERSION=4.0.0
-    - LLVM_VERSION=3.9.1
-    - LLVM_VERSION=3.9.0
+    - LLVM_VERSION=7.0.0
+    - LLVM_VERSION=6.0.0
+    - LLVM_VERSION=3.9.0 # used by Sociomantic, needs confirmation
 
 matrix:
   include:
@@ -27,7 +27,7 @@ matrix:
     - &entry
       d: dmd-beta
       os: linux
-      env: LLVM_VERSION=4.0.0
+      env: LLVM_VERSION=7.0.0
     - <<: *entry
       d: ldc-beta
     - <<: *entry
@@ -41,7 +41,7 @@ matrix:
       stage: deploy
       d: ldc
       os: linux
-      env: LLVM_VERSION=5.0.1
+      env: LLVM_VERSION=7.0.0
       script: ./tools/build_release.sh
       deploy:
         provider: releases
@@ -57,8 +57,3 @@ matrix:
     - <<: *deploy
       os: osx
       before_install: brew install ncurses
-
-  # missing binaries from http://releases.llvm.org
-  exclude:
-    - env: LLVM_VERSION=3.9.1
-      os: osx
