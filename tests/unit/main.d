@@ -11,5 +11,5 @@ shared static this()
     import std.stdio : writeln;
     import clang.Util : clangVersionString;
 
-    writeln("Testing with ", clangVersionString);
+    writeln("with ", clangVersionString);
 }

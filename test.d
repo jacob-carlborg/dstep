@@ -47,7 +47,7 @@ struct TestRunner
      *
      * Returns: the exist code of the test run
      */
-    void runTest (TestGroup testGroup)() @safe
+    void runTest (TestGroup testGroup)()
     {
         import std.string : capitalize;
 
@@ -56,7 +56,8 @@ struct TestRunner
         static if (is(typeof(mixin(beforeFunction))))
             mixin(beforeFunction ~ "();");
 
-        writefln("Running %s tests ", testGroup);
+        writef("Running %s tests ", testGroup);
+        stdout.flush();
         const command = dubShellCommand("--config=test-" ~ testGroup);
         executeCommand(command);
     }

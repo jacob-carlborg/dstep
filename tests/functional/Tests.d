@@ -26,7 +26,7 @@ void printClangVersion()
         return;
 
     auto output = execute([dstepPath, "--clang-version"]);
-    writeln("Testing with ", output.output.strip);
+    writeln("with ", output.output.strip);
 }
 
 shared static this()

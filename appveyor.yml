@@ -29,6 +29,7 @@ install:
   - ps: tools/install_dc.ps1
   - ps: dub tools/download_llvm.d --arch=$env:arch
   - cp tmp/clang/bin/libclang.dll .
+  - cp tmp/clang/bin/libclang.dll tests/functional/test_package
 
 build_script:
   - echo dummy build script - dont remove me

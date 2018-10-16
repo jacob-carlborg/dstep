@@ -1,4 +1,7 @@
-int main(string[] args) {
-    import dstep.driver.CommandLine;
-    return run(args);
+import std.stdio : writeln;
+import clang.Util : clangVersionString;
+
+void main(string[] args)
+{
+    writeln("with ", clangVersionString);
 }
