@@ -159,6 +159,21 @@ D");
 
 }
 
+// Translate function call.
+unittest
+{
+    assertTranslates(q"C
+#define FOO(a) (bar)(a)
+C", q"D
+extern (C):
+
+extern (D) auto FOO(T)(auto ref T a)
+{
+    return bar(a);
+}
+D");
+}
+
 // Translate cast operator.
 unittest
 {
@@ -170,7 +185,6 @@ extern (D) auto FOO(T)(auto ref T a)
     return cast(float) a;
 }
 D");
-
 }
 
 // Translate unary operators.

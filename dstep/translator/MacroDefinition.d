@@ -521,6 +521,7 @@ bool translateFunctAlias(
     if (expr !is null)
     {
         Identifier* ident = expr.expr.peek!Identifier;
+        if (ident is null) return false;
 
         if (ident.spelling == "assert")
         {
@@ -541,8 +542,7 @@ bool translateFunctAlias(
             return true;
         }
 
-        if (ident !is null &&
-            equal(definition.params, expr.args
+        if (equal(definition.params, expr.args
                 .map!(a => a.translate(expressionContext))))
         {
             version (D1)
