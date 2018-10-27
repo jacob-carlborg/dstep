@@ -35,6 +35,7 @@ matrix:
     # deployment
     - &deploy
       stage: deploy
+      if: tag IS present
       d: ldc
       os: linux
       env: LLVM_VERSION=7.0.0
