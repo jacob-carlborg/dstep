@@ -31,9 +31,6 @@ matrix:
       d: ldc-beta
     - <<: *entry
       d: dmd-nightly
-  allow_failures:
-    - <<: *entry
-      d: dmd-nightly
 
     # deployment
     - &deploy
@@ -56,3 +53,7 @@ matrix:
     - <<: *deploy
       os: osx
       before_install: brew install ncurses
+
+  allow_failures:
+    - <<: *entry
+      d: dmd-nightly
