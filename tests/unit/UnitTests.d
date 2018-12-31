@@ -932,3 +932,43 @@ void bar (const(foo_t)* foo);
 D");
 
 }
+
+// Octal unit tests.
+unittest
+{
+    assertTranslates(
+    q"C
+#define some_octal_number 0101
+#define zero_is_not_octal 0
+#define double_zero_is_octal 00
+#define double_zero_is_octal_00u 00u
+#define double_zero_is_octal_00L 00L
+#define some_0700u 0700u
+#define some_0700U 0700U
+#define some_0700Lu 0700Lu
+#define some_0700LU 0700LU
+#define some_0700uL 0700uL
+#define some_0700UL 0700UL
+#define some_minus_0700 -0700
+#define some_minus_0700L -0700L
+C", q"D
+import std.conv : octal;
+
+extern (C):
+
+enum some_octal_number = octal!101;
+enum zero_is_not_octal = 0;
+enum double_zero_is_octal = octal!0;
+enum double_zero_is_octal_00u = octal!0u;
+enum double_zero_is_octal_00L = octal!0L;
+enum some_0700u = octal!700u;
+enum some_0700U = octal!700U;
+enum some_0700Lu = octal!700Lu;
+enum some_0700LU = octal!700LU;
+enum some_0700uL = octal!700uL;
+enum some_0700UL = octal!700UL;
+enum some_minus_0700 = -octal!700;
+enum some_minus_0700L = -octal!700L;
+D");
+
+}
