@@ -175,8 +175,7 @@ class IncludeHandler
 
         auto extra = imports.byKey.map!(e => toImport(e)).array;
 
-        importsBlock(output, standard.keys);
-        importsBlock(output, extra.array);
+        importsBlock(output, standard.keys ~ extra.array);
         importsBlock(output, package_.keys);
 
         if (options.keepUntranslatable)
@@ -185,12 +184,17 @@ class IncludeHandler
         output.finalize();
     }
 
-    void resolveDependency(in Cursor cursor)
+    bool resolveDependency(in Cursor cursor)
     {
         auto module_ = headerIndex.searchKnownModules(cursor);
 
         if (module_ !is null)
+        {
             addImport(module_);
+            return true;
+        }
+
+        return false;
     }
 
 private:

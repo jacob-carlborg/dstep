@@ -10,7 +10,7 @@ import Common;
 // Fix 98: dstep segfaults: Unhandled type kind cast(CXTypeKind)119.
 unittest
 {
-      assertTranslates(q"C
+    assertTranslates(q"C
 struct timeval { };
 
 void term_await_started(const struct timeval *timeout);

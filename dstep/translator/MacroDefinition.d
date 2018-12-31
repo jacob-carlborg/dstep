@@ -59,12 +59,14 @@ Expression braced(Expression expression)
         return Expression(new SubExpr(expression));
 }
 
-void resolveMacroDependency(Context context, string spelling)
+bool resolveMacroDependency(Context context, string spelling)
 {
     auto cursor = spelling in context.macroIndex.globalCursors();
 
     if (cursor !is null)
         return context.includeHandler.resolveDependency(*cursor);
+
+    return false;
 }
 
 struct ExpressionContext

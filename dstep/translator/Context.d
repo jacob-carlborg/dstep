@@ -251,14 +251,21 @@ class Context
 
     public string translateTagSpelling(Cursor cursor)
     {
-        if (auto spelling = (cursor.canonical in translatedSpellings))
+        if (auto cached = (cursor.canonical in translatedSpellings))
         {
-            return *spelling;
+            return *cached;
+        }
+
+        string spelling;
+
+        if (cursor.spelling == "stat"
+            && headerIndex.searchKnownModules(cursor) == "core.sys.posix.sys.stat")
+        {
+            spelling = "stat_t";
         }
         else
         {
             auto typedefp = typedefParent(cursor.canonical);
-            string spelling;
 
             if (typedefp.isValid && cursor.spelling == "")
             {
@@ -287,11 +294,10 @@ class Context
                     }
                 }
             }
-
-            translatedSpellings[cursor.canonical] = spelling;
-
-            return spelling;
         }
+
+        translatedSpellings[cursor.canonical] = spelling;
+        return spelling;
     }
 
     public Translator translator()
