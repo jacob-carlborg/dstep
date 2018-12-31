@@ -68,7 +68,7 @@ $ ./configure --llvm-path /usr/lib/llvm-4.0/lib
 
 #### Remarks
 
-Building 32-bit version requires a 32-bit variant of the Visual Studio toolchain to be present in `PATH`. The same for 64-bit. Remember to specify `--arch=x86_mscoff` when building 32-bit version. The architecture specification is mandatory as with the default architecture or `--arch=x86` dub will try to use unsupported `OPTLINK` linker. `OPTLINK` linker requires unsupported version of libclang binaries. Remember to install LLVM to its default installation path and to add its binaries to the `PATH` environmental variable (otherwise you may need to change `dub.json`).
+Building 32-bit version requires a 32-bit variant of the Visual Studio toolchain to be present in `PATH`. The same for 64-bit. Remember to specify `--arch=x86_mscoff` when building 32-bit version. The architecture specification is mandatory as with the default architecture or `--arch=x86` dub will try to use unsupported `OPTLINK` linker. `OPTLINK` linker requires unsupported version of libclang binaries. Remember to install LLVM to its default installation path and to add its binaries to the `PATH` environmental variable (otherwise you may need to change `dub.json`). When the program compiles under Windows but crashes at start, make sure an appropriate version of `libclang.dll` is available for dstep (you can validate it easily by copying dll to the directory with dstep). [Here](https://docs.microsoft.com/en-us/windows/desktop/Dlls/dynamic-link-library-search-order#search-order-for-desktop-applications) you can find more information on the topic.
 
 ## Usage
 
