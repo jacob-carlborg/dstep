@@ -483,8 +483,43 @@ C",
 q"D
 extern (C):
 
-alias byte = ushort;
-extern __gshared byte variable;
+alias byte_ = ushort;
+extern __gshared byte_ variable;
+D", options);
+
+    // Don't do above if reduction disabled.
+    options.reduceAliases = false;
+
+    assertTranslates(
+q"C
+typedef unsigned char byte;
+byte variable;
+C",
+q"D
+extern (C):
+
+alias byte_ = ubyte;
+extern __gshared byte_ variable;
+D", options);
+
+}
+
+// Rename the alias if it's the d keyword.
+unittest
+{
+    Options options;
+    options.reduceAliases = false;
+
+    assertTranslates(
+q"C
+typedef unsigned char immutable;
+immutable variable;
+C",
+q"D
+extern (C):
+
+alias immutable_ = ubyte;
+extern __gshared immutable_ variable;
 D", options);
 
 }

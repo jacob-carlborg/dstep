@@ -74,6 +74,7 @@
 * [Issue 203](https://github.com/jacob-carlborg/dstep/issues/203): Octal constants not handled correctly
 * [Issue 204](https://github.com/jacob-carlborg/dstep/issues/204): C INT_MAX not handled.
 * [Issue 214](https://github.com/jacob-carlborg/dstep/issues/214): Cast inside macro not properly translated
+* [Issue 216](https://github.com/jacob-carlborg/dstep/issues/216): can't alias to existing D type
 
 ## Version 0.2.1
 ### New/Changed Features

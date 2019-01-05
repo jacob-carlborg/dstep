@@ -263,7 +263,17 @@ string translateTypedef(Context context, Type type)
 
 
     handleInclude(context, type);
-    return type.spelling;
+
+    if (isDKeyword(type.spelling))
+    {
+        return type.spelling != translateType(context, type.canonical.kind)
+            ? renameDKeyword(type.spelling)
+            : type.spelling;
+    }
+    else
+    {
+        return type.spelling;
+    }
 }
 
 SourceNode translateUnexposed (Context context, Type type, bool rewriteIdToObjcObject)

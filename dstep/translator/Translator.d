@@ -286,14 +286,16 @@ class Translator
                 underlying.spelling != ""))
             {
                 auto canonical = typedef_.type.canonical;
-                auto spelling = typedef_.spelling;
+
                 auto type = translateType(context, typedef_, canonical);
 
                 auto typeSpelling = type.makeString();
 
                 // Do not alias itself
-                if (spelling != typeSpelling)
+                if (typedef_.spelling != typeSpelling)
                 {
+                    auto spelling = translateIdentifier(typedef_.spelling);
+
                     version (D1)
                     {
                         output.adaptiveSourceNode(
@@ -487,11 +489,6 @@ void translateVariable (Output output, Context context, Cursor cursor, string pr
     }
 }
 
-string translateIdentifier (string str)
-{
-    return isDKeyword(str) ? str ~ '_' : str;
-}
-
 void handleInclude (Context context, Type type)
 {
     import std.algorithm.searching;
@@ -659,4 +656,14 @@ bool isDKeyword (string str)
     }
 
     return false;
+}
+
+string renameDKeyword (string str)
+{
+    return str ~ '_';
+}
+
+string translateIdentifier (string str)
+{
+    return isDKeyword(str) ? renameDKeyword(str) : str;
 }
