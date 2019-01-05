@@ -73,6 +73,7 @@
 * [Issue 202](https://github.com/jacob-carlborg/dstep/issues/202): Invalid translation of C struct with typedef to D.
 * [Issue 203](https://github.com/jacob-carlborg/dstep/issues/203): Octal constants not handled correctly
 * [Issue 204](https://github.com/jacob-carlborg/dstep/issues/204): C INT_MAX not handled.
+* [Issue 214](https://github.com/jacob-carlborg/dstep/issues/214): Cast inside macro not properly translated
 
 ## Version 0.2.1
 ### New/Changed Features
