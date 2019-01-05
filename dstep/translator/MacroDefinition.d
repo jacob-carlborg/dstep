@@ -34,31 +34,6 @@ void dumpAST(Expression expression, ref Appender!string result, size_t indent)
     result.put(expression.toString());
 }
 
-Expression debraced(Expression expression)
-{
-    if (!expression.hasValue)
-        return expression;
-
-    auto subExpr = expression.peek!SubExpr();
-
-    return subExpr !is null ? subExpr.subexpr : expression;
-}
-
-Expression braced(Expression expression)
-{
-    if (!expression.hasValue)
-        return expression;
-
-    if (auto subExpr = expression.peek!Identifier())
-        return expression;
-    else if (auto subExpr = expression.peek!Literal())
-        return expression;
-    else if (auto subExpr = expression.peek!SubExpr())
-        return expression;
-    else
-        return Expression(new SubExpr(expression));
-}
-
 bool resolveMacroDependency(Context context, string spelling)
 {
     auto cursor = spelling in context.macroIndex.globalCursors();

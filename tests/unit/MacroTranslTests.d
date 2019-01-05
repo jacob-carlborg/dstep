@@ -803,3 +803,41 @@ alias __le64 = ulong;
 D");
 }
 
+// Handle recursive preprocessor aliases for types.
+unittest
+{
+    assertTranslates(q"C
+#define alias_lvl0 int
+#define alias_lvl1 alias_lvl0
+#define alias_lvl2 alias_lvl1
+C", q"D
+extern (C):
+
+alias alias_lvl0 = int;
+alias alias_lvl1 = alias_lvl0;
+alias alias_lvl2 = alias_lvl1;
+D");
+}
+
+// Properly translate the cast operator when the type is aliased with macros.
+unittest
+{
+    assertTranslates(q"C
+#define alias_lvl0 int
+#define alias_lvl1 alias_lvl0
+#define alias_lvl2 alias_lvl1
+
+#define fun(a) (alias_lvl2)(a)
+C", q"D
+extern (C):
+
+alias alias_lvl0 = int;
+alias alias_lvl1 = alias_lvl0;
+alias alias_lvl2 = alias_lvl1;
+
+extern (D) auto fun(T)(auto ref T a)
+{
+    return cast(alias_lvl2) a;
+}
+D");
+}
