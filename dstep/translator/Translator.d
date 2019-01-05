@@ -289,15 +289,21 @@ class Translator
                 auto spelling = typedef_.spelling;
                 auto type = translateType(context, typedef_, canonical);
 
-                version (D1)
+                auto typeSpelling = type.makeString();
+
+                // Do not alias itself
+                if (spelling != typeSpelling)
                 {
-                    output.adaptiveSourceNode(
-                        type.wrapWith("alias ", " " ~ spelling ~ ";"));
-                }
-                else
-                {
-                    output.adaptiveSourceNode(
-                        type.wrapWith("alias " ~ spelling ~ " = ", ";"));
+                    version (D1)
+                    {
+                        output.adaptiveSourceNode(
+                            type.wrapWith("alias ", " " ~ spelling ~ ";"));
+                    }
+                    else
+                    {
+                        output.adaptiveSourceNode(
+                            type.wrapWith("alias " ~ spelling ~ " = ", ";"));
+                    }
                 }
 
                 context.markAsDefined(typedef_);
