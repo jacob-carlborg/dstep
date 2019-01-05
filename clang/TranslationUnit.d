@@ -226,7 +226,7 @@ struct TranslationUnit
 
         struct Entry
         {
-            uint index;
+            size_t index;
             SourceLocation location;
 
             int opCmp(ref const Entry s) const
@@ -242,10 +242,10 @@ struct TranslationUnit
 
         Entry[][string] map;
 
-        foreach (uint index, location; locations)
+        foreach (index, location; locations)
             map[location.path] ~= Entry(index, location);
 
-        uint findIndex(SourceLocation a)
+        size_t findIndex(SourceLocation a)
         {
             auto entries = map[a.path];
 
