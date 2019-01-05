@@ -422,13 +422,28 @@ D", options);
 
 }
 
+// Do not translate typedef if it's aliasing itself.
+unittest
+{
+    assertTranslates(
+q"C
+typedef unsigned short ushort;
+ushort variable;
+C", q"D
+extern (C):
+
+extern __gshared ushort variable;
+D");
+
+}
+
 // Do not reduce aliases of unknown types.
 unittest
 {
-   Options options;
-   options.reduceAliases = true;
+    Options options;
+    options.reduceAliases = true;
 
-   assertTranslates(
+    assertTranslates(
 q"C
 typedef unsigned int Bar;
 Bar foo;
@@ -438,6 +453,38 @@ extern (C):
 
 alias Bar = uint;
 extern __gshared Bar foo;
+D", options);
+
+}
+
+// Reduce typedefs when underlying type is unsigned type and the alias is idiomatic signed equivalent.
+unittest
+{
+    Options options;
+    options.reduceAliases = true;
+
+    assertTranslates(
+q"C
+typedef unsigned char byte;
+byte variable;
+C",
+q"D
+extern (C):
+
+extern __gshared ubyte variable;
+D", options);
+
+    // Don't do above in corner cases.
+    assertTranslates(
+q"C
+typedef unsigned short byte;
+byte variable;
+C",
+q"D
+extern (C):
+
+alias byte = ushort;
+extern __gshared byte variable;
 D", options);
 
 }

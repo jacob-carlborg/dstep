@@ -201,8 +201,13 @@ package string reduceAlias(Type type)
         case "u32": return "uint";
         case "u64": return "ulong";
 
-        default: return null;
+        default: break;
     }
+
+    if (type.spelling == "byte" && type.canonical.kind == CXTypeKind.uChar)
+        return "ubyte";
+
+    return null;
 }
 
 package bool isAliasReducible(Type type)
