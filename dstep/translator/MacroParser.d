@@ -532,6 +532,31 @@ alias Expression = Algebraic!(
     LogicalOrExpr,
     CondExpr);
 
+Expression debraced(Expression expression)
+{
+    if (!expression.hasValue)
+        return expression;
+
+    auto subExpr = expression.peek!SubExpr();
+
+    return subExpr !is null ? subExpr.subexpr : expression;
+}
+
+Expression braced(Expression expression)
+{
+    if (!expression.hasValue)
+        return expression;
+
+    if (auto subExpr = expression.peek!Identifier())
+        return expression;
+    else if (auto subExpr = expression.peek!Literal())
+        return expression;
+    else if (auto subExpr = expression.peek!SubExpr())
+        return expression;
+    else
+        return Expression(new SubExpr(expression));
+}
+
 Expression parseStringConcat(ref Token[] tokens)
 {
     import std.array;
@@ -1576,6 +1601,7 @@ MacroDefinition[] parseMacroDefinitions(Range)(
 
     alias predicate = (Cursor cursor) =>
         cursor.kind == CXCursorKind.macroDefinition;
+
     auto definitions = cursors.filter!predicate();
 
     auto macroDefinitions = appender!(MacroDefinition[]);
@@ -1588,6 +1614,14 @@ MacroDefinition[] parseMacroDefinitions(Range)(
         {
             parsed.cursor = definition;
             macroDefinitions.put(parsed);
+
+            if (parsed.aliasOrConst)
+            {
+                auto debraced = parsed.expr.debraced;
+
+                if (debraced.peek!TypeIdentifier)
+                    types[parsed.spelling] = definition;
+            }
         }
     }
 
