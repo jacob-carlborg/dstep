@@ -10,12 +10,14 @@ import Common;
 import dstep.translator.Options;
 
 // Fix 46: Generating code that will not compile.
-unittest
+version (Posix)
 {
-    Options options;
-    options.reduceAliases = true;
+    unittest
+    {
+        Options options;
+        options.reduceAliases = true;
 
-    assertTranslates(
+        assertTranslates(
 q"C
 
 typedef unsigned char __u8;
@@ -54,8 +56,7 @@ struct property_t {
     } u;
     int result;
 } __attribute__ ((packed));
-C",
-q"D
+C", q"D
 extern (C):
 
 struct stats_t
@@ -108,5 +109,5 @@ struct property_t
     int result;
 }
 D", options);
-
+    }
 }

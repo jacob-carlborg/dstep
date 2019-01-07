@@ -169,40 +169,53 @@ string translateSelector (string str, bool fullName = false, bool translateIdent
 
 package string reduceAlias(Type type)
 {
-    auto spelling = type.spelling;
+    import std.typecons;
 
-    switch (type.spelling)
-    {
-        case "BOOL": return "bool";
-        case "int8_t": return "byte";
-        case "int16_t": return "short";
-        case "int32_t": return "int";
-        case "int64_t": return "long";
-        case "uint8_t": return "ubyte";
-        case "uint16_t": return "ushort";
-        case "uint32_t": return "uint";
-        case "uint64_t": return "ulong";
+    enum aliasMapping = [
+        tuple("byte", CXTypeKind.uChar): "ubyte",
+        tuple("BOOL", CXTypeKind.bool_): "bool",
+        tuple("BOOL", CXTypeKind.sChar): "bool",
 
-        case "__s8": return "byte";
-        case "__s16": return "short";
-        case "__s32": return "int";
-        case "__s64": return "long";
-        case "__u8": return "ubyte";
-        case "__u16": return "ushort";
-        case "__u32": return "uint";
-        case "__u64": return "ulong";
+        tuple("int8_t", CXTypeKind.sChar): "byte",
+        tuple("int16_t", CXTypeKind.short_): "short",
+        tuple("int32_t", CXTypeKind.int_): "int",
+        tuple("int64_t", CXTypeKind.longLong): "long",
+        tuple("uint8_t", CXTypeKind.uChar): "ubyte",
+        tuple("uint16_t", CXTypeKind.uShort): "ushort",
+        tuple("uint32_t", CXTypeKind.uInt): "uint",
+        tuple("uint64_t", CXTypeKind.uLongLong): "ulong",
 
-        case "s8": return "byte";
-        case "s16": return "short";
-        case "s32": return "int";
-        case "s64": return "long";
-        case "u8": return "ubyte";
-        case "u16": return "ushort";
-        case "u32": return "uint";
-        case "u64": return "ulong";
+        tuple("__s8", CXTypeKind.sChar): "byte",
+        tuple("__s16", CXTypeKind.short_): "short",
+        tuple("__s32", CXTypeKind.int_): "int",
+        tuple("__s64", CXTypeKind.longLong): "long",
+        tuple("__u8", CXTypeKind.uChar): "ubyte",
+        tuple("__u16", CXTypeKind.uShort): "ushort",
+        tuple("__u32", CXTypeKind.uInt): "uint",
+        tuple("__u64", CXTypeKind.uLongLong): "ulong",
 
-        default: return null;
-    }
+        tuple("s8", CXTypeKind.sChar): "byte",
+        tuple("s16", CXTypeKind.short_): "short",
+        tuple("s32", CXTypeKind.int_): "int",
+        tuple("s64", CXTypeKind.longLong): "long",
+        tuple("u8", CXTypeKind.uChar): "ubyte",
+        tuple("u16", CXTypeKind.uShort): "ushort",
+        tuple("u32", CXTypeKind.uInt): "uint",
+        tuple("u64", CXTypeKind.uLongLong): "ulong"
+    ];
+
+    auto canonical = type.canonical;
+    auto kind = canonical.kind;
+
+    if (kind == CXTypeKind.long_ && canonical.sizeOf == 8)
+        kind = CXTypeKind.longLong;
+    else if (kind == CXTypeKind.uLong && canonical.sizeOf == 8)
+        kind = CXTypeKind.uLongLong;
+
+    if (auto alias_ = tuple(type.spelling, kind) in aliasMapping)
+        return *alias_;
+    else
+        return null;
 }
 
 package bool isAliasReducible(Type type)
@@ -258,7 +271,17 @@ string translateTypedef(Context context, Type type)
 
 
     handleInclude(context, type);
-    return type.spelling;
+
+    if (isDKeyword(type.spelling))
+    {
+        return type.spelling != translateType(context, type.canonical.kind)
+            ? renameDKeyword(type.spelling)
+            : type.spelling;
+    }
+    else
+    {
+        return type.spelling;
+    }
 }
 
 SourceNode translateUnexposed (Context context, Type type, bool rewriteIdToObjcObject)
