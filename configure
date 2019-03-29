@@ -2,4 +2,15 @@
 
 set -e
 
-rdmd configure.d "$@"
+if test -z "$DC"; then
+    if test -x "$(which dmd)"; then
+        DC=dmd
+    elif test -x "$(which ldc2)"; then
+        DC=ldc2
+    else
+        echo "Neither DMD nor LDC found to compile configure.d"
+        exit -1
+    fi
+fi
+
+$DC -run configure.d "$@"
