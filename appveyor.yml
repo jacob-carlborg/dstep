@@ -3,6 +3,7 @@ platform:
   - x86
 
 configuration:
+  - LLVM 8.0.0
   - LLVM 7.0.0
   - LLVM 6.0.0
 
@@ -61,5 +62,5 @@ deploy:
   on:
     branch: master
     appveyor_repo_tag: true
-    configuration: LLVM 7.0.0
+    configuration: LLVM 8.0.0
     d: ldc
