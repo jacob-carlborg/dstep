@@ -32,7 +32,7 @@ extern (C):
  * compatible, thus CINDEX_VERSION_MAJOR is expected to remain stable.
  */
 enum CINDEX_VERSION_MAJOR = 0;
-enum CINDEX_VERSION_MINOR = 49;
+enum CINDEX_VERSION_MINOR = 50;
 
 extern (D) auto CINDEX_VERSION_ENCODE(T0, T1)(auto ref T0 major, auto ref T1 minor)
 {
@@ -1336,7 +1336,17 @@ enum CXTranslationUnit_Flags
      *
      * The function bodies of the main file are not skipped.
      */
-    limitSkipFunctionBodiesToPreamble = 0x800
+    limitSkipFunctionBodiesToPreamble = 0x800,
+
+    /**
+     * Used to indicate that attributed types should be included in CXType.
+     */
+    includeAttributedTypes = 0x1000,
+
+    /**
+     * Used to indicate that implicit attributes should be visited.
+     */
+    visitImplicitAttributes = 0x2000
 }
 
 /**
@@ -2569,7 +2579,25 @@ enum CXCursorKind
     visibilityAttr = 417,
     dllExport = 418,
     dllImport = 419,
-    lastAttr = dllImport,
+    nsReturnsRetained = 420,
+    nsReturnsNotRetained = 421,
+    nsReturnsAutoreleased = 422,
+    nsConsumesSelf = 423,
+    nsConsumed = 424,
+    objCException = 425,
+    objCNSObject = 426,
+    objCIndependentClass = 427,
+    objCPreciseLifetime = 428,
+    objCReturnsInnerPointer = 429,
+    objCRequiresSuper = 430,
+    objCRootClass = 431,
+    objCSubclassingRestricted = 432,
+    objCExplicitProtocolImpl = 433,
+    objCDesignatedInitializer = 434,
+    objCRuntimeVisible = 435,
+    objCBoxable = 436,
+    flagEnum = 437,
+    lastAttr = flagEnum,
 
     /* Preprocessing */
     preprocessingDirective = 500,
@@ -3281,7 +3309,25 @@ enum CXTypeKind
     oclSampler = 157,
     oclEvent = 158,
     oclQueue = 159,
-    oclReserveID = 160
+    oclReserveID = 160,
+
+    objCObject = 161,
+    objCTypeParam = 162,
+    attributed = 163,
+
+    oclIntelSubgroupAVCMcePayload = 164,
+    oclIntelSubgroupAVCImePayload = 165,
+    oclIntelSubgroupAVCRefPayload = 166,
+    oclIntelSubgroupAVCSicPayload = 167,
+    oclIntelSubgroupAVCMceResult = 168,
+    oclIntelSubgroupAVCImeResult = 169,
+    oclIntelSubgroupAVCRefResult = 170,
+    oclIntelSubgroupAVCSicResult = 171,
+    oclIntelSubgroupAVCImeResultSingleRefStreamout = 172,
+    oclIntelSubgroupAVCImeResultDualRefStreamout = 173,
+    oclIntelSubgroupAVCImeSingleRefStreamin = 174,
+
+    oclIntelSubgroupAVCImeDualRefStreamin = 175
 }
 
 /**
@@ -3307,6 +3353,7 @@ enum CXCallingConv
     swift = 13,
     preserveMost = 14,
     preserveAll = 15,
+    aArch64VectorCall = 16,
 
     invalid = 100,
     unexposed = 200
@@ -3642,6 +3689,43 @@ int clang_getNumArgTypes(CXType T);
 CXType clang_getArgType(CXType T, uint i);
 
 /**
+ * Retrieves the base type of the ObjCObjectType.
+ *
+ * If the type is not an ObjC object, an invalid type is returned.
+ */
+CXType clang_Type_getObjCObjectBaseType(CXType T);
+
+/**
+ * Retrieve the number of protocol references associated with an ObjC object/id.
+ *
+ * If the type is not an ObjC object, 0 is returned.
+ */
+uint clang_Type_getNumObjCProtocolRefs(CXType T);
+
+/**
+ * Retrieve the decl for a protocol reference for an ObjC object/id.
+ *
+ * If the type is not an ObjC object or there are not enough protocol
+ * references, an invalid cursor is returned.
+ */
+CXCursor clang_Type_getObjCProtocolDecl(CXType T, uint i);
+
+/**
+ * Retreive the number of type arguments associated with an ObjC object.
+ *
+ * If the type is not an ObjC object, 0 is returned.
+ */
+uint clang_Type_getNumObjCTypeArgs(CXType T);
+
+/**
+ * Retrieve a type argument associated with an ObjC object.
+ *
+ * If the type is not an ObjC or the index is not valid,
+ * an invalid type is returned.
+ */
+CXType clang_Type_getObjCTypeArg(CXType T, uint i);
+
+/**
  * Return 1 if the CXType is a variadic function type, and 0 otherwise.
  */
 uint clang_isFunctionTypeVariadic(CXType T);
@@ -3713,6 +3797,34 @@ CXType clang_Type_getNamedType(CXType T);
  * \returns non-zero if transparent and zero otherwise.
  */
 uint clang_Type_isTransparentTagTypedef(CXType T);
+
+enum CXTypeNullabilityKind
+{
+    /**
+     * Values of this type can never be null.
+     */
+    nonNull = 0,
+    /**
+     * Values of this type can be null.
+     */
+    nullable = 1,
+    /**
+     * Whether values of this type can be null is (explicitly)
+     * unspecified. This captures a (fairly rare) case where we
+     * can't conclude anything about the nullability of the type even
+     * though it has been considered.
+     */
+    unspecified = 2,
+    /**
+     * Nullability is not applicable to this type.
+     */
+    invalid = 3
+}
+
+/**
+ * Retrieve the nullability kind of a pointer type.
+ */
+CXTypeNullabilityKind clang_Type_getNullability(CXType T);
 
 /**
  * List the possible error codes for \c clang_Type_getSizeOf,
@@ -3792,6 +3904,13 @@ long clang_Type_getSizeOf(CXType T);
  *   CXTypeLayoutError_InvalidFieldName is returned.
  */
 long clang_Type_getOffsetOf(CXType T, const(char)* S);
+
+/**
+ * Return the type that was modified by this attributed type.
+ *
+ * If the type is not an attributed type, an invalid type is returned.
+ */
+CXType clang_Type_getModifiedType(CXType T);
 
 /**
  * Return the offset of the field represented by the Cursor.
@@ -4360,6 +4479,18 @@ enum CXObjCPropertyAttrKind
  * \param reserved Reserved for future use, pass 0.
  */
 uint clang_Cursor_getObjCPropertyAttributes(CXCursor C, uint reserved);
+
+/**
+ * Given a cursor that represents a property declaration, return the
+ * name of the method that implements the getter.
+ */
+CXString clang_Cursor_getObjCPropertyGetterName(CXCursor C);
+
+/**
+ * Given a cursor that represents a property declaration, return the
+ * name of the method that implements the setter, if any.
+ */
+CXString clang_Cursor_getObjCPropertySetterName(CXCursor C);
 
 /**
  * 'Qualifiers' written next to the return and parameter types in
@@ -5520,9 +5651,14 @@ enum CXCompletionContext
     naturalLanguage = 1 << 21,
 
     /**
+     * #include file completions should be included in the results.
+     */
+    includedFile = 1 << 22,
+
+    /**
      * The current context is unknown, so set all contexts.
      */
-    unknown = (1 << 22) - 1
+    unknown = (1 << 23) - 1
 }
 
 /**
