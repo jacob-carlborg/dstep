@@ -44,7 +44,7 @@ enum llvmArchives = [
         32: "clang+llvm-%s-i686-fedora23.tar.xz"
     ],
     Platform.ubuntu: [
-        64: "clang+llvm-%s-x86_64-linux-gnu-ubuntu-14.04.tar.xz"
+        64: "clang+llvm-%s-x86_64-linux-gnu-ubuntu-16.04.tar.xz"
     ],
     Platform.windows: [
         64: "LLVM-%s-win64.exe",
