@@ -154,7 +154,7 @@ string dstepLLVMUrl(Config config)
 {
     import std.format : format;
 
-    return format("https://github.com/jacob-carlborg/llvm-svn/releases/" ~
+    return format("https://github.com/jacob-carlborg/llvm-project/releases/" ~
         "download/dstep-%s/%s", llvmVersion, dstepLLVMArchive(config));
 }
 
