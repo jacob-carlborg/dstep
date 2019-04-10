@@ -545,7 +545,13 @@ private:
      */
     auto llvmFlags()
     {
-        return dirEntries(llvmLibPath, "libLLVM*.a", SpanMode.shallow);
+        const result = dirEntries(llvmLibPath, "libLLVM*.a", SpanMode.shallow)
+            .map!(e => e.name)
+            .array;
+
+        const findAllSymbolsPath = llvmLibPath.buildPath("libfindAllSymbols.a");
+
+        return findAllSymbolsPath.exists ? result ~ findAllSymbolsPath : result;
     }
 
     /**
