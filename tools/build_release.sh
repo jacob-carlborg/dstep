@@ -36,7 +36,7 @@ function test_dstep {
 }
 
 function version {
-  ./bin/dub --version
+  "$target_path" --version
 }
 
 function arch {
