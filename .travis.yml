@@ -5,9 +5,11 @@ d:
   - ldc
 
 install: ./tools/download_llvm.d
+
 before_script:
   - git fetch --unshallow
   - ./configure --llvm-path tmp/clang
+
 script: dub test --verror --compiler=${DC}
 
 os:
@@ -41,6 +43,7 @@ matrix:
       d: ldc
       os: linux
       env: LLVM_VERSION=8.0.0
+      install: ./tools/download_llvm.d --dstep
       script: ./tools/build_release.sh
       deploy:
         provider: releases

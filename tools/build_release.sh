@@ -6,10 +6,6 @@ app_name="dstep"
 target_dir="bin"
 target_path="$target_dir/$app_name"
 
-function download_llvm {
-  ./tools/download_llvm.d --dstep
-}
-
 function configure {
   local os=$(os)
   local default_flags="--llvm-path tmp/clang"
@@ -62,7 +58,6 @@ function archive {
   tar Jcf "$(release_name)".tar.xz -C "$target_dir" "$app_name"
 }
 
-download_llvm
 configure
 build
 test_dstep
