@@ -27,12 +27,12 @@ function configure {
 }
 
 function build {
-  dub build -b release
+  dub build -b release --verror
   strip "$target_path"
 }
 
 function test_dstep {
-  dub -c test-functional
+  dub -c test-functional --verror
 }
 
 function version {
