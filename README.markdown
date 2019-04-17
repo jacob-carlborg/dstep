@@ -85,8 +85,10 @@ Use `-h` for usage information. Any flags recognized by Clang can be used.
 
 ## Limitations/Known issues
 
-* Doesn't translate preprocessor macros, with exception to simple constants and functions.
-* Doesn't translate `#include` to `import`. A few standard C headers are translated
+* Supports translating some of the preprocessor, like: `#define` for simple
+    constants, function like macros and the token concatenation operator (`##`)
+* Doesn't translate `#include` to `import`. Imports for a few standard C headers
+    are added automatically
 * Doesn't translate C++ at all
 * Umbrella headers. Some headers just serve to include other headers. If these other headers contain some form of protection, like `#error`, to be included directly this can cause problems for DStep
 * Some headers are designed to always be included together with other header files. These headers may very well use symbols from other header files without including them itself. Since DStep is designed to convert header files one-by-one this doesn't work. There are two workarounds for this:
