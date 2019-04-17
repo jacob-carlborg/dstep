@@ -1,6 +1,9 @@
 # DStep
 
-DStep is a tool for translating C and Objective-C headers to D modules.
+DStep is a tool for automatically generating D bindings for C and Objective-C
+libraries. This is implemented by processing C or Objective-C header files and
+output D modules. DStep uses the Clang compiler as a library (libclang) to
+process the header files.
 
 ## Download
 
