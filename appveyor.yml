@@ -60,7 +60,6 @@ deploy:
   artifact: /dstep.+\.7z/
   draft: true
   on:
-    branch: master
     appveyor_repo_tag: true
     configuration: LLVM 8.0.0
     d: ldc
