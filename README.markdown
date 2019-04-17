@@ -9,10 +9,6 @@ For the latest release see: [releases/latest](https://github.com/jacob-carlborg/
 Pre-compiled binaries are available for OS X, Linux and FreeBSD, as 64bit. See the
 [releases](https://github.com/jacob-carlborg/dstep/releases) section.
 
-Arch packages are available in [community] repository (thanks to Михаил Страшун):
-
-[https://www.archlinux.org/packages/?q=dstep](https://www.archlinux.org/packages/?q=dstep)
-
 Alternatively install via [Dub](http://code.dlang.org/download)
 
 ## License
