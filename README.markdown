@@ -36,7 +36,7 @@ The source code is available under the [Boost Software License 1.0](http://www.b
 1. Install all requirements, see [above](#requirements)
 2. Clone the repository by running:
 
-        $ git clone git://github.com/jacob-carlborg/dstep.git
+        $ git clone https://github.com/jacob-carlborg/dstep
 
 3. Run `dub build`
 
