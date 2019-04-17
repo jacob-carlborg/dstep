@@ -8,12 +8,12 @@ $targetPath="$targetDir/$appName.exe"
 
 function Build
 {
-  dub build -b release --verror
+  dub build -b release --verror --arch=$env:arch --compiler=$env:DC
 }
 
 function TestDstep
 {
-  dub -c test-functional --verror
+  dub -c test-functional --verror --arch=$env:arch --compiler=$env:DC
 }
 
 function Version
