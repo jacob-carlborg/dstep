@@ -6,8 +6,8 @@ DStep is a tool for translating C and Objective-C headers to D modules.
 
 For the latest release see: [releases/latest](https://github.com/jacob-carlborg/dstep/releases/latest).
 
-Pre-compiled binaries are available for OS X, Linux and FreeBSD, as 64bit. See the
-[releases](https://github.com/jacob-carlborg/dstep/releases) section.
+Pre-compiled binaries are available for OS X, Linux and FreeBSD, as 64bit. See
+the [releases](https://github.com/jacob-carlborg/dstep/releases) section.
 
 Alternatively install via [Dub](http://code.dlang.org/download)
 
@@ -23,8 +23,10 @@ The source code is available under the [Boost Software License 1.0](http://www.b
 
 * libclang - [http://clang.llvm.org](http://clang.llvm.org) - 7.0.0 or 8.0.0.
     The idea is that the two most recent versions of libclang are supported.
-* A D compiler - The latest version of [DMD](http://dlang.org/download.html) or [LDC](https://github.com/ldc-developers/ldc/releases/latest)
-* Dub [http://code.dlang.org/download](http://code.dlang.org/download) (also shipped with the compilers)
+* A D compiler - The latest version of [DMD](http://dlang.org/download.html)
+    or [LDC](https://github.com/ldc-developers/ldc/releases/latest)
+* Dub [http://code.dlang.org/download](http://code.dlang.org/download)
+    (also shipped with the compilers)
 
 #### Building
 
@@ -48,8 +50,10 @@ $ ./configure --llvm-path /usr/lib/llvm-4.0/lib
 
 #### Requirements
 
-* LLVM - [http://llvm.org/releases/download.html](http://llvm.org/releases/download.html) - pre-built binaries for Windows
-* DMD - [http://dlang.org/download.html](http://dlang.org/download.html) - 2.071.0 or later
+* LLVM - [http://llvm.org/releases/download.html](http://llvm.org/releases/download.html) -
+    pre-built binaries for Windows
+* DMD - [http://dlang.org/download.html](http://dlang.org/download.html) -
+    2.071.0 or later
 * Dub - [http://code.dlang.org/download](http://code.dlang.org/download)
 * Visual Studio - for example Visual Studio Community
 
@@ -65,7 +69,18 @@ $ ./configure --llvm-path /usr/lib/llvm-4.0/lib
 
 #### Remarks
 
-Building 32-bit version requires a 32-bit variant of the Visual Studio toolchain to be present in `PATH`. The same for 64-bit. Remember to specify `--arch=x86_mscoff` when building 32-bit version. The architecture specification is mandatory as with the default architecture or `--arch=x86` dub will try to use unsupported `OPTLINK` linker. `OPTLINK` linker requires unsupported version of libclang binaries. Remember to install LLVM to its default installation path and to add its binaries to the `PATH` environmental variable (otherwise you may need to change `dub.json`). When the program compiles under Windows but crashes at start, make sure an appropriate version of `libclang.dll` is available for dstep (you can validate it easily by copying dll to the directory with dstep). [Here](https://docs.microsoft.com/en-us/windows/desktop/Dlls/dynamic-link-library-search-order#search-order-for-desktop-applications) you can find more information on the topic.
+Building 32-bit version requires a 32-bit variant of the Visual Studio toolchain
+to be present in `PATH`. The same for 64-bit. Remember to specify
+`--arch=x86_mscoff` when building 32-bit version. The architecture specification
+is mandatory as with the default architecture or `--arch=x86` dub will try to
+use unsupported `OPTLINK` linker. `OPTLINK` linker requires unsupported version
+of libclang binaries. Remember to install LLVM to its default installation path
+and to add its binaries to the `PATH` environmental variable (otherwise you may
+need to change `dub.json`). When the program compiles under Windows but crashes
+at start, make sure an appropriate version of `libclang.dll` is available for
+DStep (you can validate it easily by copying dll to the directory with DStep).
+[Here](https://docs.microsoft.com/en-us/windows/desktop/Dlls/dynamic-link-library-search-order#search-order-for-desktop-applications)
+you can find more information on the topic.
 
 ## Usage
 
@@ -90,8 +105,16 @@ Use `-h` for usage information. Any flags recognized by Clang can be used.
 * Doesn't translate `#include` to `import`. Imports for a few standard C headers
     are added automatically
 * Doesn't translate C++ at all
-* Umbrella headers. Some headers just serve to include other headers. If these other headers contain some form of protection, like `#error`, to be included directly this can cause problems for DStep
-* Some headers are designed to always be included together with other header files. These headers may very well use symbols from other header files without including them itself. Since DStep is designed to convert header files one-by-one this doesn't work. There are two workarounds for this:
+* Umbrella headers. Some headers just serve to include other headers. If these
+    other headers contain some form of protection, like `#error`, to be included
+    directly this can cause problems for DStep
+* Some headers are designed to always be included together with other header
+    files. These headers may very well use symbols from other header files
+    without including them itself. Since DStep is designed to convert header
+    files one-by-one this doesn't work. There are two workarounds for this:
 
-    1. Add `#include`-directives for the header files the header file is actually using
-    2. Use the `-include <file>` flag available in Clang to indicate the given `<file>` should be processed before the file that should be translated. DStep accepts all flags Clang accepts
+    1. Add `#include`-directives for the header files the header file is
+        actually using
+    2. Use the `-include <file>` flag available in Clang to indicate the given
+        `<file>` should be processed before the file that should be translated.
+        DStep accepts all flags Clang accepts
