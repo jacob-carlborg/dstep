@@ -17,7 +17,7 @@
 * Statements are now translated in the original order as the input file
 * Multiple input files can be processed at once
 * Extend a functionality that automatically replaces aliases to basic types with their D equivalents
-* Add a switch `--dont-reduce-aliases` which disables the above functionality
+* Add a switch `--reduce-aliases` which disables/enables the above functionality
 * Add a switch `--alias-enum-members` which enables generation of aliases for enum members in the global scope
 * Add a switch `--translate-macros` which can disable the translation of C macro definitions
 * Add the `libclang` bindings as a test case
@@ -29,7 +29,7 @@
 * Add support for building with LDC
 * Bump the minimum requirement D compilers to their latest version
 * Always test using the latest version of DMD and LDC, including beta and nightly builds
-* Bump the minimum requirement of libclang to 3.9.0
+* Bump the minimum requirement of libclang to 7.0.0
 * Automatically generate the libclang bindings using DStep
 * Add a switch `--rename-enum-members`, which enables stripping of superfluous prefixes from enum members.
 * Add a switch `--normalize-modules`, which enables changing the names of modules to the D conforming form.
