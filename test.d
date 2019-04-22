@@ -1,5 +1,6 @@
 module test;
 
+import std.array;
 import std.process;
 import std.stdio;
 import std.file;
@@ -98,7 +99,9 @@ void executeCommand(const string[] args ...)
 
 string[] dubShellCommand(string[] subCommands ...)
 {
-    return ["dub", "--verror"] ~ subCommands ~ dubArch;
+    return (["dub", "--verror"] ~ subCommands ~ dubArch)
+        .filter!(e => e.length > 0)
+        .array;
 }
 
 string defaultArchitecture()

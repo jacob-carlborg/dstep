@@ -1,3 +1,5 @@
+import std.algorithm : filter;
+import std.array : array;
 import std.stdio;
 import std.process : spawnProcess, Config, wait;
 
@@ -10,7 +12,9 @@ void main()
 
 string[] dubShellCommand() pure nothrow
 {
-    return ["dub", "run", "--verror"] ~ dubArch;
+    return (["dub", "run", "--verror"] ~ dubArch)
+        .filter!(e => e.length > 0)
+        .array;
 }
 
 void executeCommand(const string[] args ...)
