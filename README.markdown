@@ -9,8 +9,12 @@ process the header files.
 
 For the latest release see: [releases/latest](https://github.com/jacob-carlborg/dstep/releases/latest).
 
-Pre-compiled binaries are available for OS X, Linux and FreeBSD, as 64bit. See
-the [releases](https://github.com/jacob-carlborg/dstep/releases) section.
+Pre-compiled binaries are available for macOS and Linux as 64 bit binaries and
+Windows as 32 and 64 bit binaries. The Linux binaries are completely statically
+linked and should work on all distros. The macOS binaries are statically linked
+against libclang requires no other dependencies than the system libraries. They
+should work on macOS Mavericks (10.9) and later. The Windows binaries require
+to install libclang. See the [releases](https://github.com/jacob-carlborg/dstep/releases) section.
 
 Alternatively install via [Dub](http://code.dlang.org/download)
 
