@@ -1,6 +1,6 @@
 # DStep Change Log
 
-## Unreleased
+## Version 1.0.0
 ### New/Changed Features
 
 * Support for simple defines (like `#define FOO 1`)
