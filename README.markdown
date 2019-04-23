@@ -58,7 +58,7 @@ $ ./configure --llvm-path /usr/lib/llvm-4.0/lib
 #### Requirements
 
 * LLVM - [http://llvm.org/releases/download.html](http://llvm.org/releases/download.html) -
-    pre-built binaries for Windows
+    pre-built binaries for Windows. Has to be installed at the default location
 * DMD - [http://dlang.org/download.html](http://dlang.org/download.html) -
     2.071.0 or later
 * Dub - [http://code.dlang.org/download](http://code.dlang.org/download)
