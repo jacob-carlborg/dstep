@@ -1,5 +1,11 @@
 # DStep Change Log
 
+## Unreleased
+
+### Bugs Fixed
+
+* [Issue 224](https://github.com/jacob-carlborg/dstep/issues/224): Dub assumes default installation path for LLVM on Windows
+
 ## Version 1.0.0
 ### New/Changed Features
 
