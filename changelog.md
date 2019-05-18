@@ -4,6 +4,7 @@
 
 ### Bugs Fixed
 
+* [Issue 235](https://github.com/jacob-carlborg/dstep/issues/235): Passing `--` as an argument doesn't work properly
 * [Issue 224](https://github.com/jacob-carlborg/dstep/issues/224): Dub assumes default installation path for LLVM on Windows
 
 ## Version 1.0.0

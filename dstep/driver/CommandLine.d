@@ -24,11 +24,12 @@ import dstep.core.Exceptions;
  */
 auto parseCommandLine(string[] args)
 {
+    import std.array : split;
     import std.getopt;
 
     Configuration config;
 
-    // Parse dstep own paramaters:
+    // Parse dstep own parameters:
 
     void parseLanguage (string param, string value)
     {
@@ -52,6 +53,16 @@ auto parseCommandLine(string[] args)
 
     bool forceObjectiveC;
 
+    auto splittedArgs = args.split("--");
+
+    if (splittedArgs.length == 1)
+        args = splittedArgs[0];
+    else if (splittedArgs.length == 2)
+    {
+        args = splittedArgs[0];
+        config.clangParams = splittedArgs[1];
+    }
+
     auto helpInformation = getopt(
         args,
         std.getopt.config.passThrough,
@@ -64,8 +75,7 @@ auto parseCommandLine(string[] args)
     // remove dstep binary name (args[0])
     args = args[1 .. $];
 
-    // Seperate input files from clang paramaters:
-
+    // Separate input files from clang parameters:
     foreach (arg; args)
     {
         if (arg[0] == '-')
@@ -122,6 +132,11 @@ unittest
         [ "dstep", "file.h", "--skip", "foo", "--skip-definition", "bar" ]);
     assert(!config.skipDefinitions.find("bar").empty);
     assert(!config.skipSymbols.find("foo").empty);
+
+    AliasSeq!(config, getoptResult) = parseCommandLine(
+        [ "dstep", "foo.h", "--", "-include", "bar.h" ]);
+    assert(config.inputFiles == [ "foo.h" ]);
+    assert(config.clangParams == [ "-include", "bar.h" ]);
 }
 
 /**
