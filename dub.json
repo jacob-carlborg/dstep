@@ -97,5 +97,5 @@
             "importPaths": ["."],
             "excludedSourceFiles": ["dstep/main.d"]
         }
-    ],
+    ]
 }
