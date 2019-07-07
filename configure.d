@@ -203,16 +203,16 @@ static:
         ];
 
         immutable llvmLibPaths = [
-            "/usr/lib/llvm-4.0/lib",
-            "/usr/lib/llvm-3.9/lib",
-            "/usr/lib/llvm-3.8/lib",
-            "/usr/lib/llvm-3.7/lib"
+            "/usr/local/llvm80/lib",
+            "/usr/local/llvm70/lib",
+            "/usr/local/llvm60/lib",
+            "/usr/local/llvm50/lib",
         ] ~ standardPaths;
 
         immutable additionalLibPaths = standardPaths;
 
-        enum ncursesLib = LibraryName("ncurses", "libncurses.a");
-        enum cppLib = "stdc++";
+        enum additionalLib = LibraryName("ncurses", "libncurses.a");
+        enum cppLib = "c++";
     }
 
     else
