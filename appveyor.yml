@@ -15,6 +15,7 @@ environment:
     - d: ldc
 
 init:
+  - ps: New-ItemProperty -Path HKLM:\SOFTWARE\Policies\Microsoft\SystemCertificates\AuthRoot -Name DisableRootAutoUpdate -Value 00000001 -PropertyType "DWord"
   - ps: $env:LLVM_VERSION = $env:CONFIGURATION.split(" ")[1]
   - ps: |
       $env:arch = if ($env:PLATFORM -eq 'x86')
