@@ -1,4 +1,4 @@
-#!/usr/bin/env dub --DRT-gcopt=parallel:0
+#!/usr/bin/env dub
 /+ dub.sdl:
     name "download_llvm"
 +/

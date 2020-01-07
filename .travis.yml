@@ -10,7 +10,7 @@ before_script:
   - git fetch --unshallow
   - ./configure --llvm-path tmp/clang
 
-script: dub test --verror --compiler=${DC} --DRT-gcopt=parallel:0
+script: dub test --verror --compiler=${DC}
 
 os:
   - linux

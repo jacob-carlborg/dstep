@@ -12,7 +12,7 @@ void main()
 
 string[] dubShellCommand() pure nothrow
 {
-    return (["dub", "run", "--verror", "--DRT-gcopt=parallel:0"] ~ dubArch)
+    return (["dub", "run", "--verror"] ~ dubArch)
         .filter!(e => e.length > 0)
         .array;
 }

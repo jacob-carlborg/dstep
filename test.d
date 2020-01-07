@@ -99,7 +99,7 @@ void executeCommand(const string[] args ...)
 
 string[] dubShellCommand(string[] subCommands ...)
 {
-    return (["dub", "--verror", "--DRT-gcopt=parallel:0"] ~ subCommands ~ dubArch)
+    return (["dub", "--verror"] ~ subCommands ~ dubArch)
         .filter!(e => e.length > 0)
         .array;
 }
