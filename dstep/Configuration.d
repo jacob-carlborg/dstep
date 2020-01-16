@@ -20,6 +20,9 @@ struct Configuration
     /// array of file names to translate to D
     string[] inputFiles;
 
+    /// in case if there are many input files in one dir
+    bool isInputFromDir;
+
     /// expected programming language of input files
     Language language;
 
