@@ -67,10 +67,14 @@ auto parseCommandLine(string[] args)
         args,
         std.getopt.config.passThrough,
         std.getopt.config.caseSensitive,
-        "output|o", &config.output,
+        "output|o", &config.outputPath,
+        "output-to-dir|O", &config.isOutputToDir,
         "objective-c", &forceObjectiveC,
         "language|x", &parseLanguage,
         makeGetOptArgs!config);
+
+    if(config.inputFiles.length == 1)
+        config.isOutputToDir = true;
 
     // remove dstep binary name (args[0])
     args = args[1 .. $];
@@ -239,6 +243,7 @@ void showHelp (Configuration config, GetoptResult getoptResult)
     auto customEntries = [
         Entry("-o, --output <file>", "Write output to <file>."),
         Entry("-o, --output <directory>", "Write all the files to <directory>, in case of multiple input files."),
+        Entry("-O, --output-to-dir", "Force write files to <directory>."),
         Entry("-ObjC, --objective-c", "Treat source input file as Objective-C input."),
         Entry("-x, --language", "Treat subsequent input files as having type <language>.")];
 

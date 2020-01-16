@@ -125,16 +125,16 @@ class Application
 
         // when only one input file is supplied, -o argument is
         // interpreted as file path, otherwise as base directory path
-        if (inputFiles.length == 1)
+        if (!config.isOutputToDir)
         {
-            return [config.output.empty
+            return [config.outputPath.empty
                 ? makeDefaultOutputFile(inputFiles.front, false)
-                : config.output];
+                : config.outputPath];
         }
         else
         {
             alias fmap = file => Path.buildPath(
-                config.output,
+                config.outputPath,
                 makeDefaultOutputFile(file, false));
 
             return inputFiles.map!fmap.array;
