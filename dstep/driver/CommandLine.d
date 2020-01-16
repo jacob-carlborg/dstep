@@ -99,10 +99,8 @@ auto parseCommandLine(string[] args)
 
         config.inputFiles = dirEntries(config.inputFiles[0], SpanMode.depth)
             .filter!(f => f.name.endsWith(".h"))
-            .map!(a => a.name).array;
-
-        import std.stdio;
-        config.inputFiles.writeln;
+            .map!(a => a.name)
+            .array;
     }
 
     if(config.isInputFromDir || config.inputFiles.length > 1)
