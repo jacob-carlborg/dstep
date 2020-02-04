@@ -31,10 +31,10 @@ class ObjcInterface (Data) : Declaration
 
     override void translate (Output output)
     {
-        auto cursor = cursor.objc;
+        auto outCursor = cursor.objc;
 
-        writeClass(output, spelling, cursor.superClass.spelling, collectInterfaces(cursor.objc), {
-            foreach (cursor, parent ; cursor.declarations)
+        writeClass(output, spelling, outCursor.superClass.spelling, collectInterfaces(outCursor.objc), {
+            foreach (cursor, parent ; outCursor.declarations)
             {
                 with (CXCursorKind)
                     switch (cursor.kind)
@@ -64,11 +64,11 @@ class ObjcInterface (Data) : Declaration
         output.output(currentClass.data());
     }
 
-    protected string[] collectInterfaces (ObjcCursor cursor)
+    protected string[] collectInterfaces (ObjcCursor objcCursor)
     {
         string[] interfaces;
 
-        foreach (cursor , parent ; cursor.protocols)
+        foreach (cursor, parent ; objcCursor.protocols)
             interfaces ~= translateIdentifier(cursor.spelling);
 
         return interfaces;
