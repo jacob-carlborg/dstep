@@ -31,7 +31,7 @@ in
 {
     assert(type.isValid);
 }
-body
+do
 {
     SourceNode result;
 
@@ -289,7 +289,7 @@ in
 {
     assert(type.kind == CXTypeKind.unexposed);
 }
-body
+do
 {
     auto declaration = type.declaration;
 
@@ -345,7 +345,7 @@ in
     assert(type.kind == CXTypeKind.constantArray
         || type.kind == CXTypeKind.incompleteArray);
 }
-body
+do
 {
     import std.format : format;
 
@@ -462,7 +462,7 @@ in
 {
     assert(type.kind == CXTypeKind.pointer);
 }
-body
+do
 {
     static bool valueTypeIsConst (Type type)
     {
@@ -546,7 +546,7 @@ in
 {
     assert(type.kind == CXTypeKind.objCObjectPointer && !type.isObjCBuiltinType);
 }
-body
+do
 {
     auto pointee = type.pointee;
 
