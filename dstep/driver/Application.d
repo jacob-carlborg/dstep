@@ -155,8 +155,8 @@ class Application
             unit = TranslationUnit.parse(
                 translationIndex,
                 config.inputFiles[index],
-                config.clangParams ~ compiler.extraIncludeFlags,
-                compiler.extraHeaders);
+                config.clangParams ~ compiler.internalFlags,
+                compiler.internalHeaders);
         }
 
         return translationUnits;

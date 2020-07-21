@@ -24,16 +24,13 @@ static TranslationUnit makeTranslationUnit(
 
     Compiler compiler;
 
-    auto includeFlags = compiler
-        .extraIncludePaths.map!(e => "-I" ~ e).array();
-
     auto index = Index(false, false);
 
     return TranslationUnit.parse(
         index,
         sourceFilename,
-        commandLineArgs ~ includeFlags,
-        compiler.extraHeaders,
+        commandLineArgs ~ compiler.internalFlags,
+        compiler.internalHeaders,
         options);
 }
 

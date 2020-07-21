@@ -34,7 +34,7 @@ struct Compiler
             string content;
         }
 
-        enum internalHeaders = [
+        enum internalHeaders_ = [
             staticMap!(
                 toInternalHeader,
                 "__stddef_max_align_t.h",
@@ -52,20 +52,21 @@ struct Compiler
         return [virtualPath];
     }
 
-    string[] extraIncludeFlags ()
+    string[] internalFlags ()
     {
         import std.algorithm;
         import std.array;
-        return extraIncludePaths.map!(x => "-I" ~ x).array;
+
+        return extraIncludePaths.map!(path => "-I" ~ path).array;
     }
 
-    CXUnsavedFile[] extraHeaders ()
+    CXUnsavedFile[] internalHeaders ()
     {
         import std.algorithm : map;
         import std.array;
         import std.string : toStringz;
 
-        return internalHeaders.map!((e) {
+        return internalHeaders_.map!((e) {
             auto path = buildPath(virtualPath, e.filename);
             return CXUnsavedFile(path.toStringz, e.content.ptr, cast(uint)e.content.length);
         }).array();
@@ -83,17 +84,4 @@ private:
 
         return virtualPath_ = buildPath(root, uniform(1, 10_000_000).to!string);
     }
-}
-
-string[] internalIncludeFlags()
-{
-    import std.algorithm;
-    import std.array;
-
-    return Compiler.init.extraIncludePaths.map!(path => "-I" ~ path).array();
-}
-
-CXUnsavedFile[] internalHeaders()
-{
-    return Compiler.init.extraHeaders();
 }
