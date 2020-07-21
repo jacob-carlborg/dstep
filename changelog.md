@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### New/Changed Features
+
+* Automatically detect macOS SDK path ([Issue 227](https://github.com/jacob-carlborg/dstep/issues/227))
+
 ### Bugs Fixed
 
 * [Issue 235](https://github.com/jacob-carlborg/dstep/issues/235): Passing `--` as an argument doesn't work properly

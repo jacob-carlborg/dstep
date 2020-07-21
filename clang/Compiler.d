@@ -22,6 +22,7 @@ struct Compiler
             enum root = "/";
 
         string virtualPath_;
+        string[] sysRootFlag_;
 
         static template toInternalHeader (string file)
         {
@@ -47,23 +48,22 @@ struct Compiler
         ];
     }
 
-    string[] extraIncludePaths ()
-    {
-        return [virtualPath];
-    }
-
     string[] internalFlags ()
     {
-        import std.algorithm;
-        import std.array;
+        import std.algorithm : map;
+        import std.array : array;
+        import std.range : chain;
 
-        return extraIncludePaths.map!(path => "-I" ~ path).array;
+        return extraIncludePaths
+            .map!(path => "-I" ~ path)
+            .chain(sysRootFlag)
+            .array;
     }
 
     CXUnsavedFile[] internalHeaders ()
     {
         import std.algorithm : map;
-        import std.array;
+        import std.array : array;
         import std.string : toStringz;
 
         return internalHeaders_.map!((e) {
@@ -74,6 +74,11 @@ struct Compiler
 
 private:
 
+    string[] extraIncludePaths ()
+    {
+        return [virtualPath];
+    }
+
     string virtualPath ()
     {
         import std.random;
@@ -83,5 +88,36 @@ private:
             return virtualPath_;
 
         return virtualPath_ = buildPath(root, uniform(1, 10_000_000).to!string);
+    }
+
+    string[] sysRootFlag ()
+    {
+        if (sysRootFlag_.length)
+            return sysRootFlag_;
+
+        version (OSX)
+        {
+            import std.string : strip;
+            import std.array : join;
+            import std.format : format;
+            import std.process : execute;
+
+            import dstep.core.Exceptions : DStepException;
+
+            static immutable command = ["xcrun", "--show-sdk-path", "--sdk", "macosx"];
+            const result = execute(command);
+
+            if (result.status == 0)
+                return sysRootFlag_ = ["-isysroot", result.output.strip];
+
+            enum fmt = "Failed get the path of the SDK.\nThe command '%s' " ~
+                "returned the following output:\n%s";
+
+            const message = format!fmt(command.join(" "), result.output);
+            throw new DStepException(message);
+        }
+
+        else
+            return null;
     }
 }

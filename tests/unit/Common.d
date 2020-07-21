@@ -16,6 +16,7 @@ import std.array;
 import std.typecons;
 import std.traits : ReturnType;
 import std.process : execute;
+import std.range : chain, only;
 
 import clang.c.Index;
 import clang.Diagnostic;
@@ -91,9 +92,13 @@ void assertEq(
 
 TranslationUnit makeTranslationUnit(string source)
 {
-    auto arguments = ["-Iresources", "-Wno-missing-declarations"];
+    Compiler compiler;
 
-    arguments ~= findExtraIncludePaths();
+    auto arguments = compiler
+        .internalFlags
+        .chain(only("-Iresources", "-Wno-missing-declarations"))
+        .chain(findExtraIncludePaths)
+        .array;
 
     return TranslationUnit.parseString(index, source, arguments);
 }
