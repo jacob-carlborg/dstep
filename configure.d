@@ -33,6 +33,7 @@ import std.range;
 import std.string;
 import std.uni;
 import std.traits;
+import std.typecons : Tuple;
 
 version (Posix)
 {
@@ -146,16 +147,28 @@ static:
             "/usr/lib"
         ];
 
-        immutable llvmLibPaths = [
-            "/opt/local/libexec/llvm-4.0/lib", // MacPorts
-            "/usr/local/opt/llvm40/lib", // Homebrew
-            "/opt/local/libexec/llvm-3.9/lib", // MacPorts
-            "/usr/local/opt/llvm39/lib", // Homebrew
-            "/opt/local/libexec/llvm-3.8/lib", // MacPorts
-            "/usr/local/opt/llvm38/lib", // Homebrew
-            "/opt/local/libexec/llvm-3.7/lib", // MacPorts
-            "/usr/local/opt/llvm37/lib" // Homebrew
-        ] ~ standardPaths;
+        enum macPortsPaths = [
+            "/opt/local/libexec/llvm-4.0/lib",
+            "/opt/local/libexec/llvm-3.9/lib",
+            "/opt/local/libexec/llvm-3.8/lib",
+            "/opt/local/libexec/llvm-3.7/lib"
+        ];
+
+        enum homebrewPaths = [
+            "/usr/local/opt/llvm40/lib",
+            "/usr/local/opt/llvm39/lib",
+            "/usr/local/opt/llvm38/lib",
+            "/usr/local/opt/llvm37/lib"
+        ];
+
+        static assert(macPortsPaths.length == homebrewPaths.length);
+
+        enum llvmLibPaths = macPortsPaths
+            .zip(homebrewPaths)
+            .map!((Tuple!(string, string) t) => [t[0], t[1]])
+            .joiner
+            .chain(standardPaths)
+            .array;
 
         immutable additionalLibPaths = [
             "/opt/local/lib",
@@ -178,15 +191,19 @@ static:
             "/usr/lib32" // Fedora
         ];
 
-        immutable llvmLibPaths = [
-            "/usr/lib/llvm-4.0/lib", // Debian
-            "/usr/lib/llvm-3.9/lib", // Debian
-            "/usr/lib/llvm-3.8/lib", // Debian
-            "/usr/lib/llvm-3.7/lib", // Debian
-            "/usr/lib64/llvm", // CentOS
-            "/usr/lib32/llvm" // CentOS
-        ] ~ standardPaths;
+        enum debianPaths = [
+            "/usr/lib/llvm-4.0/lib",
+            "/usr/lib/llvm-3.9/lib",
+            "/usr/lib/llvm-3.8/lib",
+            "/usr/lib/llvm-3.7/lib"
+        ];
 
+        enum centOsPaths = [
+            "/usr/lib64/llvm",
+            "/usr/lib32/llvm"
+        ];
+
+        immutable llvmLibPaths = debianPaths ~ centOsPaths ~ standardPaths;
         immutable additionalLibPaths = standardPaths;
 
         enum additionalLib = LibraryName("tinfo", "libtinfo.a");
