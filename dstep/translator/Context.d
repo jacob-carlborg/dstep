@@ -80,13 +80,15 @@ class Context
 
     static Context fromString(string source, Options options = Options.init)
     {
-        import clang.Compiler;
+        import clang.Compiler : Compiler;
+
+        Compiler compiler;
 
         auto translationUnit = TranslationUnit.parseString(
             Index(false, false),
             source,
-            internalIncludeFlags(),
-            internalHeaders());
+            compiler.internalFlags,
+            compiler.internalHeaders);
 
         return new Context(translationUnit, options);
     }
