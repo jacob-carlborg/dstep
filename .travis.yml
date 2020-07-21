@@ -19,10 +19,10 @@ os:
 env:
   global: MACOSX_DEPLOYMENT_TARGET=10.9
   matrix:
-    - LLVM_VERSION=8.0.0
-    - LLVM_VERSION=7.0.0
-    # Used by Sociomantic
-    - LLVM_VERSION=6.0.0
+    - LLVM_VERSION=10.0.0
+    - LLVM_VERSION=9.0.0
+    - LLVM_VERSION=8.0.0 # used by Buildkite
+    - LLVM_VERSION=6.0.0 # Used by Sociomantic
 
 matrix:
   include:
@@ -30,7 +30,7 @@ matrix:
     - &entry
       d: dmd-beta
       os: linux
-      env: LLVM_VERSION=8.0.0
+      env: LLVM_VERSION=10.0.0
     - <<: *entry
       d: ldc-beta
     - <<: *entry
@@ -42,7 +42,7 @@ matrix:
       if: tag IS present
       d: ldc
       os: linux
-      env: LLVM_VERSION=8.0.0
+      env: LLVM_VERSION=10.0.0
       install: ./tools/download_llvm.d --dstep
       script: ./tools/build_release.sh
       deploy:

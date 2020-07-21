@@ -3,8 +3,9 @@ platform:
   - x86
 
 configuration:
+  - LLVM 10.0.0
+  - LLVM 9.0.0
   - LLVM 8.0.0
-  - LLVM 7.0.0
   - LLVM 6.0.0
 
 environment:
@@ -61,5 +62,5 @@ deploy:
   draft: true
   on:
     appveyor_repo_tag: true
-    configuration: LLVM 8.0.0
+    configuration: LLVM 10.0.0
     d: ldc

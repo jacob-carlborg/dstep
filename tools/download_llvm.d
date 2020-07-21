@@ -136,7 +136,7 @@ string llvmVersion()
 {
     import std.process : environment;
 
-    return environment.get("LLVM_VERSION", "7.0.0");
+    return environment.get("LLVM_VERSION", "10.0.0");
 }
 
 string llvmUrl(Config config)

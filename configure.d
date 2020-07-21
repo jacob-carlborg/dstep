@@ -148,6 +148,12 @@ static:
         ];
 
         enum macPortsPaths = [
+            "/opt/local/libexec/llvm-10/lib",
+            "/opt/local/libexec/llvm-9.0/lib",
+            "/opt/local/libexec/llvm-8.0/lib",
+            "/opt/local/libexec/llvm-7.0/lib",
+            "/opt/local/libexec/llvm-6.0/lib",
+            "/opt/local/libexec/llvm-5.0/lib",
             "/opt/local/libexec/llvm-4.0/lib",
             "/opt/local/libexec/llvm-3.9/lib",
             "/opt/local/libexec/llvm-3.8/lib",
@@ -155,6 +161,12 @@ static:
         ];
 
         enum homebrewPaths = [
+            "/usr/local/opt/llvm@10/lib",
+            "/usr/local/opt/llvm@9/lib",
+            "/usr/local/opt/llvm@8/lib",
+            "/usr/local/opt/llvm@7/lib",
+            "/usr/local/opt/llvm@6/lib",
+            "/usr/local/opt/llvm@5/lib",
             "/usr/local/opt/llvm40/lib",
             "/usr/local/opt/llvm39/lib",
             "/usr/local/opt/llvm38/lib",
@@ -192,6 +204,12 @@ static:
         ];
 
         enum debianPaths = [
+            "/usr/lib/llvm-10/lib",
+            "/usr/lib/llvm-9/lib",
+            "/usr/lib/llvm-8/lib",
+            "/usr/lib/llvm-7/lib",
+            "/usr/lib/llvm-6.0/lib",
+            "/usr/lib/llvm-5.0/lib",
             "/usr/lib/llvm-4.0/lib",
             "/usr/lib/llvm-3.9/lib",
             "/usr/lib/llvm-3.8/lib",
@@ -220,6 +238,7 @@ static:
         ];
 
         immutable llvmLibPaths = [
+            "/usr/local/llvm90/lib",
             "/usr/local/llvm80/lib",
             "/usr/local/llvm70/lib",
             "/usr/local/llvm60/lib",
