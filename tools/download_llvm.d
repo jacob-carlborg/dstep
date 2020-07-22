@@ -4,8 +4,6 @@
 +/
 module download_llvm;
 
-import std.stdio : println = writeln;
-
 enum downloadPath = "tmp";
 
 enum Architecture
@@ -17,50 +15,71 @@ enum Architecture
     x86_mscoff = bit32,
 }
 
-enum Platform
+version (Windows)
 {
-    darwin,
-    freebsd,
-    windows,
+    enum llvmArchives = [
+        64: [
+            "10.0.0": "LLVM-10.0.0-win64.exe",
+            "9.0.0": "LLVM-9.0.0-win64.exe"
+        ],
 
-    debian,
-    fedora,
-    ubuntu,
+        32: [
+            "10.0.0": "LLVM-10.0.0-win32.exe",
+            "9.0.0": "LLVM-9.0.0-win32.exe"
+        ]
+    ];
+
+    enum llvmUrls = [
+        "10.0.0": "https://github.com/llvm/llvm-project/releases/download/llvmorg-%s/%s",
+        "9.0.0": "https://releases.llvm.org/%s/%s",
+    ];
 }
 
-enum llvmArchives = [
-    Platform.darwin: [
-        64: "clang+llvm-%s-x86_64-apple-darwin.tar.xz"
-    ],
-    Platform.freebsd: [
-        64: "clang+llvm-%s-amd64-unknown-freebsd10.tar.xz",
-        32: "clang+llvm-%s-i386-unknown-freebsd10.tar.xz"
-    ],
-    Platform.debian: [
-        64: "clang+llvm-%s-x86_64-linux-gnu-debian8.tar.xz"
-    ],
-    Platform.fedora: [
-        64: "clang+llvm-%s-x86_64-fedora23.tar.xz",
-        32: "clang+llvm-%s-i686-fedora23.tar.xz"
-    ],
-    Platform.ubuntu: [
-        64: "clang+llvm-%s-x86_64-linux-gnu-ubuntu-16.04.tar.xz"
-    ],
-    Platform.windows: [
-        64: "LLVM-%s-win64.exe",
-        32: "LLVM-%s-win32.exe"
-    ]
-];
+version (OSX)
+{
+    enum llvmArchives = [
+        64: [
+            "10.0.0": "clang+llvm-10.0.0-x86_64-apple-darwin.tar.xz",
+            "9.0.0": "clang+llvm-9.0.0-x86_64-darwin-apple.tar.xz",
+            "8.0.0": "clang+llvm-8.0.0-x86_64-apple-darwin.tar.xz",
+            "6.0.0": "clang+llvm-6.0.0-x86_64-apple-darwin.tar.xz"
+        ]
+    ];
 
-enum dstepLLVMArchives = [
-    Platform.darwin: [
-        64: "llvm-%s-macos-x86_64.tar.xz"
-    ],
+    enum dstepLLVMArchives = [
+        64: [
+            "10.0.0": "llvm-10.0.0-macos-x86_64.tar.xz"
+        ]
+    ];
 
-    Platform.ubuntu: [
-        64: "llvm-%s-linux-x86_64.tar.xz"
-    ]
-];
+    enum llvmUrls = [
+        "10.0.0": "https://github.com/llvm/llvm-project/releases/download/llvmorg-%s/%s",
+        "9.0.0": "https://releases.llvm.org/%s/%s",
+        "8.0.0": "https://releases.llvm.org/%s/%s",
+        "6.0.0": "https://releases.llvm.org/%s/%s"
+    ];
+
+    enum dstepLLVMUrls = [
+        "10.0.0": "https://github.com/jacob-carlborg/llvm-project/releases/download/dstep-%s/%s"
+    ];
+}
+
+else version (linux)
+{
+    enum llvmArchives = [0: ["":""]];
+
+    enum dstepLLVMArchives = [
+        64: [
+            "10.0.0": "llvm-10.0.0-linux-x86_64.tar.xz"
+        ]
+    ];
+
+    enum llvmUrls = ["": ""];
+
+    enum dstepLLVMUrls = [
+        "10.0.0": "https://github.com/jacob-carlborg/llvm-project/releases/download/dstep-%s/%s"
+    ];
+}
 
 struct Config
 {
@@ -81,7 +100,34 @@ void main(string[] args)
     );
 
     downloadLLVM(config);
-    extractArchive(config);
+
+    if (!shouldInstallUsingPackageManager(config))
+        extractArchive(config);
+}
+
+bool shouldInstallUsingPackageManager(Config config)
+{
+    version (linux)
+        return !config.dstepLLVM;
+
+    else
+        return false;
+}
+
+void installUsingPackageManager()
+{
+    import std.format : format;
+
+    const llvmMajorVersion = .llvmMajorVersion == "6" ? "6.0" : .llvmMajorVersion;
+
+    executeShell("curl -L https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -");
+
+    const repo = format!"deb https://apt.llvm.org/xenial/ llvm-toolchain-xenial-%s main"(llvmMajorVersion);
+    execute("sudo", "add-apt-repository", "-y", repo);
+    execute("sudo", "apt-get", "-q", "update");
+
+    const libclangPackage = format!"libclang-%s-dev"(llvmMajorVersion);
+    execute("sudo", "apt-get", "install", "-y", libclangPackage);
 }
 
 void downloadLLVM(Config config)
@@ -90,6 +136,12 @@ void downloadLLVM(Config config)
     import std.net.curl : download;
     import std.path : buildPath;
     import std.stdio : writefln;
+
+    if (shouldInstallUsingPackageManager(config))
+    {
+        installUsingPackageManager();
+        return;
+    }
 
     auto archivePath = buildPath(downloadPath, llvmArchive(config));
 
@@ -107,7 +159,12 @@ void downloadLLVM(Config config)
 string componentsToStrip(Config config)
 {
     if (config.dstepLLVM)
-        return platform == Platform.darwin ? "4" : "3";
+    {
+        version (OSX)
+            return "4";
+        else
+            return "3";
+    }
     else
         return "1";
 }
@@ -139,23 +196,21 @@ string llvmVersion()
     return environment.get("LLVM_VERSION", "10.0.0");
 }
 
-string llvmUrl(Config config)
+string llvmMajorVersion()
 {
-    import std.array : join;
+    import std.string : split;
 
-    if (config.dstepLLVM)
-        return dstepLLVMUrl(config);
-
-    return ["https://releases.llvm.org", llvmVersion, llvmArchive(config)]
-        .join("/");
+    return llvmVersion.split('.')[0];
 }
 
-string dstepLLVMUrl(Config config)
+string llvmUrl(Config config)
 {
     import std.format : format;
 
-    return format("https://github.com/jacob-carlborg/llvm-project/releases/" ~
-        "download/dstep-%s/%s", llvmVersion, dstepLLVMArchive(config));
+    const baseUrls = config.dstepLLVM ? dstepLLVMUrls : llvmUrls;
+    const baseUrl = baseUrls.tryGet(llvmVersion);
+
+    return format(baseUrl, llvmVersion, llvmArchive(config));
 }
 
 string llvmArchive(Config config)
@@ -171,14 +226,9 @@ string dstepLLVMArchive(Config config)
     return archive(dstepLLVMArchives, config);
 }
 
-string archive(string[int][Platform] archives, Config config)
+string archive(string[string][int] archives, Config config)
 {
-    import std.format : format;
-
-    return archives
-        .tryGet(platform)
-        .tryGet(config.architecture)
-        .format(llvmVersion);
+    return archives.tryGet(config.architecture).tryGet(llvmVersion);
 }
 
 Architecture defaultArchitecture()
@@ -191,79 +241,21 @@ Architecture defaultArchitecture()
         static assert("unsupported architecture");
 }
 
-Platform platform()
-{
-    import std.traits : EnumMembers;
-
-    version (OSX)
-        return Platform.darwin;
-    else version (FreeBSD)
-        return Platform.freebsd;
-    else version (Windows)
-        return Platform.windows;
-    else version (linux)
-        return linuxPlatform();
-    else
-        static assert("unsupported platform");
-}
-
-version (linux) Platform linuxPlatform()
-{
-    import std.algorithm : canFind;
-    import std.process : environment;
-
-    static struct System
-    {
-    static:
-        import core.sys.posix.sys.utsname : utsname, uname;
-
-        import std.exception : assumeUnique;
-        import std.string : fromStringz;
-        import std.uni : toLower;
-
-        private utsname data_;
-
-        private utsname data()
-        {
-            import std.exception;
-
-            if (data_ != data_.init)
-                return data_;
-
-            errnoEnforce(!uname(&data_));
-            return data_;
-        }
-
-        string update ()
-        {
-            return data.update.ptr.fromStringz.toLower.assumeUnique;
-        }
-
-        string nodename ()
-        {
-            return data.nodename.ptr.fromStringz.toLower.assumeUnique;
-        }
-    }
-
-    if (System.nodename.canFind("fedora"))
-        return Platform.fedora;
-    else if (System.nodename.canFind("ubuntu") || System.update.canFind("ubuntu"))
-        return Platform.ubuntu;
-    else if (System.nodename.canFind("debian"))
-        return Platform.debian;
-    else if (environment.get("TRAVIS", "false") == "true")
-        return Platform.ubuntu;
-    else
-        throw new Exception("Failed to identify the Linux platform");
-}
-
-void execute(string[] args ...)
+void execute(const string[] args ...)
 {
     import std.process : spawnProcess, wait;
     import std.array : join;
 
     if (spawnProcess(args).wait() != 0)
         throw new Exception("Failed to execute command: " ~ args.join(' '));
+}
+
+void executeShell(string command)
+{
+    import std.process : spawnShell, wait;
+
+    if (spawnShell(command).wait() != 0)
+        throw new Exception("Failed to execute command: " ~ command);
 }
 
 inout(V) tryGet(K, V)(inout(V[K]) aa, K key)

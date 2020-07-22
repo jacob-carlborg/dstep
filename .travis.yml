@@ -8,7 +8,10 @@ install: ./tools/download_llvm.d
 
 before_script:
   - git fetch --unshallow
-  - ./configure --llvm-path tmp/clang
+  - |
+    if [ $TRAVIS_OS_NAME = 'osx' ]; then
+      ./configure --llvm-path tmp/clang
+    fi
 
 script: dub test --verror --compiler=${DC}
 
@@ -44,6 +47,7 @@ matrix:
       os: linux
       env: LLVM_VERSION=10.0.0
       install: ./tools/download_llvm.d --dstep
+      before_script: ./configure --llvm-path tmp/clang
       script: ./tools/build_release.sh
       deploy:
         provider: releases
