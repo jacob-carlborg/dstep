@@ -27,3 +27,4 @@ pushd "$1"/clang-c > /dev/null
   --rename-enum-members
 
 popd > /dev/null
+rm "$cwd"/clang/c/ExternC.d

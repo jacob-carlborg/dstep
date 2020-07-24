@@ -1,9 +1,9 @@
 /*==-- clang-c/Documentation.h - Utilities for comment processing -*- C -*-===*\
 |*                                                                            *|
-|*                     The LLVM Compiler Infrastructure                       *|
-|*                                                                            *|
-|* This file is distributed under the University of Illinois Open Source      *|
-|* License. See LICENSE.TXT for details.                                      *|
+|* Part of the LLVM Project, under the Apache License v2.0 with LLVM          *|
+|* Exceptions.                                                                *|
+|* See https://llvm.org/LICENSE.txt for license information.                  *|
+|* SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception                    *|
 |*                                                                            *|
 |*===----------------------------------------------------------------------===*|
 |*                                                                            *|
@@ -183,7 +183,12 @@ enum CXCommentInlineCommandRenderKind
      * Command argument should be rendered emphasized (typically italic
      * font).
      */
-    emphasized = 3
+    emphasized = 3,
+
+    /**
+     * Command argument should not be rendered (since it only defines an anchor).
+     */
+    anchor = 4
 }
 
 /**

@@ -450,6 +450,13 @@ class TypeLayoutErrorInvalidFieldName : TypeLayoutError
         super("The field name '" ~ spelling ~ "' is not valid for this record.");
     }
 }
+class TypeLayoutErrorUndeduced : TypeLayoutError
+{
+    this (string spelling, string file = __FILE__, size_t line = __LINE__)
+    {
+        super("The type '" ~ spelling ~ "' is undeduced.");
+    }
+}
 
 void throwTypeLayoutError(
     CXTypeLayoutError layout,
@@ -469,5 +476,7 @@ void throwTypeLayoutError(
             throw new TypeLayoutErrorNotConstantSize(spelling, file, line);
         case CXTypeLayoutError.invalidFieldName:
             throw new TypeLayoutErrorInvalidFieldName(spelling, file, line);
+        case CXTypeLayoutError.undeduced:
+            throw new TypeLayoutErrorUndeduced(spelling, file, line);
     }
 }

@@ -1,9 +1,9 @@
 /*===-- clang-c/Index.h - Indexing Public C Interface -------------*- C -*-===*\
 |*                                                                            *|
-|*                     The LLVM Compiler Infrastructure                       *|
-|*                                                                            *|
-|* This file is distributed under the University of Illinois Open Source      *|
-|* License. See LICENSE.TXT for details.                                      *|
+|* Part of the LLVM Project, under the Apache License v2.0 with LLVM          *|
+|* Exceptions.                                                                *|
+|* See https://llvm.org/LICENSE.txt for license information.                  *|
+|* SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception                    *|
 |*                                                                            *|
 |*===----------------------------------------------------------------------===*|
 |*                                                                            *|
@@ -32,7 +32,7 @@ extern (C):
  * compatible, thus CINDEX_VERSION_MAJOR is expected to remain stable.
  */
 enum CINDEX_VERSION_MAJOR = 0;
-enum CINDEX_VERSION_MINOR = 50;
+enum CINDEX_VERSION_MINOR = 59;
 
 extern (D) auto CINDEX_VERSION_ENCODE(T0, T1)(auto ref T0 major, auto ref T1 minor)
 {
@@ -224,7 +224,12 @@ enum CXCursor_ExceptionSpecificationKind
     /**
      * The exception specification has not been parsed yet.
      */
-    unparsed = 8
+    unparsed = 8,
+
+    /**
+     * The cursor has a __declspec(nothrow) exception specification.
+     */
+    noThrow = 9
 }
 
 /**
@@ -1346,7 +1351,22 @@ enum CXTranslationUnit_Flags
     /**
      * Used to indicate that implicit attributes should be visited.
      */
-    visitImplicitAttributes = 0x2000
+    visitImplicitAttributes = 0x2000,
+
+    /**
+     * Used to indicate that non-errors from included files should be ignored.
+     *
+     * If set, clang_getDiagnosticSetFromTU() will not report e.g. warnings from
+     * included files anymore. This speeds up clang_getDiagnosticSetFromTU() for
+     * the case where these warnings are not of interest, as for an IDE for
+     * example, which typically shows only the diagnostics in the main file.
+     */
+    ignoreNonErrorsFromIncludedFiles = 0x4000,
+
+    /**
+     * Tells the preprocessor not to skip excluded conditional blocks.
+     */
+    retainExcludedConditionalBlocks = 0x8000
 }
 
 /**
@@ -2542,7 +2562,31 @@ enum CXCursorKind
      */
     ompTargetTeamsDistributeSimdDirective = 279,
 
-    lastStmt = ompTargetTeamsDistributeSimdDirective,
+    /** C++2a std::bit_cast expression.
+     */
+    builtinBitCastExpr = 280,
+
+    /** OpenMP master taskloop directive.
+     */
+    ompMasterTaskLoopDirective = 281,
+
+    /** OpenMP parallel master taskloop directive.
+     */
+    ompParallelMasterTaskLoopDirective = 282,
+
+    /** OpenMP master taskloop simd directive.
+     */
+    ompMasterTaskLoopSimdDirective = 283,
+
+    /** OpenMP parallel master taskloop simd directive.
+     */
+    ompParallelMasterTaskLoopSimdDirective = 284,
+
+    /** OpenMP parallel master directive.
+     */
+    ompParallelMasterDirective = 285,
+
+    lastStmt = ompParallelMasterDirective,
 
     /**
      * Cursor that represents the translation unit itself.
@@ -2597,7 +2641,11 @@ enum CXCursorKind
     objCRuntimeVisible = 435,
     objCBoxable = 436,
     flagEnum = 437,
-    lastAttr = flagEnum,
+    convergentAttr = 438,
+    warnUnusedAttr = 439,
+    warnUnusedResultAttr = 440,
+    alignedAttr = 441,
+    lastAttr = alignedAttr,
 
     /* Preprocessing */
     preprocessingDirective = 500,
@@ -3327,7 +3375,9 @@ enum CXTypeKind
     oclIntelSubgroupAVCImeResultDualRefStreamout = 173,
     oclIntelSubgroupAVCImeSingleRefStreamin = 174,
 
-    oclIntelSubgroupAVCImeDualRefStreamin = 175
+    oclIntelSubgroupAVCImeDualRefStreamin = 175,
+
+    extVector = 176
 }
 
 /**
@@ -3855,7 +3905,11 @@ enum CXTypeLayoutError
     /**
      * The Field name is not valid for this record.
      */
-    invalidFieldName = -5
+    invalidFieldName = -5,
+    /**
+     * The type is undeduced.
+     */
+    undeduced = -6
 }
 
 /**
@@ -3928,10 +3982,22 @@ CXType clang_Type_getModifiedType(CXType T);
 long clang_Cursor_getOffsetOfField(CXCursor C);
 
 /**
+ * Determine whether the given cursor represents an anonymous
+ * tag or namespace
+ */
+uint clang_Cursor_isAnonymous(CXCursor C);
+
+/**
  * Determine whether the given cursor represents an anonymous record
  * declaration.
  */
-uint clang_Cursor_isAnonymous(CXCursor C);
+uint clang_Cursor_isAnonymousRecordDecl(CXCursor C);
+
+/**
+ * Determine whether the given cursor represents an inline namespace
+ * declaration.
+ */
+uint clang_Cursor_isInlineNamespace(CXCursor C);
 
 enum CXRefQualifierKind
 {
