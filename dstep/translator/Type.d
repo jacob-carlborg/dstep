@@ -390,7 +390,7 @@ do
 
                 if (!token.isNull)
                 {
-                    return maybeRef(token.spelling);
+                    return maybeRef(token.get.spelling);
                 }
 
                 auto expansions = context.macroIndex.queryExpansion(children[dimension]);
