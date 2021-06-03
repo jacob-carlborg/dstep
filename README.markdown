@@ -50,7 +50,7 @@ default paths, please manually invoke the configuration script and specify the
 path to where libclang is installed using the `--llvm-path` flag.
 
 ```
-$ ./configure --llvm-path /usr/lib/llvm-4.0/lib
+$ ./configure --llvm-path /usr/lib/llvm-4.0
 ```
 
 ### Windows
