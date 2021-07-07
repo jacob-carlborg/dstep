@@ -81,8 +81,47 @@ struct Options
     /// The path to the LLVM/Clang library directory.
     string llvmLibPath ()
     {
+        auto libPath = llvmconfigGetOpts("--libdir", llvmPath);
+
+        if (libPath)
+            return libPath;
+
         return llvmPath.empty ? "" : buildPath(llvmPath, "lib");
     }
+}
+
+/**
+ * Get the output of llvm-config program.
+ *
+ * Params:
+ *  cmdOptions = the arguments to parse. If multiple, pass a string array
+ *  llvmPath = optional LLVM root path to look for the executable
+ *
+ * Return: the command output stripping newlines, otherwise `null`
+ */
+string llvmconfigGetOpts(T)(T cmdOptions, string llvmPath = "")
+    if (is(T == string) || is(T == string[]))
+{
+    import std.ascii : newline;
+
+    string binDir = llvmPath.empty ? "" : buildPath(llvmPath, "bin");
+    string llvmconfig = buildPath(binDir, DefaultConfig.llvmConfigExecutable);
+
+    static if (is(T == string))
+        string[] options = [cmdOptions];
+    else
+        alias options = cmdOptions;
+
+    try
+    {
+        auto run = execute(llvmconfig ~ options);
+
+        if (run.status == 0)
+            return run.output.strip(newline);
+    }
+    catch(ProcessException) {}
+
+    return null;
 }
 
 /// This struct contains the name and filename of a library.
