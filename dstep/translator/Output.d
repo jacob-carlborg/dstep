@@ -937,7 +937,7 @@ D"[0 .. $ - 1]);
             }
         }
 
-        void opIn (void delegate () nested)
+        void opBinary(string op : "in")(void delegate () nested)
         {
             nested();
         }
