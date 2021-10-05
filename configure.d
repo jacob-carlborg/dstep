@@ -200,7 +200,8 @@ static:
             "/usr/local/lib",
             "/usr/lib/x86_64-linux-gnu", // Debian
             "/usr/lib64", // Fedora
-            "/usr/lib32" // Fedora
+            "/usr/lib32", // Fedora
+            "/data/data/com.termux/files/usr/lib", // Termux
         ];
 
         enum debianPaths = [
