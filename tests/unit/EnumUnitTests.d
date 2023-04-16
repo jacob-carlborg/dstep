@@ -11,7 +11,7 @@ import dstep.translator.Translator;
 // Test standard enum.
 unittest
 {
-	assertTranslates(
+    assertTranslates(
 q"C
 enum Qux
 {
@@ -308,6 +308,37 @@ alias BAZ = Foo.FooEnum.BAZ;
 alias QUX = Foo.BarEnum.QUX;
 D", options);
 
+}
+
+// Test aliasing of all enum members for anonymous typedefed enum.
+unittest
+{
+    Options options;
+    options.aliasEnumMembers = true;
+
+    assertTranslates(
+q"C
+typedef enum
+{
+    FOO,
+    BAR,
+    BAZ,
+} Enum;
+C",
+q"D
+extern (C):
+
+enum Enum
+{
+    FOO = 0,
+    BAR = 1,
+    BAZ = 2
+}
+
+alias FOO = Enum.FOO;
+alias BAR = Enum.BAR;
+alias BAZ = Enum.BAZ;
+D", options);
 }
 
 // Test a named enum inside a struct.

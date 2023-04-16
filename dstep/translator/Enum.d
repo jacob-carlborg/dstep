@@ -53,7 +53,12 @@ void translateEnumConstantDecl(
 
 void generateEnumAliases(Output output, Context context, Cursor cursor, string spelling)
 {
-    string subscope = cursorScopeString(context, cursor) ~ ".";
+    auto subscope = cursorScopeString(context, cursor);
+
+    if (subscope.length == 0)
+        subscope = spelling;
+
+    subscope ~= '.';
 
     version (D1)
         enum fmt = "alias %2$s %1$s;";
@@ -256,12 +261,14 @@ void translateEnumDef(Output output, Context context, Cursor cursor)
 
     auto variables = cursor.variablesInParentScope();
     auto anonymous = context.shouldBeAnonymous(cursor);
-    auto spelling = "enum";
+    auto spelling = "";
 
     if (!anonymous || variables || !cursor.isGlobal)
-        spelling = "enum " ~ translateIdentifier(context.translateTagSpelling(cursor));
+        spelling = translateIdentifier(context.translateTagSpelling(cursor));
 
-    output.subscopeStrong(cursor.extent, "%s", spelling) in
+    auto declarationSpelling = spelling.length > 0 ? "enum " ~ spelling : "enum";
+
+    output.subscopeStrong(cursor.extent, "%s", declarationSpelling) in
     {
         auto members = cursor.children
             .filter!(cursor => cursor.kind == CXCursorKind.enumConstantDecl);
