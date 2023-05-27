@@ -15,5 +15,5 @@ module clang.c.Platform;
 
 extern (C):
 
-/* MSVC DLL import/export. */
+/* Windows DLL import/export. */
 

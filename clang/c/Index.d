@@ -32,7 +32,7 @@ extern (C):
  * compatible, thus CINDEX_VERSION_MAJOR is expected to remain stable.
  */
 enum CINDEX_VERSION_MAJOR = 0;
-enum CINDEX_VERSION_MINOR = 59;
+enum CINDEX_VERSION_MINOR = 62;
 
 extern (D) auto CINDEX_VERSION_ENCODE(T0, T1)(auto ref T0 major, auto ref T1 minor)
 {
@@ -385,7 +385,7 @@ struct CXFileUniqueID
  * \param outID stores the returned CXFileUniqueID.
  * \returns If there was a failure getting the unique ID, returns non-zero,
  * otherwise returns 0.
-*/
+ */
 int clang_getFileUniqueID(CXFile file, CXFileUniqueID* outID);
 
 /**
@@ -1644,8 +1644,8 @@ int clang_reparseTranslationUnit(
     uint options);
 
 /**
-  * Categorizes how memory is being used by a translation unit.
-  */
+ * Categorizes how memory is being used by a translation unit.
+ */
 enum CXTUResourceUsageKind
 {
     ast = 1,
@@ -1670,9 +1670,9 @@ enum CXTUResourceUsageKind
 }
 
 /**
-  * Returns the human-readable null-terminated C string that represents
-  *  the name of the memory category.  This string should never be freed.
-  */
+ * Returns the human-readable null-terminated C string that represents
+ *  the name of the memory category.  This string should never be freed.
+ */
 const(char)* clang_getTUResourceUsageName(CXTUResourceUsageKind kind);
 
 struct CXTUResourceUsageEntry
@@ -1685,8 +1685,8 @@ struct CXTUResourceUsageEntry
 }
 
 /**
-  * The memory usage of a CXTranslationUnit, broken into categories.
-  */
+ * The memory usage of a CXTranslationUnit, broken into categories.
+ */
 struct CXTUResourceUsage
 {
     /* Private data member, used for queries. */
@@ -1701,9 +1701,9 @@ struct CXTUResourceUsage
 }
 
 /**
-  * Return the memory usage of a translation unit.  This object
-  *  should be released with clang_disposeCXTUResourceUsage().
-  */
+ * Return the memory usage of a translation unit.  This object
+ *  should be released with clang_disposeCXTUResourceUsage().
+ */
 CXTUResourceUsage clang_getCXTUResourceUsage(CXTranslationUnit TU);
 
 void clang_disposeCXTUResourceUsage(CXTUResourceUsage usage);
@@ -2202,7 +2202,7 @@ enum CXCursorKind
      */
     objCSelfExpr = 146,
 
-    /** OpenMP 4.0 [2.4, Array Section].
+    /** OpenMP 5.0 [2.1.5, Array Section].
      */
     ompArraySectionExpr = 147,
 
@@ -2215,7 +2215,30 @@ enum CXCursorKind
      */
     fixedPointLiteral = 149,
 
-    lastExpr = fixedPointLiteral,
+    /** OpenMP 5.0 [2.1.4, Array Shaping].
+     */
+    ompArrayShapingExpr = 150,
+
+    /**
+     * OpenMP 5.0 [2.1.6 Iterators]
+     */
+    ompIteratorExpr = 151,
+
+    /** OpenCL's addrspace_cast<> expression.
+     */
+    cxxAddrspaceCastExpr = 152,
+
+    /**
+     * Expression that references a C++20 concept.
+     */
+    conceptSpecializationExpr = 153,
+
+    /**
+     * Expression that references a C++20 concept.
+     */
+    requiresExpr = 154,
+
+    lastExpr = requiresExpr,
 
     /* Statements */
     firstStmt = 200,
@@ -2586,7 +2609,83 @@ enum CXCursorKind
      */
     ompParallelMasterDirective = 285,
 
-    lastStmt = ompParallelMasterDirective,
+    /** OpenMP depobj directive.
+     */
+    ompDepobjDirective = 286,
+
+    /** OpenMP scan directive.
+     */
+    ompScanDirective = 287,
+
+    /** OpenMP tile directive.
+     */
+    ompTileDirective = 288,
+
+    /** OpenMP canonical loop.
+     */
+    ompCanonicalLoop = 289,
+
+    /** OpenMP interop directive.
+     */
+    ompInteropDirective = 290,
+
+    /** OpenMP dispatch directive.
+     */
+    ompDispatchDirective = 291,
+
+    /** OpenMP masked directive.
+     */
+    ompMaskedDirective = 292,
+
+    /** OpenMP unroll directive.
+     */
+    ompUnrollDirective = 293,
+
+    /** OpenMP metadirective directive.
+     */
+    ompMetaDirective = 294,
+
+    /** OpenMP loop directive.
+     */
+    ompGenericLoopDirective = 295,
+
+    /** OpenMP teams loop directive.
+     */
+    ompTeamsGenericLoopDirective = 296,
+
+    /** OpenMP target teams loop directive.
+     */
+    ompTargetTeamsGenericLoopDirective = 297,
+
+    /** OpenMP parallel loop directive.
+     */
+    ompParallelGenericLoopDirective = 298,
+
+    /** OpenMP target parallel loop directive.
+     */
+    ompTargetParallelGenericLoopDirective = 299,
+
+    /** OpenMP parallel masked directive.
+     */
+    ompParallelMaskedDirective = 300,
+
+    /** OpenMP masked taskloop directive.
+     */
+    ompMaskedTaskLoopDirective = 301,
+
+    /** OpenMP masked taskloop simd directive.
+     */
+    ompMaskedTaskLoopSimdDirective = 302,
+
+    /** OpenMP parallel masked taskloop directive.
+     */
+    ompParallelMaskedTaskLoopDirective = 303,
+
+    /** OpenMP parallel masked taskloop simd directive.
+     */
+    ompParallelMaskedTaskLoopSimdDirective = 304,
+
+    lastStmt = ompParallelMaskedTaskLoopSimdDirective,
 
     /**
      * Cursor that represents the translation unit itself.
@@ -2594,7 +2693,7 @@ enum CXCursorKind
      * The translation unit cursor exists primarily to act as the root
      * cursor for traversing the contents of a translation unit.
      */
-    translationUnit = 300,
+    translationUnit = 350,
 
     /* Attributes */
     firstAttr = 400,
@@ -2670,8 +2769,13 @@ enum CXCursorKind
      * a friend declaration.
      */
     friendDecl = 603,
+    /**
+     * a concept declaration.
+     */
+    conceptDecl = 604,
+
     firstExtraDecl = moduleImportDecl,
-    lastExtraDecl = friendDecl,
+    lastExtraDecl = conceptDecl,
 
     /**
      * A code completion overload candidate.
@@ -2965,6 +3069,26 @@ int clang_getCursorPlatformAvailability(
 void clang_disposeCXPlatformAvailability(CXPlatformAvailability* availability);
 
 /**
+ * If cursor refers to a variable declaration and it has initializer returns
+ * cursor referring to the initializer otherwise return null cursor.
+ */
+CXCursor clang_Cursor_getVarDeclInitializer(CXCursor cursor);
+
+/**
+ * If cursor refers to a variable declaration that has global storage returns 1.
+ * If cursor refers to a variable declaration that doesn't have global storage
+ * returns 0. Otherwise returns -1.
+ */
+int clang_Cursor_hasVarDeclGlobalStorage(CXCursor cursor);
+
+/**
+ * If cursor refers to a variable declaration that has external storage
+ * returns 1. If cursor refers to a variable declaration that doesn't have
+ * external storage returns 0. Otherwise returns -1.
+ */
+int clang_Cursor_hasVarDeclExternalStorage(CXCursor cursor);
+
+/**
  * Describe the "language" of the entity referred to by a cursor.
  */
 enum CXLanguageKind
@@ -3022,14 +3146,14 @@ void clang_disposeCXCursorSet(CXCursorSet cset);
  * Queries a CXCursorSet to see if it contains a specific CXCursor.
  *
  * \returns non-zero if the set contains the specified cursor.
-*/
+ */
 uint clang_CXCursorSet_contains(CXCursorSet cset, CXCursor cursor);
 
 /**
  * Inserts a CXCursor into a CXCursorSet.
  *
  * \returns zero if the CXCursor was already in the set, and non-zero otherwise.
-*/
+ */
 uint clang_CXCursorSet_insert(CXCursorSet cset, CXCursor cursor);
 
 /**
@@ -3284,8 +3408,10 @@ enum CXTypeKind
     uShortAccum = 36,
     uAccum = 37,
     uLongAccum = 38,
+    bFloat16 = 39,
+    ibm128 = 40,
     firstBuiltin = void_,
-    lastBuiltin = uLongAccum,
+    lastBuiltin = ibm128,
 
     complex = 100,
     pointer = 101,
@@ -3377,7 +3503,9 @@ enum CXTypeKind
 
     oclIntelSubgroupAVCImeDualRefStreamin = 175,
 
-    extVector = 176
+    extVector = 176,
+    atomic = 177,
+    btfTagAttributed = 178
 }
 
 /**
@@ -3404,6 +3532,8 @@ enum CXCallingConv
     preserveMost = 14,
     preserveAll = 15,
     aArch64VectorCall = 16,
+    swiftAsync = 17,
+    aArch64SVEPCS = 18,
 
     invalid = 100,
     unexposed = 200
@@ -3452,9 +3582,9 @@ CXType clang_getEnumDeclIntegerType(CXCursor C);
  * Retrieve the integer value of an enum constant declaration as a signed
  *  long long.
  *
- * If the cursor does not reference an enum constant declaration, LLONG_MIN is returned.
- * Since this is also potentially a valid constant value, the kind of the cursor
- * must be verified before calling this function.
+ * If the cursor does not reference an enum constant declaration, LLONG_MIN is
+ * returned. Since this is also potentially a valid constant value, the kind of
+ * the cursor must be verified before calling this function.
  */
 long clang_getEnumConstantDeclValue(CXCursor C);
 
@@ -3462,9 +3592,9 @@ long clang_getEnumConstantDeclValue(CXCursor C);
  * Retrieve the integer value of an enum constant declaration as an unsigned
  *  long long.
  *
- * If the cursor does not reference an enum constant declaration, ULLONG_MAX is returned.
- * Since this is also potentially a valid constant value, the kind of the cursor
- * must be verified before calling this function.
+ * If the cursor does not reference an enum constant declaration, ULLONG_MAX is
+ * returned. Since this is also potentially a valid constant value, the kind of
+ * the cursor must be verified before calling this function.
  */
 ulong clang_getEnumConstantDeclUnsignedValue(CXCursor C);
 
@@ -3761,7 +3891,7 @@ uint clang_Type_getNumObjCProtocolRefs(CXType T);
 CXCursor clang_Type_getObjCProtocolDecl(CXType T, uint i);
 
 /**
- * Retreive the number of type arguments associated with an ObjC object.
+ * Retrieve the number of type arguments associated with an ObjC object.
  *
  * If the type is not an ObjC object, 0 is returned.
  */
@@ -3791,7 +3921,8 @@ CXType clang_getCursorResultType(CXCursor C);
  * Retrieve the exception specification type associated with a given cursor.
  * This is a value of type CXCursor_ExceptionSpecificationKind.
  *
- * This only returns a valid result if the cursor refers to a function or method.
+ * This only returns a valid result if the cursor refers to a function or
+ * method.
  */
 int clang_getCursorExceptionSpecificationType(CXCursor C);
 
@@ -3868,7 +3999,15 @@ enum CXTypeNullabilityKind
     /**
      * Nullability is not applicable to this type.
      */
-    invalid = 3
+    invalid = 3,
+
+    /**
+     * Generally behaves like Nullable, except when used in a block parameter that
+     * was imported into a swift async method. There, swift will assume that the
+     * parameter can get null even if no error occurred. _Nullable parameters are
+     * assumed to only get null on error.
+     */
+    nullableResult = 4
 }
 
 /**
@@ -3967,6 +4106,13 @@ long clang_Type_getOffsetOf(CXType T, const(char)* S);
 CXType clang_Type_getModifiedType(CXType T);
 
 /**
+ * Gets the type contained by this atomic type.
+ *
+ * If a non-atomic type is passed in, an invalid type is returned.
+ */
+CXType clang_Type_getValueType(CXType CT);
+
+/**
  * Return the offset of the field represented by the Cursor.
  *
  * If the cursor is not a field declaration, -1 is returned.
@@ -4059,9 +4205,9 @@ enum CX_CXXAccessSpecifier
 /**
  * Returns the access control level for the referenced object.
  *
- * If the cursor refers to a C++ declaration, its access control level within its
- * parent scope is returned. Otherwise, if the cursor refers to a base specifier or
- * access specifier, the specifier itself is returned.
+ * If the cursor refers to a C++ declaration, its access control level within
+ * its parent scope is returned. Otherwise, if the cursor refers to a base
+ * specifier or access specifier, the specifier itself is returned.
  */
 CX_CXXAccessSpecifier clang_getCXXAccessSpecifier(CXCursor);
 
@@ -5973,6 +6119,7 @@ alias CXEvalResult = void*;
  * If cursor is a statement declaration tries to evaluate the
  * statement and if its variable, tries to evaluate its initializer,
  * into its corresponding type.
+ * If it's an expression, tries to evaluate the expression.
  */
 CXEvalResult clang_Cursor_Evaluate(CXCursor C);
 
@@ -6273,7 +6420,8 @@ enum CXIdxEntityKind
     cxxDestructor = 23,
     cxxConversionFunction = 24,
     cxxTypeAlias = 25,
-    cxxInterface = 26
+    cxxInterface = 26,
+    cxxConcept = 27
 }
 
 enum CXIdxEntityLanguage
