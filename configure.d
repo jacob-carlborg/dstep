@@ -62,13 +62,6 @@ struct Options
     /// The specified path to the LLVM/Clang root directory.
     string llvmPath;
 
-    /**
-     * The specified path to the location of additional libraries, like
-     * `ncurses` or `tinfo`, that needs to linked when linking libclang
-     * statically.
-     */
-    string additionalLibPath;
-
     /// Indicates if libclang should be statically or dynamically linked.
     bool staticallyLinkClang = false;
 
@@ -114,21 +107,6 @@ static:
          * libraries.
          */
         immutable string[] llvmLibPaths = [];
-
-        /**
-         * A list of default paths where to look for additional libraries.
-         *
-         * Thes are libraries that are not part of LLVM or Clang which are used
-         * when statically linking libclang.
-         */
-        immutable string[] additionalLibPaths = [];
-
-        /**
-         * The name of the additional static library, like `ncurses` or `tinfo`.
-         *
-         * Used when statically linking libclang.
-         */
-        enum additionalLib = LibraryName();
 
         /**
          * The name of the C++ standard library.
@@ -184,12 +162,6 @@ static:
             .chain(standardPaths)
             .array;
 
-        immutable additionalLibPaths = [
-            "/opt/local/lib",
-            "/usr/local/opt/ncurses/lib" // the brew ncurses formula is a keg-only
-        ] ~ standardPaths;
-
-        enum additionalLib = LibraryName("ncurses", "libncurses.a");
         enum cppLib = "c++";
     }
 
@@ -226,9 +198,7 @@ static:
         ];
 
         immutable llvmLibPaths = debianPaths ~ centOsPaths ~ standardPaths;
-        immutable additionalLibPaths = standardPaths;
 
-        enum additionalLib = LibraryName("tinfo", "libtinfo.a");
         enum cppLib = "stdc++";
     }
 
@@ -249,9 +219,6 @@ static:
             "/usr/local/llvm50/lib",
         ] ~ standardPaths;
 
-        immutable additionalLibPaths = standardPaths;
-
-        enum additionalLib = LibraryName("ncurses", "libncurses.a");
         enum cppLib = "c++";
     }
 
@@ -505,9 +472,6 @@ struct StaticConfigurator
             enum startGroupFlag = "--start-group".only;
             enum endGroupFlag = "-Wl,--end-group".only;
         }
-
-        /// Local cache for the additional library path.
-        Path additionalLibPath;
     }
 
     /**
@@ -520,10 +484,6 @@ struct StaticConfigurator
     this(Options options, DefaultConfig defaultConfig)
     {
         initialize(options, defaultConfig);
-
-        additionalLibPath = new Path(defaultConfig.additionalLib.name,
-            DefaultConfig.additionalLibPaths,
-            options.additionalLibPath, defaultConfig.additionalLib.filename);
     }
 
     /**
@@ -534,12 +494,6 @@ struct StaticConfigurator
      */
     void generateConfig()
     {
-        enforceLibrariesExist(
-            DefaultConfig.additionalLib.name,
-            additionalLibPath,
-            DefaultConfig.additionalLib.filename
-        );
-
         writeConfig(config);
     }
 
@@ -553,7 +507,6 @@ private:
             libclangFlags,
             llvmFlags,
             endGroupFlag,
-            additionalLibFlags,
             cppFlags,
             extraFlags
         );
@@ -566,17 +519,6 @@ private:
     auto cppFlags()
     {
         return format("-l%s", DefaultConfig.cppLib).only;
-    }
-
-    /**
-     * Returns: a range of linker flags necessary to link with the ncurses
-     *  library.
-     */
-    auto additionalLibFlags()
-    {
-        return additionalLibPath
-            .buildPath(DefaultConfig.additionalLib.filename)
-            .only;
     }
 
     /**
