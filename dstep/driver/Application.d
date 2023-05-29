@@ -10,7 +10,6 @@ import std.getopt;
 import std.stdio : writeln, stderr;
 import Path = std.path;
 import std.file;
-import std.parallelism;
 
 import clang.c.Index;
 
@@ -54,7 +53,7 @@ class Application
         auto inputFiles = config.inputFiles;
         auto outputFiles = makeOutputFiles(config);
 
-        foreach (tuple; zip(inputFiles, outputFiles, translationUnits).parallel(1))
+        foreach (tuple; zip(inputFiles, outputFiles, translationUnits))
         {
             string outputDirectory = Path.dirName(tuple[1]);
 
@@ -66,8 +65,6 @@ class Application
             auto translator = new Translator(tuple[2], options);
             translator.translate;
         }
-
-        taskPool.finish(true);
     }
 
     static void enforceInputFilesExist(const Configuration config)
@@ -143,14 +140,12 @@ class Application
 
     static TranslationUnit[] makeTranslationUnits(Configuration config)
     {
-        import std.parallelism;
-
         Index translationIndex = Index(false, false);
         Compiler compiler;
 
         auto translationUnits = new TranslationUnit[config.inputFiles.length];
 
-        foreach (index, ref unit; translationUnits.parallel(1))
+        foreach (index, ref unit; translationUnits)
         {
             unit = TranslationUnit.parse(
                 translationIndex,
