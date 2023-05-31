@@ -15,6 +15,13 @@
     "preGenerateCommands-posix": ["$PACKAGE_DIR/tools/generate_version.sh"],
     "preGenerateCommands-windows": ["$PACKAGE_DIR/tools/generate_version.bat"],
 
+    "preBuildCommands": [
+        "(! [ -s linker_flags.txt ] && ./configure) || true"
+    ],
+
+    "lflags": ["@$PACKAGE_DIR/linker_flags.txt"],
+    "libs-windows": ["version"],
+
     "buildTypes": {
         "release": {
             "buildOptions": ["optimize", "inline"],
@@ -29,13 +36,7 @@
             "targetName": "dstep",
             "mainSourceFile": "dstep/main.d",
             "sourcePaths": ["dstep", "clang"],
-            "importPaths": ["."],
-
-            "preBuildCommands": [
-                "(! [ -s linker_flags.txt ] && ./configure) || true"
-            ],
-
-            "lflags": ["@linker_flags.txt"]
+            "importPaths": ["."]
         },
 
         {
@@ -59,13 +60,7 @@
             "sourcePaths": ["dstep", "clang", "tests/unit", "tests/support"],
             "excludedSourceFiles": ["dstep/main.d"],
             "dflags": ["-main"],
-            "buildOptions" : ["unittests", "debugMode", "debugInfo"],
-
-            "preBuildCommands": [
-                "(! [ -s linker_flags.txt ] && ./configure) || true"
-            ],
-
-            "lflags": ["@linker_flags.txt"]
+            "buildOptions" : ["unittests", "debugMode", "debugInfo"]
         },
 
         {

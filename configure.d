@@ -42,7 +42,12 @@ version (Posix)
     else version (FreeBSD) {}
     else
         static assert("The current platform is not supported");
+
+    enum libPrefix = "lib";
 }
+else version (Windows)
+    enum libPrefix = "";
+
 else
     static assert("This script should only be run on Posix platforms");
 
@@ -220,6 +225,15 @@ static:
         ] ~ standardPaths;
 
         enum cppLib = "c++";
+    }
+
+    else version (Windows)
+    {
+        enum clangLib = "clang.dll";
+        immutable string[] llvmLibPaths = [];
+        immutable string[] additionalLibPaths = [];
+        immutable string[] additionalLib = [];
+        enum cppLib = "";
     }
 
     else
@@ -467,6 +481,12 @@ struct StaticConfigurator
             enum endGroupFlag = "".only;
         }
 
+        else version (Windows)
+        {
+            enum startGroupFlag = "".only;
+            enum endGroupFlag = "".only;
+        }
+
         else
         {
             enum startGroupFlag = "--start-group".only;
@@ -527,8 +547,10 @@ private:
      */
     auto llvmFlags()
     {
-        const result = dirEntries(llvmLibPath, "libLLVM*.a", SpanMode.shallow)
+        const result = dirEntries(llvmLibPath, "*LLVM*.{a,lib}", SpanMode.shallow)
             .map!(e => e.name)
+            // exclude import library which causes a dynamic link on Windows
+            .filter!(e => !e.endsWith("LLVM-C.lib"))
             .array;
 
         const findAllSymbolsPath = llvmLibPath.buildPath("libfindAllSymbols.a");
@@ -542,7 +564,7 @@ private:
      */
     auto libclangFlags()
     {
-        return dirEntries(llvmLibPath, "libclang*.a", SpanMode.shallow);
+        return dirEntries(llvmLibPath, "{libclang,clang}*.{a,lib}", SpanMode.shallow);
     }
 
     auto extraFlags()
