@@ -148,6 +148,7 @@ static:
         ];
 
         enum macPortsPaths = [
+            "/opt/local/libexec/llvm-14/lib",
             "/opt/local/libexec/llvm-10/lib",
             "/opt/local/libexec/llvm-9.0/lib",
             "/opt/local/libexec/llvm-8.0/lib",
@@ -161,6 +162,7 @@ static:
         ];
 
         enum homebrewPaths = [
+            "/usr/local/opt/llvm@14/lib",
             "/usr/local/opt/llvm@10/lib",
             "/usr/local/opt/llvm@9/lib",
             "/usr/local/opt/llvm@8/lib",
@@ -205,6 +207,7 @@ static:
         ];
 
         enum debianPaths = [
+            "/usr/lib/llvm-14/lib",
             "/usr/lib/llvm-10/lib",
             "/usr/lib/llvm-9/lib",
             "/usr/lib/llvm-8/lib",
