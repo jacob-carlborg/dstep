@@ -3,9 +3,9 @@
 set -e
 
 if test -z "$DC"; then
-    if test -x "$(which dmd)"; then
+    if command -v dmd > /dev/null; then
         DC=dmd
-    elif test -x "$(which ldc2)"; then
+    elif command -v ldc2 > /dev/null; then
         DC=ldc2
     else
         echo "Neither DMD nor LDC found to compile configure.d"
