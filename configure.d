@@ -76,6 +76,9 @@ struct Options
      */
     bool staticallyLinkBinary = false;
 
+    /// Only generate configuration if needed.
+    bool ifNeeded = false;
+
     /// The path to the LLVM/Clang library directory.
     string llvmLibPath ()
     {
@@ -384,6 +387,9 @@ private:
     }
 }
 
+/// The name of the file where the configuration is written.
+enum configPath = "linker_flags.txt";
+
 /**
  * This mixin template contains shared logic to generate the actual
  * configuration.
@@ -392,9 +398,6 @@ mixin template BaseConfigurator()
 {
     private
     {
-        /// The name of the file where the configuration is written.
-        enum configPath = "linker_flags.txt";
-
         /// The options that were the result of parsing the command line flags.
         Options options;
 
@@ -621,13 +624,16 @@ void main(string[] args)
 {
     auto options = parseArguments(args);
 
-    if (!options.help)
-    {
-        if (options.staticallyLinkClang)
-            StaticConfigurator(options, DefaultConfig()).generateConfig();
-        else
-            DynamicConfigurator(options, DefaultConfig()).generateConfig();
-    }
+    if (options.help)
+        return;
+
+    if (options.ifNeeded && exists(configPath))
+        return;
+
+    if (options.staticallyLinkClang)
+        StaticConfigurator(options, DefaultConfig()).generateConfig();
+    else
+        DynamicConfigurator(options, DefaultConfig()).generateConfig();
 }
 
 private:
@@ -651,7 +657,8 @@ Options parseArguments(string[] args)
         "llvm-path", "The path to the LLVM/Clang root directory.", &options.llvmPath,
         // "ncurses-lib-path", "The path to the ncurses library.", &options.ncursesLibPath,
         "statically-link-clang", "Statically link libclang. Defaults to no.", &options.staticallyLinkClang,
-        "statically-link-binary", "Completely statically link the binary. Defaults to no.", &options.staticallyLinkBinary
+        "statically-link-binary", "Completely statically link the binary. Defaults to no.", &options.staticallyLinkBinary,
+        "if-needed", "Only generate the configuration if needed. Defaults to no.", &options.ifNeeded
     );
 
     version (OSX)
