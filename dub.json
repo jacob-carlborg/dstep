@@ -16,7 +16,7 @@
     "preGenerateCommands-windows": ["$PACKAGE_DIR/tools/generate_version.bat"],
 
     "preBuildCommands": [
-        "$DC -run configure.d --if-needed"
+        "dub configure --if-needed"
     ],
 
     "lflags": ["@$PACKAGE_DIR/linker_flags.txt"],
