@@ -4,8 +4,10 @@
 
 ### New/Changed Features
 
-* Building DStep now requires libclang 10.0.0 or 9.0.0
+* Building DStep now requires libclang 15.0.7
 * Automatically detect macOS SDK path ([Issue 227](https://github.com/jacob-carlborg/dstep/issues/227))
+* Add support for FreeBSD
+* Drop support for Windows 32 bit
 
 ### Bugs Fixed
 
