@@ -41,21 +41,12 @@ import std.uni;
 import std.traits;
 import std.typecons : Tuple;
 
-version (Posix)
-{
-    version (OSX) {}
-    else version (linux) {}
-    else version (FreeBSD) {}
-    else
-        static assert("The current platform is not supported");
-
-    enum libPrefix = "lib";
-}
-else version (Windows)
-    enum libPrefix = "";
-
+version (OSX) {}
+else version (linux) {}
+else version (FreeBSD) {}
+else version (Windows) {}
 else
-    static assert("This script should only be run on Posix platforms");
+    static assert("The current platform is not supported");
 
 /**
  * The options of the application.
