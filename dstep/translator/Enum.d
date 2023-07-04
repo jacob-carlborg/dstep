@@ -305,7 +305,7 @@ void translateEnumDef(Output output, Context context, Cursor cursor)
         }
     };
 
-    if ((anonymous && variables) || !cursor.isGlobal || context.options.aliasEnumMembers)
+    if ((anonymous && variables) || !cursor.isGlobal || (context.options.aliasEnumMembers && !anonymous))
         generateEnumAliases(context.globalScope, context, cursor, spelling);
 }
 

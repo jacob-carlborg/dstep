@@ -14,6 +14,7 @@
 * [Issue 235](https://github.com/jacob-carlborg/dstep/issues/235): Passing `--` as an argument doesn't work properly
 * [Issue 224](https://github.com/jacob-carlborg/dstep/issues/224): Dub assumes default installation path for LLVM on Windows
 * [Issue 247](https://github.com/jacob-carlborg/dstep/issues/247): `--alias-enum-members` doesn't work properly for typedef enums
+* [Issue 285](https://github.com/jacob-carlborg/dstep/issues/285): `--alias-enum-members=true` shouldn't affect global anonymous enums
 
 ## Version 1.0.0
 ### New/Changed Features

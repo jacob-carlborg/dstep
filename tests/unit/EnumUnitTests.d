@@ -341,6 +341,32 @@ alias BAZ = Enum.BAZ;
 D", options);
 }
 
+// Test aliasing of all enum members for anonymous enum.
+unittest
+{
+    Options options = { aliasEnumMembers: true };
+
+assertTranslates(
+q"C
+enum
+{
+    FOO,
+    BAR,
+    BAZ,
+};
+C",
+q"D
+extern (C):
+
+enum
+{
+    FOO = 0,
+    BAR = 1,
+    BAZ = 2
+}
+D", options);
+}
+
 // Test a named enum inside a struct.
 unittest
 {
