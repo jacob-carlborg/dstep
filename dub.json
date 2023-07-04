@@ -12,8 +12,7 @@
     "buildRequirements": ["silenceWarnings"],
     "stringImportPaths": ["resources"],
 
-    "preGenerateCommands-posix": ["$PACKAGE_DIR/tools/generate_version.sh"],
-    "preGenerateCommands-windows": ["$PACKAGE_DIR/tools/generate_version.bat"],
+    "preGenerateCommands": ["dub $PACKAGE_DIR/tools/generate_version.d"],
 
     "preBuildCommands": [
         "dub configure --if-needed"
