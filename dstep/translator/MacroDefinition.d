@@ -127,7 +127,7 @@ string translate(Identifier identifier, ExpressionContext context)
                 ? typedefParent.spelling
                 : lexicalParent.spelling;
 
-            auto scopePrefix = lexicalParent != context.scope_
+            auto scopePrefix = lexicalParent != context.scope_ && !lexicalParent.isAnonymous
                 ? scopeName ~ "."
                 : "";
 

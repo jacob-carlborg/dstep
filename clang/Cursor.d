@@ -48,6 +48,11 @@ struct Cursor
         return clang_getCursorKind(cx);
     }
 
+    @property bool isAnonymous () const
+    {
+        return clang_Cursor_isAnonymous(cx) != 0;
+    }
+
     @property bool isPreprocessor () const
     {
         CXCursorKind kind = clang_getCursorKind(cx);
