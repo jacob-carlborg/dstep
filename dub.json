@@ -12,10 +12,10 @@
     "buildRequirements": ["silenceWarnings"],
     "stringImportPaths": ["resources"],
 
-    "preGenerateCommands": ["dub $PACKAGE_DIR/tools/generate_version.d"],
+    "preGenerateCommands": ["$DUB $PACKAGE_DIR/tools/generate_version.d"],
 
     "preBuildCommands": [
-        "dub configure --if-needed"
+        "$DUB configure --if-needed"
     ],
 
     "lflags": ["@$PACKAGE_DIR/linker_flags.txt"],
