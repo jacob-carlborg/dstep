@@ -109,6 +109,10 @@ struct Configuration
     @("global-import", "Add <import> as a global import.")
     string[] globalImports;
 
+    /// add global imports
+    @("public-global-import", "Add <import> as a public global import.")
+    string[] publicGlobalImports;
+
     Options toOptions(string inputFile, string outputFile) const
     {
         Options options = toOptions();
@@ -145,6 +149,7 @@ struct Configuration
         options.collisionAction = collisionAction;
         options.globalAttributes = globalAttributes;
         options.globalImports = globalImports;
+        options.publicGlobalImports = publicGlobalImports;
 
         return options;
     }

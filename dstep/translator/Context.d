@@ -52,6 +52,9 @@ class Context
         foreach (item; options.globalImports)
             includeHandler_.addImport(item);
 
+        foreach (item; options.publicGlobalImports)
+            includeHandler_.addImport(item, Visibility.public_);
+
         this.options = options;
 
         if (options.enableComments)

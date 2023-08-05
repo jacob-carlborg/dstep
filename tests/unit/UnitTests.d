@@ -1054,3 +1054,22 @@ enum some_minus_0700L = -octal!700L;
 D");
 
 }
+
+@("public global import")
+unittest
+{
+    Options options;
+    options.publicGlobalImports = ["foo.a", "foo.b"];
+
+    assertTranslates(q"C
+void foo();
+C", q"D
+public import foo.a;
+public import foo.b;
+
+extern (C):
+
+void foo ();
+D", options);
+
+}

@@ -16,12 +16,18 @@ import dstep.translator.HeaderIndex;
 import dstep.translator.Options;
 import dstep.translator.Output;
 
+enum Visibility
+{
+    public_ = "public"
+}
+
 class IncludeHandler
 {
     private Options options;
     private string[string] submodules;
     private bool[string] includes;
     private bool[string] imports;
+    private Set!string publicImports;
     private HeaderIndex headerIndex;
     immutable static string[string] knownIncludes;
 
@@ -149,6 +155,16 @@ class IncludeHandler
         imports[imp] = true;
     }
 
+    void addImport (string imp, Visibility visibility)
+    {
+        final switch (visibility)
+        {
+            case Visibility.public_:
+                publicImports.add(imp);
+            break;
+        }
+    }
+
     void addCompatible ()
     {
         includes["config.h"] = true;
@@ -173,9 +189,10 @@ class IncludeHandler
                 unhandled.add(format(`/+ #include "%s" +/`, entry));
         }
 
+        const publicExtra = publicImports.byKey.map!(e => toImport(e, Visibility.public_)).array;
         auto extra = imports.byKey.map!(e => toImport(e)).array;
 
-        importsBlock(output, standard.keys ~ extra.array);
+        importsBlock(output, standard.keys ~ publicExtra ~ extra.array);
         importsBlock(output, package_.keys);
 
         if (options.keepUntranslatable)
@@ -214,6 +231,11 @@ private:
     string toImport (string str)
     {
         return "import " ~ str ~ ";";
+    }
+
+    string toImport (string str, Visibility visibility)
+    {
+        return visibility ~ " " ~ toImport(str);
     }
 
     string toSubmoduleImport (string str)

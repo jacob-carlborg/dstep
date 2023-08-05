@@ -50,6 +50,7 @@ struct Options
     CollisionAction collisionAction = CollisionAction.rename;
     const(string)[] globalAttributes;
     const(string)[] globalImports;
+    const(string)[] publicGlobalImports;
     bool delegate(ref const(Cursor)) isWantedCursorForTypedefs;
 
     string toString() const

@@ -8,6 +8,7 @@
 * Automatically detect macOS SDK path ([Issue 227](https://github.com/jacob-carlborg/dstep/issues/227))
 * Add support for FreeBSD
 * Drop support for Windows 32 bit
+* [Issue 287](https://github.com/jacob-carlborg/dstep/issues/287): Add support for adding public imports
 
 ### Bugs Fixed
 
