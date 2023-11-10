@@ -201,7 +201,11 @@ package string reduceAlias(Type type)
         tuple("u8", CXTypeKind.uChar): "ubyte",
         tuple("u16", CXTypeKind.uShort): "ushort",
         tuple("u32", CXTypeKind.uInt): "uint",
-        tuple("u64", CXTypeKind.uLongLong): "ulong"
+        tuple("u64", CXTypeKind.uLongLong): "ulong",
+        tuple("__int128_t", CXTypeKind.int128): "Cent",
+
+        // There's no unsigned 128 bit integer in D. Use signed instead.
+        tuple("__uint128_t", CXTypeKind.uInt128): "Cent"
     ];
 
     auto canonical = type.canonical;
@@ -580,7 +584,11 @@ string translateType (Context context, CXTypeKind kind, bool rewriteIdToObjcObje
                 return "c_ulong";
 
             case uLongLong: return "ulong";
-            case uInt128: return "<unimplemented>";
+            case uInt128:
+                context.includeHandler.addImport("core.int128");
+                // There's no unsigned 128 bit integer in D. Use signed instead.
+                return "Cent";
+
             case charS: return "char";
             case sChar: return "byte";
             case wChar: return "wchar";
@@ -592,7 +600,11 @@ string translateType (Context context, CXTypeKind kind, bool rewriteIdToObjcObje
                 return "c_long";
 
             case longLong: return "long";
-            case int128: return "<unimplemented>";
+
+            case int128:
+                context.includeHandler.addImport("core.int128");
+                return "Cent";
+
             case float_: return "float";
             case double_: return "double";
             case longDouble: return "real";
