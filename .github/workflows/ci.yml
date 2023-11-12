@@ -136,8 +136,6 @@ jobs:
           environment_variables: DSTEP_LLVM_VERSION DSTEP_COMPILER
           run: |
             sudo pkg install -y llvm git gnupg
-            d_version="$(echo ${{ matrix.compiler }} | sed 's/-latest//')"
-            source $(curl --retry 3 -fsS https://dlang.org/install.sh | bash -s "$d_version" -a)
             ./ci.sh
 
       - name: Set up QEMU
