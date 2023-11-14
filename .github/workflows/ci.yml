@@ -128,7 +128,7 @@ jobs:
 
       - name: Test
         if: matrix.data.cross_platform_actions
-        uses: cross-platform-actions/action@v0.15.0
+        uses: cross-platform-actions/action@v0.21.1
         with:
           shell: bash
           operating_system: ${{ matrix.data.os.target }}
