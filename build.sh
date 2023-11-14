@@ -2,7 +2,7 @@
 
 if [ -s "$HOME/.dvm/scripts/dvm" ] ; then
     . "$HOME/.dvm/scripts/dvm" ;
-    dvm use ldc-1.32.0
+    dvm use ldc-1.35.0
 fi
 
 dub build --verror
