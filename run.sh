@@ -1,3 +1,6 @@
 #!/bin/sh
 
-./build.sh && ./bin/dstep foo.h -o foo.d && cat foo.d
+set -eu
+
+./build.sh
+./bin/dstep foo.h -o /dev/stdout
