@@ -9,6 +9,10 @@
     "targetType": "executable",
     "targetPath": "bin",
 
+    "dependencies": {
+      "dyaml": "~>0.9.2"
+    },
+
     "buildRequirements": ["silenceWarnings"],
     "stringImportPaths": ["resources"],
 

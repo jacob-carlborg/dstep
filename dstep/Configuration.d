@@ -5,6 +5,8 @@
  */
 module dstep.Configuration;
 
+import std.file;
+
 import clang.Util;
 
 import dstep.translator.Options;
@@ -113,6 +115,9 @@ struct Configuration
     @("public-global-import", "Add <import> as a public global import.")
     string[] publicGlobalImports;
 
+    @("api-notes", "Traslate using the <file> API notes file.")
+    string apiNotesFile;
+
     Options toOptions(string inputFile, string outputFile) const
     {
         Options options = toOptions();
@@ -150,6 +155,7 @@ struct Configuration
         options.globalAttributes = globalAttributes;
         options.globalImports = globalImports;
         options.publicGlobalImports = publicGlobalImports;
+        options.apiNotes = apiNotesFile.empty ? "" : readText(apiNotesFile);
 
         return options;
     }

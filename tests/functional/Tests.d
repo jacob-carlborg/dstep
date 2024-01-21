@@ -369,3 +369,14 @@ unittest
         "tests/functional/objc/time_h_issue.h"
     );
 }
+
+@("API Notes")
+@("Rename of global function")
+unittest
+{
+    assertRunsDStepCFile(
+        "tests/functional/api_notes.d",
+        "tests/functional/api_notes.h",
+        ["--api-notes=tests/functional/api_notes.yml"]
+    );
+}

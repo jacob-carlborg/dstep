@@ -20,6 +20,7 @@ import clang.Util;
 import dstep.core.Exceptions;
 import dstep.Configuration;
 
+import dstep.translator.ApiNotes;
 import dstep.translator.Context;
 import dstep.translator.Declaration;
 import dstep.translator.Enum;
@@ -54,6 +55,7 @@ class Translator
         File inputFile;
         Language language;
         string[string] deferredDeclarations;
+        ApiNotes apiNotes;
     }
 
     TypedMacroDefinition[string] typedMacroDefinitions;
@@ -68,6 +70,7 @@ class Translator
 
         inputFile = translationUnit.file(inputFilename);
         context = new Context(translationUnit, options, this);
+        apiNotes = ApiNotes.parse(options.apiNotes);
     }
 
     void translate ()
@@ -232,6 +235,9 @@ class Translator
     {
         output.flushLocation(cursor.extent);
 
+        const newName = apiNotes.lookupFunction(cursor.spelling);
+        import std.stdio;
+        writeln(newName);
         immutable auto name = translateIdentifier(cursor.spelling);
         output.adaptiveSourceNode(translateFunction(context, cursor.func, name));
         output.append(";");
