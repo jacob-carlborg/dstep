@@ -105,6 +105,46 @@ The directory will be created if it doesn't exist.
 
 Use `-h` for usage information. Any flags recognized by Clang can be used.
 
+### API Notes
+
+API Notes allows to transform the translated output in various ways, like
+renaming symbols, without having to modify the original headers. This is
+achieved by suppling a "sidecar" file to DStep. For more information, see the
+Clang documentation for API notes [1]. The API Notes format used by Clang is
+indented to be used to annotate API's for importing into Swift. DStep
+piggybacks and uses the same format, with some minor additions.
+
+To use the API Notes feature, create a new file, `api_notes.yml`, with the
+following content:
+
+```yaml
+Functions:
+  - Name: foo
+    SwiftName: bar
+```
+
+Assuming the input file, `foo.h`, has the following content:
+
+```c
+void foo();
+```
+
+Run DStep with the following command:
+
+```
+dstep foo.h --api-notes api_notes.yml
+```
+
+The translated output will look as follows:
+
+```d
+extern (C):
+
+void bar ();
+```
+
+[1] https://clang.llvm.org/docs/APINotes.html
+
 ## Limitations/Known issues
 
 * Supports translating some of the preprocessor, like: `#define` for simple

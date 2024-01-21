@@ -52,6 +52,7 @@ struct Options
     const(string)[] globalImports;
     const(string)[] publicGlobalImports;
     bool delegate(ref const(Cursor)) isWantedCursorForTypedefs;
+    string apiNotes = null;
 
     string toString() const
     {
