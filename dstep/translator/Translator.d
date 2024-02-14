@@ -18,6 +18,7 @@ import clang.Type;
 import clang.Util;
 
 import dstep.core.Exceptions;
+import dstep.core.Optional;
 import dstep.Configuration;
 
 import dstep.translator.ApiNotes;
@@ -235,10 +236,10 @@ class Translator
     {
         output.flushLocation(cursor.extent);
 
-        const newName = apiNotes.lookupFunction(cursor.spelling);
-        import std.stdio;
-        writeln(newName);
-        immutable auto name = translateIdentifier(cursor.spelling);
+        auto func = apiNotes.lookupFunction(cursor.spelling);
+        const newSpelling = func.baseName.or(cursor.spelling);
+        immutable auto name = translateIdentifier(newSpelling);
+
         output.adaptiveSourceNode(translateFunction(context, cursor.func, name));
         output.append(";");
     }
