@@ -181,7 +181,7 @@ class Translator
                     break;
 
                 case structDecl:
-                    translateRecord(output, context, cursor);
+                    translateRecord(output, context, cursor, apiNotes);
                     break;
 
                 case enumDecl:
@@ -189,7 +189,7 @@ class Translator
                     break;
 
                 case unionDecl:
-                    translateRecord(output, context, cursor);
+                    translateRecord(output, context, cursor, apiNotes);
                     break;
 
                 case macroDefinition:

@@ -1169,7 +1169,7 @@ D"[0 .. $ - 1]);
     }
 }
 
-class StructData
+class BaseData
 {
     string name;
     protected Context context;
@@ -1222,7 +1222,47 @@ protected:
     }
 }
 
-class ClassData : StructData
+class StructData
+{
+    alias Body = void delegate(Output);
+
+    string name;
+    private string type;
+    private Body body;
+    private Cursor cursor;
+    private Output[] declarations;
+
+    this(string name, string type, Cursor cursor, Body body)
+    in(body !is null)
+    {
+        this.name = name;
+        this.type = type;
+        this.cursor = cursor;
+        this.body = body;
+    }
+
+    @property Output write(Output to)
+    {
+        auto output = to;
+        const spellingCode = name == "" ? name : " " ~ name;
+
+        output.subscopeStrong(cursor.extent, "%s%s", type, spellingCode) in {
+            body(output);
+
+            foreach (i, e ; declarations)
+                output.output(e);
+        };
+
+        return output;
+    }
+
+    void addDeclaration(Output output)
+    {
+        declarations ~= output;
+    }
+}
+
+class ClassData : BaseData
 {
     Output[] members;
 

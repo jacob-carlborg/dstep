@@ -13,6 +13,7 @@ import clang.Cursor;
 import clang.Visitor;
 import clang.Util;
 
+import dstep.translator.ApiNotes;
 import dstep.translator.Context;
 import dstep.translator.Enum;
 import dstep.translator.Declaration;
@@ -139,11 +140,11 @@ void translateRecordDef(
 
     auto canonical = cursor.canonical;
 
-    auto spelling = keepUnnamed ? "" : context.translateTagSpelling(cursor);
-    spelling = spelling == "" ? spelling : " " ~ spelling;
+    const spelling = keepUnnamed ? "" : context.translateTagSpelling(cursor);
+    const spellingCode = spelling == "" ? spelling : " " ~ spelling;
     auto type = translateRecordTypeKeyword(cursor);
 
-    output.subscopeStrong(cursor.extent, "%s%s", type, spelling) in {
+    StructData.Body body = (output) {
         alias predicate = (a, b) =>
             a == b ||
             a.isBitField() &&
@@ -209,6 +210,9 @@ void translateRecordDef(
             }
         }
     };
+
+    auto structData = new StructData(spelling, type, cursor, body);
+    structData.write(to: output);
 }
 
 void translateRecordDecl(Output output, Context context, Cursor cursor)
@@ -224,7 +228,7 @@ void translateRecordDecl(Output output, Context context, Cursor cursor)
 void translateAnonymousRecord(Output output, Context context, Cursor cursor)
 {
     if (!variablesInParentScope(cursor))
-        translateRecordDef(output, context, cursor, true);
+        translateRecordDef(output, context, cursor, keepUnnamed: true);
 }
 
 bool shouldSkipRecord(Context context, Cursor cursor)
