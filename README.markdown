@@ -143,6 +143,67 @@ extern (C):
 void bar ();
 ```
 
+#### Member Functions
+
+API Notes also supports converting free functions to instance methods. To
+convert a free function into an instance method, use the following syntax:
+
+```yaml
+Functions:
+  - Name: foo
+    SwiftName: A.bar(this)
+```
+
+Where `foo` is the original name of the free function. `A` is the name of the
+struct which `foo` will be an instance method of. `bar` is the new new name of
+the instance method. `this` indicates the function should be an instance
+method.
+
+Assuming the input file, `foo.h`, has the following content:
+
+```c
+void foo(Foo foo);
+int toInt(const char* str);
+
+struct A {
+  int b;
+};
+```
+
+Run DStep with the following command:
+
+```
+dstep foo.h --api-notes api_notes.yml
+```
+
+The translated output will look as follows, the declaration of the struct `A`
+will be output in a separate file:
+
+```d
+module foo;
+
+extern (C):
+
+int toInt (const char* str);
+```
+
+```d
+module A;
+
+struct A {
+    int b;
+
+    void bar()
+    {
+        __foo(this);
+    }
+
+    extern (C) pragma(mangle, "foo") private static
+    void __foo();
+}
+```
+
+
 [1] https://clang.llvm.org/docs/APINotes.html
 
 ## Limitations/Known issues

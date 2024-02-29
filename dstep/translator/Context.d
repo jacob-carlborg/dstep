@@ -6,11 +6,15 @@
  */
 module dstep.translator.Context;
 
+import std.algorithm;
+
 import clang.c.Index;
 import clang.Cursor;
 import clang.Index;
 import clang.SourceRange;
 import clang.TranslationUnit;
+
+import dstep.core.Optional;
 
 import dstep.translator.CommentIndex;
 import dstep.translator.IncludeHandler;
@@ -38,6 +42,7 @@ class Context
     private Cursor[string] typeNames_;
     private Cursor[string] constNames_;
     private string[Cursor] translatedSpellings;
+    private AnnotatedDeclaration[string] _annotatedDeclarations;
 
     Options options;
 
@@ -314,6 +319,20 @@ class Context
     {
         return globalScope_;
     }
+
+    auto annotatedDeclarations() => _annotatedDeclarations;
+
+    void addAnnotatedDeclaration(StructData structData)
+    {
+        _annotatedDeclarations.require(structData.name, new AnnotatedDeclaration(structData.name)).
+            declaration = structData;
+    }
+
+    void addAnnotatedMember(string context, StructData.Body member)
+    {
+        _annotatedDeclarations.require(context, new AnnotatedDeclaration(context))
+            .addMember(member);
+    }
 }
 
 string[] cursorScope(Context context, Cursor cursor)
@@ -461,4 +480,36 @@ void collectGlobalNames(
     }
 
     collectGlobalTypes(translUnit.cursor, types, consts);
+}
+
+/// A declaration that has been annotated with API notes.
+class AnnotatedDeclaration
+{
+    immutable string name;
+    Optional!StructData declaration;
+
+    private StructData.Body[] _members;
+
+    this(string name)
+    {
+        this.name = name;
+    }
+
+    StructData.Body[] members()
+    {
+        return _members;
+    }
+
+    void addMember(StructData.Body member)
+    {
+        _members ~= member;
+    }
+
+    void addMembersToDeclaration()
+    {
+        declaration.each!((decl) {
+            foreach (member; members)
+                decl.addDeclaration(member);
+        });
+    }
 }

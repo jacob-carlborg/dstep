@@ -130,6 +130,7 @@ void translateRecordDef(
     Output output,
     Context context,
     Cursor cursor,
+    ApiNotes apiNotes,
     bool keepUnnamed = false)
 {
     import std.algorithm;
@@ -197,7 +198,7 @@ void translateRecordDef(
                     case CXCursorKind.unionDecl:
                     case CXCursorKind.structDecl:
                         if (cursor.type.isAnonymous)
-                            translateAnonymousRecord(output, context, cursor);
+                            translateAnonymousRecord(output, context, cursor, apiNotes);
 
                         break;
 
@@ -211,8 +212,14 @@ void translateRecordDef(
         }
     };
 
+    const isAnnotatedStruct = spelling.length > 0 && apiNotes.contextExists(spelling);
     auto structData = new StructData(spelling, type, cursor, body);
-    structData.write(to: output);
+
+    if (isAnnotatedStruct)
+        context.addAnnotatedDeclaration(structData);
+
+    else
+        structData.write(to: output);
 }
 
 void translateRecordDecl(Output output, Context context, Cursor cursor)
@@ -225,10 +232,10 @@ void translateRecordDecl(Output output, Context context, Cursor cursor)
     output.singleLine(cursor.extent, "%s%s;", type, spelling);
 }
 
-void translateAnonymousRecord(Output output, Context context, Cursor cursor)
+void translateAnonymousRecord(Output output, Context context, Cursor cursor, ApiNotes apiNotes)
 {
     if (!variablesInParentScope(cursor))
-        translateRecordDef(output, context, cursor, keepUnnamed: true);
+        translateRecordDef(output, context, cursor, apiNotes, keepUnnamed: true);
 }
 
 bool shouldSkipRecord(Context context, Cursor cursor)
@@ -263,7 +270,7 @@ bool shouldSkipRecordDefinition(Context context, Cursor cursor)
     return false;
 }
 
-void translateRecord(Output output, Context context, Cursor record)
+void translateRecord(Output output, Context context, Cursor record, ApiNotes apiNotes)
 {
     if (context.alreadyDefined(record.canonical))
         return;
@@ -271,7 +278,7 @@ void translateRecord(Output output, Context context, Cursor record)
     bool skipdef = shouldSkipRecordDefinition(context, record);
 
     if (record.isDefinition && !skipdef)
-        translateRecordDef(output, context, record);
+        translateRecordDef(output, context, record, apiNotes);
     else if (!context.isInsideTypedef(record) && (record.definition.isEmpty || skipdef))
         translateRecordDecl(output, context, record);
 }

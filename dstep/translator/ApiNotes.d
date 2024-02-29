@@ -45,12 +45,17 @@ struct ApiNotes
         return Loader.fromString(data).load.as!ApiNotes;
     }
 
-    Optional!Function lookupFunction(string name) =>
+    Optional!Function lookupFunction(const string name) =>
         functions
             .find!(f => f.name == name)
             .takeOne
             .map!some
             .or(none!Function);
+
+    bool contextExists(const string context) =>
+        !functions
+            .find!(f => f.context.or("") == context)
+            .empty;
 }
 
 struct Function
@@ -66,6 +71,17 @@ struct Function
     }
 
     mixin ToString;
+
+    bool isStaticMethod() => context.isPresent && !isInstanceMethod;
+    bool isMethod() => isStaticMethod || isInstanceMethod;
+
+    bool isInstanceMethod() =>
+        context.isPresent &&
+        arguments.length > 0 &&
+        (
+            arguments[0] == "this" ||
+            arguments[0] == "self"
+        );
 
 private:
 
