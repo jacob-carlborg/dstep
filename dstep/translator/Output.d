@@ -1230,7 +1230,7 @@ class StructData
     private string type;
     private Body body;
     private Cursor cursor;
-    private Output[] declarations;
+    private Body[] declarations;
 
     this(string name, string type, Cursor cursor, Body body)
     in(body !is null)
@@ -1249,16 +1249,16 @@ class StructData
         output.subscopeStrong(cursor.extent, "%s%s", type, spellingCode) in {
             body(output);
 
-            foreach (i, e ; declarations)
-                output.output(e);
+            foreach (decl; declarations)
+                decl(output);
         };
 
         return output;
     }
 
-    void addDeclaration(Output output)
+    void addDeclaration(StructData.Body declaration)
     {
-        declarations ~= output;
+        declarations ~= declaration;
     }
 }
 

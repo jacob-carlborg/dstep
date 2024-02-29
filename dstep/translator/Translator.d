@@ -6,8 +6,10 @@
  */
 module dstep.translator.Translator;
 
+import std.algorithm;
 import std.file;
 import std.array;
+import std.path;
 
 import clang.c.Index;
 import clang.Cursor;
@@ -17,6 +19,7 @@ import clang.TranslationUnit;
 import clang.Type;
 import clang.Util;
 
+import dstep.core.Core;
 import dstep.core.Exceptions;
 import dstep.core.Optional;
 import dstep.Configuration;
@@ -77,6 +80,7 @@ class Translator
     void translate ()
     {
         write(outputFile, translateToString());
+        writeAnnotatedDeclarations();
     }
 
     Output translateCursors()
@@ -240,8 +244,20 @@ class Translator
         const newSpelling = func.baseName.or(cursor.spelling);
         immutable auto name = translateIdentifier(newSpelling);
 
-        output.adaptiveSourceNode(translateFunction(context, cursor.func, name));
-        output.append(";");
+        void implementation(Output output)
+        {
+            output.adaptiveSourceNode(translateFunction(context, cursor.func, name));
+            output.append(";");
+        }
+
+        if (func.isInstanceMethod.or(false))
+        {
+            auto context = func.flatMap!(f => f.context).or("");
+            this.context.addAnnotatedMember(context, &implementation);
+        }
+
+        else
+            implementation(output);
     }
 
     void declareRecordForTypedef(Output output, Cursor typedef_)
@@ -377,6 +393,25 @@ private:
             output.singleLine("%s:", attribute);
 
         output.separator();
+    }
+
+    void writeAnnotatedDeclarations()
+    {
+        const directory = dirName(outputFile);
+        auto declarations = context
+            .annotatedDeclarations
+            .byValue
+            .filter!(d => d.declaration.isPresent);
+
+        foreach (declaration; declarations)
+        {
+            declaration.addMembersToDeclaration();
+            auto output = new Output;
+            declaration.declaration.write(output);
+
+            const outputFile = buildPath(directory, declaration.name) ~ ".d";
+            write(outputFile, output.content);
+        }
     }
 }
 

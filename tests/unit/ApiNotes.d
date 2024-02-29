@@ -97,6 +97,14 @@ import dstep.translator.Options;
     }
 }
 
+@"ApiNotes.contextExists" unittest
+{
+    auto apiNotes = ApiNotes.ApiNotes([
+        RawFunction(name: "foo", dName: "Bar.baz")
+    ]);
+
+    assert(apiNotes.contextExists("Bar"));
+}
 
 @"ApiNotes.parse" unittest
 {
@@ -111,6 +119,82 @@ YAML";
     auto expected = ApiNotes.ApiNotes([RawFunction(name: "foo", dName: "bar")]);
 
     assert(actual == expected, format!"%s != %s"(actual, expected));
+}
+
+@"Function.isInstanceMethod"
+{
+    @"when the D name contains a context"
+    {
+        @"when the D name contains a 'this'" unittest
+        {
+            auto rawFunc = RawFunction(name: "foo", dName: "Foo.bar(this)");
+            auto func = Function.parse(rawFunc);
+
+            assert(func.isInstanceMethod);
+        }
+
+        @"when the D name contains a 'self'" unittest
+        {
+            auto rawFunc = RawFunction(name: "foo", dName: "Foo.bar(self)");
+            auto func = Function.parse(rawFunc);
+
+            assert(func.isInstanceMethod);
+        }
+
+        @"when the D name does not contain 'this' or 'self'" unittest
+        {
+            auto rawFunc = RawFunction(name: "foo", dName: "Foo.bar()");
+            auto func = Function.parse(rawFunc);
+
+            assert(!func.isInstanceMethod);
+        }
+    }
+
+    @"when the D name does not contain a context" unittest
+    {
+        auto rawFunc = RawFunction(name: "foo", dName: "bar");
+        auto func = Function.parse(rawFunc);
+
+        assert(!func.isInstanceMethod);
+    }
+}
+
+@"Function.isStaticMethod"
+{
+    @"when the D name contains a context"
+    {
+        @"when the D name contains a 'this'" unittest
+        {
+            auto rawFunc = RawFunction(name: "foo", dName: "Foo.bar(this)");
+            auto func = Function.parse(rawFunc);
+
+            assert(!func.isStaticMethod);
+        }
+
+        @"when the D name contains a 'self'" unittest
+        {
+            auto rawFunc = RawFunction(name: "foo", dName: "Foo.bar(self)");
+            auto func = Function.parse(rawFunc);
+
+            assert(!func.isStaticMethod);
+        }
+
+        @"when the D name does not contain 'this' or 'self'" unittest
+        {
+            auto rawFunc = RawFunction(name: "foo", dName: "Foo.bar()");
+            auto func = Function.parse(rawFunc);
+
+            assert(func.isStaticMethod);
+        }
+    }
+
+    @"when the D name does not contain a context" unittest
+    {
+        auto rawFunc = RawFunction(name: "foo", dName: "bar");
+        auto func = Function.parse(rawFunc);
+
+        assert(!func.isStaticMethod);
+    }
 }
 
 unittest

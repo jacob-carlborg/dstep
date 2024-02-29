@@ -10,6 +10,7 @@
 * [Issue 287](https://github.com/jacob-carlborg/dstep/issues/287): Add support for adding public imports
 * [Issue 288](https://github.com/jacob-carlborg/dstep/issues/288): Missing `__u/int128` support
 * Add support for renaming global functions using API notes
+* Add support for converting free functions to instance methods using API notes
 
 ### Bugs Fixed
 
