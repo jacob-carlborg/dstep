@@ -48,7 +48,7 @@ jobs:
               target: freebsd
               version: '13.1'
               target_triple: x86_64-unknown-freebsd13.1
-              host: macOS-latest
+              host: ubuntu-latest
             cross_platform_actions: true
 
         compiler:
@@ -128,7 +128,7 @@ jobs:
 
       - name: Test
         if: matrix.data.cross_platform_actions
-        uses: cross-platform-actions/action@v0.22.0
+        uses: cross-platform-actions/action@v0.23.0
         with:
           shell: bash
           operating_system: ${{ matrix.data.os.target }}
