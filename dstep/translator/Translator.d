@@ -8,6 +8,7 @@ module dstep.translator.Translator;
 
 import std.algorithm;
 import std.file;
+import std.format;
 import std.array;
 import std.path;
 
@@ -244,20 +245,26 @@ class Translator
         const newSpelling = func.baseName.or(cursor.spelling);
         immutable auto name = translateIdentifier(newSpelling);
 
-        void implementation(Output output)
+        StructData.Body getImplementation(string mangledName)
         {
-            output.adaptiveSourceNode(translateFunction(context, cursor.func, name));
-            output.append(";");
+            return (Output output)
+            {
+                auto result = translateFunction(context, cursor.func, name,
+                    mangledName: mangledName);
+
+                output.adaptiveSourceNode(result);
+                output.append(";");
+            };
         }
 
         if (func.isInstanceMethod.or(false))
         {
             auto context = func.flatMap!(f => f.context).or("");
-            this.context.addAnnotatedMember(context, &implementation);
+            this.context.addAnnotatedMember(context, getImplementation(name));
         }
 
         else
-            implementation(output);
+            getImplementation(cursor.mangling)(output);
     }
 
     void declareRecordForTypedef(Output output, Cursor typedef_)
@@ -419,6 +426,7 @@ SourceNode translateFunction (
     Context context,
     FunctionCursor func,
     string name,
+    string mangledName,
     bool isStatic = false)
 {
     bool isVariadic(Context context, size_t numParams, FunctionCursor func)
@@ -452,7 +460,7 @@ SourceNode translateFunction (
         !context.options.singleLineFunctionSignatures;
     auto spacer = context.options.spaceAfterFunctionName ? " " : "";
 
-    return translateFunction(
+    auto result = translateFunction(
         resultType,
         name,
         params,
@@ -460,6 +468,9 @@ SourceNode translateFunction (
         isStatic ? "static " : "",
         spacer,
         multiline);
+
+    const prefix = format!`pragma(mangle, "%s") `(mangledName);
+    return mangledName == name ? result : result.prefixWith(prefix);
 }
 
 package struct Parameter

@@ -43,6 +43,17 @@ struct Cursor
         return toD(clang_getCursorSpelling(cx));
     }
 
+    @property string mangling() const
+    {
+        const mangling = clang_Cursor_getMangling(cx).toD;
+
+        version (OSX)
+            return mangling.startsWith("_") ? mangling[1 .. $] : mangling;
+
+        else
+            return mangling;
+    }
+
     @property CXCursorKind kind () const
     {
         return clang_getCursorKind(cx);

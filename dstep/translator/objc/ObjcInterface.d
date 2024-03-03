@@ -121,7 +121,10 @@ private:
         {
             Output output = new Output();
 
-            output.adaptiveSourceNode(translateFunction(translator.context, func, name, classMethod));
+            auto result = translateFunction(translator.context, func, name,
+                mangledName: name, isStatic: classMethod);
+
+            output.adaptiveSourceNode(result);
             output.append(" ");
             writeSelector(output, func.spelling);
             output.append(";");

@@ -214,6 +214,6 @@ C",
 q"D
 extern (C):
 
-void bar ();
+pragma(mangle, "foo") void bar ();
 D", options);
 }
