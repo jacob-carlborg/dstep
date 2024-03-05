@@ -21,6 +21,7 @@ import std.range : chain, only;
 import clang.c.Index;
 import clang.Diagnostic;
 
+import dstep.core.Optional;
 import dstep.driver.Application;
 import dstep.translator.CommentIndex;
 import dstep.translator.Context;
@@ -147,6 +148,9 @@ string translate(TranslationUnit translationUnit, Options options)
     return translator.translateToString();
 }
 
+string[string] translateAnnotatedFiles(TranslationUnit translationUnit, Options options) =>
+    new Translator(translationUnit, options).translateAnnotatedDeclarations;
+
 class TranslateAssertError : AssertError
 {
     this (string message, string file, size_t line)
@@ -160,6 +164,7 @@ void assertTranslates(
     TranslationUnit translUnit,
     Options options,
     bool strict,
+    Optional!string annotatedFile = none,
     string file = __FILE__,
     size_t line = __LINE__)
 {
@@ -184,8 +189,14 @@ void assertTranslates(
     }
 
     options.printDiagnostics = false;
+    string translated;
 
-    auto translated = translate(translUnit, options);
+    if (annotatedFile.isPresent)
+        translated = translateAnnotatedFiles(translUnit, options)[annotatedFile.or("")];
+
+    else
+        translated = translate(translUnit, options);
+
     auto mismatch = mismatchRegionTranslated(translated, expected, 8, strict);
 
     if (mismatch)
@@ -216,7 +227,7 @@ void assertTranslates(
         options.inputFile = translUnit.spelling;
 
     options.language = Language.c;
-    assertTranslates(d, translUnit, options, strict, file, line);
+    assertTranslates(d, translUnit, options, strict, annotatedFile: none!string, file, line);
 }
 
 void assertTranslates(
@@ -232,7 +243,24 @@ void assertTranslates(
     if (options.inputFile.empty)
         options.inputFile = translUnit.spelling;
 
-    assertTranslates(d, translUnit, options, strict, file, line);
+    assertTranslates(d, translUnit, options, strict, annotatedFile: none!string, file, line);
+}
+
+void assertTranslatesAnnotated(
+    string c,
+    string d,
+    Options options,
+    string annotatedFile,
+    bool strict = false,
+    string file = __FILE__,
+    size_t line = __LINE__)
+{
+    auto translUnit = makeTranslationUnit(c);
+
+    if (options.inputFile.empty)
+        options.inputFile = translUnit.spelling;
+
+    assertTranslates(d, translUnit, options, strict, some("./" ~ annotatedFile), file, line);
 }
 
 string[] findExtraIncludePaths()

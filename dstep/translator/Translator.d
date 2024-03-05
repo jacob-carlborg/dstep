@@ -11,6 +11,8 @@ import std.file;
 import std.format;
 import std.array;
 import std.path;
+import std.range;
+import std.typecons;
 
 import clang.c.Index;
 import clang.Cursor;
@@ -132,6 +134,34 @@ class Translator
         return main.header ~ head.data ~ main.content;
     }
 
+    string[string] translateAnnotatedDeclarations()
+    {
+        translateCursors();
+
+        const directory = dirName(outputFile);
+
+        alias createOutput = ad => tuple(ad.declaration.get, new Output);
+        alias writeToOutput = (declaration, output) => declaration.write(output);
+
+        alias generateFilename = declaration =>
+            buildPath(directory, declaration.name) ~ ".d";
+
+        alias toFilename = (declaration, output ) =>
+            tuple(generateFilename(declaration), output);
+
+        return context
+            .annotatedDeclarations
+            .byValue
+            .filter!(ad => ad.declaration.isPresent)
+            .tee!(ad => ad.addMembersToDeclaration(), No.pipeOnPop)
+            .map!createOutput
+            .cache
+            .tee!(t => writeToOutput(t.expand), No.pipeOnPop)
+            .map!(t => toFilename(t.expand))
+            .map!(t => tuple(t[0], t[1].data))
+            .assocArray;
+    }
+
     void translateInGlobalScope(
         Output output,
         Cursor cursor,
@@ -245,26 +275,46 @@ class Translator
         const newSpelling = func.baseName.or(cursor.spelling);
         immutable auto name = translateIdentifier(newSpelling);
 
-        StructData.Body getImplementation(string mangledName)
-        {
-            return (Output output)
-            {
-                auto result = translateFunction(context, cursor.func, name,
-                    mangledName: mangledName);
-
-                output.adaptiveSourceNode(result);
-                output.append(";");
-            };
-        }
-
         if (func.isInstanceMethod.or(false))
         {
             auto context = func.flatMap!(f => f.context).or("");
-            this.context.addAnnotatedMember(context, getImplementation(name));
+
+            this.context.addAnnotatedMember(context, (Output output) {
+                const declName = "__" ~ name;
+
+                auto wrapperResult = translateFunction(this.context, cursor.func,
+                    name,
+                    mangledName: name,
+                    apiNotesFunction: func
+                );
+
+                assert(cursor.func.parameters.length > 0,
+                    "there needs to be at least one parameter for instance methods");
+                const firstParamType = cursor.func.parameters.first.type;
+                const thisArg = firstParamType.isPointer ? "&this" : "this";
+
+                output.subscopeStrong(wrapperResult.extent, wrapperResult.makeString) in {
+                    output.singleLine("return %s(%s, __traits(parameters));", declName, thisArg);
+                };
+
+                auto declarationResult = translateFunction(this.context, cursor.func,
+                    declName,
+                    mangledName: cursor.mangling);
+
+                output.singleLine("extern (C) private static");
+                output.adaptiveSourceNode(declarationResult);
+                output.append(";");
+            });
         }
 
         else
-            getImplementation(cursor.mangling)(output);
+        {
+            auto result = translateFunction(context, cursor.func, name,
+                mangledName: cursor.mangling);
+
+            output.adaptiveSourceNode(result);
+            output.append(";");
+        }
     }
 
     void declareRecordForTypedef(Output output, Cursor typedef_)
@@ -404,21 +454,8 @@ private:
 
     void writeAnnotatedDeclarations()
     {
-        const directory = dirName(outputFile);
-        auto declarations = context
-            .annotatedDeclarations
-            .byValue
-            .filter!(d => d.declaration.isPresent);
-
-        foreach (declaration; declarations)
-        {
-            declaration.addMembersToDeclaration();
-            auto output = new Output;
-            declaration.declaration.write(output);
-
-            const outputFile = buildPath(directory, declaration.name) ~ ".d";
-            write(outputFile, output.content);
-        }
+        foreach (filename, data; translateAnnotatedDeclarations)
+            write(filename, data);
     }
 }
 
@@ -427,7 +464,8 @@ SourceNode translateFunction (
     FunctionCursor func,
     string name,
     string mangledName,
-    bool isStatic = false)
+    bool isStatic = false,
+    Optional!Function apiNotesFunction = none)
 {
     bool isVariadic(Context context, size_t numParams, FunctionCursor func)
     {
@@ -467,7 +505,8 @@ SourceNode translateFunction (
         isVariadic(context, params.length, func),
         isStatic ? "static " : "",
         spacer,
-        multiline);
+        multiline,
+        apiNotesFunction);
 
     const prefix = format!`pragma(mangle, "%s") `(mangledName);
     return mangledName == name ? result : result.prefixWith(prefix);
@@ -487,14 +526,17 @@ package SourceNode translateFunction (
     bool variadic,
     string prefix = "",
     string spacer = " ",
-    bool multiline = false)
+    bool multiline = false,
+    Optional!Function apiNotesFunction = none)
 {
     import std.format : format;
 
     string[] params;
     params.reserve(parameters.length);
 
-    foreach (param ; parameters)
+    const parameterStart = apiNotesFunction.isInstanceMethod.or(false) ? 1 : 0;
+
+    foreach (param ; parameters[parameterStart .. $])
     {
         string p;
 

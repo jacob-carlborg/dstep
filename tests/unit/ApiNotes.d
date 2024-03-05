@@ -197,7 +197,7 @@ YAML";
     }
 }
 
-unittest
+@"renaming free function" unittest
 {
     auto options = Options(apiNotes:
 q"YAML
@@ -216,4 +216,67 @@ extern (C):
 
 pragma(mangle, "foo") void bar ();
 D", options);
+}
+
+@"free function to instance method"
+{
+    @"when the first parameter is not a pointer" unittest
+    {
+        auto options = Options(apiNotes:
+q"YAML
+Functions:
+  - Name: foo
+    DName: Bar.foo(this:a:)
+YAML"
+);
+
+        assertTranslatesAnnotated(
+q"C
+struct Bar {};
+
+void foo(struct Bar bar, int a);
+C",
+q"D
+struct Bar
+{
+    void foo (int a)
+    {
+        return __foo(this, __traits(parameters));
+    }
+
+    extern (C) private static
+    pragma(mangle, "foo") void __foo (Bar bar, int a);
+}
+D", options, annotatedFile: "Bar.d");
+    }
+
+    @"when the first parameter is pointer" unittest
+    {
+        auto options = Options(apiNotes:
+q"YAML
+Functions:
+  - Name: foo
+    DName: Bar.foo(this:a:)
+YAML"
+);
+
+        assertTranslatesAnnotated(
+q"C
+struct Bar {};
+
+void foo(struct Bar* bar, int a);
+C",
+q"D
+struct Bar
+{
+    void foo (int a)
+    {
+        return __foo(&this, __traits(parameters));
+    }
+
+    extern (C) private static
+    pragma(mangle, "foo") void __foo (Bar* bar, int a);
+}
+D", options, annotatedFile: "Bar.d");
+    }
 }
