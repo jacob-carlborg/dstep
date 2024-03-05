@@ -32,7 +32,7 @@ T memoize(T)(ref Optional!T cache, scope T delegate() operation)
 template flatMap(func...)
 if (func.length >= 1)
 {
-    import std.range : isInputRange;
+    import std.range : isInputRange, tee;
     import std.traits : Unqual;
     import std.algorithm : cache, map, joiner;
 

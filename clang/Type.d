@@ -149,7 +149,7 @@ struct Type
         return isObjCIdType || isObjCClassType || isObjCSelType;
     }
 
-    @property bool isPointer ()
+    @property bool isPointer () const
     {
         return kind == CXTypeKind.pointer;
     }
