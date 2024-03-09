@@ -244,8 +244,8 @@ struct Bar
         return __foo(this, __traits(parameters));
     }
 
-    extern (C) private static
-    pragma(mangle, "foo") void __foo (Bar bar, int a);
+    extern (C) private static pragma(mangle, "foo")
+    void __foo (Bar bar, int a);
 }
 D", options, annotatedFile: "Bar.d");
     }
@@ -274,8 +274,8 @@ struct Bar
         return __foo(&this, __traits(parameters));
     }
 
-    extern (C) private static
-    pragma(mangle, "foo") void __foo (Bar* bar, int a);
+    extern (C) private static pragma(mangle, "foo")
+    void __foo (Bar* bar, int a);
 }
 D", options, annotatedFile: "Bar.d");
     }

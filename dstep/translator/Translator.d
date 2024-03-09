@@ -301,12 +301,12 @@ class Translator
                 auto function_ = Function(
                     cursor: cursor.func,
                     name: declName,
-                    mangledName: cursor.mangling.some
+                    mangledName: none!string, // handle below
                 );
 
                 auto declarationResult = translateFunction(this.context, function_);
 
-                output.singleLine("extern (C) private static");
+                output.singleLine(`extern (C) private static pragma(mangle, "%s")`, cursor.mangling);
                 output.adaptiveSourceNode(declarationResult);
                 output.append(";");
             });
