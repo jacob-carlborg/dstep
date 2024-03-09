@@ -136,8 +136,6 @@ class Translator
 
     string[string] translateAnnotatedDeclarations()
     {
-        translateCursors();
-
         const directory = dirName(outputFile);
 
         alias createOutput = ad => tuple(ad.declaration.get, new Output);
@@ -274,6 +272,7 @@ class Translator
         auto func = apiNotes.lookupFunction(cursor.spelling);
         const newSpelling = func.baseName.or(cursor.spelling);
         immutable auto name = translateIdentifier(newSpelling);
+        const mangledName = cursor.mangling == name ? none!string : cursor.mangling.some;
 
         if (func.isInstanceMethod.or(false))
         {
@@ -282,11 +281,13 @@ class Translator
             this.context.addAnnotatedMember(context, (Output output) {
                 const declName = "__" ~ name;
 
-                auto wrapperResult = translateFunction(this.context, cursor.func,
-                    name,
-                    mangledName: name,
+                auto wrapperFunction = Function(
+                    cursor: cursor.func,
+                    name: name,
                     apiNotesFunction: func
                 );
+
+                auto wrapperResult = translateFunction(this.context, wrapperFunction);
 
                 assert(cursor.func.parameters.length > 0,
                     "there needs to be at least one parameter for instance methods");
@@ -297,9 +298,13 @@ class Translator
                     output.singleLine("return %s(%s, __traits(parameters));", declName, thisArg);
                 };
 
-                auto declarationResult = translateFunction(this.context, cursor.func,
-                    declName,
-                    mangledName: cursor.mangling);
+                auto function_ = Function(
+                    cursor: cursor.func,
+                    name: declName,
+                    mangledName: cursor.mangling.some
+                );
+
+                auto declarationResult = translateFunction(this.context, function_);
 
                 output.singleLine("extern (C) private static");
                 output.adaptiveSourceNode(declarationResult);
@@ -309,9 +314,13 @@ class Translator
 
         else
         {
-            auto result = translateFunction(context, cursor.func, name,
-                mangledName: cursor.mangling);
+            auto function_ = Function(
+                cursor: cursor.func,
+                name: name,
+                mangledName: mangledName
+            );
 
+            auto result = translateFunction(context, function_);
             output.adaptiveSourceNode(result);
             output.append(";");
         }
@@ -461,15 +470,11 @@ private:
 
 SourceNode translateFunction (
     Context context,
-    FunctionCursor func,
-    string name,
-    string mangledName,
-    bool isStatic = false,
-    Optional!Function apiNotesFunction = none)
+    Function func)
 {
-    bool isVariadic(Context context, size_t numParams, FunctionCursor func)
+    bool isVariadic(Context context, size_t numParams, FunctionCursor cursor)
     {
-        if (func.isVariadic)
+        if (cursor.isVariadic)
         {
             if (context.options.zeroParamIsVararg)
                 return true;
@@ -484,32 +489,43 @@ SourceNode translateFunction (
 
     Parameter[] params;
 
-    if (func.type.isValid) // This will be invalid for Objective-C methods
-        params.reserve(func.type.func.arguments.length);
+    if (func.cursor.type.isValid) // This will be invalid for Objective-C methods
+        params.reserve(func.cursor.type.func.arguments.length);
 
-    foreach (param ; func.parameters)
+    foreach (param ; func.cursor.parameters)
     {
         auto type = translateType(context, param);
         params ~= Parameter(type, param.spelling);
     }
 
-    auto resultType = translateType(context, func, func.resultType);
-    auto multiline = func.extent.isMultiline &&
+    const parameterStart = func.apiNotesFunction.isInstanceMethod.or(false) ? 1 : 0;
+    params = params[parameterStart .. $];
+
+    auto resultType = translateType(context, func.cursor, func.cursor.resultType);
+    auto multiline = func.cursor.extent.isMultiline &&
         !context.options.singleLineFunctionSignatures;
     auto spacer = context.options.spaceAfterFunctionName ? " " : "";
 
-    auto result = translateFunction(
-        resultType,
-        name,
-        params,
-        isVariadic(context, params.length, func),
-        isStatic ? "static " : "",
-        spacer,
-        multiline,
-        apiNotesFunction);
+    const mangling = func
+        .mangledName
+        .map!(name => format!`pragma(mangle, "%s")`(name))
+        .or("");
 
-    const prefix = format!`pragma(mangle, "%s") `(mangledName);
-    return mangledName == name ? result : result.prefixWith(prefix);
+    const prefixes = [
+        func.isStatic ? "static" : "",
+        mangling
+    ].filter!(e => e.length > 0).array;
+
+    const prefix = prefixes.join(" ");
+
+    return translateFunction(
+        resultType,
+        func.name,
+        params,
+        isVariadic(context, params.length, func.cursor),
+        prefix.length > 0 ? prefix ~ ' ' : prefix,
+        spacer,
+        multiline);
 }
 
 package struct Parameter
@@ -526,17 +542,14 @@ package SourceNode translateFunction (
     bool variadic,
     string prefix = "",
     string spacer = " ",
-    bool multiline = false,
-    Optional!Function apiNotesFunction = none)
+    bool multiline = false)
 {
     import std.format : format;
 
     string[] params;
     params.reserve(parameters.length);
 
-    const parameterStart = apiNotesFunction.isInstanceMethod.or(false) ? 1 : 0;
-
-    foreach (param ; parameters[parameterStart .. $])
+    foreach (param ; parameters)
     {
         string p;
 
@@ -761,4 +774,13 @@ string renameDKeyword (string str)
 string translateIdentifier (string str)
 {
     return isDKeyword(str) ? renameDKeyword(str) : str;
+}
+
+struct Function
+{
+    FunctionCursor cursor;
+    string name;
+    Optional!string mangledName;
+    bool isStatic;
+    Optional!(dstep.translator.ApiNotes.Function) apiNotesFunction;
 }
