@@ -11,6 +11,7 @@
 * [Issue 288](https://github.com/jacob-carlborg/dstep/issues/288): Missing `__u/int128` support
 * Add support for renaming global functions using API notes
 * Add support for converting free functions to instance methods using API notes
+* Add support for converting free functions to static methods using API notes
 
 ### Bugs Fixed
 

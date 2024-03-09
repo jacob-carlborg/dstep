@@ -312,6 +312,26 @@ class Translator
             });
         }
 
+        else if (func.isStaticMethod.or(false))
+        {
+            auto context = func.flatMap!(f => f.context).or("");
+
+            this.context.addAnnotatedMember(context, (Output output) {
+                auto function_ = Function(
+                    cursor: cursor.func,
+                    name: name,
+                    mangledName: none!string, // handle below
+                    apiNotesFunction: func,
+                    isStatic: true
+                );
+
+                auto result = translateFunction(this.context, function_);
+                output.singleLine(`extern (C) pragma(mangle, "%s")`, cursor.mangling);
+                output.adaptiveSourceNode(result);
+                output.append(";");
+            });
+        }
+
         else
         {
             auto function_ = Function(
