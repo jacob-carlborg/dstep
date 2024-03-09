@@ -280,3 +280,28 @@ struct Bar
 D", options, annotatedFile: "Bar.d");
     }
 }
+
+@"free function to static method" unittest
+{
+    auto options = Options(apiNotes:
+q"YAML
+Functions:
+  - Name: foo
+    DName: Bar.foo(a:)
+YAML"
+);
+
+    assertTranslatesAnnotated(
+q"C
+struct Bar {};
+
+void foo(int a);
+C",
+q"D
+struct Bar
+{
+    extern (C) pragma(mangle, "foo")
+    static void foo (int a);
+}
+D", options, annotatedFile: "Bar.d");
+}
