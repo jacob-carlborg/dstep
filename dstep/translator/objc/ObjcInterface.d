@@ -121,8 +121,13 @@ private:
         {
             Output output = new Output();
 
-            auto result = translateFunction(translator.context, func, name,
-                mangledName: name, isStatic: classMethod);
+            auto function_ = Function(
+                cursor: func,
+                name: name,
+                isStatic: classMethod
+            );
+
+            auto result = translateFunction(translator.context, function_);
 
             output.adaptiveSourceNode(result);
             output.append(" ");

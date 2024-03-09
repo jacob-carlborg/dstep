@@ -148,8 +148,13 @@ string translate(TranslationUnit translationUnit, Options options)
     return translator.translateToString();
 }
 
-string[string] translateAnnotatedFiles(TranslationUnit translationUnit, Options options) =>
-    new Translator(translationUnit, options).translateAnnotatedDeclarations;
+string[string] translateAnnotatedFiles(TranslationUnit translationUnit, Options options)
+{
+    auto translator = new Translator(translationUnit, options);
+    translator.translateToString();
+
+    return translator.translateAnnotatedDeclarations();
+}
 
 class TranslateAssertError : AssertError
 {
