@@ -121,6 +121,41 @@ YAML";
     assert(actual == expected, format!"%s != %s"(actual, expected));
 }
 
+@"Function.isConstructor"
+{
+    @"when the D name contains 'init'" unittest
+    {
+        auto rawFunc = RawFunction(name: "CreateFoo", dName: "Foo.init()");
+        auto func = Function.parse(rawFunc);
+
+        assert(func.isConstructor);
+    }
+
+    @"when the D name contains 'this'" unittest
+    {
+        auto rawFunc = RawFunction(name: "CreateFoo", dName: "Foo.this()");
+        auto func = Function.parse(rawFunc);
+
+        assert(func.isConstructor);
+    }
+
+    @"when the D name does not contain 'init or 'this'" unittest
+    {
+        auto rawFunc = RawFunction(name: "CreateFoo", dName: "Foo.bar()");
+        auto func = Function.parse(rawFunc);
+
+        assert(!func.isConstructor);
+    }
+
+    @"when the D name contains 'init' and the first argument is 'self' " unittest
+    {
+        auto rawFunc = RawFunction(name: "CreateFoo", dName: "Foo.init(self)");
+        auto func = Function.parse(rawFunc);
+
+        assert(!func.isConstructor);
+    }
+}
+
 @"Function.isInstanceMethod"
 {
     @"when the D name contains a context"
@@ -304,4 +339,34 @@ struct Bar
     static void foo (int a);
 }
 D", options, annotatedFile: "Bar.d");
+}
+
+@"free function to constructor" unittest
+{
+    auto options = Options(apiNotes:
+q"YAML
+Functions:
+  - Name: CGPathCreateMutable
+    DName: CGMutablePath.init()
+YAML"
+);
+
+    assertTranslatesAnnotated(
+q"C
+struct CGMutablePath {};
+
+struct CGMutablePath CGPathCreateMutable(void);
+C",
+q"D
+struct CGMutablePath
+{
+    static CGMutablePath opCall ()
+    {
+        return CGPathCreateMutable(__traits(parameters));
+    }
+
+    extern (C) private static pragma(mangle, "CGPathCreateMutable")
+    CGMutablePath CGPathCreateMutable ();
+}
+D", options, annotatedFile: "CGMutablePath.d");
 }

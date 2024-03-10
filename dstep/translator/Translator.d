@@ -274,6 +274,21 @@ class Translator
         immutable auto name = translateIdentifier(newSpelling);
         const mangledName = cursor.mangling == name ? none!string : cursor.mangling.some;
 
+        void addBindingFunction(Output output, string declName)
+        {
+            auto function_ = Function(
+                cursor: cursor.func,
+                name: declName,
+                mangledName: none!string, // handle below
+            );
+
+            auto declarationResult = translateFunction(this.context, function_);
+
+            output.singleLine(`extern (C) private static pragma(mangle, "%s")`, cursor.mangling);
+            output.adaptiveSourceNode(declarationResult);
+            output.append(";");
+        }
+
         if (func.isInstanceMethod.or(false))
         {
             auto context = func.flatMap!(f => f.context).or("");
@@ -298,17 +313,30 @@ class Translator
                     output.singleLine("return %s(%s, __traits(parameters));", declName, thisArg);
                 };
 
-                auto function_ = Function(
+                addBindingFunction(output, declName);
+            });
+        }
+
+        else if (func.isConstructor.or(false))
+        {
+            auto context = func.flatMap!(f => f.context).or("");
+
+            this.context.addAnnotatedMember(context, (Output output) {
+                auto wrapperFunction = Function(
                     cursor: cursor.func,
-                    name: declName,
-                    mangledName: none!string, // handle below
+                    name: "opCall",
+                    apiNotesFunction: func,
+                    isStatic: true
                 );
 
-                auto declarationResult = translateFunction(this.context, function_);
+                auto wrapperResult = translateFunction(this.context, wrapperFunction);
+                const translatedName = translateIdentifier(cursor.spelling);
 
-                output.singleLine(`extern (C) private static pragma(mangle, "%s")`, cursor.mangling);
-                output.adaptiveSourceNode(declarationResult);
-                output.append(";");
+                output.subscopeStrong(wrapperResult.extent, wrapperResult.makeString) in {
+                    output.singleLine("return %s(__traits(parameters));", translatedName);
+                };
+
+                addBindingFunction(output, translatedName);
             });
         }
 

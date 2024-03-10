@@ -72,6 +72,7 @@ struct Function
 
     mixin ToString;
 
+    bool isConstructor() => isStaticMethod && (baseName == "init" || baseName == "this");
     bool isStaticMethod() => context.isPresent && !isInstanceMethod;
     bool isMethod() => isStaticMethod || isInstanceMethod;
 

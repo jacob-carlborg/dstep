@@ -12,6 +12,7 @@
 * Add support for renaming global functions using API notes
 * Add support for converting free functions to instance methods using API notes
 * Add support for converting free functions to static methods using API notes
+* Add support for converting free functions to constructors using API notes
 
 ### Bugs Fixed
 
