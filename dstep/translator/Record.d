@@ -213,7 +213,7 @@ void translateRecordDef(
     };
 
     const isAnnotatedStruct = spelling.length > 0 && apiNotes.contextExists(spelling);
-    auto structData = new StructData(spelling, type, cursor, body);
+    auto structData = new StructData(spelling, type, cursor.extent, body);
 
     if (isAnnotatedStruct)
         context.addAnnotatedDeclaration(structData);

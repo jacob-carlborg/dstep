@@ -18,6 +18,7 @@ import clang.c.Index;
 import clang.Cursor;
 import clang.File;
 import clang.Index;
+import clang.SourceRange;
 import clang.TranslationUnit;
 import clang.Type;
 import clang.Util;
@@ -136,6 +137,8 @@ class Translator
 
     string[string] translateAnnotatedDeclarations()
     {
+        synthesisAnnotatedDeclarations();
+
         const directory = dirName(outputFile);
 
         alias createOutput = ad => tuple(ad.declaration.get, new Output);
@@ -320,6 +323,24 @@ class Translator
         else if (func.isConstructor.or(false))
         {
             auto context = func.flatMap!(f => f.context).or("");
+            auto previousOriginalType = this
+                .context
+                .getAnnotatedCursorFor(context)
+                .func.resultType;
+
+            if (previousOriginalType.isPresent &&
+                !previousOriginalType.get.isEqualTo(cursor.func.resultType))
+            {
+                const message = format!("Already specified a constructor with " ~
+                    "a different type. Previous type: %s. New type: %s")(
+                        previousOriginalType.get.spelling,
+                        cursor.func.resultType.spelling
+                );
+
+                throw new DStepException(message);
+            }
+
+            this.context.setAnnotatedCursorFor(context, cursor);
 
             this.context.addAnnotatedMember(context, (Output output) {
                 auto wrapperFunction = Function(
@@ -514,6 +535,31 @@ private:
         foreach (filename, data; translateAnnotatedDeclarations)
             write(filename, data);
     }
+
+    void synthesisAnnotatedDeclarations()
+    {
+        auto decls = context
+            .annotatedDeclarations
+            .byValue
+            .filter!(e => e.declaration.empty);
+
+        foreach (ad; decls)
+        {
+            assert(ad.cursor.isPresent);
+            auto cursor = ad.cursor.get;
+            auto type = translateType(context, cursor, cursor.func.resultType);
+
+            StructData.Body body = (output) {
+                translateVariable(output, type,
+                    identifier: "rawValue", prefix: "private ");
+            };
+
+            auto extent = SourceRange(clang_getNullRange());
+            context.addAnnotatedDeclaration(
+                new StructData(ad.name, "struct", extent, body)
+            );
+        }
+    }
 }
 
 SourceNode translateFunction (
@@ -639,10 +685,16 @@ void translateVariable (Output output, Context context, Cursor cursor, string pr
     if (!context.alreadyDefined(cursor.canonical))
     {
         auto type = translateType(context, cursor, cursor.type);
-        auto identifier = translateIdentifier(cursor.spelling);
-        output.adaptiveSourceNode(type.wrapWith(prefix, " " ~ identifier ~ ";"));
+        translateVariable(output, type, cursor.spelling, prefix);
         context.markAsDefined(cursor.canonical);
     }
+}
+
+private void translateVariable(Output output, SourceNode typeSourceNode,
+    string identifier, string prefix = "")
+{
+    auto newIdentifier = translateIdentifier(identifier);
+    output.adaptiveSourceNode(typeSourceNode.wrapWith(prefix, " " ~ newIdentifier ~ ";"));
 }
 
 void handleInclude (Context context, Type type)

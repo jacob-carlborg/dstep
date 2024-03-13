@@ -333,6 +333,19 @@ class Context
         _annotatedDeclarations.require(context, new AnnotatedDeclaration(context))
             .addMember(member);
     }
+
+    void setAnnotatedCursorFor(string name, Cursor cursor)
+    {
+        _annotatedDeclarations.require(name, new AnnotatedDeclaration(name))
+            .cursor = cursor;
+    }
+
+    Optional!Cursor getAnnotatedCursorFor(string name)
+    {
+        return _annotatedDeclarations
+            .get(name, new AnnotatedDeclaration(name))
+            .cursor;
+    }
 }
 
 string[] cursorScope(Context context, Cursor cursor)
@@ -487,6 +500,7 @@ class AnnotatedDeclaration
 {
     immutable string name;
     Optional!StructData declaration;
+    Optional!Cursor cursor;
 
     private StructData.Body[] _members;
 

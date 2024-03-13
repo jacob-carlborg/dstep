@@ -1229,15 +1229,15 @@ class StructData
     string name;
     private string type;
     private Body body;
-    private Cursor cursor;
+    private SourceRange extent;
     private Body[] declarations;
 
-    this(string name, string type, Cursor cursor, Body body)
+    this(string name, string type, SourceRange extent, Body body)
     in(body !is null)
     {
         this.name = name;
         this.type = type;
-        this.cursor = cursor;
+        this.extent = extent;
         this.body = body;
     }
 
@@ -1246,7 +1246,7 @@ class StructData
         auto output = to;
         const spellingCode = name == "" ? name : " " ~ name;
 
-        output.subscopeStrong(cursor.extent, "%s%s", type, spellingCode) in {
+        output.subscopeStrong(extent, "%s%s", type, spellingCode) in {
             body(output);
 
             foreach (decl; declarations)

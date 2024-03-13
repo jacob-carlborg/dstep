@@ -258,6 +258,8 @@ struct Type
         import std.format : format;
         return format("Type(kind = %s, spelling = %s)", kind, spelling);
     }
+
+    bool isEqualTo(Type other) => clang_equalTypes(cx, other.cx) != 0;
 }
 
 struct FuncType
