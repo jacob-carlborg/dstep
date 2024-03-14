@@ -29,6 +29,7 @@ import dstep.core.Optional;
 import dstep.Configuration;
 
 import dstep.translator.ApiNotes;
+import dstep.translator.ApiNotesTranslator;
 import dstep.translator.Context;
 import dstep.translator.Declaration;
 import dstep.translator.Enum;
@@ -64,6 +65,7 @@ class Translator
         Language language;
         string[string] deferredDeclarations;
         ApiNotes apiNotes;
+        ApiNotesTranslator apiNotesTranslator;
     }
 
     TypedMacroDefinition[string] typedMacroDefinitions;
@@ -79,6 +81,7 @@ class Translator
         inputFile = translationUnit.file(inputFilename);
         context = new Context(translationUnit, options, this);
         apiNotes = ApiNotes.parse(options.apiNotes);
+        apiNotesTranslator = ApiNotesTranslator(context);
     }
 
     void translate ()
@@ -277,109 +280,14 @@ class Translator
         immutable auto name = translateIdentifier(newSpelling);
         const mangledName = cursor.mangling == name ? none!string : cursor.mangling.some;
 
-        void addBindingFunction(Output output, string declName)
-        {
-            auto function_ = Function(
-                cursor: cursor.func,
-                name: declName,
-                mangledName: none!string, // handle below
-            );
-
-            auto declarationResult = translateFunction(this.context, function_);
-
-            output.singleLine(`extern (C) private static pragma(mangle, "%s")`, cursor.mangling);
-            output.adaptiveSourceNode(declarationResult);
-            output.append(";");
-        }
-
         if (func.isInstanceMethod.or(false))
-        {
-            auto context = func.flatMap!(f => f.context).or("");
-
-            this.context.addAnnotatedMember(context, (Output output) {
-                const declName = "__" ~ name;
-
-                auto wrapperFunction = Function(
-                    cursor: cursor.func,
-                    name: name,
-                    apiNotesFunction: func
-                );
-
-                auto wrapperResult = translateFunction(this.context, wrapperFunction);
-
-                assert(cursor.func.parameters.length > 0,
-                    "there needs to be at least one parameter for instance methods");
-                const firstParamType = cursor.func.parameters.first.type;
-                const thisArg = firstParamType.isPointer ? "&this" : "this";
-
-                output.subscopeStrong(wrapperResult.extent, wrapperResult.makeString) in {
-                    output.singleLine("return %s(%s, __traits(parameters));", declName, thisArg);
-                };
-
-                addBindingFunction(output, declName);
-            });
-        }
+            func.each!(f => apiNotesTranslator.freeFunctionToInstanceMethod(cursor, name, f));
 
         else if (func.isConstructor.or(false))
-        {
-            auto context = func.flatMap!(f => f.context).or("");
-            auto previousOriginalType = this
-                .context
-                .getAnnotatedCursorFor(context)
-                .func.resultType;
-
-            if (previousOriginalType.isPresent &&
-                !previousOriginalType.get.isEqualTo(cursor.func.resultType))
-            {
-                const message = format!("Already specified a constructor with " ~
-                    "a different type. Previous type: %s. New type: %s")(
-                        previousOriginalType.get.spelling,
-                        cursor.func.resultType.spelling
-                );
-
-                throw new DStepException(message);
-            }
-
-            this.context.setAnnotatedCursorFor(context, cursor);
-
-            this.context.addAnnotatedMember(context, (Output output) {
-                auto wrapperFunction = Function(
-                    cursor: cursor.func,
-                    name: "opCall",
-                    apiNotesFunction: func,
-                    isStatic: true
-                );
-
-                auto wrapperResult = translateFunction(this.context, wrapperFunction);
-                const translatedName = translateIdentifier(cursor.spelling);
-
-                output.subscopeStrong(wrapperResult.extent, wrapperResult.makeString) in {
-                    output.singleLine("return %s(__traits(parameters));", translatedName);
-                };
-
-                addBindingFunction(output, translatedName);
-            });
-        }
+            func.each!(f => apiNotesTranslator.freeFunctionToConstructor(cursor, f));
 
         else if (func.isStaticMethod.or(false))
-        {
-            auto context = func.flatMap!(f => f.context).or("");
-
-            this.context.addAnnotatedMember(context, (Output output) {
-                auto function_ = Function(
-                    cursor: cursor.func,
-                    name: name,
-                    mangledName: none!string, // handle below
-                    apiNotesFunction: func,
-                    isStatic: true
-                );
-
-                auto result = translateFunction(this.context, function_);
-                output.singleLine(`extern (C) pragma(mangle, "%s")`, cursor.mangling);
-                output.adaptiveSourceNode(result);
-                output.append(";");
-            });
-        }
+            func.each!(f => apiNotesTranslator.freeFunctionToStaticMethod(cursor, name, f));
 
         else
         {
