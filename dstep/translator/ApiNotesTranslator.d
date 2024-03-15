@@ -40,7 +40,7 @@ struct ApiNotesTranslator
     void freeFunctionToInstanceMethod(Cursor cursor, string name, Function func)
     {
         auto member = (Output output) {
-            const declName = "__" ~ name;
+            const originalName = "__" ~ name;
 
             auto wrapperFunction = dstep.translator.Translator.Function(
                 cursor: cursor.func,
@@ -56,10 +56,10 @@ struct ApiNotesTranslator
             const thisArg = firstParamType.isPointer ? "&this" : "this";
 
             output.subscopeStrong(wrapperResult.extent, wrapperResult.makeString) in {
-                output.singleLine("return %s(%s, __traits(parameters));", declName, thisArg);
+                output.singleLine("return %s(%s, __traits(parameters));", originalName, thisArg);
             };
 
-            addOriginalFunction(cursor, output, declName);
+            addOriginalFunction(cursor, output, originalName);
         };
 
         addMember(member, for_: func.context.or(""));
