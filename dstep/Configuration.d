@@ -170,6 +170,7 @@ template makeGetOptArgs(alias config)
         alias member = Alias!(__traits(getMember, config, spelling));
 
         static if (
+            __traits(getOverloads, config, __traits(identifier, member)).length == 0 &&
             __traits(compiles, &__traits(getMember, config, spelling)) &&
             __traits(getAttributes, member).length == 2)
         {
