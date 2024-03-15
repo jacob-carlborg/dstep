@@ -18,7 +18,6 @@ import clang.c.Index;
 import clang.Cursor;
 import clang.File;
 import clang.Index;
-import clang.SourceRange;
 import clang.TranslationUnit;
 import clang.Type;
 import clang.Util;
@@ -141,7 +140,7 @@ class Translator
 
     string[string] translateAnnotatedDeclarations()
     {
-        synthesisAnnotatedDeclarations();
+        apiNotesTranslator.synthesisDeclarations();
 
         const directory = dirName(outputFile);
 
@@ -443,31 +442,6 @@ private:
     {
         foreach (filename, data; translateAnnotatedDeclarations)
             write(filename, data);
-    }
-
-    void synthesisAnnotatedDeclarations()
-    {
-        auto decls = apiNotesTranslator
-            .declarations
-            .byValue
-            .filter!(e => e.declaration.empty);
-
-        foreach (ad; decls)
-        {
-            assert(ad.cursor.isPresent);
-            auto cursor = ad.cursor.get;
-            auto type = translateType(context, cursor, cursor.func.resultType);
-
-            StructData.Body body = (output) {
-                translateVariable(output, type,
-                    identifier: "rawValue", prefix: "private ");
-            };
-
-            auto extent = SourceRange(clang_getNullRange());
-            apiNotesTranslator.addDeclaration(
-                new StructData(ad.name, "struct", extent, body)
-            );
-        }
     }
 }
 

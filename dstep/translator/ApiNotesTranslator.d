@@ -6,9 +6,12 @@
  */
 module dstep.translator.ApiNotesTranslator;
 
+import std.algorithm;
 import std.format;
 
+import clang.c.Index;
 import clang.Cursor;
+import clang.SourceRange;
 
 import dstep.core.Core;
 import dstep.core.Optional;
@@ -17,6 +20,7 @@ import dstep.translator.ApiNotes;
 import dstep.translator.Context;
 import dstep.translator.Output;
 import dstep.translator.Translator;
+import dstep.translator.Type;
 
 private alias Function = dstep.translator.ApiNotes.Function;
 
@@ -125,7 +129,28 @@ struct ApiNotesTranslator
         addMember(member, for_: func.context.or(""));
     }
 
+    void synthesisDeclarations()
+    {
+        foreach (ad; declarationsNeedingSynthesizing)
+        {
+            assert(ad.cursor.isPresent);
+            auto cursor = ad.cursor.get;
+            auto type = translateType(context, cursor, cursor.func.resultType);
+
+            StructData.Body body = (output) {
+                translateVariable(output, type,
+                    identifier: "rawValue", prefix: "private ");
+            };
+
+            auto extent = SourceRange(clang_getNullRange());
+            addDeclaration(new StructData(ad.name, "struct", extent, body));
+        }
+    }
+
 private:
+
+    auto declarationsNeedingSynthesizing() =>
+        declarations.byValue.filter!(e => e.declaration.empty);
 
     void addOriginalFunction(Cursor cursor, Output output, string declName)
     {
