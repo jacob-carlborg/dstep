@@ -67,7 +67,7 @@ struct ApiNotesTranslator
 
     void freeFunctionToConstructor(Cursor cursor, Function func)
     {
-        auto previousOriginalType = getCursorFor(func.context.or(""))
+        auto previousOriginalType = getCursor(for_: func.context.or(""))
             .func.resultType;
 
         if (previousOriginalType.isPresent &&
@@ -82,7 +82,7 @@ struct ApiNotesTranslator
             throw new DStepException(message);
         }
 
-        setCursorFor(func.context.or(""), cursor);
+        setCursor(cursor, for_: func.context.or(""));
 
         auto member = (Output output) {
             auto wrapperFunction = dstep.translator.Translator.Function(
@@ -149,14 +149,16 @@ private:
             .addMember(member);
     }
 
-    void setCursorFor(string name, Cursor cursor)
+    void setCursor(Cursor cursor, string for_)
     {
+        auto name = for_;
         declarations.require(name, new AnnotatedDeclaration(name))
             .cursor = cursor;
     }
 
-    Optional!Cursor getCursorFor(string name)
+    Optional!Cursor getCursor(string for_)
     {
+        auto name = for_;
         return declarations
             .get(name, new AnnotatedDeclaration(name))
             .cursor;
