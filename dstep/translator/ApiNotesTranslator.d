@@ -59,7 +59,7 @@ struct ApiNotesTranslator
                 output.singleLine("return %s(%s, __traits(parameters));", declName, thisArg);
             };
 
-            addBindingFunction(cursor, output, declName);
+            addOriginalFunction(cursor, output, declName);
         };
 
         addMember(member, for_: func.context.or(""));
@@ -99,7 +99,7 @@ struct ApiNotesTranslator
                 output.singleLine("return %s(__traits(parameters));", translatedName);
             };
 
-            addBindingFunction(cursor, output, translatedName);
+            addOriginalFunction(cursor, output, translatedName);
         };
 
         addMember(member, for_: func.context.or(""));
@@ -127,7 +127,7 @@ struct ApiNotesTranslator
 
 private:
 
-    void addBindingFunction(Cursor cursor, Output output, string declName)
+    void addOriginalFunction(Cursor cursor, Output output, string declName)
     {
         auto function_ = dstep.translator.Translator.Function(
             cursor: cursor.func,
