@@ -464,7 +464,7 @@ private:
             };
 
             auto extent = SourceRange(clang_getNullRange());
-            apiNotesTranslator.addAnnotatedDeclaration(
+            apiNotesTranslator.addDeclaration(
                 new StructData(ad.name, "struct", extent, body)
             );
         }

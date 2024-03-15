@@ -218,7 +218,7 @@ void translateRecordDef(
     auto structData = new StructData(spelling, type, cursor.extent, body);
 
     if (isAnnotatedStruct)
-        translator.apiNotesTranslator.addAnnotatedDeclaration(structData);
+        translator.apiNotesTranslator.addDeclaration(structData);
 
     else
         structData.write(to: output);
