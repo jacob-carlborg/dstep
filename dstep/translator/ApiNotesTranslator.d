@@ -23,15 +23,43 @@ private alias Function = dstep.translator.ApiNotes.Function;
 struct ApiNotesTranslator
 {
     private Context context;
+    private AnnotatedDeclaration[string] _annotatedDeclarations;
 
     this(Context context)
     {
         this.context = context;
     }
 
+    auto annotatedDeclarations() => _annotatedDeclarations;
+
+    void addAnnotatedDeclaration(StructData structData)
+    {
+        _annotatedDeclarations.require(structData.name, new AnnotatedDeclaration(structData.name)).
+            declaration = structData;
+    }
+
+    void addAnnotatedMember(string context, StructData.Body member)
+    {
+        _annotatedDeclarations.require(context, new AnnotatedDeclaration(context))
+            .addMember(member);
+    }
+
+    void setAnnotatedCursorFor(string name, Cursor cursor)
+    {
+        _annotatedDeclarations.require(name, new AnnotatedDeclaration(name))
+            .cursor = cursor;
+    }
+
+    Optional!Cursor getAnnotatedCursorFor(string name)
+    {
+        return _annotatedDeclarations
+            .get(name, new AnnotatedDeclaration(name))
+            .cursor;
+    }
+
     void freeFunctionToInstanceMethod(Cursor cursor, string name, Function func)
     {
-        context.addAnnotatedMember(func.context.or(""), (Output output) {
+        addAnnotatedMember(func.context.or(""), (Output output) {
             const declName = "__" ~ name;
 
             auto wrapperFunction = dstep.translator.Translator.Function(
@@ -57,8 +85,7 @@ struct ApiNotesTranslator
 
     void freeFunctionToConstructor(Cursor cursor, Function func)
     {
-        auto previousOriginalType = context
-            .getAnnotatedCursorFor(func.context.or(""))
+        auto previousOriginalType = getAnnotatedCursorFor(func.context.or(""))
             .func.resultType;
 
         if (previousOriginalType.isPresent &&
@@ -73,9 +100,9 @@ struct ApiNotesTranslator
             throw new DStepException(message);
         }
 
-        context.setAnnotatedCursorFor(func.context.or(""), cursor);
+        setAnnotatedCursorFor(func.context.or(""), cursor);
 
-        context.addAnnotatedMember(func.context.or(""), (Output output) {
+        addAnnotatedMember(func.context.or(""), (Output output) {
             auto wrapperFunction = dstep.translator.Translator.Function(
                 cursor: cursor.func,
                 name: "opCall",
@@ -96,7 +123,7 @@ struct ApiNotesTranslator
 
     void freeFunctionToStaticMethod(Cursor cursor, string name, Function func)
     {
-        context.addAnnotatedMember(func.context.or(""), (Output output) {
+        addAnnotatedMember(func.context.or(""), (Output output) {
             auto function_ = dstep.translator.Translator.Function(
                 cursor: cursor.func,
                 name: name,

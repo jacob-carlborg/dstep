@@ -55,6 +55,8 @@ class TranslationException : DStepException
 
 class Translator
 {
+    ApiNotesTranslator apiNotesTranslator;
+
     private
     {
         TranslationUnit translationUnit;
@@ -65,7 +67,6 @@ class Translator
         Language language;
         string[string] deferredDeclarations;
         ApiNotes apiNotes;
-        ApiNotesTranslator apiNotesTranslator;
     }
 
     TypedMacroDefinition[string] typedMacroDefinitions;
@@ -153,7 +154,7 @@ class Translator
         alias toFilename = (declaration, output ) =>
             tuple(generateFilename(declaration), output);
 
-        return context
+        return apiNotesTranslator
             .annotatedDeclarations
             .byValue
             .filter!(ad => ad.declaration.isPresent)
@@ -220,7 +221,7 @@ class Translator
                     break;
 
                 case structDecl:
-                    translateRecord(output, context, cursor, apiNotes);
+                    translateRecord(output, this, cursor, apiNotes);
                     break;
 
                 case enumDecl:
@@ -228,7 +229,7 @@ class Translator
                     break;
 
                 case unionDecl:
-                    translateRecord(output, context, cursor, apiNotes);
+                    translateRecord(output, this, cursor, apiNotes);
                     break;
 
                 case macroDefinition:
@@ -446,7 +447,7 @@ private:
 
     void synthesisAnnotatedDeclarations()
     {
-        auto decls = context
+        auto decls = apiNotesTranslator
             .annotatedDeclarations
             .byValue
             .filter!(e => e.declaration.empty);
@@ -463,7 +464,7 @@ private:
             };
 
             auto extent = SourceRange(clang_getNullRange());
-            context.addAnnotatedDeclaration(
+            apiNotesTranslator.addAnnotatedDeclaration(
                 new StructData(ad.name, "struct", extent, body)
             );
         }

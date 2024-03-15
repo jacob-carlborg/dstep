@@ -42,7 +42,6 @@ class Context
     private Cursor[string] typeNames_;
     private Cursor[string] constNames_;
     private string[Cursor] translatedSpellings;
-    private AnnotatedDeclaration[string] _annotatedDeclarations;
 
     Options options;
 
@@ -318,33 +317,6 @@ class Context
     public Output globalScope()
     {
         return globalScope_;
-    }
-
-    auto annotatedDeclarations() => _annotatedDeclarations;
-
-    void addAnnotatedDeclaration(StructData structData)
-    {
-        _annotatedDeclarations.require(structData.name, new AnnotatedDeclaration(structData.name)).
-            declaration = structData;
-    }
-
-    void addAnnotatedMember(string context, StructData.Body member)
-    {
-        _annotatedDeclarations.require(context, new AnnotatedDeclaration(context))
-            .addMember(member);
-    }
-
-    void setAnnotatedCursorFor(string name, Cursor cursor)
-    {
-        _annotatedDeclarations.require(name, new AnnotatedDeclaration(name))
-            .cursor = cursor;
-    }
-
-    Optional!Cursor getAnnotatedCursorFor(string name)
-    {
-        return _annotatedDeclarations
-            .get(name, new AnnotatedDeclaration(name))
-            .cursor;
     }
 }
 
