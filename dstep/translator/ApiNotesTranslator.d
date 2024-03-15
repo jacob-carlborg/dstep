@@ -37,25 +37,6 @@ struct ApiNotesTranslator
             declaration = structData;
     }
 
-    void addMember(string context, StructData.Body member)
-    {
-        declarations.require(context, new AnnotatedDeclaration(context))
-            .addMember(member);
-    }
-
-    void setCursorFor(string name, Cursor cursor)
-    {
-        declarations.require(name, new AnnotatedDeclaration(name))
-            .cursor = cursor;
-    }
-
-    Optional!Cursor getCursorFor(string name)
-    {
-        return declarations
-            .get(name, new AnnotatedDeclaration(name))
-            .cursor;
-    }
-
     void freeFunctionToInstanceMethod(Cursor cursor, string name, Function func)
     {
         addMember(func.context.or(""), (Output output) {
@@ -153,5 +134,24 @@ private:
         output.singleLine(`extern (C) private static pragma(mangle, "%s")`, cursor.mangling);
         output.adaptiveSourceNode(declarationResult);
         output.append(";");
+    }
+
+    void addMember(string context, StructData.Body member)
+    {
+        declarations.require(context, new AnnotatedDeclaration(context))
+            .addMember(member);
+    }
+
+    void setCursorFor(string name, Cursor cursor)
+    {
+        declarations.require(name, new AnnotatedDeclaration(name))
+            .cursor = cursor;
+    }
+
+    Optional!Cursor getCursorFor(string name)
+    {
+        return declarations
+            .get(name, new AnnotatedDeclaration(name))
+            .cursor;
     }
 }
