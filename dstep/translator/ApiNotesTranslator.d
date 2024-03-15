@@ -39,7 +39,7 @@ struct ApiNotesTranslator
 
     void freeFunctionToInstanceMethod(Cursor cursor, string name, Function func)
     {
-        addMember(func.context.or(""), (Output output) {
+        auto member = (Output output) {
             const declName = "__" ~ name;
 
             auto wrapperFunction = dstep.translator.Translator.Function(
@@ -60,7 +60,9 @@ struct ApiNotesTranslator
             };
 
             addBindingFunction(cursor, output, declName);
-        });
+        };
+
+        addMember(member, for_: func.context.or(""));
     }
 
     void freeFunctionToConstructor(Cursor cursor, Function func)
@@ -82,7 +84,7 @@ struct ApiNotesTranslator
 
         setCursorFor(func.context.or(""), cursor);
 
-        addMember(func.context.or(""), (Output output) {
+        auto member = (Output output) {
             auto wrapperFunction = dstep.translator.Translator.Function(
                 cursor: cursor.func,
                 name: "opCall",
@@ -98,12 +100,14 @@ struct ApiNotesTranslator
             };
 
             addBindingFunction(cursor, output, translatedName);
-        });
+        };
+
+        addMember(member, for_: func.context.or(""));
     }
 
     void freeFunctionToStaticMethod(Cursor cursor, string name, Function func)
     {
-        addMember(func.context.or(""), (Output output) {
+        auto member = (Output output) {
             auto function_ = dstep.translator.Translator.Function(
                 cursor: cursor.func,
                 name: name,
@@ -116,7 +120,9 @@ struct ApiNotesTranslator
             output.singleLine(`extern (C) pragma(mangle, "%s")`, cursor.mangling);
             output.adaptiveSourceNode(result);
             output.append(";");
-        });
+        };
+
+        addMember(member, for_: func.context.or(""));
     }
 
 private:
@@ -136,9 +142,10 @@ private:
         output.append(";");
     }
 
-    void addMember(string context, StructData.Body member)
+    void addMember(StructData.Body member, string for_)
     {
-        declarations.require(context, new AnnotatedDeclaration(context))
+        auto name = for_;
+        declarations.require(name, new AnnotatedDeclaration(name))
             .addMember(member);
     }
 
