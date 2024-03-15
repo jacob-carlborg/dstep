@@ -155,7 +155,7 @@ class Translator
             tuple(generateFilename(declaration), output);
 
         return apiNotesTranslator
-            .annotatedDeclarations
+            .declarations
             .byValue
             .filter!(ad => ad.declaration.isPresent)
             .tee!(ad => ad.addMembersToDeclaration(), No.pipeOnPop)
@@ -448,7 +448,7 @@ private:
     void synthesisAnnotatedDeclarations()
     {
         auto decls = apiNotesTranslator
-            .annotatedDeclarations
+            .declarations
             .byValue
             .filter!(e => e.declaration.empty);
 

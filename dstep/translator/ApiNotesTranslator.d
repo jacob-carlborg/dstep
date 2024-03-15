@@ -22,37 +22,36 @@ private alias Function = dstep.translator.ApiNotes.Function;
 
 struct ApiNotesTranslator
 {
+    AnnotatedDeclaration[string] declarations;
+
     private Context context;
-    private AnnotatedDeclaration[string] _annotatedDeclarations;
 
     this(Context context)
     {
         this.context = context;
     }
 
-    auto annotatedDeclarations() => _annotatedDeclarations;
-
     void addAnnotatedDeclaration(StructData structData)
     {
-        _annotatedDeclarations.require(structData.name, new AnnotatedDeclaration(structData.name)).
+        declarations.require(structData.name, new AnnotatedDeclaration(structData.name)).
             declaration = structData;
     }
 
     void addAnnotatedMember(string context, StructData.Body member)
     {
-        _annotatedDeclarations.require(context, new AnnotatedDeclaration(context))
+        declarations.require(context, new AnnotatedDeclaration(context))
             .addMember(member);
     }
 
     void setAnnotatedCursorFor(string name, Cursor cursor)
     {
-        _annotatedDeclarations.require(name, new AnnotatedDeclaration(name))
+        declarations.require(name, new AnnotatedDeclaration(name))
             .cursor = cursor;
     }
 
     Optional!Cursor getAnnotatedCursorFor(string name)
     {
-        return _annotatedDeclarations
+        return declarations
             .get(name, new AnnotatedDeclaration(name))
             .cursor;
     }
