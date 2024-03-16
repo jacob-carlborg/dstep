@@ -7,7 +7,6 @@
 * Building DStep now requires libclang 15.0.7
 * Automatically detect macOS SDK path ([Issue 227](https://github.com/jacob-carlborg/dstep/issues/227))
 * Add support for FreeBSD
-* Drop support for Windows 32 bit
 * [Issue 287](https://github.com/jacob-carlborg/dstep/issues/287): Add support for adding public imports
 * [Issue 288](https://github.com/jacob-carlborg/dstep/issues/288): Missing `__u/int128` support
 

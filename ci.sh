@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 
+# Environment variables:
+# DSTEP_COMPILER: the compiler to build with
+# DSTEP_LLVM_VERSION: the version of LLVM to link with
+# DSTEP_TARGET_TRIPLE: the target triple to build for
+# DSTEP_RELEASE_PLATFORM: the name of the platform
+
 set -exo pipefail
+
+export MACOSX_DEPLOYMENT_TARGET=10.9
 
 download() {
   curl --retry 3 -fsS "$1"
@@ -17,10 +25,52 @@ install_d_compiler() {
   source $(download https://dlang.org/install.sh | bash -s "$(d_compiler)" -a)
 }
 
-run() {
+configure() {
   ./configure --llvm-path "llvm-$DSTEP_LLVM_VERSION" --statically-link-clang
-  dub test --verror
 }
 
+target_triple_arg() {
+  if echo "$(d_compiler)" | grep -i -q ldc; then
+    echo "--mtriple=$DSTEP_TARGET_TRIPLE"
+  else
+    echo "-target=$DSTEP_TARGET_TRIPLE"
+  fi
+}
+
+run_tests() {
+  DFLAGS="$(target_triple_arg)" dub test --verror
+}
+
+release() {
+  DFLAGS="$(target_triple_arg)" dub build -b release --verror
+  strip "$target_path"*
+  archive
+}
+
+version() {
+  "$target_path"* --version
+}
+
+release_name() {
+  echo "$app_name-$(version)-$DSTEP_RELEASE_PLATFORM"
+}
+
+archive() {
+  if uname | grep -i -q mingw; then
+    7z a "$(release_name).7z" "$target_path"*
+  else
+    tar Jcf "$(release_name).tar.xz" -C "$target_dir" "$app_name"
+  fi
+}
+
+app_name="dstep"
+target_dir="bin"
+target_path="$target_dir/$app_name"
+
 install_d_compiler
-run
+configure
+
+case "$1" in
+  'test') run_tests ;;
+  'release') release ;;
+esac

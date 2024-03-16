@@ -9,10 +9,12 @@ inputs:
     description: "The target operating system"
   target_version:
     description: "The target operating system version"
-  llvm:
-    description: "The version of LLVM"
   target_triple:
     description: "The target triple"
+  release_platform:
+    description: "The name of the platform used for releases"
+  llvm:
+    description: "The version of LLVM"
   cross_platform_actions:
     description: "Indicates if the Cross Platform Action should be used"
   docker:
@@ -25,12 +27,14 @@ runs:
   steps:
     - name: Download LLVM
       if: runner.os != 'Windows'
+      shell: bash
       run: |
         curl -f -L -o llvm.tar.xz --retry 3 'https://github.com/jacob-carlborg/clang-builder/releases/download/v${{ inputs.llvm }}%2B0.0.2-rc2/llvm-${{ inputs.llvm }}-${{ inputs.target_triple }}.tar.xz'
         tar xf llvm.tar.xz
 
     - name: Download LLVM
       if: runner.os == 'Windows'
+      shell: bash
       run: |
         curl -f -L -o llvm.7z --retry 3 'https://github.com/jacob-carlborg/clang-builder/releases/download/v${{ inputs.llvm }}%2B0.0.2-rc2/llvm-${{ inputs.llvm }}-${{ inputs.target_triple }}.7z'
         7z x llvm.7z
@@ -42,18 +46,32 @@ runs:
 
     - name: Test
       if: ${{ !inputs.cross_platform_actions && !inputs.docker }}
+      shell: bash
+      env:
+        DSTEP_LLVM_VERSION: ${{ inputs.llvm }}
+        DSTEP_COMPILER: ${{ inputs.compiler }}
+        DSTEP_RELEASE_PLATFORM: ${{ inputs.release_platform }}
+        DSTEP_TARGET_TRIPLE: ${{ inputs.target_triple }}
       run: ./ci.sh ${{ inputs.action }}
 
     - name: Test
       if: inputs.cross_platform_actions
+      env:
+        DSTEP_LLVM_VERSION: ${{ inputs.llvm }}
+        DSTEP_COMPILER: ${{ inputs.compiler }}
+        DSTEP_RELEASE_PLATFORM: ${{ inputs.release_platform }}
+        DSTEP_TARGET_TRIPLE: ${{ inputs.target_triple }}
       uses: cross-platform-actions/action@v0.23.0
       with:
         shell: bash
         operating_system: ${{ inputs.target_operating_system }}
         version: ${{ inputs.target_version }}
+        environment_variables: >-
+          DSTEP_LLVM_VERSION
+          DSTEP_COMPILER
+          DSTEP_RELEASE_PLATFORM
+          DSTEP_TARGET_TRIPLE
         run: |
-          export DSTEP_LLVM_VERSION="${{ inputs.llvm }}"
-          export DSTEP_COMPILER="${{ inputs.compiler }}"
           sudo pkg install -y llvm git gnupg
           ./ci.sh ${{ inputs.action }}
 
@@ -65,13 +83,21 @@ runs:
 
     - name: Run Tests in Docker
       if: inputs.docker
+      shell: bash
+      env:
+        DSTEP_LLVM_VERSION: ${{ inputs.llvm }}
+        DSTEP_COMPILER: ${{ inputs.compiler }}
+        DSTEP_RELEASE_PLATFORM: ${{ inputs.release_platform }}
+        DSTEP_TARGET_TRIPLE: ${{ inputs.target_triple }}
       run: |
         docker run \
           --rm \
           -v $(pwd):/${{ github.workspace }} \
           -w ${{ github.workspace }} \
-          -e DSTEP_LLVM_VERSION=${{ inputs.llvm }} \
-          -e DSTEP_COMPILER=${{ inputs.compiler }} \
+          -e DSTEP_LLVM_VERSION=${{ env.DSTEP_LLVM_VERSION }} \
+          -e DSTEP_COMPILER=${{ env.DSTEP_COMPILER }} \
+          -e DSTEP_RELEASE_PLATFORM=${{ env.DSTEP_RELEASE_PLATFORM }} \
+          -e DSTEP_TARGET_TRIPLE=${{ env.DSTEP_TARGET_TRIPLE }} \
           --platform linux/${{ inputs.docker_arch || inputs.arch }} \
           alpine:edge \
           apk add --no-cache git curl bash && \

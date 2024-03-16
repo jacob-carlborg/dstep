@@ -10,9 +10,6 @@ on:
   schedule:
     - cron: 0 0 * * *
 
-env:
-  MACOSX_DEPLOYMENT_TARGET: 10.9
-
 defaults:
   run:
     shell: bash
@@ -89,6 +86,14 @@ jobs:
                 host: windows-latest
                 target_triple: x86_64-pc-windows-msvc
 
+          # - compiler: dmd-latest
+          #   llvm: '15.0.7'
+          #   arch: x86
+          #   data:
+          #     os:
+          #       host: windows-latest
+          #       target_triple: x86-pc-windows-msvc
+
     steps:
       - name: Clone Repository
         uses: actions/checkout@v3
@@ -109,3 +114,101 @@ jobs:
           cross_platform_actions: ${{ matrix.data.cross_platform_actions }}
           docker: ${{ matrix.data.docker }}
           compiler: ${{ matrix.compiler }}
+
+  create_release:
+    name: Create Release ${{ matrix.data.os.target_triple }}
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ${{ matrix.data.os.host }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x86_64]
+        data:
+          - os:
+              host: ubuntu-latest
+              target_triple: x86_64-alpine-linux-musl
+            docker: true
+            release_platform: linux-x86_64
+
+          - os:
+              host: macOS-latest
+              target_triple: x86_64-apple-macos10.9
+            release_platform: macos-x86_64
+
+          - os:
+              host: windows-latest
+              target_triple: x86_64-pc-windows-msvc
+            release_platform: windows-x64
+
+          - os:
+              target: freebsd
+              version: '13.1'
+              target_triple: x86_64-unknown-freebsd13.1
+              host: ubuntu-latest
+            cross_platform_actions: true
+            release_platform: freebsd13.1-x86_64
+
+        compiler:
+          - ldc-latest
+
+        llvm:
+          - '15.0.7'
+
+        # include:
+        #   - compiler: ldc-latest
+        #     llvm: '15.0.7'
+        #     arch: x86
+        #     data:
+        #       os:
+        #         host: windows-latest
+        #         target_triple: x86-pc-windows-msvc
+        #       release_platform: windows-x86
+
+    steps:
+      - name: Clone Repository
+        uses: actions/checkout@v3
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Build Release
+        uses: ./.github/workflows/support/build
+        with:
+          action: release
+          arch: ${{ matrix.arch }}
+          docker_arch: ${{ matrix.docker_arch }}
+          target_operating_system: ${{ matrix.data.os.target }}
+          target_version: ${{ matrix.data.os.version }}
+          llvm: ${{ matrix.llvm }}
+          target_triple: ${{ matrix.data.os.target_triple }}
+          cross_platform_actions: ${{ matrix.data.cross_platform_actions }}
+          docker: ${{ matrix.data.docker }}
+          compiler: ${{ matrix.compiler }}
+          release_platform: ${{ matrix.data.release_platform }}
+
+      - name: Extract Version
+        id: version
+        run: echo version="${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+
+      - name: Extract changelog
+        if: runner.os == 'Linux'
+        uses: sean0x42/markdown-extract@v2
+        id: extract_changelog
+        with:
+         file: changelog.md
+         pattern: '\[${{ steps.version.outputs.version }}\].+'
+         no-print-matched-heading: true
+
+      - name: Create release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: DStep ${{ steps.version.outputs.version }}
+          draft: true
+          body: ${{ steps.extract_changelog.outputs.markdown }}
+          files: |
+            dstep*.tar.xz
+            dstep*.7z
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
