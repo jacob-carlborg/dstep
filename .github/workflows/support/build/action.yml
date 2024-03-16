@@ -1,0 +1,78 @@
+inputs:
+  action:
+    description: "The action to run, i.e. test/release"
+  arch:
+    description: "The architecture"
+  docker_arch:
+    description: "The architecture as it's named in Docker"
+  target_operating_system:
+    description: "The target operating system"
+  target_version:
+    description: "The target operating system version"
+  llvm:
+    description: "The version of LLVM"
+  target_triple:
+    description: "The target triple"
+  cross_platform_actions:
+    description: "Indicates if the Cross Platform Action should be used"
+  docker:
+    description: "Indicates if Docker should be used"
+  compiler:
+    description: "The compiler to use"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Download LLVM
+      if: runner.os != 'Windows'
+      run: |
+        curl -f -L -o llvm.tar.xz --retry 3 'https://github.com/jacob-carlborg/clang-builder/releases/download/v${{ inputs.llvm }}%2B0.0.2-rc2/llvm-${{ inputs.llvm }}-${{ inputs.target_triple }}.tar.xz'
+        tar xf llvm.tar.xz
+
+    - name: Download LLVM
+      if: runner.os == 'Windows'
+      run: |
+        curl -f -L -o llvm.7z --retry 3 'https://github.com/jacob-carlborg/clang-builder/releases/download/v${{ inputs.llvm }}%2B0.0.2-rc2/llvm-${{ inputs.llvm }}-${{ inputs.target_triple }}.7z'
+        7z x llvm.7z
+
+    # - name: Setup tmate session
+    #   uses: mxschmitt/action-tmate@v3
+    #   with:
+    #     limit-access-to-actor: true
+
+    - name: Test
+      if: ${{ !inputs.cross_platform_actions && !inputs.docker }}
+      run: ./ci.sh ${{ inputs.action }}
+
+    - name: Test
+      if: inputs.cross_platform_actions
+      uses: cross-platform-actions/action@v0.23.0
+      with:
+        shell: bash
+        operating_system: ${{ inputs.target_operating_system }}
+        version: ${{ inputs.target_version }}
+        run: |
+          export DSTEP_LLVM_VERSION="${{ inputs.llvm }}"
+          export DSTEP_COMPILER="${{ inputs.compiler }}"
+          sudo pkg install -y llvm git gnupg
+          ./ci.sh ${{ inputs.action }}
+
+    - name: Set up QEMU
+      if: inputs.docker && inputs.arch != 'x86_64'
+      uses: docker/setup-qemu-action@v1
+      with:
+        platforms: ${{ inputs.arch }}
+
+    - name: Run Tests in Docker
+      if: inputs.docker
+      run: |
+        docker run \
+          --rm \
+          -v $(pwd):/${{ github.workspace }} \
+          -w ${{ github.workspace }} \
+          -e DSTEP_LLVM_VERSION=${{ inputs.llvm }} \
+          -e DSTEP_COMPILER=${{ inputs.compiler }} \
+          --platform linux/${{ inputs.docker_arch || inputs.arch }} \
+          alpine:edge \
+          apk add --no-cache git curl bash && \
+          ./ci.sh ${{ inputs.action }}

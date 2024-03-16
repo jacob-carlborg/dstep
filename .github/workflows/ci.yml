@@ -19,13 +19,10 @@ defaults:
 
 jobs:
   test:
-    name: ${{ matrix.data.os.target_triple }} ${{ matrix.compiler }}
+    name: Test ${{ matrix.data.os.target_triple }} ${{ matrix.compiler }}
     runs-on: ${{ matrix.data.os.host }}
     continue-on-error: ${{ matrix.nightly == 'nightly' }}
     timeout-minutes: 20
-    env:
-      DSTEP_LLVM_VERSION: ${{ matrix.llvm }}
-      DSTEP_COMPILER: ${{ matrix.compiler }}
     strategy:
       fail-fast: false
       matrix:
@@ -99,60 +96,16 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
 
-      # - name: Install Compiler
-      #   if: ${{ !matrix.data.cross_platform_actions && !matrix.data.docker }}
-      #   uses: dlang-community/setup-dlang@v1
-      #   with:
-      #     compiler: ${{ matrix.compiler }}
-
-      - name: Download LLVM
-        if: runner.os != 'Windows'
-        run: |
-          curl -f -L -o llvm.tar.xz --retry 3 'https://github.com/jacob-carlborg/clang-builder/releases/download/v${{ matrix.llvm }}%2B0.0.2-rc2/llvm-${{ matrix.llvm }}-${{ matrix.data.os.target_triple }}.tar.xz'
-          tar xf llvm.tar.xz
-
-      - name: Download LLVM
-        if: runner.os == 'Windows'
-        run: |
-          curl -f -L -o llvm.7z --retry 3 'https://github.com/jacob-carlborg/clang-builder/releases/download/v${{ matrix.llvm }}%2B0.0.2-rc2/llvm-${{ matrix.llvm }}-${{ matrix.data.os.target_triple }}.7z'
-          7z x llvm.7z
-
-      # - name: Setup tmate session
-      #   uses: mxschmitt/action-tmate@v3
-      #   with:
-      #     limit-access-to-actor: true
-
-      - name: Test
-        if: ${{ !matrix.data.cross_platform_actions && !matrix.data.docker }}
-        run: ./ci.sh
-
-      - name: Test
-        if: matrix.data.cross_platform_actions
-        uses: cross-platform-actions/action@v0.23.0
+      - name: test
+        uses: ./.github/workflows/support/build
         with:
-          shell: bash
-          operating_system: ${{ matrix.data.os.target }}
-          version: ${{ matrix.data.os.version }}
-          environment_variables: DSTEP_LLVM_VERSION DSTEP_COMPILER
-          run: |
-            sudo pkg install -y llvm git gnupg
-            ./ci.sh
-
-      - name: Set up QEMU
-        if: matrix.data.docker && matrix.arch != 'x86_64'
-        uses: docker/setup-qemu-action@v1
-        with:
-          platforms: ${{ matrix.arch }}
-
-      - name: Run Tests in Docker
-        if: matrix.data.docker
-        run: |
-          docker run \
-            --rm \
-            -v $(pwd):/${{ github.workspace }} \
-            -w ${{ github.workspace }} \
-            -e DSTEP_LLVM_VERSION=${{ env.DSTEP_LLVM_VERSION }} \
-            --platform linux/${{ matrix.docker_arch || matrix.arch }} \
-            alpine:edge \
-            apk add --no-cache git curl bash && \
-            ./ci.sh
+          action: test
+          arch: ${{ matrix.arch }}
+          docker_arch: ${{ matrix.docker_arch }}
+          target_operating_system: ${{ matrix.data.os.target }}
+          target_version: ${{ matrix.data.os.version }}
+          llvm: ${{ matrix.llvm }}
+          target_triple: ${{ matrix.data.os.target_triple }}
+          cross_platform_actions: ${{ matrix.data.cross_platform_actions }}
+          docker: ${{ matrix.data.docker }}
+          compiler: ${{ matrix.compiler }}
