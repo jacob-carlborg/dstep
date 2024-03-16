@@ -202,7 +202,7 @@ jobs:
          no-print-matched-heading: true
 
       - name: Create release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           name: DStep ${{ steps.version.outputs.version }}
           draft: true
