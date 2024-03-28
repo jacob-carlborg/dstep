@@ -86,13 +86,13 @@ jobs:
                 host: windows-latest
                 target_triple: x86_64-pc-windows-msvc
 
-          # - compiler: dmd-latest
-          #   llvm: '15.0.7'
-          #   arch: x86
-          #   data:
-          #     os:
-          #       host: windows-latest
-          #       target_triple: x86-pc-windows-msvc
+          - compiler: dmd-latest
+            llvm: '15.0.7'
+            arch: x86
+            data:
+              os:
+                host: windows-latest
+                target_triple: x86-pc-windows-msvc
 
     steps:
       - name: Clone Repository
@@ -156,15 +156,15 @@ jobs:
         llvm:
           - '15.0.7'
 
-        # include:
-        #   - compiler: ldc-latest
-        #     llvm: '15.0.7'
-        #     arch: x86
-        #     data:
-        #       os:
-        #         host: windows-latest
-        #         target_triple: x86-pc-windows-msvc
-        #       release_platform: windows-x86
+        include:
+          - compiler: ldc-latest
+            llvm: '15.0.7'
+            arch: x86
+            data:
+              os:
+                host: windows-latest
+                target_triple: x86-pc-windows-msvc
+              release_platform: windows-x86
 
     steps:
       - name: Clone Repository
