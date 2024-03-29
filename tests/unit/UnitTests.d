@@ -917,7 +917,7 @@ D", options);
 
 // Temporarily disable this test on Windows 64bit since it's failing for some
 // unknown reason
-version (Win64) {}
+version (Windows) {}
 else
 {
     // Test abort on spelling collision.
