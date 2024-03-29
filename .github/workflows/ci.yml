@@ -86,7 +86,7 @@ jobs:
                 host: windows-latest
                 target_triple: x86_64-pc-windows-msvc
 
-          - compiler: dmd-latest
+          - compiler: ldc-latest
             llvm: '15.0.7'
             arch: x86
             data:
