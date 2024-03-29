@@ -29,14 +29,14 @@ runs:
       if: runner.os != 'Windows'
       shell: bash
       run: |
-        curl -f -L -o llvm.tar.xz --retry 3 'https://github.com/jacob-carlborg/clang-builder/releases/download/v${{ inputs.llvm }}%2B0.0.2-rc3/llvm-${{ inputs.llvm }}-${{ inputs.target_triple }}.tar.xz'
+        curl -f -L -o llvm.tar.xz --retry 3 'https://github.com/jacob-carlborg/clang-builder/releases/download/v${{ inputs.llvm }}%2B0.0.2-rc4/llvm-${{ inputs.llvm }}-${{ inputs.target_triple }}.tar.xz'
         tar xf llvm.tar.xz
 
     - name: Download LLVM
       if: runner.os == 'Windows'
       shell: bash
       run: |
-        curl -f -L -o llvm.7z --retry 3 'https://github.com/jacob-carlborg/clang-builder/releases/download/v${{ inputs.llvm }}%2B0.0.2-rc3/llvm-${{ inputs.llvm }}-${{ inputs.target_triple }}.7z'
+        curl -f -L -o llvm.7z --retry 3 'https://github.com/jacob-carlborg/clang-builder/releases/download/v${{ inputs.llvm }}%2B0.0.2-rc4/llvm-${{ inputs.llvm }}-${{ inputs.target_triple }}.7z'
         7z x llvm.7z
 
     # - name: Setup tmate session
