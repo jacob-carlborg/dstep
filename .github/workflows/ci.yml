@@ -92,7 +92,7 @@ jobs:
             data:
               os:
                 host: windows-latest
-                target_triple: x86-pc-windows-msvc
+                target_triple: i386-pc-windows-msvc
 
     steps:
       - name: Clone Repository
