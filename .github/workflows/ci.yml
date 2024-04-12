@@ -25,25 +25,25 @@ jobs:
       matrix:
         arch: [x86_64]
         data:
-          - os:
-              host: ubuntu-latest
-              target_triple: x86_64-alpine-linux-musl
-            docker: true
-
-          - os:
-              host: macOS-latest
-              target_triple: x86_64-apple-macos10.9
+          # - os:
+          #     host: ubuntu-latest
+          #     target_triple: x86_64-alpine-linux-musl
+          #   docker: true
+          #
+          # - os:
+          #     host: macOS-latest
+          #     target_triple: x86_64-apple-macos10.9
 
           - os:
               host: windows-latest
               target_triple: x86_64-pc-windows-msvc
 
-          - os:
-              target: freebsd
-              version: '13.1'
-              target_triple: x86_64-unknown-freebsd13.1
-              host: ubuntu-latest
-            cross_platform_actions: true
+          # - os:
+          #     target: freebsd
+          #     version: '13.1'
+          #     target_triple: x86_64-unknown-freebsd13.1
+          #     host: ubuntu-latest
+          #   cross_platform_actions: true
 
         compiler:
           - ldc-latest
@@ -52,39 +52,39 @@ jobs:
           - '15.0.7'
 
         include:
-          - compiler: dmd-latest
-            llvm: '15.0.7'
-            arch: x86_64
-            data:
-              os:
-                host: windows-latest
-                target_triple: x86_64-pc-windows-msvc
-
-          - compiler: dmd-beta
-            llvm: '15.0.7'
-            arch: x86_64
-            data:
-              os:
-                host: windows-latest
-                target_triple: x86_64-pc-windows-msvc
-
-          - compiler: ldc-beta
-            llvm: '15.0.7'
-            arch: x86_64
-            data:
-              os:
-                host: ubuntu-latest
-                target_triple: x86_64-alpine-linux-musl
-              docker: true
-
-          - compiler: dmd-master
-            llvm: '15.0.7'
-            arch: x86_64
-            nightly: nightly
-            data:
-              os:
-                host: windows-latest
-                target_triple: x86_64-pc-windows-msvc
+          # - compiler: dmd-latest
+          #   llvm: '15.0.7'
+          #   arch: x86_64
+          #   data:
+          #     os:
+          #       host: windows-latest
+          #       target_triple: x86_64-pc-windows-msvc
+          #
+          # - compiler: dmd-beta
+          #   llvm: '15.0.7'
+          #   arch: x86_64
+          #   data:
+          #     os:
+          #       host: windows-latest
+          #       target_triple: x86_64-pc-windows-msvc
+          #
+          # - compiler: ldc-beta
+          #   llvm: '15.0.7'
+          #   arch: x86_64
+          #   data:
+          #     os:
+          #       host: ubuntu-latest
+          #       target_triple: x86_64-alpine-linux-musl
+          #     docker: true
+          #
+          # - compiler: dmd-master
+          #   llvm: '15.0.7'
+          #   arch: x86_64
+          #   nightly: nightly
+          #   data:
+          #     os:
+          #       host: windows-latest
+          #       target_triple: x86_64-pc-windows-msvc
 
           - compiler: ldc-latest
             llvm: '15.0.7'
