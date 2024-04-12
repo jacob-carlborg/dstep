@@ -24,7 +24,7 @@ install_d_compiler() {
   if [ "$DSTEP_TARGET_TRIPLE" = 'i386-pc-windows-msvc' ]; then
     local version=""
 
-    if [ "$(d_compiler)" = 'ldc' ];
+    if [ "$(d_compiler)" = 'ldc' ]; then
       version="$(download https://ldc-developers.github.io/LATEST)"
     else
       version="$(echo "$(d_compiler)" | sed 's/ldc-//')"
