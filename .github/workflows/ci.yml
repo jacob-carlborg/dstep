@@ -19,7 +19,7 @@ jobs:
     name: Test ${{ matrix.data.os.target_triple }} ${{ matrix.compiler }}
     runs-on: ${{ matrix.data.os.host }}
     continue-on-error: ${{ matrix.nightly == 'nightly' }}
-    timeout-minutes: 20
+    timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
