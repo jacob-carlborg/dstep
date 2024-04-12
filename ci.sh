@@ -22,9 +22,17 @@ d_compiler() {
 
 install_d_compiler() {
   if [ "$DSTEP_TARGET_TRIPLE" = 'i386-pc-windows-msvc' ]; then
-    local target_dir="~/dlang/ldc-$(d_compiler)"
+    local version=""
+
+    if [ "$(d_compiler)" = 'ldc' ];
+      version="$(download https://ldc-developers.github.io/LATEST)"
+    else
+      version="$(echo "$(d_compiler)" | sed 's/ldc-//')"
+    fi
+
+    local target_dir="~/dlang/ldc-$version"
     mkdir -p "$target_dir"
-    download -o ldc2.7z "https://github.com/ldc-developers/ldc/releases/download/v$(d_compiler)/ldc2-$(d_compiler)-windows-multilib.7z"
+    download -o ldc2.7z "https://github.com/ldc-developers/ldc/releases/download/v$version/ldc2-$version-windows-multilib.7z"
     7z x ldc2.7z -o"$target_dir" -r '-x!*/'
     rm ldc2.7z
     export PATH="$target_dir/bin:$PATH"
