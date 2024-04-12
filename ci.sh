@@ -11,7 +11,7 @@ set -exo pipefail
 export MACOSX_DEPLOYMENT_TARGET=10.9
 
 download() {
-  curl --retry 3 -fsS "$1"
+  curl --retry 3 -fsS "$@"
 }
 
 d_compiler() {
@@ -21,8 +21,17 @@ d_compiler() {
 }
 
 install_d_compiler() {
-  download https://dlang.org/d-keyring.gpg | gpg --import /dev/stdin
-  source $(download https://dlang.org/install.sh | bash -s "$(d_compiler)" -a)
+  if [ "$DSTEP_TARGET_TRIPLE" = 'i386-pc-windows-msvc' ]; then
+    local target_dir="~/dlang/ldc-$(d_compiler)"
+    mkdir -p "$target_dir"
+    download -o ldc2.7z "https://github.com/ldc-developers/ldc/releases/download/v$(d_compiler)/ldc2-$(d_compiler)-windows-multilib.7z"
+    7z x ldc2.7z -o"$target_dir" -r '-x!*/'
+    rm ldc2.7z
+    export PATH="$target_dir/bin:$PATH"
+  else
+    download https://dlang.org/d-keyring.gpg | gpg --import /dev/stdin
+    source $(download https://dlang.org/install.sh | bash -s "$(d_compiler)" -a)
+  fi
 }
 
 configure() {
