@@ -370,3 +370,35 @@ struct CGMutablePath
 }
 D", options, annotatedFile: "CGMutablePath.d");
 }
+
+@"extending non-struct type" unittest
+{
+    auto options = Options(apiNotes:
+q"YAML
+Functions:
+  - Name: CGPathCreateMutable
+    DName: CGMutablePathRef.init()
+YAML"
+);
+
+    assertTranslatesAnnotated(
+q"C
+typedef struct CGPath *CGMutablePathRef;
+CGMutablePathRef CGPathCreateMutable(void);
+C",
+q"D
+struct CGMutablePathRef
+{
+    private CGPath* __rawValue;
+
+    static CGMutablePathRef opCall ()
+    {
+        typeof(this) __result = { CGPathCreateMutable(__traits(parameters)) };
+        return __result;
+    }
+
+    extern (C) private static pragma(mangle, "CGPathCreateMutable")
+    CGPath* CGPathCreateMutable ();
+}
+D", options, annotatedFile: "CGMutablePathRef.d");
+}

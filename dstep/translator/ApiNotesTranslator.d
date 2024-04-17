@@ -8,6 +8,7 @@ module dstep.translator.ApiNotesTranslator;
 
 import std.algorithm;
 import std.format;
+import std.functional;
 
 import clang.c.Index;
 import clang.Cursor;
@@ -16,6 +17,7 @@ import clang.SourceRange;
 import dstep.core.Core;
 import dstep.core.Optional;
 import dstep.core.Exceptions;
+import dstep.core.Set;
 import dstep.translator.ApiNotes;
 import dstep.translator.Context;
 import dstep.translator.Output;
@@ -29,10 +31,14 @@ struct ApiNotesTranslator
     AnnotatedDeclaration[string] declarations;
 
     private Context context;
+    private Set!string declarationsNeedingWrapping;
+    private ApiNotes apiNotes;
 
-    this(Context context)
+    this(Context context, ApiNotes apiNotes)
     {
         this.context = context;
+        this.apiNotes = apiNotes;
+        collectDeclarationsNeedingWrapping();
     }
 
     void addDeclaration(StructData structData)
@@ -100,7 +106,14 @@ struct ApiNotesTranslator
             const translatedName = translateIdentifier(cursor.spelling);
 
             output.subscopeStrong(wrapperResult.extent, wrapperResult.makeString) in {
-                output.singleLine("return %s(__traits(parameters));", translatedName);
+                if (func.context.or("") in declarationsNeedingWrapping)
+                {
+                    output.singleLine("typeof(this) __result = { %s(__traits(parameters)) };", translatedName);
+                    output.singleLine("return __result;");
+                }
+
+                else
+                    output.singleLine("return %s(__traits(parameters));", translatedName);
             };
 
             addOriginalFunction(cursor, output, translatedName);
@@ -135,11 +148,11 @@ struct ApiNotesTranslator
         {
             assert(ad.cursor.isPresent);
             auto cursor = ad.cursor.get;
-            auto type = translateType(context, cursor, cursor.func.resultType);
+            auto type = translateType(context, cursor, cursor.func.resultType.canonical);
 
             StructData.Body body = (output) {
                 translateVariable(output, type,
-                    identifier: "rawValue", prefix: "private ");
+                    identifier: "__rawValue", prefix: "private ");
             };
 
             auto extent = SourceRange(clang_getNullRange());
@@ -158,6 +171,7 @@ private:
             cursor: cursor.func,
             name: declName,
             mangledName: none!string, // handle below
+            canonicalizeReturnType: true
         );
 
         auto declarationResult = translateFunction(context, function_);
@@ -187,5 +201,22 @@ private:
         return declarations
             .get(name, new AnnotatedDeclaration(name))
             .cursor;
+    }
+
+    void collectDeclarationsNeedingWrapping()
+    {
+        alias isAggregate = e =>
+            e.kind == CXCursorKind.structDecl ||
+            e.kind == CXCursorKind.unionDecl;
+
+        context
+            .translUnit
+            .cursor
+            .children
+            .filter!(cursor => cursor.isDeclaration)
+            .filter!(not!isAggregate)
+            .map!(cursor => cursor.spelling)
+            .filter!(spelling => spelling in apiNotes.contextsWithConstructors)
+            .each!(spelling => declarationsNeedingWrapping.put(spelling));
     }
 }

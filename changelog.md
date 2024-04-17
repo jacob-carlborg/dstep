@@ -13,6 +13,7 @@
 * Add support for converting free functions to instance methods using API notes
 * Add support for converting free functions to static methods using API notes
 * Add support for converting free functions to constructors using API notes
+* Add support for adding methods to non-aggregate types using API notes
 
 ### Bugs Fixed
 

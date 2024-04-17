@@ -17,10 +17,12 @@ import dyaml;
 
 import dstep.core.Core;
 import dstep.core.Optional;
+import dstep.core.Set;
 
 struct ApiNotes
 {
     Function[] functions;
+    private Optional!(Set!string) _contextsWithConstructors;
 
     this(RawFunction[] functions)
     {
@@ -56,6 +58,10 @@ struct ApiNotes
         !functions
             .find!(f => f.context.or("") == context)
             .empty;
+
+    auto contextsWithConstructors() => memoize(_contextsWithConstructors,
+        functions.filter!(f => f.isConstructor).flatMap!(f => f.context).set
+    );
 }
 
 struct Function

@@ -25,6 +25,7 @@ import clang.Util;
 import dstep.core.Core;
 import dstep.core.Exceptions;
 import dstep.core.Optional;
+import dstep.core.Set;
 import dstep.Configuration;
 
 import dstep.translator.ApiNotes;
@@ -81,7 +82,7 @@ class Translator
         inputFile = translationUnit.file(inputFilename);
         context = new Context(translationUnit, options, this);
         apiNotes = ApiNotes.parse(options.apiNotes);
-        apiNotesTranslator = ApiNotesTranslator(context);
+        apiNotesTranslator = ApiNotesTranslator(context, apiNotes);
     }
 
     void translate ()
@@ -478,7 +479,9 @@ SourceNode translateFunction (
     const parameterStart = func.apiNotesFunction.isInstanceMethod.or(false) ? 1 : 0;
     params = params[parameterStart .. $];
 
-    auto resultType = translateType(context, func.cursor, func.cursor.resultType);
+    auto returnType = func.canonicalizeReturnType ?
+        func.cursor.resultType.canonical : func.cursor.resultType;
+    auto resultType = translateType(context, func.cursor, returnType);
     auto multiline = func.cursor.extent.isMultiline &&
         !context.options.singleLineFunctionSignatures;
     auto spacer = context.options.spaceAfterFunctionName ? " " : "";
@@ -765,5 +768,6 @@ struct Function
     string name;
     Optional!string mangledName;
     bool isStatic;
+    bool canonicalizeReturnType;
     Optional!(dstep.translator.ApiNotes.Function) apiNotesFunction;
 }
