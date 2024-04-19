@@ -476,8 +476,11 @@ SourceNode translateFunction (
         params ~= Parameter(type, param.spelling);
     }
 
-    const parameterStart = func.apiNotesFunction.isInstanceMethod.or(false) ? 1 : 0;
-    params = params[parameterStart .. $];
+    if (func.apiNotesFunction.isInstanceMethod.or(false))
+    {
+        auto index = func.apiNotesFunction.indexOfThis.or(ptrdiff_t(-1));
+        params = params.remove(index);
+    }
 
     auto returnType = func.canonicalizeReturnType ?
         func.cursor.resultType.canonical : func.cursor.resultType;

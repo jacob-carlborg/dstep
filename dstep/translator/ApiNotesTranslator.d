@@ -65,8 +65,23 @@ struct ApiNotesTranslator
             const firstParamType = cursor.func.parameters.first.type;
             const thisArg = firstParamType.isPointer ? "&this" : "this";
 
+
+            string[] parameterNames;
+            parameterNames.reserve(cursor.func.parameters.length);
+            size_t paramCount;
+
+            foreach (param ; cursor.func.parameters)
+            {
+                if (paramCount == func.indexOfThis)
+                    parameterNames ~= param.type.isPointer ? "&this" : "this";
+                else
+                    parameterNames ~= translateIdentifier(param.spelling);
+
+                paramCount++;
+            }
+
             output.subscopeStrong(wrapperResult.extent, wrapperResult.makeString) in {
-                output.singleLine("return %s(%s, __traits(parameters));", originalName, thisArg);
+                output.singleLine("return %s(%-(%s, %));", originalName, parameterNames);
             };
 
             addOriginalFunction(cursor, output, originalName);

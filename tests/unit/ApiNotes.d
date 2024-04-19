@@ -160,17 +160,25 @@ YAML";
 {
     @"when the D name contains a context"
     {
-        @"when the D name contains a 'this'" unittest
+        @"when the D name of the first argument is 'this'" unittest
         {
-            auto rawFunc = RawFunction(name: "foo", dName: "Foo.bar(this)");
+            auto rawFunc = RawFunction(name: "foo", dName: "Foo.bar(this:)");
             auto func = Function.parse(rawFunc);
 
             assert(func.isInstanceMethod);
         }
 
-        @"when the D name contains a 'self'" unittest
+        @"when the D name of the first argument is 'self'" unittest
         {
-            auto rawFunc = RawFunction(name: "foo", dName: "Foo.bar(self)");
+            auto rawFunc = RawFunction(name: "foo", dName: "Foo.bar(self:)");
+            auto func = Function.parse(rawFunc);
+
+            assert(func.isInstanceMethod);
+        }
+
+        @"when the D name of another argument is 'this'" unittest
+        {
+            auto rawFunc = RawFunction(name: "foo", dName: "Foo.bar(foo:this:bar:)");
             auto func = Function.parse(rawFunc);
 
             assert(func.isInstanceMethod);
@@ -232,6 +240,25 @@ YAML";
     }
 }
 
+@"Function.indexOfThis"
+{
+    @"when the D name contains 'this' or 'self'" unittest
+    {
+        auto rawFunc = RawFunction(name: "foo", dName: "Foo.bar(foo:this:bar:)");
+        auto func = Function.parse(rawFunc);
+
+        assert(func.indexOfThis == 1);
+    }
+
+    @"when the D name does not contain 'this' or 'self'" unittest
+    {
+        auto rawFunc = RawFunction(name: "foo", dName: "Foo.bar(foo:bar:)");
+        auto func = Function.parse(rawFunc);
+
+        assert(func.indexOfThis == -1);
+    }
+}
+
 @"renaming free function" unittest
 {
     auto options = Options(apiNotes:
@@ -276,7 +303,7 @@ struct Bar
 {
     void foo (int a)
     {
-        return __foo(this, __traits(parameters));
+        return __foo(this, a);
     }
 
     extern (C) private static pragma(mangle, "foo")
@@ -306,7 +333,7 @@ struct Bar
 {
     void foo (int a)
     {
-        return __foo(&this, __traits(parameters));
+        return __foo(&this, a);
     }
 
     extern (C) private static pragma(mangle, "foo")

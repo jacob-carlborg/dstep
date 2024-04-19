@@ -84,11 +84,9 @@ struct Function
 
     bool isInstanceMethod() =>
         context.isPresent &&
-        arguments.length > 0 &&
-        (
-            arguments[0] == "this" ||
-            arguments[0] == "self"
-        );
+        !arguments.save.find!isThis.empty;
+
+    auto indexOfThis() => arguments.save.countUntil!isThis;
 
 private:
 
@@ -234,3 +232,5 @@ mixin template ToString()
         return format!"%s(%-(%s, %))"(typeof(this).stringof, formattedFields);
     }
 }
+
+bool isThis(string value) => value == "this" || value == "self";
