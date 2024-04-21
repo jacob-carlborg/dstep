@@ -9,10 +9,12 @@ module dstep.translator.ApiNotesTranslator;
 import std.algorithm;
 import std.format;
 import std.functional;
+import std.range;
 
 import clang.c.Index;
 import clang.Cursor;
 import clang.SourceRange;
+import clang.Type;
 
 import dstep.core.Core;
 import dstep.core.Optional;
@@ -34,11 +36,39 @@ struct ApiNotesTranslator
     private Set!string declarationsNeedingWrapping;
     private ApiNotes apiNotes;
 
+    /**
+     * This maps a context name from an API Notes file to a the cursor that
+     * corresponds to the type that the raw value in the wrapper struct should
+     * be of.
+     *
+     * Examples:
+     *
+     * ```yaml
+     * - Name: CGColorCreateGenericGray
+     *   SwiftName: CGColor.init(gray:alpha:) # "CGColor" will be store as the key
+     * ```
+     *
+     * ```c
+     * typedef struct CGColor* CGColorRef;
+     * // The cursor of this return type will be stored as a value.
+     * CGColorRef CGColorCreateGenericGray(double gray, double alpha);
+     * ```
+     *
+     * ```
+     * struct CGColor
+     * {
+     *      private CGColorRef rawValue;
+     * }
+     * ```
+     */
+    private Optional!Cursor[string] rawValueMappings;
+
     this(Context context, ApiNotes apiNotes)
     {
         this.context = context;
         this.apiNotes = apiNotes;
         collectDeclarationsNeedingWrapping();
+        collectContextNames();
     }
 
     void addDeclaration(StructData structData)
@@ -81,7 +111,13 @@ struct ApiNotesTranslator
             }
 
             output.subscopeStrong(wrapperResult.extent, wrapperResult.makeString) in {
-                output.singleLine("return %s(%-(%s, %));", originalName, parameterNames);
+                if (wrapper(of: cursor.func.resultType).isPresent)
+                {
+                    output.singleLine("typeof(this) __result = { %s(%-(%s, %)) };", originalName, parameterNames);
+                    output.singleLine("return __result;");
+                }
+                else
+                    output.singleLine("return %s(%-(%s, %));", originalName, parameterNames);
             };
 
             addOriginalFunction(cursor, output, originalName);
@@ -107,7 +143,7 @@ struct ApiNotesTranslator
             throw new DStepException(message);
         }
 
-        setCursor(cursor, for_: func.context.or(""));
+        setCursor(cursor, forContext: func.context.or(""));
 
         auto member = (Output output) {
             auto wrapperFunction = dstep.translator.Translator.Function(
@@ -175,6 +211,14 @@ struct ApiNotesTranslator
         }
     }
 
+    Optional!string wrapper(Type of) =>
+        declarations
+            .byValue
+            .filter!(ad => !ad.cursor.func.resultType.declaration.isRecord.or(false))
+            .find!(ad => ad.cursor.func.resultType.isEqualTo(of).or(false))
+            .map!(ad => ad.name.some)
+            .or(none!string);
+
 private:
 
     auto declarationsNeedingSynthesizing() =>
@@ -203,9 +247,9 @@ private:
             .addMember(member);
     }
 
-    void setCursor(Cursor cursor, string for_)
+    void setCursor(Cursor cursor, string forContext)
     {
-        auto name = for_;
+        auto name = forContext;
         declarations.require(name, new AnnotatedDeclaration(name))
             .cursor = cursor;
     }
@@ -233,5 +277,17 @@ private:
             .map!(cursor => cursor.spelling)
             .filter!(spelling => spelling in apiNotes.contextsWithConstructors)
             .each!(spelling => declarationsNeedingWrapping.put(spelling));
+    }
+
+    void collectContextNames()
+    {
+        auto contexts = apiNotes
+            .functions
+            .save
+            .filter!(func => func.isConstructor)
+            .map!(func => func.context.or(""));
+
+        foreach (context; contexts)
+            declarations.require(context, new AnnotatedDeclaration(context));
     }
 }

@@ -484,7 +484,23 @@ SourceNode translateFunction (
 
     auto returnType = func.canonicalizeReturnType ?
         func.cursor.resultType.canonical : func.cursor.resultType;
-    auto resultType = translateType(context, func.cursor, returnType);
+
+    SourceNode resultType;
+
+    auto translateReturnType() => translateType(context, func.cursor, returnType);
+
+    if (func.apiNotesFunction.isInstanceMethod.or(false))
+    {
+        const wrapper = context
+            .translator
+            .apiNotesTranslator
+            .wrapper(of: func.cursor.resultType);
+
+        resultType = wrapper.map!(w => makeSourceNode(w)).or(translateReturnType());
+    }
+    else
+        resultType = translateReturnType();
+
     auto multiline = func.cursor.extent.isMultiline &&
         !context.options.singleLineFunctionSignatures;
     auto spacer = context.options.spaceAfterFunctionName ? " " : "";

@@ -405,6 +405,8 @@ q"YAML
 Functions:
   - Name: CGPathCreateMutable
     DName: CGMutablePathRef.init()
+  - Name: CGPathCreateCopy
+    SwiftName: CGMutablePathRef.copy(self:)
 YAML"
 );
 
@@ -412,6 +414,7 @@ YAML"
 q"C
 typedef struct CGPath *CGMutablePathRef;
 CGMutablePathRef CGPathCreateMutable(void);
+CGMutablePathRef CGPathCreateCopy(CGMutablePathRef path);
 C",
 q"D
 struct CGMutablePathRef
@@ -426,6 +429,15 @@ struct CGMutablePathRef
 
     extern (C) private static pragma(mangle, "CGPathCreateMutable")
     CGPath* CGPathCreateMutable ();
+
+    CGMutablePathRef copy ()
+    {
+        typeof(this) __result = { __copy(this) };
+        return __result;
+    }
+
+    extern (C) private static pragma(mangle, "CGPathCreateCopy")
+    CGPath* __copy (CGMutablePathRef path);
 }
 D", options, annotatedFile: "CGMutablePathRef.d");
 }

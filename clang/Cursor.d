@@ -295,6 +295,12 @@ struct Cursor
         return clang_isTranslationUnit(kind) != 0;
     }
 
+    bool isRecord() const
+    {
+        with (CXCursorKind)
+            return kind == structDecl || kind == unionDecl;
+    }
+
     File includedFile()
     {
         return File(clang_getIncludedFile(cx));
