@@ -27,7 +27,7 @@ struct Cursor
 
     private static const CXCursorKind[string] predefined;
 
-    static this()
+    shared static this()
     {
         predefined = queryPredefined();
     }
