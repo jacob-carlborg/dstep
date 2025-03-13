@@ -33,7 +33,7 @@ typedef struct rd_kafka_metadata {
         char       *orig_broker_name; /* Name of originating broker */
 } rd_kafka_metadata_t;
 
-rd_kafka_metadata (rd_kafka_t *rk, int all_topics,
+int rd_kafka_metadata (rd_kafka_t *rk, int all_topics,
                    rd_kafka_topic_t *only_rkt,
                    const struct rd_kafka_metadata **metadatap,
                    int timeout_ms);
