@@ -21,6 +21,7 @@ import dstep.translator.Output;
 import dstep.translator.Translator;
 import dstep.translator.TypedefIndex;
 import dstep.translator.HeaderIndex;
+import dstep.translator.Util;
 
 class Context
 {
@@ -194,7 +195,7 @@ class Context
 
     private string translateSpellingImpl(in Cursor cursor)
     {
-        return cursor.spelling == ""
+        return cursor.spelling.isUnnamed()
             ? generateAnonymousName(cursor)
             : cursor.spelling;
     }
@@ -272,7 +273,7 @@ class Context
         {
             auto typedefp = typedefParent(cursor.canonical);
 
-            if (typedefp.isValid && cursor.spelling == "")
+            if (typedefp.isValid && cursor.spelling.isUnnamed)
             {
                 spelling = typedefp.spelling;
             }
@@ -378,8 +379,19 @@ bool variablesInParentScope(Cursor cursor)
   */
 bool shouldBeAnonymous(Context context, Cursor cursor)
 {
-    return cursor.type.isAnonymous &&
-        context.typedefIndex.typedefParent(cursor).isEmpty;
+    import std.string: startsWith;
+
+    /* Unfortunately, libclang isAnonymous doesn't seem to work on enums
+     * https://stackoverflow.com/a/35184821
+     * Checking for the string value instead is brittle and might break in a future
+     * version, but I don't think there's a better way
+     */
+    if (cursor.kind == CXCursorKind.enumDecl)
+        return cursor.spelling.isUnnamed
+            && context.typedefIndex.typedefParent(cursor).isEmpty;
+    else
+        return cursor.type.isAnonymous &&
+            context.typedefIndex.typedefParent(cursor).isEmpty;
 }
 
 /**

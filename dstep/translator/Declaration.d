@@ -10,6 +10,7 @@ import clang.Cursor;
 
 import dstep.translator.Translator;
 import dstep.translator.Output;
+import dstep.translator.Util;
 
 abstract class Declaration
 {
@@ -44,6 +45,6 @@ abstract class Declaration
     @property string spelling ()
     {
         auto name = cursor.spelling;
-        return name.length || parent.isEmpty ? name : translator.context.generateAnonymousName(cursor);
+        return !name.isUnnamed && (name.length || parent.isEmpty) ? name : translator.context.generateAnonymousName(cursor);
     }
 }
