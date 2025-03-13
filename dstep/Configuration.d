@@ -165,6 +165,9 @@ template makeGetOptArgs(alias config)
 
         static if (
             __traits(compiles, &__traits(getMember, config, spelling)) &&
+            // member might be a possibly overloaded function
+            // calling getAttributes on an overload set has been deprecated
+            !is(typeof(member) == return) &&
             __traits(getAttributes, member).length == 2)
         {
             auto ptr() @property
