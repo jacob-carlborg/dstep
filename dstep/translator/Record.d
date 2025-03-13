@@ -19,6 +19,7 @@ import dstep.translator.Declaration;
 import dstep.translator.Output;
 import dstep.translator.Translator;
 import dstep.translator.Type;
+import dstep.translator.Util;
 
 string translateRecordTypeKeyword(in Cursor cursor)
 {
@@ -140,7 +141,14 @@ void translateRecordDef(
     auto canonical = cursor.canonical;
 
     auto spelling = keepUnnamed ? "" : context.translateTagSpelling(cursor);
-    spelling = spelling == "" ? spelling : " " ~ spelling;
+    /* Spaghetti warning: Since unnamed values might in at least clang 19.1
+     * contain "unnamed enum" or something as the name instead of being empty,
+     * explicitly set it our variable to the empty string.
+     *
+     * Preferably, this would be disentagled and it would be ensured that there
+     * is only one source of the spelling in this whole function.
+     */
+    spelling = spelling.isUnnamed ? "" : " " ~ spelling;
     auto type = translateRecordTypeKeyword(cursor);
 
     output.subscopeStrong(cursor.extent, "%s%s", type, spelling) in {
@@ -195,7 +203,7 @@ void translateRecordDef(
 
                     case CXCursorKind.unionDecl:
                     case CXCursorKind.structDecl:
-                        if (cursor.type.isAnonymous)
+                        if (cursor.type.isAnonymous || cursor.spelling.isUnnamed)
                             translateAnonymousRecord(output, context, cursor);
 
                         break;
@@ -216,7 +224,8 @@ void translateRecordDecl(Output output, Context context, Cursor cursor)
     context.markAsDefined(cursor);
 
     auto spelling = context.translateTagSpelling(cursor);
-    spelling = spelling == "" ? spelling : " " ~ spelling;
+    //spelling = spelling == "" ? spelling : " " ~ spelling;
+    spelling = spelling.isUnnamed ? "" : " " ~ spelling;
     auto type = translateRecordTypeKeyword(cursor);
     output.singleLine(cursor.extent, "%s%s;", type, spelling);
 }
@@ -233,7 +242,7 @@ bool shouldSkipRecord(Context context, Cursor cursor)
         cursor.kind == CXCursorKind.unionDecl)
     {
         auto typedefp = context.typedefParent(cursor.canonical);
-        auto spelling = typedefp.isValid && cursor.spelling == ""
+        auto spelling = typedefp.isValid && isUnnamed(cursor.spelling)
             ? typedefp.spelling
             : cursor.spelling;
 
@@ -249,7 +258,7 @@ bool shouldSkipRecordDefinition(Context context, Cursor cursor)
         cursor.kind == CXCursorKind.unionDecl)
     {
         auto typedefp = context.typedefParent(cursor.canonical);
-        auto spelling = typedefp.isValid && cursor.spelling == ""
+        auto spelling = typedefp.isValid && cursor.spelling.isUnnamed
             ? typedefp.spelling
             : cursor.spelling;
 
