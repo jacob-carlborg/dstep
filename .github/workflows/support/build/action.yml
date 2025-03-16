@@ -72,7 +72,7 @@ runs:
           DSTEP_RELEASE_PLATFORM
           DSTEP_TARGET_TRIPLE
         run: |
-          sudo pkg install -y llvm git gnupg
+          sudo pkg install -y llvm15 git gnupg
           ./ci.sh ${{ inputs.action }}
 
     - name: Set up QEMU
