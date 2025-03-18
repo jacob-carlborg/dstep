@@ -19,6 +19,7 @@ import dstep.translator.Declaration;
 import dstep.translator.Output;
 import dstep.translator.Translator;
 import dstep.translator.Type;
+import dstep.translator.Util;
 
 void translateEnumConstantDecl(
     Output output,
