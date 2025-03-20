@@ -20,6 +20,9 @@ struct Configuration
     /// array of file names to translate to D
     string[] inputFiles;
 
+    /// in case if there are many input files in one dir
+    bool isInputFromDir;
+
     /// expected programming language of input files
     Language language;
 
@@ -34,8 +37,11 @@ struct Configuration
     /// array of parameters needed to be forwarded to clang driver
     string[] clangParams;
 
-    /// output file name or folder (in case there are many input files)
-    string output;
+    /// output file name or folder
+    string outputPath;
+
+    /// in case there are many input files or dir output option provided
+    bool isOutputToDir;
 
     /// package name
     @("package", "Use <package> as package name.")
