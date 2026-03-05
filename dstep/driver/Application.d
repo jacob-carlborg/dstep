@@ -115,8 +115,9 @@ class Application
         import std.algorithm;
         import std.array;
         import std.range;
+        import std.path;
 
-        import dstep.driver.Util : makeDefaultOutputFile;
+        import dstep.driver.Util : makeDefaultOutputFile, findBasePath;
 
         auto inputFiles = config.inputFiles;
 
@@ -130,11 +131,19 @@ class Application
         }
         else
         {
-            alias fmap = file => Path.buildPath(
-                config.output,
-                makeDefaultOutputFile(file, false));
-
-            return inputFiles.map!fmap.array;
+            if (config.output.empty)
+            {
+                alias fmap = file => makeDefaultOutputFile(file, false);
+                return inputFiles.map!fmap.array;
+            }
+            else
+            {
+                auto basePath = findBasePath(inputFiles);
+                alias fmap = file => Path.buildPath(
+                    config.output,
+                    makeDefaultOutputFile(relativePath(file, basePath), false));
+                return inputFiles.map!fmap.array;
+            }
         }
     }
 
