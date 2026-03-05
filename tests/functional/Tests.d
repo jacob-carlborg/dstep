@@ -9,6 +9,7 @@ import tests.support.Assertions;
 import std.algorithm : canFind;
 import std.process : executeShell;
 import std.typecons;
+import std.path : absolutePath;
 
 void printClangVersion()
 {
@@ -292,6 +293,44 @@ unittest
 unittest
 {
     assertIssuesWarning("tests/functional/collision.h");
+}
+
+// DStep should output to correct directory when using absolute paths.
+unittest
+{
+    assertRunsDStepCFiles([
+        TestFile("tests/functional/graph/subfile1.d", absolutePath("tests/functional/graph/subfile1.h")),
+        TestFile("tests/functional/include/subfile3.d", absolutePath("tests/functional/include/subfile3.h"))]
+    );
+}
+
+unittest
+{
+    assertRunsDStepCFile(
+        "tests/functional/functions.d",
+        absolutePath("tests/functional/functions.h")
+    );
+}
+
+// Output in same directory when single file given and no output specified
+unittest
+{
+    assertRunsDStepCFiles(
+        [TestFile("tests/functional/functions.d", absolutePath("tests/functional/functions.h"))],
+        ["--unspecified-output"],
+        false);
+}
+
+// Output in same directory when using multiple files with no output folder specified
+unittest
+{
+    assertRunsDStepCFiles(
+        [TestFile("tests/functional/aggregate.d", "tests/functional/aggregate.h"),
+         TestFile("tests/functional/functions.d", "tests/functional/functions.h"),
+         TestFile("tests/functional/graph/subfile1.d", absolutePath("tests/functional/graph/subfile1.h")),
+         TestFile("tests/functional/include/subfile3.d", absolutePath("tests/functional/include/subfile3.h"))],
+        ["--unspecified-output"]
+    );
 }
 
 version (OSX):
