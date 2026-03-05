@@ -21,13 +21,13 @@ auto testRunDStep(
 {
     import core.exception : AssertError;
 
-    import std.algorithm : canFind, map;
-    import std.file : exists, isFile, readText, rmdirRecurse;
-    import std.path : buildPath;
+    import std.algorithm : canFind, map, remove;
+    import std.file : exists, isFile, readText, mkdirRecurse, rmdirRecurse, copy, getcwd;
+    import std.path : buildPath, isAbsolute, relativePath, dirName;
     import std.range : join;
-    import std.array : empty;
+    import std.array : empty, array;
 
-    import dstep.driver.Util : makeDefaultOutputFile;
+    import dstep.driver.Util : makeDefaultOutputFile, findBasePath;
 
     version (OptionalGNUStep)
     {
@@ -48,31 +48,53 @@ auto testRunDStep(
     string outputDir = namedTempDir("dstepUnitTest");
     scope(exit) rmdirRecurse(outputDir);
 
+    auto argumentsLength = arguments.length;
+    arguments = arguments.remove!(x => x == "--unspecified-output");
+    bool unspecifiedOutput = arguments.length < argumentsLength;
+
     string[] outputPaths;
+    string workDir = getcwd();
 
-    if (sourcePaths.length == 1)
+    auto sourceBasePath = findBasePath(sourcePaths);
+    foreach (ref sourcePath; sourcePaths)
     {
-        outputPaths ~= buildPath(outputDir,
-            makeDefaultOutputFile(sourcePaths[0], false));
+        string path = sourcePath;
+        if (isAbsolute(sourcePath))
+        {
+            path = relativePath(sourcePath, unspecifiedOutput ? workDir : sourceBasePath);
+        }
+        if (unspecifiedOutput)
+        {
+            auto updatedSourcePath = buildPath(outputDir, path);
+            mkdirRecurse(dirName(updatedSourcePath));
+            copy(sourcePath, updatedSourcePath);
+            if (isAbsolute(sourcePath))
+            {
+                sourcePath = updatedSourcePath;
+            }
+        }
+        outputPaths ~= buildPath(outputDir, makeDefaultOutputFile(path, false));
+    }
+
+    auto dstepPath = buildPath(workDir, "bin", "dstep");
+    auto localCommand = [dstepPath] ~ sourcePaths ~ arguments;
+
+    if (unspecifiedOutput)
+    {
+        workDir = outputDir;
     }
     else
     {
-        foreach (sourcePath; sourcePaths)
-            outputPaths ~= buildPath(outputDir,
-                makeDefaultOutputFile(sourcePath, false));
+        if (outputPaths.length == 1)
+            localCommand ~= ["-o", outputPaths[0]];
+        else
+            localCommand ~= ["-o", outputDir];
     }
-
-    auto localCommand = ["./bin/dstep"] ~ sourcePaths ~ arguments;
-
-    if (outputPaths.length == 1)
-        localCommand ~= ["-o", outputPaths[0]];
-    else
-        localCommand ~= ["-o", outputDir];
 
     if (command)
         *command = join(localCommand, " ");
 
-    auto result = execute(localCommand);
+    auto result = execute(localCommand, workDir: workDir);
 
     if (outputContents)
         outputContents.length = outputPaths.length;
