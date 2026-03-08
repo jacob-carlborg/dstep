@@ -850,8 +850,8 @@ D"[0 .. $ - 1]);
         if (commentIndex && commentIndex.isHeaderCommentPresent)
         {
             auto location = commentIndex.queryHeaderCommentExtent.end;
-            headerEndOffset = location.offset + 2;
             flushLocation(location, false);
+            headerEndOffset = cast(uint) buffer.data.length + 2;
             return true;
         }
         else

@@ -33,6 +33,31 @@ q"D
 D", options, false);
 }
 
+unittest
+{
+    Options options;
+    options.packageName = "a";
+    options.outputFile = "a.h";
+    options.globalImports = ["b"];
+
+    assertTranslates(
+"/**\n * comment with trailing whitespace  \n *   \n**/\n\n#pragma once\n\n#define A 1\n",
+q"D
+/**
+ * comment with trailing whitespace
+ *
+**/
+
+module a.a;
+
+import b;
+
+extern (C):
+
+enum A = 1;
+D", options, true);
+}
+
 // Test single comment.
 unittest
 {
