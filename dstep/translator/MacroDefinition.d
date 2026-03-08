@@ -10,6 +10,7 @@ import std.array : Appender;
 import std.traits;
 import std.meta;
 import std.variant;
+import std.string;
 
 import clang.c.Index;
 import clang.Cursor;
@@ -87,27 +88,59 @@ struct ExpressionContext
     }
 }
 
+private string normalizeLSuffix(string suffix)
+{
+    for (int i = 0; i < suffix.length; i++)
+    {
+        if (suffix.length > i + 1 &&
+            ((suffix[i] == 'l' && suffix[i + 1] == 'l') ||
+            (suffix[i] == 'L' && suffix[i + 1] == 'L')))
+        {
+            return suffix[0 .. i] ~ "L" ~ suffix[i + 2 .. $];
+        }
+        else if (suffix[i] == 'l')
+        {
+            return suffix[0 .. i] ~ "L" ~ suffix[i + 1 .. $];
+        }
+    }
+    return suffix;
+}
+
+private string normalizeDot(string number, string suffix)
+{
+    auto dot = number.indexOf('.');
+    if (dot < 0 || (suffix.empty && dot == number.length - 1))
+        return number;
+
+    if (dot + 1 == number.length ||
+        number[dot + 1] == 'e' || number[dot + 1] == 'E' ||
+        number[dot + 1] == 'p' || number[dot + 1] == 'P')
+        return number[0 .. dot + 1] ~ "0" ~ number[dot + 1 .. $];
+
+    return number;
+}
+
 string translate(Literal literal, ExpressionContext context)
 {
     import std.algorithm;
     import std.ascii;
-    import std.range;
 
-    alias pred = (dchar x) => (x == 'u' || x == 'U' || x == 'L');
-    auto integer = literal.spelling.stripRight!pred;
-    auto uinteger = integer.stripLeft!(x => x == '+' || x == '-');
+    alias pred = (dchar x) => (x == 'u' || x == 'U' || x == 'l' || x == 'L' ||
+                               x == 'f' || x == 'F');
+    auto number  = literal.spelling.stripRight!pred;
+    auto suffix   = literal.spelling[number.length .. $];
 
-    if (uinteger.length > 1 &&
-        uinteger.all!isDigit &&
-        uinteger.front == '0')
+    suffix = normalizeLSuffix(suffix);
+
+    auto uinteger = number.stripLeft!(x => x == '+' || x == '-');
+    if (uinteger.length > 1 && uinteger.all!isDigit && uinteger.front == '0')
     {
         (*context.imports).add("std.conv : octal");
-        auto suffix = literal.spelling[integer.length .. $];
         auto core = uinteger[0 .. $ - 1].stripLeft('0') ~ uinteger[$ - 1];
         return "octal!" ~ core ~ suffix;
     }
 
-    return literal.spelling;
+    return normalizeDot(number, suffix) ~ suffix;
 }
 
 string translate(Identifier identifier, ExpressionContext context)
