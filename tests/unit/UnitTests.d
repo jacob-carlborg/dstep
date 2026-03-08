@@ -1033,6 +1033,7 @@ unittest
 #define some_0700UL 0700UL
 #define some_minus_0700 -0700
 #define some_minus_0700L -0700L
+#define nonoctal 0700.
 C", q"D
 import std.conv : octal;
 
@@ -1051,6 +1052,66 @@ enum some_0700uL = octal!700uL;
 enum some_0700UL = octal!700UL;
 enum some_minus_0700 = -octal!700;
 enum some_minus_0700L = -octal!700L;
+enum nonoctal = 0700.;
+D");
+
+}
+
+// Suffix normalization tests.
+unittest
+{
+    assertTranslates(q"C
+#define longA 1l
+#define longB 2LL
+#define longC -3ll
+#define longD 4uLL
+#define longE 5Ull
+#define longF 6LLU
+#define longG 7llu
+#define longH 8LLu
+#define longI +9llU
+#define longJ 1ull
+#define longK 2ULL
+
+#define floatA 3.
+#define floatB 4.f
+#define floatC 0.F
+#define floatD -1.f
+#define floatE +2.F
+#define floatF 0.e+0
+#define floatG 0e0
+#define floatH 3.e7
+#define floatI -1.2E+3
+#define floatJ 4.5e-6
+#define floatK 0x79.P6
+#define floatL 0x8.p2F
+C", q"D
+extern (C):
+
+enum longA = 1L;
+enum longB = 2L;
+enum longC = -3L;
+enum longD = 4uL;
+enum longE = 5UL;
+enum longF = 6LU;
+enum longG = 7Lu;
+enum longH = 8Lu;
+enum longI = +9LU;
+enum longJ = 1uL;
+enum longK = 2UL;
+
+enum floatA = 3.;
+enum floatB = 4.0f;
+enum floatC = 0.0F;
+enum floatD = -1.0f;
+enum floatE = +2.0F;
+enum floatF = 0.0e+0;
+enum floatG = 0e0;
+enum floatH = 3.0e7;
+enum floatI = -1.2E+3;
+enum floatJ = 4.5e-6;
+enum floatK = 0x79.0P6;
+enum floatL = 0x8.0p2F;
 D");
 
 }
