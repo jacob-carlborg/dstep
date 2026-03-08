@@ -90,3 +90,14 @@ unittest
 
     new HeaderIndex(translationUnit);
 }
+
+unittest
+{
+    const string file = "tests/functional/graph/subfile1.h".asAbsNormPath();
+
+    auto translationUnit = makeTranslationUnit(
+        "tests/functional/graph/include_known.h",
+        ["-Wno-missing-declarations", "-Itests/functional", "-include", file]);
+
+    new HeaderIndex(translationUnit);
+}
