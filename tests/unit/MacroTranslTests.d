@@ -841,3 +841,19 @@ extern (D) auto fun(T)(auto ref T a)
 }
 D");
 }
+
+// Translate wide string literals with L prefix.
+unittest
+{
+    assertTMD(q"C
+#define H L"hello world"
+C", q"D
+enum H = "hello world"w;
+D");
+
+    assertTMD(q"C
+#define E L""
+C", q"D
+enum E = ""w;
+D");
+}

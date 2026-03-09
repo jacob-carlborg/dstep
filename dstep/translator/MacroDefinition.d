@@ -105,6 +105,9 @@ string translate(Literal literal, ExpressionContext context)
         auto suffix = literal.spelling[integer.length .. $];
         auto core = uinteger[0 .. $ - 1].stripLeft('0') ~ uinteger[$ - 1];
         return "octal!" ~ core ~ suffix;
+    } else if (literal.spelling.length >= 3 && literal.spelling[0..2] == "L\"")
+    {
+        return literal.spelling[1..$] ~ "w";
     }
 
     return literal.spelling;
