@@ -84,6 +84,37 @@ unittest
     assert(d !is null && d.expr.hasValue && d.expr.peek!CallExpr !is null);
 }
 
+unittest
+{
+    auto a = parse(`#define NESTED { .inner = { 1, 2 } }`);
+    assert(a !is null);
+    assert(a.expr.hasValue);
+    assert(a.expr.peek!BracedExpr !is null);
+    auto braced1 = a.expr.get!BracedExpr;
+    assert(braced1.expr == `{.inner={1,2}}`);
+
+    auto b = parse(`#define MAKE(a) { .data = (a) }`);
+    assert(b !is null);
+    assert(b.expr.hasValue);
+    assert(b.expr.peek!BracedExpr !is null);
+    auto braced2 = b.expr.get!BracedExpr;
+    assert(braced2.expr == `{.data=(a)}`);
+
+    auto c = parse(`#define UUID { 0x5ae69b6a, 0xd191, 0x4609, {0xb7, 0xdc, 0x24, 0x80, 0x8e, 0xf9, 0x97, 0xb5 } }`);
+    assert(c !is null);
+    assert(c.expr.hasValue);
+    assert(c.expr.peek!BracedExpr !is null);
+    auto braced3 = c.expr.get!BracedExpr;
+    assert(braced3.expr == `{0x5ae69b6a,0xd191,0x4609,{0xb7,0xdc,0x24,0x80,0x8e,0xf9,0x97,0xb5}}`);
+
+    auto d = parse(`#define D (({ {1, 2}, {3, 4} }))`);
+    assert(d !is null);
+    assert(d.expr.hasValue);
+    assert(d.expr.peek!BracedExpr !is null);
+    auto braced4 = d.expr.get!BracedExpr;
+    assert(braced4.expr == `(({{1,2},{3,4}}))`);
+}
+
 // Test collection of type names.
 unittest
 {
