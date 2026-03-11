@@ -15,6 +15,7 @@
 module clang.c.cx_compilation_database;
 
 public import clang.c.cx_string;
+public import clang.c.platform;
 
 extern (C):
 

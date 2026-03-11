@@ -11,6 +11,7 @@ import clang.Cursor;
 import clang.Index;
 import clang.SourceRange;
 import clang.TranslationUnit;
+import clang.Util;
 
 import dstep.translator.CommentIndex;
 import dstep.translator.IncludeHandler;
@@ -18,6 +19,7 @@ import dstep.translator.MacroDefinition;
 import dstep.translator.MacroIndex;
 import dstep.translator.Options;
 import dstep.translator.Output;
+import dstep.translator.Preprocessor;
 import dstep.translator.Translator;
 import dstep.translator.TypedefIndex;
 import dstep.translator.HeaderIndex;
@@ -46,6 +48,8 @@ class Context
 
     public this(TranslationUnit translUnit, Options options, Translator translator = null)
     {
+        import std.algorithm.iteration : filter;
+
         this.translUnit = translUnit;
         macroIndex = new MacroIndex(translUnit);
         includeHandler_ = new IncludeHandler(headerIndex, options);
@@ -55,6 +59,14 @@ class Context
 
         foreach (item; options.publicGlobalImports)
             includeHandler_.addImport(item, Visibility.public_);
+
+        foreach (cursor; translUnit.cursor.children.filter!(c => c.kind == CXCursorKind.inclusionDirective))
+        {
+            if (cursor.path.asAbsNormPath != translUnit.spelling.asAbsNormPath)
+                continue;
+
+            includeHandler_.addInclude(cursor.spelling, cursor.includedFile.absolutePath);
+        }
 
         this.options = options;
 

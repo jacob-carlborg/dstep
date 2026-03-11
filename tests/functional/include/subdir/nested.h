@@ -1,0 +1,5 @@
+
+struct SubdirStruct {
+    PTR a;
+};
+
