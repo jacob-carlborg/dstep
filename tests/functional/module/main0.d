@@ -1,6 +1,7 @@
 module modules.main0;
 
 import modules.include;
+import modules.unused;
 
 extern (C):
 

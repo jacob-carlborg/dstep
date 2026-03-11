@@ -16,6 +16,8 @@ unittest
 #define __le64 uint64_t
 C",
     q"D
+import core.stdc.stdint;
+
 extern (C):
 
 alias __le64 = ulong;

@@ -227,6 +227,37 @@ unittest
     );
 }
 
+unittest
+{
+    assertRunsDStepCFile(
+        "tests/functional/include/file.d",
+        "tests/functional/include/file.h",
+        ["-Itests/functional/include"]
+    );
+}
+
+unittest
+{
+    import std.path : absolutePath;
+
+    assertRunsDStepCFile(
+        "tests/functional/imports.d",
+        "tests/functional/imports.h",
+        ["-I" ~ "tests/functional/include".absolutePath(), "-includesubdir/primary.h"]
+    );
+}
+
+unittest
+{
+    import std.path : absolutePath;
+
+    assertRunsDStepCFile(
+        "tests/functional/imports.d",
+        "tests/functional/imports.h",
+        ["-Itests/functional/include", "-include" ~ "tests/functional/include/subdir/primary.h".absolutePath()]
+    );
+}
+
 // DStep should exit with non-zero status when an input file doesn't exist.
 unittest
 {

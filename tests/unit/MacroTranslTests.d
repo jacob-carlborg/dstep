@@ -610,6 +610,8 @@ unittest
 
 #define ROWBYTES(pixel_bits) (int32_t)(pixel_bits)
 C", q"D
+import core.stdc.stdint;
+
 extern (C):
 
 extern (D) auto ROWBYTES(T)(auto ref T pixel_bits)

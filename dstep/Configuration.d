@@ -113,6 +113,9 @@ struct Configuration
     @("public-global-import", "Add <import> as a public global import.")
     string[] publicGlobalImports;
 
+    /// needed for converting absolute includes to relative
+    string[] includePaths = ["/usr/local/include", "/usr/include"];
+
     Options toOptions(string inputFile, string outputFile) const
     {
         Options options = toOptions();
@@ -150,6 +153,7 @@ struct Configuration
         options.globalAttributes = globalAttributes;
         options.globalImports = globalImports;
         options.publicGlobalImports = publicGlobalImports;
+        options.includePaths = includePaths;
 
         return options;
     }

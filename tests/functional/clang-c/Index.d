@@ -18,8 +18,10 @@ module clang.c.index;
 import core.stdc.config;
 import core.stdc.time;
 
+public import clang.c.build_system;
 public import clang.c.cx_error_code;
 public import clang.c.cx_string;
+public import clang.c.platform;
 
 extern (C):
 

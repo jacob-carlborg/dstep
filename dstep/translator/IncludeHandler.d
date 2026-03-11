@@ -25,7 +25,7 @@ class IncludeHandler
 {
     private Options options;
     private string[string] submodules;
-    private bool[string] includes;
+    private string[string] includes;
     private bool[string] imports;
     private Set!string publicImports;
     private HeaderIndex headerIndex;
@@ -106,6 +106,7 @@ class IncludeHandler
             "sys/un" : "core.sys.posix.sys.un",
             "sys/utsname" : "core.sys.posix.sys.utsname",
             "sys/wait" : "core.sys.posix.sys.wait",
+            "sys/ioctl" : "core.sys.posix.sys.ioctl",
 
             "windows" : "core.sys.windows.windows"
         ];
@@ -133,21 +134,40 @@ class IncludeHandler
         }
     }
 
-    void addInclude (string include)
+    void addInclude (string name, string absolutePath)
     {
-        import std.path;
-        import std.file;
-        import std.array;
+        assert(name.length > 0);
+        assert(absolutePath.length > 0);
 
-        auto absolute = include.asAbsNormPath;
+        includes.require(absolutePath, name);
+    }
 
-        if (absolute != options.inputFile && !include.empty)
+    void addInclude (string absolutePath)
+    {
+        import std.path : isAbsolute, baseName;
+        import std.algorithm.searching : startsWith;
+
+        auto includeName = headerIndex.getIncludeName(absolutePath);
+        assert(includeName.length > 0);
+
+        if (isAbsolute(includeName))
         {
-            if (exists(absolute) && isFile(absolute))
-                includes[absolute] = true;
-            else
-                includes[include] = true;
+            foreach (includePath; options.includePaths)
+            {
+                if (absolutePath.startsWith(includePath))
+                {
+                    includeName = absolutePath[includePath.length + 1 .. $];
+                    break;
+                }
+            }
+
+
+            if (isAbsolute(includeName))
+                // didn't match any known path, fallback to just filename
+                includeName = absolutePath.baseName;
         }
+
+        addInclude(includeName, absolutePath);
     }
 
     void addImport (string imp)
@@ -167,36 +187,48 @@ class IncludeHandler
 
     void addCompatible ()
     {
-        includes["config.h"] = true;
+        includes["config.h"] = "config.h";
     }
 
     void toImports (Output output)
     {
-        import std.algorithm : map;
-        import std.array : array;
+        import std.algorithm : map, sort, copy;
+        import std.array : array, replace;
         import std.format : format;
-        import std.algorithm.iteration : filter, map;
+        import std.algorithm.iteration : map, uniq;
+        import std.path : stripExtension;
+        import std.uni : toLower;
 
         Set!string standard, package_, unhandled;
 
-        foreach (entry; includes.byKey)
+        foreach (absolute, includeName; includes)
         {
-            if (auto i = isKnownInclude(entry))
-                standard.add(toImport(i));
-            else if (auto i = isPackageSubmodule(entry))
+            if (auto i = isPackageSubmodule(absolute))
                 package_.add(toSubmoduleImport(i));
-            else
-                unhandled.add(format(`/+ #include "%s" +/`, entry));
+            else if (includeName.length > 0)
+            {
+                if (auto i = isKnownInclude(includeName))
+                {
+                    standard.add(toImport(i));
+                }
+                else
+                {
+                    auto name = stripExtension(includeName).toLower();
+                    unhandled.add(format(`// FIXME: import %s;`, name.replace("/", ".")));
+                }
+            }
         }
 
         const publicExtra = publicImports.byKey.map!(e => toImport(e, Visibility.public_)).array;
         auto extra = imports.byKey.map!(e => toImport(e)).array;
+        auto imports = standard.keys ~ publicExtra ~ extra.array;
+        imports.sort();
+        imports.length -= imports.uniq().copy(imports).length;
 
-        importsBlock(output, standard.keys ~ publicExtra ~ extra.array);
+        importsBlock(output, imports);
         importsBlock(output, package_.keys);
 
-        if (options.keepUntranslatable)
-            importsBlock(output, unhandled.keys);
+        importsBlock(output, unhandled.keys);
 
         output.finalize();
     }
@@ -248,11 +280,11 @@ private:
 
     string isKnownInclude (string include)
     {
-        import std.path : stripExtension, baseName;
+        import std.path : stripExtension;
 
-        include = stripExtension(baseName(include));
+        auto name = stripExtension(include);
 
-        if (auto ptr = include in knownIncludes)
+        if (auto ptr = name in knownIncludes)
             return *ptr;
         else
             return null;

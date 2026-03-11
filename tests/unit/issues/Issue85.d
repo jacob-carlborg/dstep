@@ -16,6 +16,8 @@ unittest
 int complex_forward (const double data[], const size_t stride, const size_t n, double result[]);
 C",
 q"D
+import core.stdc.stddef;
+
 extern (C):
 
 int complex_forward (const(double)* data, const size_t stride, const size_t n, double* result);

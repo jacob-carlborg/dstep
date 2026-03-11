@@ -13,6 +13,8 @@
 
 module clang.c.cx_string;
 
+public import clang.c.platform;
+
 extern (C):
 
 /**
