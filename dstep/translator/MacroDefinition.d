@@ -522,6 +522,7 @@ bool translateFunctAlias(
 {
     import std.algorithm.comparison : equal;
     import std.algorithm.iteration : map;
+    import std.algorithm.searching : startsWith;
 
     CallExpr* expr = definition.expr.peek!CallExpr;
     auto expressionContext = ExpressionContext.make(context);
@@ -554,11 +555,17 @@ bool translateFunctAlias(
                 .map!(a => a.translate(expressionContext))))
         {
             version (D1)
-                enum fmt = "alias %2$s %1$s;";
+                string fmt = "alias %2$s %1$s;";
             else
-                enum fmt = "alias %1$s = %2$s;";
+                string fmt = "alias %1$s = %2$s;";
 
-            output.singleLine(fmt, definition.spelling, ident.spelling);
+            // Handle compiler builtins (eg. __builtin_unreachable)
+            string value = ident.spelling;
+            if (value.startsWith("__builtin_") || value == "_Alignof")
+            {
+                fmt = "// FIXME: " ~ fmt;
+            }
+            output.singleLine(fmt, definition.spelling, value);
             return true;
         }
     }
@@ -592,6 +599,8 @@ void translateMacroDefinitionAliasOrConst(
     Context context,
     TypedMacroDefinition definition)
 {
+    import std.algorithm.searching : startsWith, canFind;
+
     auto expressionContext = ExpressionContext.make(context);
 
     string formatString;
@@ -612,10 +621,19 @@ void translateMacroDefinitionAliasOrConst(
             formatString = "enum %s = %s;";
     }
 
+    string value = debraced.translate(expressionContext);
+    if (["const", "static", "volatile", "_Static_assert"].canFind(value) ||
+        // Handle compiler builtins
+        value.startsWith("__builtin_") ||
+        value.startsWith("__attribute__"))
+    {
+        formatString = "// FIXME: " ~ formatString;
+    }
+
     output.singleLine(
         formatString,
         definition.definition.spelling,
-        debraced.translate(expressionContext));
+        value);
 
     expressionContext.elevateImports();
 }
