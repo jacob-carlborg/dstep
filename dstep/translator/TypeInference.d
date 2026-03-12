@@ -70,6 +70,12 @@ void inferMacroSignature(
 
     void pass(T)(T operator) { }
 
+    void recurseBinary(T)(T expr)
+    {
+        inferMacroSignature(context, currentDefinition, expr.left);
+        inferMacroSignature(context, currentDefinition, expr.right);
+    }
+
     bool isParamMeta(TypedMacroDefinition definition, string name)
     {
         import std.algorithm;
@@ -122,10 +128,58 @@ void inferMacroSignature(
             if (updated)
                 context.queue.insertBack(*definition);
         },
+        delegate void(CastExpr castExpr)
+        {
+            import std.algorithm : countUntil;
+
+            auto type = castExpr.type.isPointer ? castExpr.type.pointee : castExpr.type;
+            auto index = currentDefinition.params.countUntil(type.spelling);
+
+            if (index != -1 && currentDefinition.signature.params[index].peek!Generic)
+            {
+                currentDefinition.signature.params[index] = Meta.init;
+            }
+        },
         delegate void(SubExpr subExpr)
         {
             inferMacroSignature(context, currentDefinition, subExpr.subexpr);
         },
+        delegate void(UnaryExpr unaryExpr)
+        {
+            inferMacroSignature(context, currentDefinition, unaryExpr.subexpr);
+        },
+        delegate void(DotExpr dotExpr)
+        {
+            inferMacroSignature(context, currentDefinition, dotExpr.subexpr);
+        },
+        delegate void(ArrowExpr arrowExpr)
+        {
+            inferMacroSignature(context, currentDefinition, arrowExpr.subexpr);
+        },
+        delegate void(IndexExpr indexExpr)
+        {
+            inferMacroSignature(context, currentDefinition, indexExpr.subexpr);
+            inferMacroSignature(context, currentDefinition, indexExpr.index);
+        },
+        delegate void(CondExpr condExpr)
+        {
+            inferMacroSignature(context, currentDefinition, condExpr.expr);
+            inferMacroSignature(context, currentDefinition, condExpr.left);
+            inferMacroSignature(context, currentDefinition, condExpr.right);
+        },
+        recurseBinary!MulExpr,
+        recurseBinary!AddExpr,
+        recurseBinary!SftExpr,
+        recurseBinary!RelExpr,
+        recurseBinary!EqlExpr,
+        recurseBinary!AndExpr,
+        recurseBinary!XorExpr,
+        recurseBinary!OrExpr,
+        recurseBinary!LogicalAndExpr,
+        recurseBinary!LogicalOrExpr,
+        recurseBinary!AndAssignExpr,
+        recurseBinary!XorAssignExpr,
+        recurseBinary!OrAssignExpr,
         pass);
 }
 

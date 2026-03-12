@@ -109,7 +109,7 @@ do
                 default:
                     result = translateType(
                         context,
-                        type.kind,
+                        type,
                         rewriteIdToObjcObject)
                         .makeSourceNode();
             }
@@ -278,7 +278,7 @@ string translateTypedef(Context context, Type type)
 
     if (isDKeyword(type.spelling))
     {
-        return type.spelling != translateType(context, type.canonical.kind)
+        return type.spelling != translateType(context, type.canonical)
             ? renameDKeyword(type.spelling)
             : type.spelling;
     }
@@ -300,7 +300,7 @@ do
     if (declaration.isValid)
         return translateType(context, declaration, rewriteIdToObjcObject);
     else
-        return translateType(context, type.kind, rewriteIdToObjcObject)
+        return translateType(context, type, rewriteIdToObjcObject)
             .makeSourceNode();
 }
 
@@ -561,15 +561,15 @@ do
         return translateType(context, cursor, pointee);
 }
 
-string translateType (Context context, CXTypeKind kind, bool rewriteIdToObjcObject = true)
+string translateType (Context context, Type type, bool rewriteIdToObjcObject = true)
 {
     import std.conv;
 
     with (CXTypeKind)
-        switch (kind)
+        switch (type.kind)
         {
             case invalid: return "<unimplemented>";
-            case unexposed: return "<unimplemented>";
+            case unexposed: return type.spelling.empty ? "<unimplemented>" : type.spelling;
             case void_: return "void";
             case bool_: return "bool";
             case charU: return "<unimplemented>";
@@ -632,6 +632,6 @@ string translateType (Context context, CXTypeKind kind, bool rewriteIdToObjcObje
             case elaborated:
                 return "<unimplemented>";
 
-            default: assert(0, "Unhandled type kind " ~ to!string(kind));
+            default: assert(0, "Unhandled type kind " ~ to!string(type.kind));
         }
 }
