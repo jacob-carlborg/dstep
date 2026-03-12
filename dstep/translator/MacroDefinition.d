@@ -328,6 +328,14 @@ string translate(Expression expression, ExpressionContext context)
         },
         delegate string(CastExpr castExpr)
         {
+            if (!castExpr.type.isExposed && !castExpr.isParamType)
+            {
+                return format(
+                    "%s(%s)",
+                    castExpr.type.spelling,
+                    castExpr.subexpr.debraced.translate(context));
+            }
+
             return format(
                 "cast(%s) %s",
                 translateType(context, Cursor.init, castExpr.type).makeString(),

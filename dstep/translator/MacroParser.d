@@ -414,6 +414,7 @@ class CastExpr
 {
     Type type;
     Expression subexpr;
+    bool isParamType;
 
     override string toString()
     {
@@ -667,17 +668,24 @@ Expression parseTokenConcat(ref Token[] tokens)
 
 Expression parsePrimaryExpr(ref Token[] tokens, Cursor[string] table, bool defined)
 {
+    auto local = tokens;
     string spelling;
 
-    auto type = parseTypeName(tokens, table);
+    auto type = parseTypeName(local, table, false);
 
-    if (type.isValid)
+    if (type.isValid && type.isExposed)
+    {
+        tokens = local;
         return Expression(TypeIdentifier(type));
+    }
 
-    if (accept(tokens, spelling, TokenKind.identifier))
+    local = tokens;
+    if (accept(local, spelling, TokenKind.identifier) ||
+        accept(local, spelling, TokenKind.keyword))
+    {
+        tokens = local;
         return Expression(Identifier(spelling));
-
-    auto local = tokens;
+    }
 
     auto substrings = parseStringConcat(local);
 
@@ -721,9 +729,9 @@ Expression parseArg(ref Token[] tokens, Cursor[string] table, bool defined)
         return expression;
     }
 
-    auto type = parseTypeName(local, table);
+    auto type = parseTypeName(local, table, false);
 
-    if (type.isValid)
+    if (type.isValid && type.isExposed)
     {
         tokens = local;
         expression = TypeIdentifier(type);
@@ -855,7 +863,7 @@ Expression parseSizeofType(ref Token[] tokens, Cursor[string] table)
 
     if (acceptPunctuation!("(")(local))
     {
-        Type type = parseTypeName(local, table);
+        Type type = parseTypeName(local, table, true);
 
         if (type.isValid && acceptPunctuation!(")")(local))
         {
@@ -976,7 +984,7 @@ Expression parseCastExpr(ref Token[] tokens, Cursor[string] table, bool defined)
     if (!accept!("(")(local, TokenKind.punctuation))
         return parseUnaryExpr(tokens, table, defined);
 
-    Type type = parseTypeName(local, table);
+    Type type = parseTypeName(local, table, true);
 
     if (!type.isValid)
         return parseUnaryExpr(tokens, table, defined);
@@ -1464,7 +1472,7 @@ bool parseAbstractDeclarator(ref Token[] tokens, ref Type type, Cursor[string] t
     return parsePointer(tokens, type);
 }
 
-Type parseTypeName(ref Token[] tokens, Cursor[string] table)
+Type parseTypeName(ref Token[] tokens, Cursor[string] table, bool anyType = false)
 {
     auto local = tokens;
 
@@ -1472,6 +1480,9 @@ Type parseTypeName(ref Token[] tokens, Cursor[string] table)
 
     if (!parseSpecifierQualifierList(local, type, table))
         return type;
+
+    if (anyType && acceptIdentifier(local, type.spelling))
+        type.kind = CXTypeKind.unexposed;
 
     parseAbstractDeclarator(local, type, table);
 
@@ -1650,7 +1661,98 @@ MacroDefinition parsePartialMacroDefinition(
     else
     {
         tokens = local;
+        fixCasts(result);
         return result;
+    }
+}
+
+void fixCasts(MacroDefinition definition)
+{
+    if (!definition.aliasOrConst)
+    {
+        fixCasts(definition.params, definition.expr);
+    }
+}
+
+void fixCasts(string[] params, ref Expression expr)
+{
+    import std.algorithm.searching : canFind;
+
+    if (auto castExpr = expr.peek!CastExpr())
+    {
+        if (!castExpr.type.isExposed())
+        {
+            if (auto unaryExpr = castExpr.subexpr.peek!UnaryExpr())
+            {
+                fixCasts(params, unaryExpr.subexpr);
+                if (unaryExpr.operator == "&")
+                {
+                    auto newExpr = new AndExpr();
+                    newExpr.operator = unaryExpr.operator;
+                    newExpr.left = Identifier(castExpr.type.spelling);
+                    newExpr.right = unaryExpr.subexpr;
+                    expr = newExpr;
+                } else if (["+", "-"].canFind(unaryExpr.operator))
+                {
+                    auto newExpr = new AddExpr();
+                    newExpr.operator = unaryExpr.operator;
+                    newExpr.left = Identifier(castExpr.type.spelling);
+                    newExpr.right = unaryExpr.subexpr;
+                    expr = newExpr;
+                } else if (unaryExpr.operator == "*")
+                {
+                    auto newExpr = new MulExpr();
+                    newExpr.operator = unaryExpr.operator;
+                    newExpr.left = Identifier(castExpr.type.spelling);
+                    newExpr.right = unaryExpr.subexpr;
+                    expr = newExpr;
+                }
+                return;
+            }
+            else if (!params.canFind(castExpr.type.spelling))
+            {
+                fixCasts(params, castExpr.subexpr);
+
+                if (castExpr.subexpr.convertsTo!BinaryExpr)
+                {
+                    BinaryExpr binaryExpr = castExpr.subexpr.get!(BinaryExpr);
+                    auto newCallExpr = new CallExpr();
+                    newCallExpr.expr = Identifier(castExpr.type.spelling);
+                    newCallExpr.args = [binaryExpr.left];
+                    binaryExpr.left = newCallExpr;
+                    expr = castExpr.subexpr;
+                }
+                return;
+            }
+        }
+        castExpr.isParamType = params.canFind(castExpr.type.spelling);
+        fixCasts(params, castExpr.subexpr);
+    } else if (auto subExpr = expr.peek!SubExpr())
+    {
+        fixCasts(params, subExpr.subexpr);
+    } else if (auto unaryExpr = expr.peek!UnaryExpr())
+    {
+        fixCasts(params, unaryExpr.subexpr);
+    } else if (auto dotExpr = expr.peek!DotExpr())
+    {
+        fixCasts(params, dotExpr.subexpr);
+    } else if (auto arrowExpr = expr.peek!ArrowExpr())
+    {
+        fixCasts(params, arrowExpr.subexpr);
+    } else if (auto indexExpr = expr.peek!IndexExpr())
+    {
+        fixCasts(params, indexExpr.subexpr);
+        fixCasts(params, indexExpr.index);
+    } else if (auto condExpr = expr.peek!CondExpr())
+    {
+        fixCasts(params, condExpr.expr);
+        fixCasts(params, condExpr.left);
+        fixCasts(params, condExpr.right);
+    } else if (expr.hasValue && expr.convertsTo!(BinaryExpr))
+    {
+        BinaryExpr binaryExpr = expr.get!BinaryExpr;
+        fixCasts(params, binaryExpr.left);
+        fixCasts(params, binaryExpr.right);
     }
 }
 

@@ -875,7 +875,7 @@ unittest
     assertTME("#define FOO(a, b, c, d) d &= a |= b && c", "d &= a |= b && c");
     assertTME("#define FOO(a, b, c, d) d ^= a ? ~c % d : c * ~d ^ -(b ? c & d : d) | c", "d ^= a ? ~c % d : c * ~d ^ -(b ? c & d : d) | c");
 }
-{
+
 // Comment out compiler builtins and language keywords.
 unittest
 {
@@ -895,5 +895,91 @@ D");
 #define foo(x) __builtin_foo(x)
 C", q"D
 // FIXME: alias foo = __builtin_foo;
+D");
+}
+
+// Translate unknown identifier as function call with multiple args.
+unittest
+{
+    assertTMD(q"C
+#define FOO(a) (func)((bar)(a), (baz)(a))
+C", q"D
+extern (D) auto FOO(T)(auto ref T a)
+{
+    return func(bar(a), baz(a));
+}
+D");
+}
+
+unittest
+{
+    assertTMD(q"C
+#define NEG(a) (func)(-(a))
+C", q"D
+extern (D) auto NEG(T)(auto ref T a)
+{
+    return func(-a);
+}
+D");
+}
+
+// Translate unknown identifier as function call.
+unittest
+{
+    assertTMD(q"C
+#define FOO(a, b) (func)((baz)(~a) & (!b) + 3 * sizeof((b)))
+C", q"D
+extern (D) auto FOO(T0, T1)(auto ref T0 a, auto ref T1 b)
+{
+    return func(baz(~a) & (!b) + 3 * (b).sizeof);
+}
+D");
+}
+
+// Translate macro argument as type cast.
+unittest
+{
+    assertTMD(q"C
+#define FIELD_PTR(Record, TYPE, Field) ((TYPE *)&((Record)->Field))
+C", q"D
+extern (D) auto FIELD_PTR(TYPE, T0, T2)(auto ref T0 Record, auto ref T2 Field)
+{
+    return cast(TYPE*) &(Record.Field);
+}
+D");
+
+    assertTMD(q"C
+#define mycast(x,y) (x)y
+C", q"D
+extern (D) auto mycast(x, T)(auto ref T y)
+{
+    return cast(x) y;
+}
+D");
+}
+
+// Translate macro argument as type cast in conditional expression.
+unittest
+{
+    assertTMD(q"C
+#define VA_ARG(Marker, TYPE) ((sizeof(TYPE) < sizeof(UINTN)) ? (TYPE)(__builtin_va_arg(Marker, UINTN)) : (TYPE)(__builtin_va_arg(Marker, TYPE)))
+C", q"D
+extern (D) auto VA_ARG(TYPE, T)(auto ref T Marker)
+{
+    return (TYPE.sizeof < UINTN.sizeof) ? cast(TYPE) __builtin_va_arg(Marker, UINTN) : cast(TYPE) __builtin_va_arg(Marker, TYPE);
+}
+D");
+}
+
+// Translate unknown identifier as function call with complex arguments.
+unittest
+{
+    assertTMD(q"C
+#define FOO(a) (func)(~(a.d) ? (b[1]) : (((c) + (1)) * ((2) - (c))))
+C", q"D
+extern (D) auto FOO(T)(auto ref T a)
+{
+    return func(~a.d ? (b[1]) : ((c + (1)) * ((2) - c)));
+}
 D");
 }
