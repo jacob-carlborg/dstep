@@ -673,7 +673,7 @@ Expression parsePrimaryExpr(ref Token[] tokens, Cursor[string] table, bool defin
 
     auto type = parseTypeName(local, table, false);
 
-    if (type.isValid && type.isExposed)
+    if (type.isValid)
     {
         tokens = local;
         return Expression(TypeIdentifier(type));
@@ -1119,7 +1119,11 @@ bool parseBasicSpecifier(ref Token[] tokens, ref string spelling, Cursor[string]
         // "__complex__", TBD
         // "_Complex", TBD
         "bool",
-        "_Bool");
+        "_Bool",
+        "__SIZE_TYPE__",
+        "__WCHAR_TYPE__",
+        "__WINT_TYPE__",
+        "__PTRDIFF_TYPE__");
 
     return accept!(specifiers)(tokens, spelling);
 }
@@ -1441,6 +1445,30 @@ bool basicSpecifierListToType(ref Type type, Set!string specifiers)
     if (specifiers.contains("signed"))
     {
         type = Type(CXTypeKind.int_, "int");
+        return true;
+    }
+
+    if (specifiers.contains("__SIZE_TYPE__"))
+    {
+        type = Type(CXTypeKind.unexposed, "size_t");
+        return true;
+    }
+
+    if (specifiers.contains("__WCHAR_TYPE__"))
+    {
+        type = Type(CXTypeKind.wChar, "wchar");
+        return true;
+    }
+
+    if (specifiers.contains("__WINT_TYPE__"))
+    {
+        type = Type(CXTypeKind.uShort, "ushort");
+        return true;
+    }
+
+    if (specifiers.contains("__PTRDIFF_TYPE__"))
+    {
+        type = Type(CXTypeKind.unexposed, "ptrdiff_t");
         return true;
     }
 

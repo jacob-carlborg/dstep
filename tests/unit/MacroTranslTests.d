@@ -983,3 +983,25 @@ extern (D) auto FOO(T)(auto ref T a)
 }
 D");
 }
+
+// Translate compiler type macros.
+unittest
+{
+    assertTMD(q"C
+#define FOO __SIZE_TYPE__
+C", q"D
+alias FOO = size_t;
+D");
+
+    assertTMD(q"C
+#define FOO __WCHAR_TYPE__
+C", q"D
+alias FOO = wchar;
+D");
+
+    assertTMD(q"C
+#define FOO __PTRDIFF_TYPE__
+C", q"D
+alias FOO = ptrdiff_t;
+D");
+}
