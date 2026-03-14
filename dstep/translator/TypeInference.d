@@ -229,6 +229,9 @@ InferredType inferExpressionType(Expression expression)
         inferBinaryOperator!OrExpr,
         inferBinaryOperator!LogicalAndExpr,
         inferBinaryOperator!LogicalOrExpr,
+        inferBinaryOperator!AndAssignExpr,
+        inferBinaryOperator!XorAssignExpr,
+        inferBinaryOperator!OrAssignExpr,
         delegate InferredType(CondExpr condExpr)
         {
             return commonType(
