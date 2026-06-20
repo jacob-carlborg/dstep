@@ -218,3 +218,74 @@ struct Foo
 D");
 
 };
+
+unittest
+{
+    assertTranslates(q"C
+struct Foo {
+    unsigned int a : 16;
+    unsigned int b : 16;
+    unsigned int c : 8;
+    unsigned int d : 8;
+    unsigned int e : 16;
+    unsigned long long f : 42;
+};
+C",q"D
+extern (C):
+
+struct Foo
+{
+    uint a : 16;
+    uint b : 16;
+    uint c : 8;
+    uint d : 8;
+    uint e : 16;
+    ulong f : 42;
+}
+D");
+
+}
+
+unittest
+{
+    assertTranslates(q"C
+struct Foo {
+    int a : 4;
+    int b : 8;
+    int c : 12;
+};
+C",q"D
+extern (C):
+
+struct Foo
+{
+    int a : 4;
+    int b : 8;
+    int c : 12;
+}
+D");
+
+}
+
+unittest
+{
+    assertTranslates(q"C
+struct Foo {
+    int a : 1;
+    int b : 1;
+    int c : 1;
+    int d : 1;
+};
+C",q"D
+extern (C):
+
+struct Foo
+{
+    int a : 1;
+    int b : 1;
+    int c : 1;
+    int d : 1;
+}
+D");
+
+}
