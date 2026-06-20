@@ -289,3 +289,29 @@ struct Foo
 D");
 
 }
+
+// Known limitation that layout won't match C
+// Incredibly complex to get this right so leaving like this
+unittest
+{
+    assertTranslates(q"C
+struct Foo
+{
+    __int128 a : 50;
+    int b : 10;
+    __int128 c : 62;
+};
+C",q"D
+import core.int128;
+
+extern (C):
+
+struct Foo
+{
+    Cent a; // only 50 bits used, struct's layout incompatible with C
+    int b : 10;
+    Cent c; // only 62 bits used, struct's layout incompatible with C
+}
+D");
+
+}
