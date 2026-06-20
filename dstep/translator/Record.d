@@ -49,11 +49,19 @@ void translateBitFields(
         auto type = translateType(context, cursor).makeString();
         auto name = cursor.spelling();
         auto width = cursor.bitFieldWidth();
+        auto typeWidth = cast(uint)(cursor.type.sizeOf * 8);
 
-        if (name.empty)
-            output.singleLine("%s : %d;", type, width);
+        if (typeWidth > 64)
+        {
+            output.singleLine("%s %s; // only %s bits used, struct's layout incompatible with C", type, name, width);
+        }
         else
-            output.singleLine("%s %s : %d;", type, name, width);
+        {
+            if (name.empty)
+                output.singleLine("%s : %d;", type, width);
+            else
+                output.singleLine("%s %s : %d;", type, name, width);
+        }
     }
 }
 
