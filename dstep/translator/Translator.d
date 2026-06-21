@@ -78,6 +78,7 @@ class Translator
     Output translateCursors()
     {
         Output result = new Output(context.commentIndex);
+        Output content;
         typedMacroDefinitions = inferMacroSignatures(context);
 
         bool first = true;
@@ -91,20 +92,32 @@ class Translator
                     if (result.flushHeaderComment())
                         result.separator();
 
-                    externDeclaration(result);
+                    content = new Output(result);
+                    externDeclaration(content);
                     first = false;
                 }
 
-                translateInGlobalScope(result, cursor, parent);
+                translateInGlobalScope(content, cursor, parent);
             }
         }
 
+        if (first)
+        {
+            if (result.flushHeaderComment())
+                result.separator();
+
+            content = new Output(result);
+        }
+
         if (context.commentIndex)
-            result.flushLocation(context.commentIndex.queryLastLocation());
+            content.flushLocation(context.commentIndex.queryLastLocation());
 
         foreach (value; deferredDeclarations.values)
-            result.singleLine(value);
+            content.singleLine(value);
 
+        moduleDeclaration(result);
+        context.includeHandler.toImports(result);
+        result.output(content);
         result.finalize();
 
         return result;
@@ -112,15 +125,7 @@ class Translator
 
     string translateToString()
     {
-        import std.algorithm.mutation : strip;
-
-        Output main = translateCursors();
-        Output head = new Output();
-
-        moduleDeclaration(head);
-        context.includeHandler.toImports(head);
-
-        return main.header ~ head.data ~ main.content;
+        return translateCursors().data;
     }
 
     void translateInGlobalScope(

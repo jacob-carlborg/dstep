@@ -18,6 +18,23 @@ q"D
 D", true);
 }
 
+unittest
+{
+    Options options;
+    options.packageName = "a";
+    options.outputFile = "b.h";
+
+    assertTranslates(
+q"C
+/* Header comment. */
+C",
+q"D
+/* Header comment. */
+
+module a.b;
+D", options, true);
+}
+
 // Test disabled comments.
 unittest
 {
