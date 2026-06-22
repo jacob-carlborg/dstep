@@ -120,16 +120,42 @@ private string normalizeDot(string number, string suffix)
     return number;
 }
 
+private string normalizeDecimalSuffix(string suffix)
+{
+    import std.ascii : toLower;
+
+    if (suffix.length == 0 || toLower(suffix[0]) != 'd')
+        return suffix;
+
+    if (suffix.length == 1)
+        return "";
+
+    switch (toLower(suffix[1]))
+    {
+        case 'd': return "";
+        case 'l': return "L";
+        case 'f': return suffix[1 .. $];
+        default:  return suffix;
+    }
+}
+
 string translate(Literal literal, ExpressionContext context)
 {
     import std.algorithm;
     import std.ascii;
 
-    alias pred = (dchar x) => (x == 'u' || x == 'U' || x == 'l' || x == 'L' ||
-                               x == 'f' || x == 'F');
-    auto number  = literal.spelling.stripRight!pred;
-    auto suffix   = literal.spelling[number.length .. $];
+    auto stripped = literal.spelling.stripLeft!(x => x == '+' || x == '-');
+    bool isHex = stripped.length >= 2 && stripped[0] == '0' &&
+                 (stripped[1] == 'x' || stripped[1] == 'X');
 
+    string number = literal.spelling.stripRight!((dchar x) => (x == 'u' || x == 'U' || x == 'l' || x == 'L'));
+    if (!isHex || stripped.canFind('p') || stripped.canFind('P'))
+    {
+        number = number.stripRight!((dchar x) => (x == 'f' || x == 'F' || x == 'd' || x == 'D'));
+    }
+    string suffix = literal.spelling[number.length .. $];
+
+    suffix = normalizeDecimalSuffix(suffix);
     suffix = normalizeLSuffix(suffix);
 
     auto uinteger = number.stripLeft!(x => x == '+' || x == '-');
