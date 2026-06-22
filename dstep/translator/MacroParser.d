@@ -480,6 +480,15 @@ class LogicalAndExpr : BinaryExpr
 class LogicalOrExpr : BinaryExpr
 { }
 
+class AndAssignExpr : BinaryExpr
+{ }
+
+class XorAssignExpr : BinaryExpr
+{ }
+
+class OrAssignExpr : BinaryExpr
+{ }
+
 class CondExpr
 {
     Expression expr;
@@ -530,6 +539,9 @@ alias Expression = Algebraic!(
     OrExpr,
     LogicalAndExpr,
     LogicalOrExpr,
+    AndAssignExpr,
+    XorAssignExpr,
+    OrAssignExpr,
     CondExpr);
 
 Expression debraced(Expression expression)
@@ -1032,6 +1044,56 @@ Expression parseCondExpr(ref Token[] tokens, Cursor[string] table, bool defined)
     return expr;
 }
 
+Expression parseAssignExpr(ref Token[] tokens, Cursor[string] table, bool defined)
+{
+    auto local = tokens;
+
+    Expression expr = parseCondExpr(local, table, defined);
+
+    if (!expr.hasValue)
+        return Expression.init;
+
+    string op;
+
+    if (accept!("&=", "^=", "|=")(local, op, TokenKind.punctuation))
+    {
+        Expression rhs = parseAssignExpr(local, table, defined);
+
+        if (!rhs.hasValue)
+            return Expression.init;
+
+        tokens = local;
+
+        if (op == "&=")
+        {
+            auto result = new AndAssignExpr;
+            result.left = expr;
+            result.right = rhs;
+            result.operator = op;
+            return Expression(result);
+        }
+        else if (op == "^=")
+        {
+            auto result = new XorAssignExpr;
+            result.left = expr;
+            result.right = rhs;
+            result.operator = op;
+            return Expression(result);
+        }
+        else
+        {
+            auto result = new OrAssignExpr;
+            result.left = expr;
+            result.right = rhs;
+            result.operator = op;
+            return Expression(result);
+        }
+    }
+
+    tokens = local;
+    return expr;
+}
+
 bool parseBasicSpecifier(ref Token[] tokens, ref string spelling, Cursor[string] table)
 {
     import std.meta : AliasSeq;
@@ -1425,10 +1487,10 @@ Expression parseExpr(ref Token[] tokens, Cursor[string] table, bool defined)
     if (concatExpr.hasValue)
         return concatExpr;
 
-    auto condExpr = parseCondExpr(tokens, table, defined);
+    auto assignExpr = parseAssignExpr(tokens, table, defined);
 
-    if (condExpr.hasValue)
-        return condExpr;
+    if (assignExpr.hasValue)
+        return assignExpr;
 
     return Expression.init;
 }
@@ -1437,7 +1499,7 @@ Expression parseExpr(ref Token[] tokens, bool defined)
 {
     Cursor[string] table;
 
-    return parseCondExpr(tokens, table, defined);
+    return parseAssignExpr(tokens, table, defined);
 }
 
 Expression parseEnumMember(Token[] tokens, Cursor[string] table)

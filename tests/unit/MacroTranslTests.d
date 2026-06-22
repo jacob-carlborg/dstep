@@ -841,3 +841,37 @@ extern (D) auto fun(T)(auto ref T a)
 }
 D");
 }
+
+// Translate compound assignment operators &=, ^=, |=.
+unittest
+{
+    assertTME("#define FOO(a, b) a &= b", "a &= b");
+    assertTME("#define FOO(a, b) a ^= b", "a ^= b");
+    assertTME("#define FOO(a, b) a |= b", "a |= b");
+}
+
+// Compound assignment operators are right-associative.
+unittest
+{
+    assertTME("#define FOO(a, b, c) a &= b |= c", "a &= b |= c");
+    assertTME("#define FOO(a, b, c) a ^= b &= c", "a ^= b &= c");
+    assertTME("#define FOO(a, b, c) a |= b ^= c", "a |= b ^= c");
+    assertTME("#define FOO(a, b, c, d) a &= b |= c ^= d", "a &= b |= c ^= d");
+}
+
+// Compound assignment has lower precedence than conditional ?:.
+unittest
+{
+    assertTME("#define FOO(a, b, c, d) a &= b ? c : d", "a &= b ? c : d");
+    assertTME("#define FOO(a, b, c, d) a ^= b ? c : d", "a ^= b ? c : d");
+    assertTME("#define FOO(a, b, c, d) a |= b ? c : d", "a |= b ? c : d");
+}
+
+// Compound assignment mixed with other operators.
+unittest
+{
+    assertTME("#define FOO(a, b, c) a &= b & !c", "a &= b & !c");
+    assertTME("#define FOO(a, b, c) a ^= ~b + c", "a ^= ~b + c");
+    assertTME("#define FOO(a, b, c, d) d &= a |= b && c", "d &= a |= b && c");
+    assertTME("#define FOO(a, b, c, d) d ^= a ? ~c % d : c * ~d ^ -(b ? c & d : d) | c", "d ^= a ? ~c % d : c * ~d ^ -(b ? c & d : d) | c");
+}
