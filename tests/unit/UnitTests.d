@@ -1116,6 +1116,72 @@ D");
 
 }
 
+// Hex numbers.
+unittest
+{
+    assertTranslates(q"C
+#define hexA 0x000D
+#define hexB 0xFFu
+#define hexC 0xABCDUL
+#define hexD 0x1234l
+#define hexE 0XDEAD
+#define hexF 0x0D0F
+#define hexG 0XFF
+#define hexH -0xFF
+#define hexI 0xFFull
+#define hexJ 0x1.0p3
+#define hexK 0xDEADp4
+#define hexL 0x1.0p5d
+#define hexM 0x1.0p6D
+#define hexN 0x1.0p7f
+C", q"D
+extern (C):
+
+enum hexA = 0x000D;
+enum hexB = 0xFFu;
+enum hexC = 0xABCDUL;
+enum hexD = 0x1234L;
+enum hexE = 0XDEAD;
+enum hexF = 0x0D0F;
+enum hexG = 0XFF;
+enum hexH = -0xFF;
+enum hexI = 0xFFuL;
+enum hexJ = 0x1.0p3;
+enum hexK = 0xDEADp4;
+enum hexL = 0x1.0p5;
+enum hexM = 0x1.0p6;
+enum hexN = 0x1.0p7f;
+D");
+
+}
+
+// Decimal numbers.
+unittest
+{
+    assertTranslates(q"C
+#define decimalA 0.df
+#define decimalB 1.dd
+#define decimalC 2.dl
+#define decimalD 3.DF
+#define decimalE 0.DD
+#define decimalF 1.DL
+#define decimalG 1.0d
+#define decimalH 1.0D
+C", q"D
+extern (C):
+
+enum decimalA = 0.0f;
+enum decimalB = 1.;
+enum decimalC = 2.0L;
+enum decimalD = 3.0F;
+enum decimalE = 0.;
+enum decimalF = 1.0L;
+enum decimalG = 1.0;
+enum decimalH = 1.0;
+D");
+
+}
+
 @("public global import")
 unittest
 {
