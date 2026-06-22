@@ -35,62 +35,6 @@ void translatePackedAttribute(Output output, Context context, Cursor cursor)
         output.singleLine("align (1):");
 }
 
-struct BitField
-{
-    string type;
-    string field;
-    uint width;
-}
-
-BitField[] translateBitFields(
-    Context context,
-    Cursor[] cursors)
-{
-    static void pad(ref BitField[] bitFields, uint totalWidth)
-    {
-        uint padding = 0;
-
-        for (uint size = 8; size <= 64; size *= 2)
-        {
-            if (totalWidth <= size)
-            {
-                padding = size - totalWidth;
-                break;
-            }
-        }
-
-        if (padding != 0)
-            bitFields ~= BitField("uint", "", padding);
-    }
-
-    BitField[] bitFields;
-    uint totalWidth = 0;
-
-    foreach (cursor; cursors)
-    {
-        auto width = cursor.bitFieldWidth();
-
-        if (width == 0)
-        {
-            pad(bitFields, totalWidth);
-            totalWidth = 0;
-        }
-        else
-        {
-            bitFields ~= BitField(
-                translateType(context, cursor).makeString(),
-                cursor.spelling(),
-                width);
-
-            totalWidth += width;
-        }
-    }
-
-    pad(bitFields, totalWidth);
-
-    return bitFields;
-}
-
 void translateBitFields(
     Output output,
     Context context,
@@ -98,31 +42,26 @@ void translateBitFields(
 {
     import std.range;
 
-    auto bitFields = translateBitFields(context, cursors);
+    assert(cursors.length > 0);
 
-    if (bitFields.length == 1)
+    foreach (cursor; cursors)
     {
-        auto bitField = bitFields.front;
+        auto type = translateType(context, cursor).makeString();
+        auto name = cursor.spelling();
+        auto width = cursor.bitFieldWidth();
+        auto typeWidth = cast(uint)(cursor.type.sizeOf * 8);
 
-        output.singleLine(
-            `mixin(bitfields!(%s, "%s", %s));`,
-            bitField.type,
-            bitField.field,
-            bitField.width);
-    }
-    else
-    {
-        output.multiLine("mixin(bitfields!(") in {
-            foreach (index, bitField; enumerate(bitFields))
-            {
-                output.singleLine(
-                    `%s, "%s", %s%s`,
-                    bitField.type,
-                    bitField.field,
-                    bitField.width,
-                    index + 1 == bitFields.length ? "));" : ",");
-            }
-        };
+        if (typeWidth > 64)
+        {
+            output.singleLine("%s %s; // only %s bits used, struct's layout incompatible with C", type, name, width);
+        }
+        else
+        {
+            if (name.empty)
+                output.singleLine("%s : %d;", type, width);
+            else
+                output.singleLine("%s %s : %d;", type, name, width);
+        }
     }
 }
 
@@ -159,9 +98,6 @@ void translateRecordDef(
 
         auto declarations = cursor.children
             .filter!(cursor => cursor.isDeclaration)();
-
-        if (declarations.any!(cursor => cursor.isBitField()))
-            output.singleLine("import std.bitmanip : bitfields;");
 
         translatePackedAttribute(output, context, cursor);
 
