@@ -9,6 +9,7 @@ module dstep.translator.Options;
 import clang.Util;
 
 import dstep.translator.ConvertCase;
+import dstep.translator.Identifier;
 
 enum Language
 {
@@ -103,12 +104,14 @@ string fullModuleName(string packageName, string path, bool normalize = true)
     if (normalize)
     {
         auto segments = moduleName.split!(x => x == '.');
-        auto normalized = segments.map!(x => x.toUTF8.toSnakeCase).join('.');
-        return only(packageName, normalized).join('.');
+        auto normalizedSegments = segments.map!(x => translateIdentifier(x.toUTF8.toSnakeCase));
+        return chain(only(packageName), normalizedSegments).join('.');
     }
     else
     {
-        return only(packageName, moduleName.toUTF8).join('.');
+        auto segments = moduleName.split!(x => x == '.');
+        auto translatedSegments = segments.map!(x => translateIdentifier(x.toUTF8));
+        return chain(only(packageName), translatedSegments).join('.');
     }
 }
 
@@ -131,7 +134,11 @@ unittest
 
     assert(fullModuleName("pkg", "FooBarBaz.ext") == "pkg.foo_bar_baz");
     assert(fullModuleName("pkg", "FooBar.BazQux.ext") == "pkg.foo_bar.baz_qux");
+    assert(fullModuleName("pkg", "in.h") == "pkg.in_");
+    assert(fullModuleName("pkg", "foo-in.h") == "pkg.foo.in_");
 
     assert(fullModuleName("pkg", "FooBarBaz.ext", false) == "pkg.FooBarBaz");
     assert(fullModuleName("pkg", "FooBar.BazQux.ext", false) == "pkg.FooBar.BazQux");
+    assert(fullModuleName("pkg", "in.h", false) == "pkg.in_");
+    assert(fullModuleName("pkg", "foo-in.h", false) == "pkg.foo.in_");
 }
