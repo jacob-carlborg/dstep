@@ -68,6 +68,10 @@ class IncludeGraph
 
                 auto pair = Inclusion(headers_[includedPath], headers_[path]);
                 directInclusions.add(pair);
+            } else if (includedPath != "" && includedPath !in headers_)
+            {
+                reverse_[headers_.length] = includedPath;
+                headers_[includedPath] = headers_.length;
             }
         }
 
