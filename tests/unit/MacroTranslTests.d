@@ -841,3 +841,25 @@ extern (D) auto fun(T)(auto ref T a)
 }
 D");
 }
+
+// Comment out compiler builtins and language keywords.
+unittest
+{
+    assertTMD(q"C
+#define va_copy __builtin_va_copy
+C", q"D
+// FIXME: enum va_copy = __builtin_va_copy;
+D");
+
+    assertTMD(q"C
+#define fake _builtin_fake
+C", q"D
+enum fake = _builtin_fake;
+D");
+
+    assertTMD(q"C
+#define foo(x) __builtin_foo(x)
+C", q"D
+// FIXME: alias foo = __builtin_foo;
+D");
+}
