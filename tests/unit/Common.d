@@ -103,6 +103,26 @@ TranslationUnit makeTranslationUnit(string source)
     return TranslationUnit.parseString(index, source, arguments);
 }
 
+TranslationUnit makeTranslationUnitFromFile(
+    string sourceFilename,
+    const string[] commandLineArgs = ["-Wno-missing-declarations"],
+    uint options = CXTranslationUnit_Flags.detailedPreprocessingRecord)
+{
+    import std.algorithm;
+    import std.array;
+
+    Compiler compiler;
+
+    auto index = Index(false, false);
+
+    return TranslationUnit.parse(
+        index,
+        sourceFilename,
+        commandLineArgs ~ compiler.internalFlags,
+        compiler.internalHeaders,
+        options);
+}
+
 CommentIndex makeCommentIndex(string c)
 {
     TranslationUnit translUnit = makeTranslationUnit(c);

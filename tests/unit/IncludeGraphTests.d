@@ -14,29 +14,9 @@ import clang.Util;
 
 import dstep.translator.HeaderIndex;
 
-static TranslationUnit makeTranslationUnit(
-    string sourceFilename,
-    const string[] commandLineArgs = ["-Wno-missing-declarations"],
-    uint options = CXTranslationUnit_Flags.detailedPreprocessingRecord)
-{
-    import std.algorithm;
-    import std.array;
-
-    Compiler compiler;
-
-    auto index = Index(false, false);
-
-    return TranslationUnit.parse(
-        index,
-        sourceFilename,
-        commandLineArgs ~ compiler.internalFlags,
-        compiler.internalHeaders,
-        options);
-}
-
 static IncludeGraph makeIncludeGraph(string sourceFilename)
 {
-    return new IncludeGraph(makeTranslationUnit(sourceFilename));
+    return new IncludeGraph(makeTranslationUnitFromFile(sourceFilename));
 }
 
 unittest
@@ -72,7 +52,7 @@ unittest
 {
     import std.algorithm;
 
-    auto translationUnit = makeTranslationUnit(
+    auto translationUnit = makeTranslationUnitFromFile(
         "tests/functional/clang-c/Index.h",
         ["-Wno-missing-declarations", "-Itests/functional"]);
     auto headerIndex = new HeaderIndex(translationUnit);
@@ -84,7 +64,7 @@ unittest
 
 unittest
 {
-    auto translationUnit = makeTranslationUnit(
+    auto translationUnit = makeTranslationUnitFromFile(
         "tests/functional/graph/self_including_main.h",
         ["-Wno-missing-declarations", "-Itests/functional"]);
 
