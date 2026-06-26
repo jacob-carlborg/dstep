@@ -503,6 +503,23 @@ class CondExpr
     }
 }
 
+struct BracedExpr
+{
+    string expr;
+
+    this (string expr)
+    {
+        this.expr = expr;
+    }
+
+    string toString()
+    {
+        import std.format : format;
+
+        return format("BracedExpr(expr = %s)", expr);
+    }
+}
+
 alias Expression = Algebraic!(
     Identifier,
     TypeIdentifier,
@@ -530,7 +547,8 @@ alias Expression = Algebraic!(
     OrExpr,
     LogicalAndExpr,
     LogicalOrExpr,
-    CondExpr);
+    CondExpr,
+    BracedExpr);
 
 Expression debraced(Expression expression)
 {
@@ -1032,6 +1050,40 @@ Expression parseCondExpr(ref Token[] tokens, Cursor[string] table, bool defined)
     return expr;
 }
 
+Expression parseBracedExpr(ref Token[] tokens)
+{
+    if (tokens.empty)
+        return Expression.init;
+
+    auto local = tokens;
+
+    while (local.length >= 2 &&
+        acceptPunctuation!("(")(local) &&
+        local[$ - 1].kind == TokenKind.punctuation &&
+        local[$ - 1].spelling == ")")
+    {
+        local = local[0 .. $ - 1];
+    }
+
+    if (!local.empty &&
+        local.front.kind == TokenKind.punctuation &&
+        local.front.spelling == "{" &&
+        local.back.kind == TokenKind.punctuation &&
+        local.back.spelling == "}")
+    {
+        auto buffer = appender!string();
+        foreach (token; tokens)
+        {
+            buffer.put(token.spelling);
+        }
+        auto expr = Expression(BracedExpr(buffer.data));
+        tokens = [];
+        return expr;
+    }
+
+    return Expression.init;
+}
+
 bool parseBasicSpecifier(ref Token[] tokens, ref string spelling, Cursor[string] table)
 {
     import std.meta : AliasSeq;
@@ -1430,6 +1482,10 @@ Expression parseExpr(ref Token[] tokens, Cursor[string] table, bool defined)
     if (condExpr.hasValue)
         return condExpr;
 
+    auto bracedExpr = parseBracedExpr(tokens);
+    if (bracedExpr.hasValue)
+        return bracedExpr;
+
     return Expression.init;
 }
 
@@ -1437,7 +1493,7 @@ Expression parseExpr(ref Token[] tokens, bool defined)
 {
     Cursor[string] table;
 
-    return parseCondExpr(tokens, table, defined);
+    return parseExpr(tokens, table, defined);
 }
 
 Expression parseEnumMember(Token[] tokens, Cursor[string] table)

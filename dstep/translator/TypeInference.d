@@ -234,6 +234,10 @@ InferredType inferExpressionType(Expression expression)
             return commonType(
                 condExpr.left.inferExpressionType(),
                 condExpr.right.inferExpressionType());
+        },
+        delegate InferredType(BracedExpr objectExpr)
+        {
+            return InferredType(Generic.init);
         });
 }
 
