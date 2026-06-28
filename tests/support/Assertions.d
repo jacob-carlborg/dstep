@@ -1,6 +1,7 @@
 module tests.support.Assertions;
 
 import core.exception : AssertError;
+import std.sumtype : SumType, match;
 
 import tests.support.DStepRunner;
 
@@ -9,6 +10,14 @@ struct TestFile
     string expected;
     string actual;
 }
+
+struct TestDir
+{
+    string[] expected;
+    string actual;
+}
+
+alias TestInput = SumType!(TestFile[], TestDir[]);
 
 void assertRunsDStepCFile(
     string expectedPath,
@@ -30,7 +39,28 @@ void assertRunsDStepCFile(
 }
 
 void assertRunsDStepCFiles(
-    TestFile[] filesPaths,
+    TestFile[] input,
+    string[] arguments = [],
+    bool strict = false,
+    string file = __FILE__,
+    size_t line = __LINE__)
+{
+    assertRunsDStepCInput(TestInput(input), arguments, strict, file, line);
+}
+
+void assertRunsDStepCDir(
+    string[] expectedFiles,
+    string actualDir,
+    string[] arguments = [],
+    bool strict = false,
+    string file = __FILE__,
+    size_t line = __LINE__)
+{
+    assertRunsDStepCInput(TestInput([TestDir(expectedFiles, actualDir)]), arguments, strict, file, line);
+}
+
+void assertRunsDStepCInput(
+    TestInput input,
     string[] arguments = [],
     bool strict = false,
     string file = __FILE__,
@@ -39,7 +69,7 @@ void assertRunsDStepCFiles(
     string[] extended = arguments ~ ["-Iresources"];
 
     assertRunsDStep(
-        filesPaths,
+        input,
         extended,
         strict,
         file,
@@ -101,13 +131,23 @@ void assertIssuesWarning(
 }
 
 void assertRunsDStep(
-    TestFile[] testFiles,
+    TestFile[] input,
     string[] arguments,
     bool strict,
     string file = __FILE__,
     size_t line = __LINE__)
 {
-    import std.algorithm : map;
+    assertRunsDStep(TestInput(input), arguments, strict, file, line);
+}
+
+void assertRunsDStep(
+    TestInput input,
+    string[] arguments,
+    bool strict,
+    string file = __FILE__,
+    size_t line = __LINE__)
+{
+    import std.algorithm : map, joiner;
     import std.array : array;
     import std.file : readText, write;
     import std.format : format;
@@ -122,10 +162,15 @@ void assertRunsDStep(
 
     ReturnType!testRunDStep result;
 
+    string[] actualInputs = input.match!(
+        (TestFile[] files) => files.map!(x => x.actual).array,
+        (TestDir[] dirs)   => dirs.map!(x => x.actual).array
+    );
+
     try
     {
         result = testRunDStep(
-            testFiles.map!(x => x.actual).array,
+            actualInputs,
             arguments,
             &outputContents,
             &command,
@@ -179,11 +224,19 @@ DStep output:
         throw new AssertError(message, file, line);
     }
 
-    foreach (index, testFile; testFiles)
+    string[] expectedOutputs = input.match!(
+        (TestFile[] files) => files.map!(x => x.expected).array,
+        (TestDir[] dirs)   => dirs.map!(x => x.expected).joiner.array
+    );
+
+    foreach (index, expectedPath; expectedOutputs)
     {
-        if (fileExists(testFile.expected))
+        if (expectedPath == "IGNORE")
+            continue;
+
+        if (fileExists(expectedPath))
         {
-            string expected = readText(testFile.expected);
+            string expected = readText(expectedPath);
             string actual = outputContents[index];
 
             auto mismatch = mismatchRegionTranslated(actual, expected, 8, strict);
@@ -211,7 +264,7 @@ DStep output:
         }
         else
         {
-            write(testFile.expected, outputContents[index]);
+            write(expectedPath, outputContents[index]);
         }
     }
 }

@@ -208,6 +208,29 @@ unittest
 
 unittest
 {
+    assertRunsDStepCDir(["tests/functional/module/include.d",
+                         "tests/functional/module/main0.d",
+                         "IGNORE",
+                         "IGNORE",
+                         "tests/functional/module/unused.d"],
+                         "tests/functional/module",
+        ["--package", "modules", "-Iresources"]
+    );
+}
+
+unittest
+{
+    assertRunsDStepCDir(["tests/functional/module/include.d",
+                         "IGNORE",
+                         "tests/functional/module/main0NotNormalized.d",
+                         "tests/functional/module/main0_public.d"],
+                         "tests/functional/module",
+        ["--public-submodules", "--package", "modules", "-Iresources", "--unspecified-output"]
+    );
+}
+
+unittest
+{
     assertRunsDStepCFiles([
         TestFile("tests/functional/clang-c/BuildSystem.d", "tests/functional/clang-c/BuildSystem.h"),
         TestFile("tests/functional/clang-c/CXCompilationDatabase.d", "tests/functional/clang-c/CXCompilationDatabase.h"),
