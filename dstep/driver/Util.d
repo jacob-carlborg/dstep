@@ -22,6 +22,7 @@ string findBasePath(string[] paths)
     import std.algorithm.searching : commonPrefix;
     import std.array : array;
     import std.path : isAbsolute, dirName, pathSplitter, buildPath;
+    import std.file : exists, isDir;
 
     auto absolutePaths = paths.filter!isAbsolute.array;
     if (absolutePaths.length == 0)
@@ -33,11 +34,13 @@ string findBasePath(string[] paths)
         absolutePaths = absolutePaths.map!(p => p.replace("/", "\\")).array;
     }
 
+    auto getDirName = (string path) => (exists(path) && isDir(path)) ? path : dirName(path);
+
     if (absolutePaths.length == 1)
-        return dirName(absolutePaths[0]);
+        return getDirName(absolutePaths[0]);
 
     auto parts = absolutePaths
-        .map!(p => pathSplitter(dirName(p)).array)
+        .map!(p => pathSplitter(getDirName(p)).array)
         .array;
 
     version (Windows)
@@ -56,6 +59,20 @@ string findBasePath(string[] paths)
     return buildPath(common);
 }
 
+string[] findFiles(string dir, string[] extensions = [".h", ".hpp"])
+{
+    import std.file : dirEntries, SpanMode;
+    import std.path : extension, asAbsolutePath;
+    import std.algorithm : filter, map, canFind;
+    import std.array : array;
+    import std.conv : to;
+
+    return dirEntries(dir, SpanMode.breadth)
+        .filter!(f => f.isFile && extensions.canFind(extension(f.name)))
+        .map!(f => f.name.asAbsolutePath.to!string)
+        .array;
+}
+
 unittest
 {
     assert(findBasePath([]) == ".");
@@ -72,6 +89,8 @@ version (Posix)
         assert(findBasePath(["/usr/include/stdio.h", "/usr/include/string.h", "/usr/include/stdlib.h"]) == "/usr/include");
         assert(findBasePath(["usr.h", "/usr/include/stdio.h", "/usr/include/sys/stat.h", "/usr/include/string.h", "include.h"]) == "/usr/include");
         assert(findBasePath(["/usr/include/stdio.h", "/usr/Include/stdio.h", "/usR/include/stdio.h"]) == "/");
+        assert(findBasePath(["/usr"]) == "/usr");
+        assert(findBasePath(["/usr", "/usr/lib"]) == "/usr");
     }
 }
 

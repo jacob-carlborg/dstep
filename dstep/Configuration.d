@@ -37,6 +37,9 @@ struct Configuration
     /// output file name or folder (in case there are many input files)
     string output;
 
+    /// when true then output to a directory
+    bool useDirOutput = false;
+
     /// package name
     @("package", "Use <package> as package name.")
     string packageName;
