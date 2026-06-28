@@ -23,6 +23,7 @@ import dstep.translator.Options;
 import dstep.core.Exceptions;
 import dstep.translator.Options;
 import dstep.translator.Translator;
+import dstep.driver.Util : findBasePath, findFiles;
 
 class Application
 {
@@ -41,10 +42,10 @@ class Application
         import std.exception : enforce;
         import std.range;
 
+        this.config = prepareConfig(config);
+
         enforce!DStepException(config.inputFiles.length > 0,
             "dstep: error: must supply at least one input file\n");
-
-        enforceInputFilesExist(config);
 
         auto translationUnits = makeTranslationUnits(config);
 
@@ -67,21 +68,45 @@ class Application
         }
     }
 
-    static void enforceInputFilesExist(const Configuration config)
+    static Configuration prepareConfig(Configuration config)
     {
+        import std.file : exists, isDir, isFile;
+        import std.path : baseName, asAbsolutePath;
         import std.exception : enforce;
         import std.format : format;
+        import std.array : array;
 
-        foreach (inputFile; config.inputFiles)
+        Configuration result = config;
+        string[] files;
+
+        // when only one input file is supplied, -o argument is
+        // interpreted as file path, otherwise as base directory path
+        result.useDirOutput = config.inputFiles.length != 1;
+
+        foreach (input; config.inputFiles)
         {
             enforce!DStepException(
-                exists(inputFile),
-                format("dstep: error: file '%s' doesn't exist\n", inputFile));
+                exists(input),
+                format("dstep: error: input '%s' doesn't exist\n", input));
 
-            enforce!DStepException(
-                isFile(inputFile),
-                format("dstep: error: '%s' is not a file\n", inputFile));
+            if (isDir(input))
+            {
+                files ~= findFiles(input);
+                result.useDirOutput = true;
+            }
+            else
+            {
+                enforce!DStepException(
+                    isFile(input),
+                    format("dstep: error: '%s' is not a file\n", input));
+
+                files ~= input.asAbsolutePath.array;
+            }
         }
+
+        result.inputFiles = files;
+
+        return result;
     }
 
     void enforceTranslationUnitsCompiled(TranslationUnit[] translationUnits)
@@ -115,14 +140,13 @@ class Application
         import std.algorithm;
         import std.array;
         import std.range;
+        import std.path;
 
-        import dstep.driver.Util : makeDefaultOutputFile;
+        import dstep.driver.Util : makeDefaultOutputFile, findBasePath;
 
         auto inputFiles = config.inputFiles;
 
-        // when only one input file is supplied, -o argument is
-        // interpreted as file path, otherwise as base directory path
-        if (inputFiles.length == 1)
+        if (!config.useDirOutput)
         {
             return [config.output.empty
                 ? makeDefaultOutputFile(inputFiles.front, false)
@@ -130,11 +154,19 @@ class Application
         }
         else
         {
-            alias fmap = file => Path.buildPath(
-                config.output,
-                makeDefaultOutputFile(file, false));
-
-            return inputFiles.map!fmap.array;
+            if (config.output.empty)
+            {
+                alias fmap = file => makeDefaultOutputFile(file, false);
+                return inputFiles.map!fmap.array;
+            }
+            else
+            {
+                auto basePath = findBasePath(inputFiles);
+                alias fmap = file => Path.buildPath(
+                    config.output,
+                    makeDefaultOutputFile(relativePath(file, basePath), false));
+                return inputFiles.map!fmap.array;
+            }
         }
     }
 

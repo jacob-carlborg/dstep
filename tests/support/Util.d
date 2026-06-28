@@ -6,6 +6,12 @@ bool fileExists(string path)
     return exists(path) && isFile(path);
 }
 
+bool inputExists(string path)
+{
+    import std.file : exists, isFile, isDir;
+    return exists(path) && (isFile(path) || isDir(path));
+}
+
 string mismatchRegion(
     string expected,
     string actual,

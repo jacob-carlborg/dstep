@@ -11,6 +11,36 @@ version (Windows)
 
 private alias TestRunDStepResult = ReturnType!execute;
 
+
+void copy(string source, string targetDir)
+{
+    import std.file : isDir, dirEntries, SpanMode, copy, mkdirRecurse;
+    import std.path : buildPath, asAbsolutePath, asRelativePath, baseName;
+    import std.array;
+
+    mkdirRecurse(targetDir);
+
+    if (source.isDir)
+    {
+        foreach (entry; dirEntries(source, SpanMode.breadth))
+        {
+            string target = buildPath(targetDir, entry.name.asAbsolutePath.asRelativePath(source.asAbsolutePath).array);
+            if (entry.isDir)
+            {
+                mkdirRecurse(target);
+            }
+            else
+            {
+                copy(entry.name, target);
+            }
+        }
+    }
+    else
+    {
+        copy(source, buildPath(targetDir, source.baseName));
+    }
+}
+
 auto testRunDStep(
     string[] sourcePaths,
     string[] arguments,
@@ -21,13 +51,13 @@ auto testRunDStep(
 {
     import core.exception : AssertError;
 
-    import std.algorithm : canFind, map;
-    import std.file : exists, isFile, readText, rmdirRecurse;
-    import std.path : buildPath;
+    import std.algorithm : canFind, map, remove, sort;
+    import std.file : exists, isFile, isDir, readText, rmdirRecurse, getcwd;
+    import std.path : buildPath, isAbsolute, relativePath, dirName, absolutePath;
     import std.range : join;
-    import std.array : empty;
+    import std.array : empty, array;
 
-    import dstep.driver.Util : makeDefaultOutputFile;
+    import dstep.driver.Util : makeDefaultOutputFile, findBasePath, findFiles;
 
     version (OptionalGNUStep)
     {
@@ -43,36 +73,64 @@ auto testRunDStep(
     }
 
     foreach (sourcePath; sourcePaths)
-        assertFileExists(sourcePath, file, line);
+        assertInputExists(sourcePath, file, line);
 
     string outputDir = namedTempDir("dstepUnitTest");
     scope(exit) rmdirRecurse(outputDir);
 
+    auto argumentsLength = arguments.length;
+    arguments = arguments.remove!(x => x == "--unspecified-output");
+    bool unspecifiedOutput = arguments.length < argumentsLength;
+
     string[] outputPaths;
+    string workDir = getcwd();
 
-    if (sourcePaths.length == 1)
+    auto sourceBasePath = findBasePath(sourcePaths.map!(file => file.absolutePath).array);
+    bool dirInput = false;
+    auto toRelative = (string path) => relativePath(path, unspecifiedOutput ? workDir : sourceBasePath);
+
+    foreach (ref sourcePath; sourcePaths)
     {
-        outputPaths ~= buildPath(outputDir,
-            makeDefaultOutputFile(sourcePaths[0], false));
+        string path = toRelative(sourcePath.absolutePath);
+        bool dirPath = isDir(sourcePath);
+        if (unspecifiedOutput)
+        {
+            auto updatedSourcePath = buildPath(outputDir, path);
+            copy(sourcePath, dirPath ? updatedSourcePath : dirName(updatedSourcePath));
+            if (isAbsolute(sourcePath))
+            {
+                sourcePath = updatedSourcePath;
+            }
+        }
+        if (dirPath)
+        {
+            dirInput = true;
+            outputPaths ~= findFiles(sourcePath).map!(file => buildPath(outputDir, makeDefaultOutputFile(toRelative(file), false))).array.sort().array;
+        } else
+        {
+            outputPaths ~= buildPath(outputDir, makeDefaultOutputFile(path, false));
+        }
+    }
+
+    auto dstepPath = buildPath(workDir, "bin", "dstep");
+    auto localCommand = [dstepPath] ~ sourcePaths ~ arguments;
+
+    if (unspecifiedOutput)
+    {
+        workDir = outputDir;
     }
     else
     {
-        foreach (sourcePath; sourcePaths)
-            outputPaths ~= buildPath(outputDir,
-                makeDefaultOutputFile(sourcePath, false));
+        if (outputPaths.length == 1 && !dirInput)
+            localCommand ~= ["-o", outputPaths[0]];
+        else
+            localCommand ~= ["-o", outputDir];
     }
-
-    auto localCommand = ["./bin/dstep"] ~ sourcePaths ~ arguments;
-
-    if (outputPaths.length == 1)
-        localCommand ~= ["-o", outputPaths[0]];
-    else
-        localCommand ~= ["-o", outputDir];
 
     if (command)
         *command = join(localCommand, " ");
 
-    auto result = execute(localCommand);
+    auto result = execute(localCommand, workDir: workDir);
 
     if (outputContents)
         outputContents.length = outputPaths.length;
@@ -130,7 +188,7 @@ class NamedTempDirException : object.Exception
     }
 }
 
-void assertFileExists(
+void assertInputExists(
     string expected,
     string file = __FILE__,
     size_t line = __LINE__)
@@ -139,11 +197,11 @@ void assertFileExists(
 
     import std.format : format;
 
-    import tests.support.Util : fileExists;
+    import tests.support.Util : inputExists;
 
-    if (!fileExists(expected))
+    if (!inputExists(expected))
     {
-        auto message = format("File %s doesn't exist.", expected);
+        auto message = format("Input %s doesn't exist.", expected);
         throw new AssertError(message, file, line);
     }
 }
