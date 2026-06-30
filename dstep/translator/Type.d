@@ -300,8 +300,11 @@ do
     if (declaration.isValid)
         return translateType(context, declaration, rewriteIdToObjcObject);
     else
+    {
+        type = type.canonical.isValid ? type.canonical : type;
         return translateType(context, type.kind, rewriteIdToObjcObject)
             .makeSourceNode();
+    }
 }
 
 string translateComplex (Type type)
