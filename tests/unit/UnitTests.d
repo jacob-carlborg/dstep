@@ -977,6 +977,24 @@ D", options);
 
 }
 
+// Test compiler builtin types
+unittest
+{
+    assertTranslates(
+    q"C
+typedef __builtin_va_list VA_LIST;
+
+#define VA_COPY(Dest, Start)  __builtin_va_copy (Dest, Start)
+C", q"D
+extern (C):
+
+alias VA_LIST = __va_list_tag[1];
+
+alias VA_COPY = __builtin_va_copy;
+D");
+
+}
+
 // Test global attributes
 unittest
 {
