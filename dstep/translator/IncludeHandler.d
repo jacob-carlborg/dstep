@@ -29,87 +29,6 @@ class IncludeHandler
     private bool[string] imports;
     private Set!string publicImports;
     private HeaderIndex headerIndex;
-    immutable static string[string] knownIncludes;
-
-    shared static this ()
-    {
-        knownIncludes = [
-            "complex" : "core.stdc.complex",
-            "config" : "core.stdc.config",
-            "ctype" : "core.stdc.ctype",
-            "errno" : "core.stdc.errno",
-            "fenv" : "core.stdc.fenv",
-            "float" : "core.stdc.float",
-            "inttypes" : "core.stdc.inttypes",
-            "limits" : "core.stdc.limits",
-            "locale" : "core.stdc.locale",
-            "math" : "core.stdc.math",
-            "signal" : "core.stdc.signal",
-            "stdarg" : "core.stdc.stdarg",
-            "stddef" : "core.stdc.stddef",
-            "stdint" : "core.stdc.stdint",
-            "_int8_t" : "core.stdc.stdint",
-            "_int16_t" : "core.stdc.stdint",
-            "_int32_t" : "core.stdc.stdint",
-            "_int64_t" : "core.stdc.stdint",
-            "_uint8_t" : "core.stdc.stdint",
-            "_uint16_t" : "core.stdc.stdint",
-            "_uint32_t" : "core.stdc.stdint",
-            "_uint64_t" : "core.stdc.stdint",
-            "stdio" : "core.stdc.stdio",
-            "_stdio" : "core.stdc.stdio",
-            "corecrt_wstdio" : "core.stdc.stdio",
-            "stdlib" : "core.stdc.stdlib",
-            "string" : "core.stdc.string",
-            "tgmath" : "core.stdc.tgmath",
-            "time" : "core.stdc.time",
-            "_time_t" : "core.stdc.time",
-            "corecrt" : "core.stdc.time",
-            "crtdefs" : "core.stdc.time",
-            "wchar" : "core.stdc.wchar_",
-            "wctype" : "core.stdc.wctype",
-
-            "dirent" : "core.sys.posix.dirent",
-            "dlfcn" : "core.sys.posix.dlfcn",
-            "fcntl" : "core.sys.posix.fcntl",
-            "netdb" : "core.sys.posix.netdb",
-            "poll" : "core.sys.posix.poll",
-            "pthread" : "core.sys.posix.pthread",
-            "pwd" : "core.sys.posix.pwd",
-            "sched" : "core.sys.posix.sched",
-            "semaphore" : "core.sys.posix.semaphore",
-            "setjmp" : "core.sys.posix.setjmp",
-            "signal" : "core.sys.posix.signal",
-            "termios" : "core.sys.posix.termios",
-            "ucontext" : "core.sys.posix.ucontext",
-            "unistd" : "core.sys.posix.unistd",
-            "utime" : "core.sys.posix.utime",
-
-            "arpa/inet" : "core.sys.posix.arpa.inet",
-
-            "net/if" : "core.sys.posix.net.if_",
-
-            "netinet/in" : "core.sys.posix.netinet.in_",
-            "netinet/tcp" : "core.sys.posix.netinet.tcp",
-
-            "sys/ipc" : "core.sys.posix.sys.ipc",
-            "sys/mman" : "core.sys.posix.sys.mman",
-            "sys/select" : "core.sys.posix.sys.select",
-            "sys/shm" : "core.sys.posix.sys.shm",
-            "sys/socket" : "core.sys.posix.sys.socket",
-            "sys/stat" : "core.sys.posix.sys.stat",
-            "sys/time" : "core.sys.posix.sys.time",
-            "_time_t" : "core.stdc.time",
-            "sys/types" : "core.sys.posix.sys.types",
-            "sys/_types" : "core.sys.posix.sys.types",
-            "sys/uio" : "core.sys.posix.sys.uio",
-            "sys/un" : "core.sys.posix.sys.un",
-            "sys/utsname" : "core.sys.posix.sys.utsname",
-            "sys/wait" : "core.sys.posix.sys.wait",
-
-            "windows" : "core.sys.windows.windows"
-        ];
-    }
 
     this (HeaderIndex headerIndex, Options options)
     {
@@ -248,10 +167,6 @@ private:
 
     string isKnownInclude (string include)
     {
-        import std.path : stripExtension, baseName;
-
-        include = stripExtension(baseName(include));
-
         if (auto ptr = include in knownIncludes)
             return *ptr;
         else
