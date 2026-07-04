@@ -339,3 +339,35 @@ struct Foo
 D");
 
 }
+
+// Comment inside taken #ifdef branch must not join extern (C): line.
+unittest
+{
+    assertTranslates(
+q"C
+#define G1
+
+#ifdef  G1  // Guard1
+#define A 1
+#else
+#define A 2
+#endif
+
+#ifdef  G2  // Guard2
+#define B 3
+#else
+#define B 4
+#endif
+C",
+q"D
+extern (C):
+
+// Guard1
+
+enum A = 1;
+
+// Guard2
+
+enum B = 4;
+D", true);
+}

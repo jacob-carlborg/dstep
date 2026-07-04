@@ -218,6 +218,7 @@ class Output
 
     private uint lastestOffset = 0;
     private uint lastestLine = 0;
+    private uint lastContentLine = 0;
     private uint headerEndOffset = 0;
 
     this(Output parent)
@@ -231,6 +232,7 @@ class Output
         commentIndex = parent.commentIndex;
         lastestOffset = parent.lastestOffset;
         lastestLine = parent.lastestLine;
+        lastContentLine = parent.lastContentLine;
     }
 
     this(
@@ -268,6 +270,7 @@ class Output
 
         lastestOffset = 0;
         lastestLine = 0;
+        lastContentLine = 0;
         headerEndOffset = 0;
     }
 
@@ -325,6 +328,7 @@ class Output
 
             lastestOffset = max(lastestOffset, output.lastestOffset);
             lastestLine = max(lastestLine, output.lastestLine);
+            lastContentLine = max(lastContentLine, output.lastContentLine);
         }
     }
 
@@ -348,6 +352,7 @@ class Output
         indent();
         formattedWrite(buffer, fmt, args);
         stack.back = Entity.singleLine;
+        lastContentLine = lastestLine;
 
         if (first == Entity.bottom)
             first = Entity.singleLine;
@@ -468,6 +473,8 @@ class Output
 
         if (first == Entity.bottom)
             first = Entity.adaptiveLine;
+
+        lastContentLine = lastestLine;
 
         auto parts = adaptiveLineParts(fmt, args);
 
@@ -715,13 +722,17 @@ D"[0 .. $ - 1]);
                 }
             }
         }
+
+        lastContentLine = comment.extent.end.line;
     }
 
     private void comment(in CommentIndex.Comment comment)
     {
-        if (lastestLine == comment.line)
+        auto wasInline = false;
+        if (lastContentLine == comment.line)
         {
             buffer.put(" ");
+            wasInline = true;
         }
         else if (stack.back != Entity.bottom)
         {
@@ -736,10 +747,13 @@ D"[0 .. $ - 1]);
 
         writeComment(comment);
 
-        stack.back = Entity.comment;
-
         if (first == Entity.bottom)
             first = Entity.comment;
+
+        if (!wasInline && lastestLine == comment.extent.end.line)
+            stack.back = Entity.separator;
+        else
+            stack.back = Entity.comment;
 
         lastestLine = comment.extent.end.line;
         lastestOffset = comment.extent.end.offset;
