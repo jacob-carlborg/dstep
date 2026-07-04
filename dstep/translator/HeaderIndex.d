@@ -220,6 +220,92 @@ class IncludeGraph
     }
 }
 
+package immutable string[string] knownIncludes;
+
+shared static this ()
+{
+    knownIncludes = [
+        // standard c library
+        "assert.h" : "core.stdc.assert_",
+        "ctype.h" : "core.stdc.ctype",
+        "errno.h" : "core.stdc.errno",
+        "float.h" : "core.stdc.float_",
+        "limits.h" : "core.stdc.limits",
+        "locale.h" : "core.stdc.locale",
+        "math.h" : "core.stdc.math",
+        "signal.h" : "core.stdc.signal",
+        "stdarg.h" : "core.stdc.stdarg",
+        "stddef.h" : "core.stdc.stddef",
+        "stdio.h" : "core.stdc.stdio",
+        "stdlib.h" : "core.stdc.stdlib",
+        "string.h" : "core.stdc.string",
+        "time.h" : "core.stdc.time",
+        "wctype.h" : "core.stdc.wctype",
+        "wchar.h" : "core.stdc.wchar_",
+        "complex.h" : "core.stdc.complex",
+        "fenv.h" : "core.stdc.fenv",
+        "inttypes.h" : "core.stdc.inttypes",
+        "tgmath.h" : "core.stdc.tgmath",
+        "stdint.h" : "core.stdc.stdint",
+        "config.h" : "core.stdc.config",
+
+        // posix library
+        "dirent.h" : "core.sys.posix.dirent",
+        "dlfcn.h" : "core.sys.posix.dlfcn",
+        "fcntl.h" : "core.sys.posix.fcntl",
+        "netdb.h" : "core.sys.posix.netdb",
+        "poll.h" : "core.sys.posix.poll",
+        "pthread.h" : "core.sys.posix.pthread",
+        "pwd.h" : "core.sys.posix.pwd",
+        "sched.h" : "core.sys.posix.sched",
+        "semaphore.h" : "core.sys.posix.semaphore",
+        "setjmp.h" : "core.sys.posix.setjmp",
+        "signal.h" : "core.sys.posix.signal",
+        "termios.h" : "core.sys.posix.termios",
+        "ucontext.h" : "core.sys.posix.ucontext",
+        "unistd.h" : "core.sys.posix.unistd",
+        "utime.h" : "core.sys.posix.utime",
+        "arpa/inet.h" : "core.sys.posix.arpa.inet",
+        "net/if.h" : "core.sys.posix.net.if_",
+        "netinet/in.h" : "core.sys.posix.netinet.in_",
+        "netinet/tcp.h" : "core.sys.posix.netinet.tcp",
+        "sys/ipc.h" : "core.sys.posix.sys.ipc",
+        "sys/mman.h" : "core.sys.posix.sys.mman",
+        "sys/select.h" : "core.sys.posix.sys.select",
+        "sys/shm.h" : "core.sys.posix.sys.shm",
+        "sys/socket.h" : "core.sys.posix.sys.socket",
+        "sys/stat.h" : "core.sys.posix.sys.stat",
+        "sys/time.h" : "core.sys.posix.sys.time",
+        "sys/types.h" : "core.sys.posix.sys.types",
+        "sys/_types.h" : "core.sys.posix.sys.types",
+        "sys/uio.h" : "core.sys.posix.sys.uio",
+        "sys/un.h" : "core.sys.posix.sys.un",
+        "sys/utsname.h" : "core.sys.posix.sys.utsname",
+        "sys/wait.h" : "core.sys.posix.sys.wait",
+        "sys/ioctl.h" : "core.sys.posix.sys.ioctl",
+
+        // windows library
+        "windows.h" : "core.sys.windows.windows",
+        "windows" : "core.sys.windows.windows",
+        "corecrt_wstdio" : "core.stdc.stdio",
+        "corecrt" : "core.stdc.time",
+        "crtdefs" : "core.stdc.time",
+
+        // other
+        "_int8_t" : "core.stdc.stdint",
+        "_int16_t" : "core.stdc.stdint",
+        "_int32_t" : "core.stdc.stdint",
+        "_int64_t" : "core.stdc.stdint",
+        "_uint8_t" : "core.stdc.stdint",
+        "_uint16_t" : "core.stdc.stdint",
+        "_uint32_t" : "core.stdc.stdint",
+        "_uint64_t" : "core.stdc.stdint",
+        "_stdio" : "core.stdc.stdio",
+        "_time_t" : "core.stdc.time",
+        "config" : "core.stdc.config"
+    ];
+}
+
 class HeaderIndex
 {
     private IncludeGraph includeGraph_;
@@ -229,68 +315,7 @@ class HeaderIndex
 
     public this(TranslationUnit translationUnit)
     {
-        immutable string[string] standardModuleMapping = [
-            // standard c library
-            "assert.h" : "core.stdc.assert_",
-            "ctype.h" : "core.stdc.ctype",
-            "errno.h" : "core.stdc.errno",
-            "float.h" : "core.stdc.float_",
-            "limits.h" : "core.stdc.limits",
-            "locale.h" : "core.stdc.locale",
-            "math.h" : "core.stdc.math",
-            "signal.h" : "core.stdc.signal",
-            "stdarg.h" : "core.stdc.stdarg",
-            "stddef.h" : "core.stdc.stddef",
-            "stdio.h" : "core.stdc.stdio",
-            "stdlib.h" : "core.stdc.stdlib",
-            "string.h" : "core.stdc.string",
-            "time.h" : "core.stdc.time",
-            "wctype.h" : "core.stdc.wctype",
-            "wchar.h" : "core.stdc.wchar_",
-            "complex.h" : "core.stdc.complex",
-            "fenv.h" : "core.stdc.fenv",
-            "inttypes.h" : "core.stdc.inttypes",
-            "tgmath.h" : "core.stdc.tgmath",
-            "stdint.h" : "core.stdc.stdint",
-            // posix library
-            "dirent.h" : "core.sys.posix.dirent",
-            "dlfcn.h" : "core.sys.posix.dlfcn",
-            "fcntl.h" : "core.sys.posix.fcntl",
-            "netdb.h" : "core.sys.posix.netdb",
-            "poll.h" : "core.sys.posix.poll",
-            "pthread.h" : "core.sys.posix.pthread",
-            "pwd.h" : "core.sys.posix.pwd",
-            "sched.h" : "core.sys.posix.sched",
-            "semaphore.h" : "core.sys.posix.semaphore",
-            "setjmp.h" : "core.sys.posix.setjmp",
-            "signal.h" : "core.sys.posix.signal",
-            "termios.h" : "core.sys.posix.termios",
-            "ucontext.h" : "core.sys.posix.ucontext",
-            "unistd.h" : "core.sys.posix.unistd",
-            "utime.h" : "core.sys.posix.utime",
-            "arpa/inet.h" : "core.sys.posix.arpa.inet",
-            "net/if.h" : "core.sys.posix.net.if_",
-            "netinet/in.h" : "core.sys.posix.netinet.in_",
-            "netinet/tcp.h" : "core.sys.posix.netinet.tcp",
-            "sys/ipc.h" : "core.sys.posix.sys.ipc",
-            "sys/mman.h" : "core.sys.posix.sys.mman",
-            "sys/select.h" : "core.sys.posix.sys.select",
-            "sys/shm.h" : "core.sys.posix.sys.shm",
-            "sys/socket.h" : "core.sys.posix.sys.socket",
-            "sys/stat.h" : "core.sys.posix.sys.stat",
-            "sys/time.h" : "core.sys.posix.sys.time",
-            "sys/types.h" : "core.sys.posix.sys.types",
-            "sys/_types.h" : "core.sys.posix.sys.types",
-            "sys/uio.h" : "core.sys.posix.sys.uio",
-            "sys/un.h" : "core.sys.posix.sys.un",
-            "sys/utsname.h" : "core.sys.posix.sys.utsname",
-            "sys/wait.h" : "core.sys.posix.sys.wait",
-            "sys/ioctl.h" : "core.sys.posix.sys.ioctl",
-            // windows library
-            "windows" : "core.sys.windows.windows"
-        ];
-
-        this (translationUnit, standardModuleMapping);
+        this (translationUnit, knownIncludes);
     }
 
     public this(
