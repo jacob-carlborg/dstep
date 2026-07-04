@@ -215,3 +215,269 @@ enum ENUM2 = QUX!int('c', 2);
 D");
 
 }
+
+unittest
+{
+    assertTranslates(q"C
+#define XOR(x) x ^ 0xFF
+C", q"D
+extern (C):
+
+extern (D) auto XOR(T)(auto ref T x)
+{
+    return x ^ 0xFF;
+}
+D");
+}
+
+unittest
+{
+    assertTranslates(q"C
+#define LAND(x, y) x && y
+C", q"D
+extern (C):
+
+extern (D) auto LAND(T0, T1)(auto ref T0 x, auto ref T1 y)
+{
+    return x && y;
+}
+D");
+}
+
+unittest
+{
+    assertTranslates(q"C
+#define ADD_CAST(x, y, z) ((x) + (z)y)
+C", q"D
+extern (C):
+
+extern (D) auto ADD_CAST(z, T0, T1)(auto ref T0 x, auto ref T1 y)
+{
+    return x + cast(z) y;
+}
+D");
+}
+
+unittest
+{
+    assertTranslates(q"C
+#define UNARY_CAST(x, z) ~(z)(x)
+C", q"D
+extern (C):
+
+extern (D) auto UNARY_CAST(z, T)(auto ref T x)
+{
+    return ~cast(z) x;
+}
+D");
+}
+
+unittest
+{
+    assertTranslates(q"C
+#define DOT_CAST(x, z) ((z)x).field
+C", q"D
+extern (C):
+
+extern (D) auto DOT_CAST(z, T)(auto ref T x)
+{
+    return (cast(z) x).field;
+}
+D");
+}
+
+unittest
+{
+    assertTranslates(q"C
+#define ARROW_CAST(x, z) ((z)x)->field
+C", q"D
+extern (C):
+
+extern (D) auto ARROW_CAST(z, T)(auto ref T x)
+{
+    return (cast(z) x).field;
+}
+D");
+}
+
+unittest
+{
+    assertTranslates(q"C
+#define INDEX_CAST(arr, TYPE, i) arr[(TYPE)i]
+C", q"D
+extern (C):
+
+extern (D) auto INDEX_CAST(TYPE, T0, T2)(auto ref T0 arr, auto ref T2 i)
+{
+    return arr[cast(TYPE) i];
+}
+D");
+}
+
+unittest
+{
+    assertTranslates(q"C
+#define SFT_CAST(TYPE, x) (TYPE)x << 1
+C", q"D
+extern (C):
+
+extern (D) auto SFT_CAST(TYPE, T)(auto ref T x)
+{
+    return cast(TYPE) x << 1;
+}
+D");
+}
+
+unittest
+{
+    assertTranslates(q"C
+#define REL_CAST(TYPE, x) (TYPE)x < 10
+C", q"D
+extern (C):
+
+extern (D) auto REL_CAST(TYPE, T)(auto ref T x)
+{
+    return cast(TYPE) x < 10;
+}
+D");
+}
+
+unittest
+{
+    assertTranslates(q"C
+#define EQL_CAST(TYPE, x) (TYPE)x == 0
+C", q"D
+extern (C):
+
+extern (D) auto EQL_CAST(TYPE, T)(auto ref T x)
+{
+    return cast(TYPE) x == 0;
+}
+D");
+}
+
+unittest
+{
+    assertTranslates(q"C
+#define MUL_CAST(TYPE, x) (TYPE)x * 2
+C", q"D
+extern (C):
+
+extern (D) auto MUL_CAST(TYPE, T)(auto ref T x)
+{
+    return cast(TYPE) x * 2;
+}
+D");
+}
+
+unittest
+{
+    assertTranslates(q"C
+#define AND_CAST(TYPE, x) (TYPE)x & 0xFF
+C", q"D
+extern (C):
+
+extern (D) auto AND_CAST(TYPE, T)(auto ref T x)
+{
+    return cast(TYPE) x & 0xFF;
+}
+D");
+}
+
+unittest
+{
+    assertTranslates(q"C
+#define XOR_CAST(TYPE, x) (TYPE)x ^ 0xFF
+C", q"D
+extern (C):
+
+extern (D) auto XOR_CAST(TYPE, T)(auto ref T x)
+{
+    return cast(TYPE) x ^ 0xFF;
+}
+D");
+}
+
+unittest
+{
+    assertTranslates(q"C
+#define OR_CAST(TYPE, x) (TYPE)x | 1
+C", q"D
+extern (C):
+
+extern (D) auto OR_CAST(TYPE, T)(auto ref T x)
+{
+    return cast(TYPE) x | 1;
+}
+D");
+}
+
+unittest
+{
+    assertTranslates(q"C
+#define LAND_CAST(TYPE, x) (TYPE)x && 1
+C", q"D
+extern (C):
+
+extern (D) auto LAND_CAST(TYPE, T)(auto ref T x)
+{
+    return cast(TYPE) x && 1;
+}
+D");
+}
+
+unittest
+{
+    assertTranslates(q"C
+#define LOR_CAST(TYPE, x) (TYPE)x || 0
+C", q"D
+extern (C):
+
+extern (D) auto LOR_CAST(TYPE, T)(auto ref T x)
+{
+    return cast(TYPE) x || 0;
+}
+D");
+}
+
+unittest
+{
+    assertTranslates(q"C
+#define AND_ASSIGN_CAST(TYPE, x) (TYPE)x &= 0xFF
+C", q"D
+extern (C):
+
+extern (D) auto AND_ASSIGN_CAST(TYPE, T)(auto ref T x)
+{
+    return cast(TYPE) x &= 0xFF;
+}
+D");
+}
+
+unittest
+{
+    assertTranslates(q"C
+#define XOR_ASSIGN_CAST(TYPE, x) (TYPE)x ^= 0xFF
+C", q"D
+extern (C):
+
+extern (D) auto XOR_ASSIGN_CAST(TYPE, T)(auto ref T x)
+{
+    return cast(TYPE) x ^= 0xFF;
+}
+D");
+}
+
+unittest
+{
+    assertTranslates(q"C
+#define OR_ASSIGN_CAST(TYPE, x) (TYPE)x |= 1
+C", q"D
+extern (C):
+
+extern (D) auto OR_ASSIGN_CAST(TYPE, T)(auto ref T x)
+{
+    return cast(TYPE) x |= 1;
+}
+D");
+}
