@@ -225,6 +225,7 @@ class HeaderIndex
     private IncludeGraph includeGraph_;
     private string[string] stdLibPaths;
     private string[string] knownModules;
+    private string[string] includeNames;
     private string mainFilePath;
 
     public this(TranslationUnit translationUnit)
@@ -318,6 +319,11 @@ class HeaderIndex
 
     private this(T)(T directives, const string[string] moduleMapping)
     {
+        foreach (directive; directives)
+        {
+            includeNames.require(directive.includedFile.absolutePath, directive.spelling);
+        }
+
         knownModules = resolveKnownModules(
             directives,
             resolveKnownModulePaths(
@@ -329,6 +335,11 @@ class HeaderIndex
     {
         auto knownModule = cursor.file.name.asAbsNormPath in knownModules;
         return knownModule !is null ? *knownModule : null;
+    }
+
+    string getIncludeName(string absolutePath)
+    {
+        return includeNames.get(absolutePath, null);
     }
 
     IncludeGraph includeGraph()

@@ -13,6 +13,7 @@ import clang.TranslationUnit;
 import clang.Util;
 
 import dstep.translator.HeaderIndex;
+import dstep.translator.Options;
 
 // Include standard library module when the dependency is used in macro.
 unittest
@@ -84,4 +85,38 @@ D");
 
 }
 
+}
+
+unittest
+{
+    assertTranslates(
+q"C
+#include <stdio.h>
+
+int foo;
+C",
+q"D
+import core.stdc.stdio;
+
+extern (C):
+
+extern __gshared int foo;
+D");
+}
+
+unittest
+{
+    assertTranslates(
+q"C
+#include <memory.h>
+
+int foo;
+C",
+q"D
+// FIXME: import memory;
+
+extern (C):
+
+extern __gshared int foo;
+D");
 }

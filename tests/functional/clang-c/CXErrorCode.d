@@ -13,6 +13,8 @@
 
 module clang.c.cx_error_code;
 
+public import clang.c.platform;
+
 extern (C):
 
 /**

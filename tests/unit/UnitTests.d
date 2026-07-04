@@ -380,6 +380,8 @@ size_t foo;
 ptrdiff_t bar;
 C",
 q"D
+import core.stdc.stddef;
+
 extern (C):
 
 extern __gshared size_t foo;
@@ -414,6 +416,8 @@ q"C
 uint8_t foo;
 uint32_t bar;
 C", q"D
+import core.stdc.stdint;
+
 extern (C):
 
 extern __gshared ubyte foo;
@@ -555,6 +559,8 @@ q"C
 uint8_t foo;
 uint32_t bar;
 C", q"D
+import core.stdc.stdint;
+
 extern (C):
 
 extern __gshared ubyte foo;
@@ -598,6 +604,7 @@ wchar_t x;
 C",
 q"D
 import core.stdc.stddef;
+import core.stdc.wchar_;
 
 extern (C):
 
@@ -611,13 +618,13 @@ D");
     {
         assertTranslates(
             "#include <wchar.h>\n\nwchar_t x;\n",
-            "extern (C):\n\nextern __gshared wchar x;\n", options);
+            "import core.stdc.wchar_;\n\nextern (C):\n\nextern __gshared wchar x;\n", options);
     }
     else
     {
         assertTranslates(
             "#include <wchar.h>\n\nwchar_t x;\n",
-            "extern (C):\n\nextern __gshared dchar x;\n", options);
+            "import core.stdc.wchar_;\n\nextern (C):\n\nextern __gshared dchar x;\n", options);
     }
 
 }
@@ -636,6 +643,8 @@ struct bar {
      ptrdiff_t n;
 };
 C", q"D
+import core.stdc.stddef;
+
 extern (C):
 
 struct foo
@@ -974,6 +983,24 @@ extern (C):
 
 alias foo = int function(int function() bar);
 D", options);
+
+}
+
+// Test compiler builtin types
+unittest
+{
+    assertTranslates(
+    q"C
+typedef __builtin_va_list VA_LIST;
+
+#define VA_COPY(Dest, Start)  __builtin_va_copy (Dest, Start)
+C", q"D
+extern (C):
+
+alias VA_LIST = __va_list_tag[1];
+
+alias VA_COPY = __builtin_va_copy;
+D");
 
 }
 

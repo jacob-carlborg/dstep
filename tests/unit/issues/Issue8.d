@@ -39,6 +39,8 @@ int rd_kafka_metadata (rd_kafka_t *rk, int all_topics,
                    int timeout_ms);
 C",
 q"D
+import core.stdc.stdint;
+
 extern (C):
 
 struct rd_kafka

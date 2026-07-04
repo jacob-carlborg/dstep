@@ -491,12 +491,16 @@ void translateVariable (Output output, Context context, Cursor cursor, string pr
 
 void handleInclude (Context context, Type type)
 {
-    import std.algorithm.searching;
-    import std.path;
+    if (!type.declaration.isValid || type.declaration.path.length == 0)
+        return;
 
-    if (!context.includeHandler.resolveDependency(type.declaration)) {
-        context.includeHandler.addInclude(type.declaration.path);
-    }
+    auto path = type.declaration.path.asAbsNormPath;
+
+    if (path == context.translUnit.spelling.asAbsNormPath)
+        return;
+
+    if (!context.includeHandler.resolveDependency(type.declaration))
+        context.includeHandler.addInclude(path);
 }
 
 bool isDKeyword (string str)
