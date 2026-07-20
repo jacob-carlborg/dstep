@@ -63,6 +63,7 @@ jobs:
           - compiler: dmd-beta
             llvm: '15.0.7'
             arch: x86_64
+            nightly: nightly
             data:
               os:
                 host: windows-latest

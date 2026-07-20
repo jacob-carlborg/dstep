@@ -28,7 +28,7 @@ d_compiler() {
 # the compiler by name on `PATH`.
 pin_compiler_path() {
   local path
-  path="$(command -v "$DC")"
+  path="$(command -v "$DC")" || return 0
 
   if command -v cygpath > /dev/null 2>&1; then
     path="$(cygpath -w "$path")"

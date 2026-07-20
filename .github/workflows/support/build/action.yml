@@ -100,4 +100,4 @@ runs:
           -e DSTEP_TARGET_TRIPLE=${{ env.DSTEP_TARGET_TRIPLE }} \
           --platform linux/${{ inputs.docker_arch || inputs.arch }} \
           alpine:edge \
-          sh -c 'apk add --no-cache git curl bash xz tar gcc g++ musl-dev binutils && ./ci.sh ${{ inputs.action }}'
+          sh -c 'apk add --no-cache git curl bash xz tar gcc g++ musl-dev binutils && git config --global --add safe.directory "${{ github.workspace }}" && ./ci.sh ${{ inputs.action }}'
