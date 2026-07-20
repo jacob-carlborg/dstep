@@ -11,7 +11,7 @@ set -exo pipefail
 export MACOSX_DEPLOYMENT_TARGET=10.9
 
 download() {
-  curl --retry 3 -fsS "$1"
+  curl --retry 3 -fsSL "$1"
 }
 
 d_compiler() {
@@ -20,9 +20,60 @@ d_compiler() {
     sed 's/dmd-master/dmd-nightly/'
 }
 
+# dub selects the compiler via the `DC` environment variable, recognizing it by
+# the executable's base name. Resolve `DC` to an absolute path so dub always
+# finds the compiler directly instead of searching `PATH`. Some compiler
+# packages (e.g. certain DMD betas on Windows) ship without a bundled dub, in
+# which case install.sh installs a standalone dub that otherwise fails to locate
+# the compiler by name on `PATH`.
+pin_compiler_path() {
+  local path
+  path="$(command -v "$DC")"
+
+  if command -v cygpath > /dev/null 2>&1; then
+    path="$(cygpath -w "$path")"
+  fi
+
+  export DC="$path"
+}
+
+# dlang.org/install.sh only provides glibc builds, which cannot run on musl
+# based distributions such as Alpine Linux.
+on_musl() {
+  [ -f /etc/alpine-release ]
+}
+
+ldc_release_channel() {
+  case "$DSTEP_COMPILER" in
+    ldc-beta) echo LATEST_BETA ;;
+    *) echo LATEST ;;
+  esac
+}
+
+# Install the official musl build of LDC directly, since install.sh cannot.
+install_ldc_musl() {
+  local version arch dir
+  version="$(download "https://ldc-developers.github.io/$(ldc_release_channel)")"
+  arch="$(uname -m)"
+  dir="ldc2-$version-alpine-$arch"
+
+  download "https://github.com/ldc-developers/ldc/releases/download/v$version/$dir.tar.xz" | \
+    tar xJ
+
+  export PATH="$PWD/$dir/bin:$PATH"
+  export DC=ldc2
+  export DMD=ldmd2
+}
+
 install_d_compiler() {
-  download https://dlang.org/d-keyring.gpg | gpg --import /dev/stdin
-  source $(download https://dlang.org/install.sh | bash -s "$(d_compiler)" -a)
+  if on_musl; then
+    install_ldc_musl
+  else
+    download https://dlang.org/d-keyring.gpg | gpg --import /dev/stdin
+    source $(download https://dlang.org/install.sh | bash -s "$(d_compiler)" -a)
+  fi
+
+  pin_compiler_path
 }
 
 configure() {

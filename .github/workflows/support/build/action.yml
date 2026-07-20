@@ -92,13 +92,12 @@ runs:
       run: |
         docker run \
           --rm \
-          -v $(pwd):/${{ github.workspace }} \
-          -w ${{ github.workspace }} \
+          -v "$(pwd):${{ github.workspace }}" \
+          -w "${{ github.workspace }}" \
           -e DSTEP_LLVM_VERSION=${{ env.DSTEP_LLVM_VERSION }} \
           -e DSTEP_COMPILER=${{ env.DSTEP_COMPILER }} \
           -e DSTEP_RELEASE_PLATFORM=${{ env.DSTEP_RELEASE_PLATFORM }} \
           -e DSTEP_TARGET_TRIPLE=${{ env.DSTEP_TARGET_TRIPLE }} \
           --platform linux/${{ inputs.docker_arch || inputs.arch }} \
           alpine:edge \
-          apk add --no-cache git curl bash && \
-          ./ci.sh ${{ inputs.action }}
+          sh -c 'apk add --no-cache git curl bash xz tar gcc g++ musl-dev binutils && ./ci.sh ${{ inputs.action }}'

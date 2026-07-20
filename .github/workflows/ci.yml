@@ -31,7 +31,7 @@ jobs:
             docker: true
 
           - os:
-              host: macos-13
+              host: macos-26-intel
               target_triple: x86_64-apple-macos10.9
 
           - os:
@@ -133,7 +133,7 @@ jobs:
             release_platform: linux-x86_64
 
           - os:
-              host: macos-13
+              host: macos-26-intel
               target_triple: x86_64-apple-macos10.9
             release_platform: macos-x86_64
 
