@@ -563,7 +563,12 @@ private:
      */
     auto libclangFlags()
     {
-        return dirEntries(llvmLibPath, "{libclang,clang}*.{a,lib}", SpanMode.shallow);
+        return dirEntries(llvmLibPath, "{libclang,clang}*.{a,lib}", SpanMode.shallow)
+            // clang-repl bundles C runtime startup code (a `main`, TLS support)
+            // that collides with the C runtime when statically linked, e.g.
+            // LNK2005 `_tls_index already defined` on Windows. dstep doesn't use
+            // it, so exclude it.
+            .filter!(e => !e.name.baseName.startsWith("clang-repl"));
     }
 
     auto extraFlags()

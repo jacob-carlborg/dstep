@@ -37,6 +37,10 @@ jobs:
           - os:
               host: windows-latest
               target_triple: x86_64-pc-windows-msvc
+            # libclang 21 breaks the Windows build: DMD fails to link
+            # LLVMSupport against the C runtime, and an include-order unit test
+            # differs under LDC. Keep Windows on 15 until those are resolved.
+            llvm: '15.0.7'
 
           - os:
               target: freebsd
@@ -49,7 +53,7 @@ jobs:
           - ldc-latest
 
         llvm:
-          - '15.0.7'
+          - '21.1.8'
 
         include:
           - compiler: dmd-latest
@@ -70,7 +74,7 @@ jobs:
                 target_triple: x86_64-pc-windows-msvc
 
           - compiler: ldc-beta
-            llvm: '15.0.7'
+            llvm: '21.1.8'
             arch: x86_64
             data:
               os:
@@ -110,7 +114,7 @@ jobs:
           docker_arch: ${{ matrix.docker_arch }}
           target_operating_system: ${{ matrix.data.os.target }}
           target_version: ${{ matrix.data.os.version }}
-          llvm: ${{ matrix.llvm }}
+          llvm: ${{ matrix.data.llvm || matrix.llvm }}
           target_triple: ${{ matrix.data.os.target_triple }}
           cross_platform_actions: ${{ matrix.data.cross_platform_actions }}
           docker: ${{ matrix.data.docker }}
@@ -141,6 +145,7 @@ jobs:
           - os:
               host: windows-latest
               target_triple: x86_64-pc-windows-msvc
+            llvm: '15.0.7'
             release_platform: windows-x64
 
           - os:
@@ -155,7 +160,7 @@ jobs:
           - ldc-latest
 
         llvm:
-          - '15.0.7'
+          - '21.1.8'
 
         # include:
         #   - compiler: ldc-latest
@@ -182,7 +187,7 @@ jobs:
           docker_arch: ${{ matrix.docker_arch }}
           target_operating_system: ${{ matrix.data.os.target }}
           target_version: ${{ matrix.data.os.version }}
-          llvm: ${{ matrix.llvm }}
+          llvm: ${{ matrix.data.llvm || matrix.llvm }}
           target_triple: ${{ matrix.data.os.target_triple }}
           cross_platform_actions: ${{ matrix.data.cross_platform_actions }}
           docker: ${{ matrix.data.docker }}
