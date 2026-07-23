@@ -37,10 +37,6 @@ jobs:
           - os:
               host: windows-latest
               target_triple: x86_64-pc-windows-msvc
-            # libclang 21 breaks the Windows build: DMD fails to link
-            # LLVMSupport against the C runtime, and an include-order unit test
-            # differs under LDC. Keep Windows on 15 until those are resolved.
-            llvm: '15.0.7'
 
           - os:
               target: freebsd
@@ -57,7 +53,7 @@ jobs:
 
         include:
           - compiler: dmd-latest
-            llvm: '15.0.7'
+            llvm: '21.1.8'
             arch: x86_64
             data:
               os:
@@ -65,7 +61,7 @@ jobs:
                 target_triple: x86_64-pc-windows-msvc
 
           - compiler: dmd-beta
-            llvm: '15.0.7'
+            llvm: '21.1.8'
             arch: x86_64
             nightly: nightly
             data:
@@ -83,7 +79,7 @@ jobs:
               docker: true
 
           - compiler: dmd-master
-            llvm: '15.0.7'
+            llvm: '21.1.8'
             arch: x86_64
             nightly: nightly
             data:
@@ -145,7 +141,6 @@ jobs:
           - os:
               host: windows-latest
               target_triple: x86_64-pc-windows-msvc
-            llvm: '15.0.7'
             release_platform: windows-x64
 
           - os:

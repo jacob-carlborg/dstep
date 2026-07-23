@@ -546,10 +546,20 @@ private:
      */
     auto llvmFlags()
     {
+        // libclang doesn't use the LLVM execution engine, interpreter or JIT.
+        // Linking them drags their C runtime and ntdll dependencies into the
+        // static link (e.g. LLVMInterpreter's fputs/scanf, LLVMSupport talking
+        // to the JIT), which breaks the DMD link on Windows with LLVM 21.
+        static immutable unusedLibraries = [
+            "ExecutionEngine", "Interpreter", "MCJIT", "OrcJIT", "OrcShared",
+            "OrcTargetProcess", "OrcDebugging", "RuntimeDyld", "JITLink"
+        ];
+
         const result = dirEntries(llvmLibPath, "*LLVM*.{a,lib}", SpanMode.shallow)
             .map!(e => e.name)
             // exclude import library which causes a dynamic link on Windows
             .filter!(e => !e.endsWith("LLVM-C.lib"))
+            .filter!(e => !unusedLibraries.any!(lib => e.baseName.canFind(lib)))
             .array;
 
         const findAllSymbolsPath = llvmLibPath.buildPath("libfindAllSymbols.a");
