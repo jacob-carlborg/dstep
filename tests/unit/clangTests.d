@@ -55,17 +55,22 @@ unittest
 
     auto locations = translUnit.includeLocations;
 
+    // libclang reports paths with the platform-native separator, so normalize
+    // to '/' before comparing to keep the expected paths platform-independent.
+    import std.array : replace;
+    static string n(string p) { return p.replace("\\", "/"); }
+
     assert(locations.length == 10);
-    assert(locations[0].path == "");
-    assert(locations[1].path == "tests/functional/include/file.h");
-    assert(locations[2].path == "tests/functional/include/subfile1.h");
-    assert(locations[3].path == "tests/functional/include/file.h");
-    assert(locations[4].path == "tests/functional/include/subfile2.h");
-    assert(locations[5].path == "tests/functional/include/subsubfile1.h");
-    assert(locations[6].path == "tests/functional/include/subfile2.h");
-    assert(locations[7].path == "tests/functional/include/file.h");
-    assert(locations[8].path == "tests/functional/include/subfile3.h");
-    assert(locations[9].path == "tests/functional/include/file.h");
+    assert(n(locations[0].path) == "", locations[0].path);
+    assert(n(locations[1].path) == "tests/functional/include/file.h", locations[1].path);
+    assert(n(locations[2].path) == "tests/functional/include/subfile1.h", locations[2].path);
+    assert(n(locations[3].path) == "tests/functional/include/file.h", locations[3].path);
+    assert(n(locations[4].path) == "tests/functional/include/subfile2.h", locations[4].path);
+    assert(n(locations[5].path) == "tests/functional/include/subsubfile1.h", locations[5].path);
+    assert(n(locations[6].path) == "tests/functional/include/subfile2.h", locations[6].path);
+    assert(n(locations[7].path) == "tests/functional/include/file.h", locations[7].path);
+    assert(n(locations[8].path) == "tests/functional/include/subfile3.h", locations[8].path);
+    assert(n(locations[9].path) == "tests/functional/include/file.h", locations[9].path);
 
     assert(locations[7].offset == 50);
 }
