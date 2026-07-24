@@ -22,7 +22,7 @@
     "lflags": ["@$PACKAGE_DIR/linker_flags.txt"],
     "libs-windows": ["version", "ntdll"],
 
-    "dflags-windows-dmd": ["-mscrtlib=msvcrt"],
+    "dflags-windows": ["-mscrtlib=msvcrt"],
 
     "buildTypes": {
         "release": {
