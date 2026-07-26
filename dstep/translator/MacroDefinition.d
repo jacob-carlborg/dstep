@@ -343,6 +343,9 @@ string translate(Expression expression, ExpressionContext context)
         translateBinaryOperator!OrExpr,
         translateBinaryOperator!LogicalAndExpr,
         translateBinaryOperator!LogicalOrExpr,
+        translateBinaryOperator!AndAssignExpr,
+        translateBinaryOperator!XorAssignExpr,
+        translateBinaryOperator!OrAssignExpr,
         delegate string(CondExpr condExpr)
         {
             return format(
@@ -403,6 +406,9 @@ void guessParamTypes(Expression expression, ref ExprType[string] params, ExprTyp
         guessBinaryOperator!OrExpr,
         guessBinaryOperator!LogicalAndExpr,
         guessBinaryOperator!LogicalOrExpr,
+        guessBinaryOperator!AndAssignExpr,
+        guessBinaryOperator!XorAssignExpr,
+        guessBinaryOperator!OrAssignExpr,
         delegate void(CondExpr condExpr)
         {
             condExpr.expr.guessParamTypes(params, type);
