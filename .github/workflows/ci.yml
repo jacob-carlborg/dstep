@@ -49,11 +49,11 @@ jobs:
           - ldc-latest
 
         llvm:
-          - '15.0.7'
+          - '21.1.8'
 
         include:
           - compiler: dmd-latest
-            llvm: '15.0.7'
+            llvm: '21.1.8'
             arch: x86_64
             data:
               os:
@@ -61,7 +61,7 @@ jobs:
                 target_triple: x86_64-pc-windows-msvc
 
           - compiler: dmd-beta
-            llvm: '15.0.7'
+            llvm: '21.1.8'
             arch: x86_64
             nightly: nightly
             data:
@@ -70,7 +70,7 @@ jobs:
                 target_triple: x86_64-pc-windows-msvc
 
           - compiler: ldc-beta
-            llvm: '15.0.7'
+            llvm: '21.1.8'
             arch: x86_64
             data:
               os:
@@ -79,7 +79,7 @@ jobs:
               docker: true
 
           - compiler: dmd-master
-            llvm: '15.0.7'
+            llvm: '21.1.8'
             arch: x86_64
             nightly: nightly
             data:
@@ -110,7 +110,7 @@ jobs:
           docker_arch: ${{ matrix.docker_arch }}
           target_operating_system: ${{ matrix.data.os.target }}
           target_version: ${{ matrix.data.os.version }}
-          llvm: ${{ matrix.llvm }}
+          llvm: ${{ matrix.data.llvm || matrix.llvm }}
           target_triple: ${{ matrix.data.os.target_triple }}
           cross_platform_actions: ${{ matrix.data.cross_platform_actions }}
           docker: ${{ matrix.data.docker }}
@@ -155,7 +155,7 @@ jobs:
           - ldc-latest
 
         llvm:
-          - '15.0.7'
+          - '21.1.8'
 
         # include:
         #   - compiler: ldc-latest
@@ -182,7 +182,7 @@ jobs:
           docker_arch: ${{ matrix.docker_arch }}
           target_operating_system: ${{ matrix.data.os.target }}
           target_version: ${{ matrix.data.os.version }}
-          llvm: ${{ matrix.llvm }}
+          llvm: ${{ matrix.data.llvm || matrix.llvm }}
           target_triple: ${{ matrix.data.os.target_triple }}
           cross_platform_actions: ${{ matrix.data.cross_platform_actions }}
           docker: ${{ matrix.data.docker }}
