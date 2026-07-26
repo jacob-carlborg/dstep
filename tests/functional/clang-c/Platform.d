@@ -17,3 +17,5 @@ extern (C):
 
 /* MSVC DLL import/export. */
 
+// FIXME: enum CINDEX_DEPRECATED = __attribute__(deprecated);
+

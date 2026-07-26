@@ -142,6 +142,17 @@ unittest
     localAssert("int long unsigned long", CXTypeKind.uLongLong);
 }
 
+// Parse compiler types.
+unittest
+{
+    alias localAssert = assertParsedTypeHasKind;
+
+    localAssert("__SIZE_TYPE__", CXTypeKind.unexposed);
+    localAssert("__WCHAR_TYPE__", CXTypeKind.wChar);
+    localAssert("__WINT_TYPE__", CXTypeKind.uShort);
+    localAssert("__PTRDIFF_TYPE__", CXTypeKind.unexposed);
+}
+
 // Do not parse invalid types.
 unittest
 {
