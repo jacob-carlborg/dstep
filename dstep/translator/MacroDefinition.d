@@ -188,6 +188,11 @@ string translate(CallExpr expression, ExpressionContext context)
         expression.args.map!fmap.join(", "));
 }
 
+string translate(BracedExpr expr, ExpressionContext context)
+{
+    return "null /* FIXME: " ~ expr.expr ~ " */";
+}
+
 string translate(Expression expression, ExpressionContext context)
 {
     import std.format : format;
@@ -350,6 +355,10 @@ string translate(Expression expression, ExpressionContext context)
                 condExpr.expr.translate(context),
                 condExpr.left.translate(context),
                 condExpr.right.translate(context));
+        },
+        delegate string(BracedExpr expr)
+        {
+            return expr.translate(context);
         });
 }
 

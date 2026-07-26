@@ -841,3 +841,33 @@ extern (D) auto fun(T)(auto ref T a)
 }
 D");
 }
+
+unittest
+{
+    assertTMD(q"C
+#define NESTED { .inner = { 1, 2 } }
+C", q"D
+enum NESTED = null /* FIXME: {.inner={1,2}} */;
+D");
+
+    assertTMD(q"C
+#define INIT(val) { .data = (val), .len = sizeof(val) }
+C", q"D
+extern (D) auto INIT(T)(auto ref T val)
+{
+    return null /* FIXME: {.data=(val),.len=sizeof(val)} */;
+}
+D");
+
+    assertTMD(q"C
+#define UUID { 0x5ae69b6a, 0xd191, 0x4609, {0xb7, 0xdc, 0x24, 0x80, 0x8e, 0xf9, 0x97, 0xb5 } }
+C", q"D
+enum UUID = null /* FIXME: {0x5ae69b6a,0xd191,0x4609,{0xb7,0xdc,0x24,0x80,0x8e,0xf9,0x97,0xb5}} */;
+D");
+
+    assertTMD(q"C
+#define D (({ {1, 2}, {3, 4} }))
+C", q"D
+enum D = null /* FIXME: (({{1,2},{3,4}})) */;
+D");
+}
