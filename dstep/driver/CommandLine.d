@@ -67,7 +67,9 @@ auto parseCommandLine(string[] args)
         args,
         std.getopt.config.passThrough,
         std.getopt.config.caseSensitive,
-        "output|o", &config.output,
+        "input-from-dir|I", &config.isInputFromDir,
+        "output|o", &config.outputPath,
+        "output-to-dir|O", &config.isOutputToDir,
         "objective-c", &forceObjectiveC,
         "language|x", &parseLanguage,
         makeGetOptArgs!config);
@@ -83,6 +85,26 @@ auto parseCommandLine(string[] args)
         else
             config.inputFiles ~= arg;
     }
+
+    if(config.isInputFromDir)
+    {
+        import std.exception : enforce;
+        import std.file;
+        import std.algorithm;
+        import std.algorithm.iteration;
+        import std.array;
+
+        enforce!DStepException(config.inputFiles.length == 1,
+            "dstep: error: must supply only one input directory\n");
+
+        config.inputFiles = dirEntries(config.inputFiles[0], SpanMode.depth)
+            .filter!(f => f.name.endsWith(".h"))
+            .map!(a => a.name)
+            .array;
+    }
+
+    if(config.isInputFromDir || config.inputFiles.length > 1)
+        config.isOutputToDir = true;
 
     // Post-processing of CLI
 
@@ -239,6 +261,8 @@ void showHelp (Configuration config, GetoptResult getoptResult)
     auto customEntries = [
         Entry("-o, --output <file>", "Write output to <file>."),
         Entry("-o, --output <directory>", "Write all the files to <directory>, in case of multiple input files."),
+        Entry("-O, --output-to-dir", "Force write files to <directory>."),
+        Entry("-I, --input-from-dir", "Force to treat <input> as directory. Reads only *.h files."),
         Entry("-ObjC, --objective-c", "Treat source input file as Objective-C input."),
         Entry("-x, --language", "Treat subsequent input files as having type <language>.")];
 
