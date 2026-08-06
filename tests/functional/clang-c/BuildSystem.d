@@ -14,6 +14,8 @@
 module clang.c.build_system;
 
 public import clang.c.cx_error_code;
+public import clang.c.cx_string;
+public import clang.c.platform;
 
 extern (C):
 

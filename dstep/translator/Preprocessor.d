@@ -70,6 +70,12 @@ class PragmaDirective : Directive
 {
 }
 
+class IncludeDirective : Directive
+{
+    bool system;
+    string path;
+}
+
 class DefineDirective : Directive
 {
     MacroDefinition macroDefinition;
@@ -458,6 +464,30 @@ struct DirectiveRange
 
     Directive parseInclude(Token[] tokens)
     {
+        import std.algorithm.searching;
+        import std.algorithm.iteration;
+        import std.string : strip;
+
+        if (acceptDirective!"include"(tokens))
+        {
+            auto directive = new IncludeDirective();
+            directive.kind = DirectiveKind.include;
+            directive.tokens = tokens;
+            directive.extent = tokens.extent;
+
+            if (acceptPunctuation!("<")(tokens))
+            {
+                directive.system = true;
+                directive.path = tokens.until!((token) => token.spelling == ">")
+                                       .fold!((str, token) => str ~= token.spelling)("");
+            } else if (tokens.length == 1)
+            {
+                directive.system = false;
+                directive.path = tokens[0].spelling.strip("\"");
+            }
+            return directive;
+        }
+
         return null;
     }
 
@@ -1005,4 +1035,72 @@ unittest
     assert(case0.length == 2);
 
     assert(case0[0].length == 3);
+}
+
+// System include directive.
+unittest
+{
+    auto case0 = directives(q"C
+#include <stdio.h>
+int x;
+C");
+
+    assert(case0.length == 1);
+    assert(case0[0].kind == DirectiveKind.include);
+
+    auto include = cast(IncludeDirective) case0[0];
+    assert(include !is null);
+    assert(include.system == true);
+    assert(include.path == "stdio.h");
+}
+
+// Local include directive.
+unittest
+{
+    auto case0 = directives(q"C
+#include "local.h"
+int x;
+C");
+
+    assert(case0.length == 1);
+    assert(case0[0].kind == DirectiveKind.include);
+
+    auto include = cast(IncludeDirective) case0[0];
+    assert(include !is null);
+    assert(include.system == false);
+    assert(include.path == "local.h");
+}
+
+// Multiple include directives.
+unittest
+{
+    auto case0 = directives(q"C
+#include <stdio.h>
+#include "local.h"
+#include <stdlib.h>
+#include "local2.h"
+int x;
+C");
+
+    assert(case0.length == 4);
+
+    auto include0 = cast(IncludeDirective) case0[0];
+    assert(include0 !is null);
+    assert(include0.system == true);
+    assert(include0.path == "stdio.h");
+
+    auto include1 = cast(IncludeDirective) case0[1];
+    assert(include1 !is null);
+    assert(include1.system == false);
+    assert(include1.path == "local.h");
+
+    auto include2 = cast(IncludeDirective) case0[2];
+    assert(include2 !is null);
+    assert(include2.system == true);
+    assert(include2.path == "stdlib.h");
+
+    auto include3 = cast(IncludeDirective) case0[3];
+    assert(include3 !is null);
+    assert(include3.system == false);
+    assert(include3.path == "local2.h");
 }

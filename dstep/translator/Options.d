@@ -35,7 +35,6 @@ struct Options
     bool enableComments = true;
     bool publicSubmodules = false;
     bool normalizeModules = false;
-    bool keepUntranslatable = false;
     bool reduceAliases = true;
     bool translateMacros = true;
     bool portableWCharT = true;
@@ -51,6 +50,7 @@ struct Options
     const(string)[] globalAttributes;
     const(string)[] globalImports;
     const(string)[] publicGlobalImports;
+    const(string)[] includePaths;
     bool delegate(ref const(Cursor)) isWantedCursorForTypedefs;
 
     string toString() const

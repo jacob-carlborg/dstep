@@ -8,6 +8,8 @@ module dstep.driver.CommandLine;
 import std.typecons : tuple, Tuple;
 import std.getopt;
 
+import clang.Util : asAbsNormPath;
+
 import dstep.Configuration;
 import dstep.translator.Options;
 import dstep.core.Exceptions;
@@ -86,7 +88,13 @@ auto parseCommandLine(string[] args)
 
     // Post-processing of CLI
 
-    import std.algorithm : canFind;
+    import std.algorithm;
+    import std.array : array;
+
+    config.includePaths ~= config.clangParams.filter!(p => p.length > 2 && p.startsWith("-I"))
+                                             .map!(p => p[2 .. $].asAbsNormPath).array;
+
+    config.includePaths = config.includePaths.sort().uniq.array.sort!((a, b) => a.length > b.length).array;
 
     if (forceObjectiveC)
         config.clangParams ~= "-ObjC";
