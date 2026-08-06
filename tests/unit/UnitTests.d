@@ -821,6 +821,21 @@ extern __gshared int foo;
 D");
 
     assertTranslates(q"C
+typedef void foo;
+
+struct foo { int x; };
+C", q"D
+extern (C):
+
+alias foo = void;
+
+struct foo_
+{
+    int x;
+}
+D");
+
+    assertTranslates(q"C
 struct foo { };
 
 #define foo 0
@@ -944,6 +959,43 @@ void foo ();
 D", options));
 
     }
+}
+
+// Test abort on spelling collision (another case).
+unittest
+{
+    import std.exception : assertThrown;
+
+    Options options;
+    options.collisionAction = CollisionAction.abort;
+
+    assertThrown!TranslationException(assertTranslates(q"C
+struct foo { int x; } foo;
+C", q"D
+extern (C):
+
+struct foo
+{
+    int x;
+}
+
+extern __gshared foo foo;
+D", options));
+}
+
+// Test that no false collision is detected.
+unittest
+{
+    auto translUnit = makeTranslationUnitFromFile("tests/functional/nocollision.h");
+
+    Options options;
+    options.collisionAction = CollisionAction.abort;
+
+    assertTranslates(q"D
+extern (C):
+
+alias Z = D;
+D", translUnit, options, false);
 }
 
 // Put or don't put a space after the 'function' keyword when

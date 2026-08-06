@@ -286,6 +286,12 @@ class Context
                 if (options.collisionAction != CollisionAction.ignore)
                 {
                     auto collision = spelling in macroIndex.globalCursors;
+                    if (collision && collision.kind == CXCursorKind.typedefDecl)
+                    {
+                        auto underlying = collision.underlyingCursor();
+                        if (cursor.canonical == underlying.canonical)
+                            collision = null;
+                    }
 
                     while (collision &&
                         collision.canonical != cursor.canonical &&
