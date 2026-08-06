@@ -227,6 +227,14 @@ unittest
     );
 }
 
+unittest
+{
+    assertRunsDStepCFile(
+        "tests/functional/size_t_redeclared.d",
+        "tests/functional/size_t_redeclared.h"
+    );
+}
+
 // DStep should exit with non-zero status when an input file doesn't exist.
 unittest
 {
