@@ -21,11 +21,7 @@ extern (C):
 
 struct Foo
 {
-    import std.bitmanip : bitfields;
-
-    mixin(bitfields!(
-        int, "x", 4,
-        uint, "", 4));
+    int x : 4;
 }
 D");
 
@@ -44,8 +40,7 @@ extern (C):
 
 struct Foo
 {
-    import std.bitmanip : bitfields;
-    mixin(bitfields!(int, "x", 8));
+    int x : 8;
 }
 D");
 
@@ -65,12 +60,9 @@ extern (C):
 
 struct bitfield
 {
-    import std.bitmanip : bitfields;
-
-    mixin(bitfields!(
-        uint, "one", 4,
-        uint, "two", 8,
-        uint, "", 4));
+    uint one : 4;
+    uint two : 8;
+    uint : 4;
 }
 D");
 }
@@ -86,14 +78,10 @@ extern (C):
 
 struct Foo
 {
-    import std.bitmanip : bitfields;
-
-    mixin(bitfields!(
-        ubyte, "a", 3,
-        ubyte, "", 2,
-        ubyte, "b", 6,
-        ubyte, "c", 2,
-        uint, "", 3));
+    ubyte a : 3;
+    ubyte : 2;
+    ubyte b : 6;
+    ubyte c : 2;
 }
 D");
 
@@ -111,11 +99,7 @@ extern (C):
 
 struct Foo
 {
-    import std.bitmanip : bitfields;
-
-    mixin(bitfields!(
-        short, "a", 4,
-        uint, "", 4));
+    short a : 4;
 
     char b;
 }
@@ -136,13 +120,8 @@ extern (C):
 
 struct Foo
 {
-    import std.bitmanip : bitfields;
-
     short a;
-
-    mixin(bitfields!(
-        char, "b", 7,
-        uint, "", 1));
+    char b : 7;
 
     char[1] c;
 }
@@ -165,16 +144,11 @@ extern (C):
 
 struct Foo
 {
-    import std.bitmanip : bitfields;
-
     short a;
     char b;
-
-    mixin(bitfields!(
-        int, "c", 1,
-        int, "d", 4,
-        int, "e", 7,
-        uint, "", 4));
+    int c : 1;
+    int d : 4;
+    int e : 7;
 }
 D");
 
@@ -197,17 +171,12 @@ extern (C):
 
 struct Foo
 {
-    import std.bitmanip : bitfields;
-
     short a;
-
-    mixin(bitfields!(
-        int, "b", 1,
-        int, "c", 4,
-        int, "d", 3,
-        int, "e", 7,
-        int, "f", 25,
-        uint, "", 24));
+    int b : 1;
+    int c : 4;
+    int d : 3;
+    int e : 7;
+    int f : 25;
 
     char g;
 }
@@ -235,23 +204,114 @@ extern (C):
 
 struct Foo
 {
-    import std.bitmanip : bitfields;
-
     short a;
-
-    mixin(bitfields!(
-        int, "b", 1,
-        int, "c", 4,
-        int, "d", 3));
+    int b : 1;
+    int c : 4;
+    int d : 3;
 
     c_long e;
-
-    mixin(bitfields!(
-        int, "f", 7,
-        int, "g", 25));
+    int f : 7;
+    int g : 25;
 
     char h;
 }
 D");
 
 };
+
+unittest
+{
+    assertTranslates(q"C
+struct Foo {
+    unsigned int a : 16;
+    unsigned int b : 16;
+    unsigned int c : 8;
+    unsigned int d : 8;
+    unsigned int e : 16;
+    unsigned long long f : 42;
+};
+C",q"D
+extern (C):
+
+struct Foo
+{
+    uint a : 16;
+    uint b : 16;
+    uint c : 8;
+    uint d : 8;
+    uint e : 16;
+    ulong f : 42;
+}
+D");
+
+}
+
+unittest
+{
+    assertTranslates(q"C
+struct Foo {
+    int a : 4;
+    int b : 8;
+    int c : 12;
+};
+C",q"D
+extern (C):
+
+struct Foo
+{
+    int a : 4;
+    int b : 8;
+    int c : 12;
+}
+D");
+
+}
+
+unittest
+{
+    assertTranslates(q"C
+struct Foo {
+    int a : 1;
+    int b : 1;
+    int c : 1;
+    int d : 1;
+};
+C",q"D
+extern (C):
+
+struct Foo
+{
+    int a : 1;
+    int b : 1;
+    int c : 1;
+    int d : 1;
+}
+D");
+
+}
+
+// Known limitation that layout won't match C
+// Incredibly complex to get this right so leaving like this
+unittest
+{
+    assertTranslates(q"C
+struct Foo
+{
+    __int128 a : 50;
+    int b : 10;
+    __int128 c : 62;
+};
+C",q"D
+import core.int128;
+
+extern (C):
+
+struct Foo
+{
+    Cent a; // only 50 bits used, struct's layout incompatible with C
+    int b : 10;
+    Cent c; // only 62 bits used, struct's layout incompatible with C
+}
+D");
+
+}
