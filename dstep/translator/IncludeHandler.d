@@ -197,8 +197,6 @@ class IncludeHandler
 
         if (options.keepUntranslatable)
             importsBlock(output, unhandled.keys);
-
-        output.finalize();
     }
 
     bool resolveDependency(in Cursor cursor)
