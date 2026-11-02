@@ -92,25 +92,48 @@ string translate(Literal literal, ExpressionContext context)
     import std.algorithm;
     import std.ascii;
     import std.range;
+    import std.string : toUpper;
+    import std.uni : icmp;
 
-    alias pred = (dchar x) => (x == 'u' || x == 'U' || x == 'L');
-    auto integer = literal.spelling.stripRight!pred;
+    /// Normalize a C integer suffix to its D equivalent.
+    /// Ex: 0123ull -> 0123UL
+    string translateSuffix(string suffix)
+    {
+        if (icmp(suffix, "u") == 0)
+            return "U";
+
+        if (icmp(suffix, "l")  == 0 ||
+            icmp(suffix, "ll") == 0)
+            return "L";
+
+        if (icmp(suffix, "ul")  == 0 ||
+            icmp(suffix, "lu")  == 0 ||
+            icmp(suffix, "ull") == 0 ||
+            icmp(suffix, "llu") == 0)
+            return "UL";
+
+        return "";
+    }
+
+    alias isSuffix = (dchar x) => (x == 'u' || x == 'l' || x == 'U' || x == 'L');
+
+    auto integer = literal.spelling.stripRight!isSuffix;
     auto uinteger = integer.stripLeft!(x => x == '+' || x == '-');
+    auto suffix = translateSuffix(literal.spelling[integer.length .. $]);
 
     if (uinteger.length > 1 &&
         uinteger.all!isDigit &&
         uinteger.front == '0')
     {
         (*context.imports).add("std.conv : octal");
-        auto suffix = literal.spelling[integer.length .. $];
         auto core = uinteger[0 .. $ - 1].stripLeft('0') ~ uinteger[$ - 1];
         return "octal!" ~ core ~ suffix;
-    } else if (literal.spelling.length >= 3 && literal.spelling[0..2] == "L\"")
+    } else if (literal.spelling.length >= 3 && literal.spelling[0 .. 2] == "L\"")
     {
-        return literal.spelling[1..$] ~ "w";
+        return literal.spelling[1 .. $] ~ "w";
     }
 
-    return literal.spelling;
+    return integer ~ suffix;
 }
 
 string translate(Identifier identifier, ExpressionContext context)
