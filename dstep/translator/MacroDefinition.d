@@ -99,6 +99,9 @@ string translate(Literal literal, ExpressionContext context)
     /// Ex: 0123ull -> 0123UL
     string translateSuffix(string suffix)
     {
+        // TODO: The following assumes 64-bit platform abi and doesnt
+        // translate unsigned long and long to 32 bits if on a 32-bit
+        // system.
         if (icmp(suffix, "u") == 0)
             return "U";
 
